@@ -21,6 +21,8 @@ export function RegisterPage() {
     email,
     password,
     confirmPassword,
+    gender,
+    dateOfBirth,
     showPassword,
     agreeTerms,
     loading,
@@ -100,6 +102,29 @@ export function RegisterPage() {
             <input id="email" type="email" placeholder={t('auth.emailPlaceholder')} value={email} onChange={(e) => updateField('email', e.target.value)} className={`${inputBase} ${field('email')}`} />
           </div>
           {fieldErrors.email && <p className="mt-1 text-xs text-red-400">{fieldErrors.email}</p>}
+        </div>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div>
+            <label className="block text-sm font-medium text-slate-400 mb-1.5" htmlFor="gender">{t('auth.gender')}</label>
+            <div className="relative group">
+              <span className="material-symbols-outlined absolute left-3 top-2.5 text-slate-500 group-focus-within:text-primary transition-colors text-xl">person</span>
+              <select id="gender" value={gender} onChange={(e) => updateField('gender', e.target.value)} className={`${inputBase} ${field('gender')} appearance-none pr-10`}>
+                <option value="">{t('auth.genderPlaceholder')}</option>
+                <option value="male">{t('auth.genderMale')}</option>
+                <option value="female">{t('auth.genderFemale')}</option>
+                <option value="other">{t('auth.genderOther')}</option>
+              </select>
+            </div>
+            {fieldErrors.gender && <p className="mt-1 text-xs text-red-400">{fieldErrors.gender}</p>}
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-slate-400 mb-1.5" htmlFor="dateOfBirth">{t('auth.dateOfBirth')}</label>
+            <div className="relative group">
+              <span className="material-symbols-outlined absolute left-3 top-2.5 text-slate-500 group-focus-within:text-primary transition-colors text-xl">calendar_today</span>
+              <input id="dateOfBirth" type="date" value={dateOfBirth} onChange={(e) => updateField('dateOfBirth', e.target.value)} className={`${inputBase} ${field('dateOfBirth')}`} />
+            </div>
+            {fieldErrors.dateOfBirth && <p className="mt-1 text-xs text-red-400">{fieldErrors.dateOfBirth}</p>}
+          </div>
         </div>
         <div>
           <label className="block text-sm font-medium text-slate-400 mb-1.5" htmlFor="password">{t('auth.password')}</label>

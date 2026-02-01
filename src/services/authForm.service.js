@@ -17,11 +17,14 @@ export async function submitRegisterForm(data, t) {
   }
 
   try {
-    const res = await apiClient.post(API_ENDPOINTS.AUTH.REGISTER, {
+    const body = {
       email: (data.email || '').trim().toLowerCase(),
       password: data.password,
       name: (data.fullName || '').trim(),
-    })
+    }
+    if (data.gender && ['male', 'female', 'other'].includes(data.gender)) body.gender = data.gender
+    if (data.dateOfBirth) body.dateOfBirth = data.dateOfBirth
+    const res = await apiClient.post(API_ENDPOINTS.AUTH.REGISTER, body)
 
     if (res.success && res.data) {
       const { accessToken, refreshToken, user } = res.data

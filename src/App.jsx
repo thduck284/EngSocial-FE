@@ -9,6 +9,7 @@ import { DashboardPage } from './pages/DashboardPage'
 import { EnterPage } from './pages/EnterPage'
 import { SkillPracticePage } from './pages/SkillPracticePage'
 import { ListeningLessonPage } from './pages/ListeningLessonPage'
+import { ProfilePage } from './pages/ProfilePage'
 import { DashboardLayout } from './components/layout/DashboardLayout'
 import { GuestOnlyLayout } from './components/layout/GuestOnlyLayout'
 
@@ -32,6 +33,7 @@ function App() {
         <Route path="skills" element={<Navigate to="/skills/reading" replace />} />
         <Route path="skills/:skill" element={<SkillPracticePage />} />
         <Route path="lesson/listening/:id" element={<ListeningLessonPage />} />
+        <Route path="profile" element={<ProfilePage />} />
       </Route>
 
       <Route path="*" element={<Navigate to="/" replace />} />

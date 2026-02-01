@@ -1,4 +1,13 @@
-import { buildApiUrl } from '../constants'
+import { buildApiUrl, ROUTES } from '../constants'
+
+/** Xóa auth storage và chuyển về trang đăng nhập (khi không token hoặc token hết hạn) */
+function clearAuthAndRedirectToLogin() {
+  ;['authToken', 'refreshToken', 'user'].forEach((key) => {
+    localStorage.removeItem(key)
+    sessionStorage.removeItem(key)
+  })
+  window.location.href = ROUTES.LOGIN
+}
 
 /**
  * API Helper - Wrapper cho fetch API
@@ -63,6 +72,10 @@ class ApiClient {
         : await response.text()
 
       if (!response.ok) {
+        if (response.status === 401) {
+          clearAuthAndRedirectToLogin()
+          return
+        }
         throw {
           status: response.status,
           message: data.message || 'Request failed',
@@ -72,6 +85,10 @@ class ApiClient {
 
       return data
     } catch (error) {
+      if (error?.status === 401) {
+        clearAuthAndRedirectToLogin()
+        return
+      }
       console.error('API Error:', error)
       throw error
     }

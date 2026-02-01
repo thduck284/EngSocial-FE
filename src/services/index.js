@@ -17,8 +17,8 @@ export const authService = {
     return apiClient.post(API_ENDPOINTS.AUTH.LOGOUT)
   },
 
-  refreshToken: async () => {
-    return apiClient.post(API_ENDPOINTS.AUTH.REFRESH_TOKEN)
+  refreshToken: async (refreshToken) => {
+    return apiClient.post(API_ENDPOINTS.AUTH.REFRESH_TOKEN, { refreshToken })
   },
 
   forgotPassword: async (email) => {
@@ -27,6 +27,10 @@ export const authService = {
 
   resetPassword: async (token, newPassword) => {
     return apiClient.post(API_ENDPOINTS.AUTH.RESET_PASSWORD, { token, newPassword })
+  },
+
+  getMe: async () => {
+    return apiClient.get(API_ENDPOINTS.AUTH.ME)
   },
 
   updatePreferences: async (payload) => {
@@ -52,11 +56,11 @@ export {
  */
 export const userService = {
   getProfile: async () => {
-    return apiClient.get(API_ENDPOINTS.USER.PROFILE)
+    return authService.getMe()
   },
 
   updateProfile: async (userData) => {
-    return apiClient.put(API_ENDPOINTS.USER.UPDATE_PROFILE, userData)
+    return apiClient.patch(API_ENDPOINTS.USER.UPDATE_PROFILE, userData)
   },
 
   getStats: async () => {
