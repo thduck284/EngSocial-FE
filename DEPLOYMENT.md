@@ -34,8 +34,8 @@ git commit -m "Initial commit: Setup EngSocial Frontend"
 
 ### 1.3. Kết nối và push
 ```bash
-# Thay YOUR_USERNAME bằng username GitHub của bạn
-git remote add origin https://github.com/YOUR_USERNAME/EngSocial-FE.git
+# Thay YOUR_USERNAME bằng: thduck284
+git remote add origin https://github.com/thduck284/EngSocial-FE.git
 git branch -M main
 git push -u origin main
 ```
@@ -166,7 +166,7 @@ npm run preview
 ## 🎉 Xong rồi!
 
 Frontend của bạn đã live tại:
-- **GitHub:** `https://github.com/YOUR_USERNAME/EngSocial-FE`
+- **GitHub:** `https://github.com/thduck284/EngSocial-FE`
 - **Vercel:** `https://your-app.vercel.app`
 
 Mỗi lần push code lên GitHub, Vercel sẽ tự động build & deploy!

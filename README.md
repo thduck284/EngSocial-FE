@@ -1,6 +1,6 @@
 # EngSocial - English Social Learning Platform (Frontend)
 
-[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https://github.com/YOUR_USERNAME/EngSocial-FE)
+[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https://github.com/thduck284/EngSocial-FE)
 
 ## 🚀 Tech Stack
 
@@ -14,7 +14,7 @@
 
 ```bash
 # Clone repository
-git clone https://github.com/YOUR_USERNAME/EngSocial-FE.git
+git clone https://github.com/thduck284/EngSocial-FE.git
 cd EngSocial-FE
 
 # Install dependencies

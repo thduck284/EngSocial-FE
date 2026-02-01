@@ -8,7 +8,7 @@ cd D:\KLTN\EngSocial-FE
 git init
 git add .
 git commit -m "Initial commit"
-git remote add origin https://github.com/YOUR_USERNAME/EngSocial-FE.git
+git remote add origin https://github.com/thduck284/EngSocial-FE.git
 git push -u origin main
 ```
 
