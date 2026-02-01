@@ -5,6 +5,20 @@ export function getAuthToken() {
   return localStorage.getItem('authToken') || sessionStorage.getItem('authToken')
 }
 
+/**
+ * Lấy refresh token (cùng nơi lưu authToken).
+ */
+export function getRefreshToken() {
+  return localStorage.getItem('refreshToken') || sessionStorage.getItem('refreshToken')
+}
+
+/**
+ * Storage đang dùng cho auth (localStorage hoặc sessionStorage).
+ */
+export function getAuthStorage() {
+  return localStorage.getItem('authToken') ? localStorage : sessionStorage
+}
+
 export function isAuthenticated() {
   return !!getAuthToken()
 }

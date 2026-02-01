@@ -58,8 +58,24 @@ export function validateAgreeTerms(value) {
   return null
 }
 
+/** Gender: optional; nếu có thì phải male | female | other */
+export function validateGender(value) {
+  if (!value) return null
+  if (!['male', 'female', 'other'].includes(value)) return { key: 'auth.validation.genderInvalid' }
+  return null
+}
+
+/** Ngày sinh: optional; nếu có thì không được ở tương lai */
+export function validateDateOfBirth(value) {
+  if (!value) return null
+  const d = new Date(value)
+  if (Number.isNaN(d.getTime())) return { key: 'auth.validation.dateOfBirthInvalid' }
+  if (d > new Date()) return { key: 'auth.validation.dateOfBirthFuture' }
+  return null
+}
+
 export function validateRegisterForm(data, t) {
-  const { fullName = '', email = '', password = '', confirmPassword = '', agreeTerms = false } = data
+  const { fullName = '', email = '', password = '', confirmPassword = '', agreeTerms = false, gender = '', dateOfBirth = '' } = data
   const fieldErrors = {}
 
   const fullNameErr = validateFullName(fullName)
@@ -76,6 +92,12 @@ export function validateRegisterForm(data, t) {
 
   const termsErr = validateAgreeTerms(agreeTerms)
   if (termsErr) fieldErrors.agreeTerms = t(termsErr.key)
+
+  const genderErr = validateGender(gender)
+  if (genderErr) fieldErrors.gender = t(genderErr.key)
+
+  const dateErr = validateDateOfBirth(dateOfBirth)
+  if (dateErr) fieldErrors.dateOfBirth = t(dateErr.key)
 
   return {
     valid: Object.keys(fieldErrors).length === 0,

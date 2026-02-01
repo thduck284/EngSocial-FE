@@ -77,14 +77,14 @@ export function DashboardPage() {
               <span className="text-[10px] text-primary">2/3 {t('dashboard.completed')}</span>
             </h3>
             <div className="space-y-1">
-              {mockGoals.map(({ done, label }) => (
-                <label key={label} className="flex items-center gap-3 py-2 cursor-pointer group">
+              {mockGoals.map(({ done, labelKey }) => (
+                <label key={labelKey} className="flex items-center gap-3 py-2 cursor-pointer group">
                   <input
                     type="checkbox"
                     defaultChecked={done}
                     className="rounded border-primary text-primary focus:ring-primary/20 bg-transparent"
                   />
-                  <span className={`text-sm ${done ? 'line-through text-[#92bbc9]' : ''}`}>{label}</span>
+                  <span className={`text-sm ${done ? 'line-through text-[#92bbc9]' : ''}`}>{t(labelKey)}</span>
                 </label>
               ))}
             </div>

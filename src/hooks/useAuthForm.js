@@ -15,6 +15,8 @@ export function useRegister() {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [confirmPassword, setConfirmPassword] = useState('')
+  const [gender, setGender] = useState('')
+  const [dateOfBirth, setDateOfBirth] = useState('')
   const [showPassword, setShowPassword] = useState(false)
   const [agreeTerms, setAgreeTerms] = useState(false)
   const [loading, setLoading] = useState(false)
@@ -35,6 +37,8 @@ export function useRegister() {
       case 'email': setEmail(value); break
       case 'password': setPassword(value); break
       case 'confirmPassword': setConfirmPassword(value); break
+      case 'gender': setGender(value); break
+      case 'dateOfBirth': setDateOfBirth(value); break
       case 'agreeTerms': setAgreeTerms(value); break
       default: break
     }
@@ -49,7 +53,7 @@ export function useRegister() {
     setLoading(true)
     try {
       const result = await submitRegisterForm(
-        { fullName, email, password, confirmPassword, agreeTerms },
+        { fullName, email, password, confirmPassword, gender, dateOfBirth, agreeTerms },
         t
       )
 
@@ -69,7 +73,7 @@ export function useRegister() {
     } finally {
       setLoading(false)
     }
-  }, [fullName, email, password, confirmPassword, agreeTerms, t, navigate])
+  }, [fullName, email, password, confirmPassword, gender, dateOfBirth, agreeTerms, t, navigate])
 
   const toggleShowPassword = useCallback(() => setShowPassword((v) => !v), [])
 
@@ -78,6 +82,8 @@ export function useRegister() {
     email,
     password,
     confirmPassword,
+    gender,
+    dateOfBirth,
     showPassword,
     agreeTerms,
     loading,
