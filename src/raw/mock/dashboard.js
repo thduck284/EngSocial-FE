@@ -1,4 +1,4 @@
-import { ROUTES } from '../constants'
+import { ROUTES } from '../../constants'
 
 // Mock: User skill stats for dashboard
 export const mockSkillStats = [
