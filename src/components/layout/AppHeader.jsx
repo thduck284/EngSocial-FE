@@ -1,6 +1,7 @@
 import { Link, useLocation } from 'react-router-dom'
-import { useRef, useState } from 'react'
+import { useRef, useState, useEffect } from 'react'
 import { useTranslation } from 'react-i18next'
+import { useAuth } from '../../context/AuthContext'
 import { NotificationPopover } from '../ui/NotificationPopover'
 import { LanguageSwitcher } from '../ui/LanguageSwitcher'
 import { NAV_ITEMS, ROUTES } from '../../constants'
@@ -19,8 +20,25 @@ const LogoIcon = () => (
 export function AppHeader() {
   const location = useLocation()
   const { t } = useTranslation()
+  const { logout } = useAuth()
   const [notifOpen, setNotifOpen] = useState(false)
+  const [avatarOpen, setAvatarOpen] = useState(false)
   const notifButtonRef = useRef(null)
+  const avatarRef = useRef(null)
+
+  useEffect(() => {
+    if (!avatarOpen) return
+    const handleClickOutside = (e) => {
+      if (avatarRef.current && !avatarRef.current.contains(e.target)) setAvatarOpen(false)
+    }
+    document.addEventListener('click', handleClickOutside)
+    return () => document.removeEventListener('click', handleClickOutside)
+  }, [avatarOpen])
+
+  const handleLogout = () => {
+    setAvatarOpen(false)
+    logout()
+  }
 
   return (
     <header className="sticky top-0 z-50 w-full bg-background-dark/80 backdrop-blur-md border-b border-border-dark px-4 md:px-10 py-3">
@@ -83,12 +101,47 @@ export function AppHeader() {
               <span className="absolute top-2 right-2.5 size-2 bg-red-500 rounded-full border-2 border-background-dark" />
             </button>
           </div>
-          <div
-            className="size-10 rounded-full bg-cover bg-center border-2 border-primary cursor-pointer"
-            style={{
-              backgroundImage: `url('https://lh3.googleusercontent.com/aida-public/AB6AXuA0AwCXYFkKZ6OadHZuVXKbGgPnJwXEbZ7mju_OspTxQDgYeb0a7ElTqsjD8BloFjbwxu8hlLpzQAXTpvgzA0Oe83pZ0xHTWNw47GKOKrRCMuPOBauT2uxw3bc9ydH3ojxuBArP752_-YvDYlqVx92pZjU111tnLtzgh2--MFFydJLdo4hVJfVeQlHd8jPPxNnSi4WMYG0gYJgD-Hsb2QuJZuQeZWjGlwKtSVnhhux0tIMKpd-muKa5gZUASKoxqXsnHH5ge6MgyVmx')`,
-            }}
-          />
+          <div className="relative" ref={avatarRef}>
+            <button
+              type="button"
+              onClick={(e) => { e.stopPropagation(); setAvatarOpen((o) => !o) }}
+              className="size-10 rounded-full bg-cover bg-center border-2 border-primary cursor-pointer focus:ring-2 focus:ring-primary/50 focus:ring-offset-2 focus:ring-offset-background-dark"
+              style={{
+                backgroundImage: `url('https://lh3.googleusercontent.com/aida-public/AB6AXuA0AwCXYFkKZ6OadHZuVXKbGgPnJwXEbZ7mju_OspTxQDgYeb0a7ElTqsjD8BloFjbwxu8hlLpzQAXTpvgzA0Oe83pZ0xHTWNw47GKOKrRCMuPOBauT2uxw3bc9ydH3ojxuBArP752_-YvDYlqVx92pZjU111tnLtzgh2--MFFydJLdo4hVJfVeQlHd8jPPxNnSi4WMYG0gYJgD-Hsb2QuJZuQeZWjGlwKtSVnhhux0tIMKpd-muKa5gZUASKoxqXsnHH5ge6MgyVmx')`,
+              }}
+              aria-expanded={avatarOpen}
+              aria-haspopup="true"
+            />
+            {avatarOpen && (
+              <div className="absolute right-0 top-full mt-2 w-48 py-1 rounded-xl bg-card-dark border border-border-dark shadow-xl z-50">
+                <Link
+                  to={ROUTES.PROFILE}
+                  onClick={() => setAvatarOpen(false)}
+                  className="flex items-center gap-2 px-4 py-2.5 text-sm text-gray-200 hover:bg-gray-700/50 hover:text-primary transition-colors"
+                >
+                  <span className="material-symbols-outlined text-lg">person</span>
+                  {t('header.profile')}
+                </Link>
+                <Link
+                  to="/settings"
+                  onClick={() => setAvatarOpen(false)}
+                  className="flex items-center gap-2 px-4 py-2.5 text-sm text-gray-200 hover:bg-gray-700/50 hover:text-primary transition-colors"
+                >
+                  <span className="material-symbols-outlined text-lg">settings</span>
+                  {t('header.settings')}
+                </Link>
+                <div className="my-1 border-t border-border-dark" />
+                <button
+                  type="button"
+                  onClick={handleLogout}
+                  className="flex items-center gap-2 w-full px-4 py-2.5 text-sm text-red-400 hover:bg-red-500/10 transition-colors text-left"
+                >
+                  <span className="material-symbols-outlined text-lg">logout</span>
+                  {t('header.logout')}
+                </button>
+              </div>
+            )}
+          </div>
         </div>
       </div>
     </header>

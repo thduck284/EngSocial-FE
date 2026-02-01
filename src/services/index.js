@@ -24,7 +24,28 @@ export const authService = {
   forgotPassword: async (email) => {
     return apiClient.post(API_ENDPOINTS.AUTH.FORGOT_PASSWORD, { email })
   },
+
+  resetPassword: async (token, newPassword) => {
+    return apiClient.post(API_ENDPOINTS.AUTH.RESET_PASSWORD, { token, newPassword })
+  },
+
+  updatePreferences: async (payload) => {
+    return apiClient.patch(API_ENDPOINTS.AUTH.PREFERENCES, payload)
+  },
 }
+
+export { submitRegisterForm, submitLoginForm } from './authForm.service.js'
+export {
+  validateRegisterForm,
+  validateLoginForm,
+  validateFullName,
+  validateEmail,
+  validatePassword,
+  validateConfirmPassword,
+  validateLoginPassword,
+  validateAgreeTerms,
+  REGISTER_VALIDATION,
+} from '../validators/index.js'
 
 /**
  * User Services

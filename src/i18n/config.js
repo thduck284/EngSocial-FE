@@ -10,7 +10,19 @@ i18n
       vi: { translation: vi },
       en: { translation: en },
     },
-    lng: localStorage.getItem('language') || 'vi', // Default language
+    lng: (() => {
+      const userStr = localStorage.getItem('user') || sessionStorage.getItem('user')
+      if (userStr) {
+        try {
+          const user = JSON.parse(userStr)
+          if (user.preferences?.language === 'vi' || user.preferences?.language === 'en') {
+            return user.preferences.language
+          }
+        } catch (_) {}
+      }
+      const saved = localStorage.getItem('language') || sessionStorage.getItem('language')
+      return saved === 'vi' || saved === 'en' ? saved : 'vi'
+    })(),
     fallbackLng: 'vi',
     interpolation: {
       escapeValue: false, // React already escapes

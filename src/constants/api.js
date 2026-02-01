@@ -1,5 +1,5 @@
-// API Base URL
-export const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3000/api'
+// API Base URL (backend default port 5000)
+export const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000/api'
 
 // API Endpoints
 export const API_ENDPOINTS = {
@@ -9,6 +9,7 @@ export const API_ENDPOINTS = {
     REGISTER: '/auth/register',
     LOGOUT: '/auth/logout',
     REFRESH_TOKEN: '/auth/refresh',
+    PREFERENCES: '/auth/preferences',
     FORGOT_PASSWORD: '/auth/forgot-password',
     RESET_PASSWORD: '/auth/reset-password',
     VERIFY_EMAIL: '/auth/verify-email',
@@ -131,3 +132,37 @@ export const API_ENDPOINTS = {
 export const buildApiUrl = (endpoint) => {
   return `${API_BASE_URL}${endpoint}`
 }
+
+// Application Routes (frontend)
+export const ROUTES = {
+  HOME: '/',
+  LOGIN: '/login',
+  REGISTER: '/register',
+  FORGOT_PASSWORD: '/forgot-password',
+  RESET_PASSWORD: '/reset-password',
+  DASHBOARD: '/',
+  SKILLS: {
+    READING: '/skills/reading',
+    LISTENING: '/skills/listening',
+    WRITING: '/skills/writing',
+  },
+  ENTER: '/enter',
+  LESSONS: '/lessons',
+  LESSON: {
+    LISTENING: (id) => `/lesson/listening/${id}`,
+  },
+  COMMUNITY: '/community',
+  GROUPS: '/groups',
+  PROFILE: '/profile',
+  FRIENDS: '/friends',
+  NOTIFICATIONS: '/notifications',
+}
+
+// Navigation items (for AppHeader)
+export const NAV_ITEMS = [
+  { to: ROUTES.HOME, label: 'header.home' },
+  { to: ROUTES.SKILLS.READING, label: 'header.skills' },
+  { to: ROUTES.LESSONS, label: 'header.lessons' },
+  { to: ROUTES.COMMUNITY, label: 'header.community' },
+  { to: ROUTES.GROUPS, label: 'header.groups' },
+]

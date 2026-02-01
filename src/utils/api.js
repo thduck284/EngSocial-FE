@@ -3,6 +3,11 @@ import { buildApiUrl } from '../constants'
 /**
  * API Helper - Wrapper cho fetch API
  */
+const getStoredLanguage = () => {
+  const saved = localStorage.getItem('language') || sessionStorage.getItem('language')
+  return saved === 'vi' || saved === 'en' ? saved : 'vi'
+}
+
 class ApiClient {
   constructor() {
     this.defaultHeaders = {
@@ -11,20 +16,29 @@ class ApiClient {
   }
 
   /**
-   * Get auth token from localStorage
+   * Get auth token (localStorage khi "ghi nhớ", sessionStorage khi không)
    */
   getAuthToken() {
-    return localStorage.getItem('authToken')
+    return localStorage.getItem('authToken') || sessionStorage.getItem('authToken')
   }
 
   /**
-   * Get headers with auth token
+   * Get current language (same as i18n: vi/en, default vi)
+   */
+  getLanguage() {
+    return getStoredLanguage()
+  }
+
+  /**
+   * Get headers with auth token and language
    */
   getHeaders(customHeaders = {}) {
     const token = this.getAuthToken()
+    const language = this.getLanguage()
     return {
       ...this.defaultHeaders,
       ...(token && { Authorization: `Bearer ${token}` }),
+      'Accept-Language': language,
       ...customHeaders,
     }
   }
