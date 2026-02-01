@@ -3,6 +3,7 @@ import { useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { NotificationPopover } from '../ui/NotificationPopover'
 import { LanguageSwitcher } from '../ui/LanguageSwitcher'
+import { NAV_ITEMS, ROUTES } from '../../constants'
 
 const LogoIcon = () => (
   <div className="size-8">
@@ -15,14 +16,6 @@ const LogoIcon = () => (
   </div>
 )
 
-const navItems = [
-  { to: '/', label: 'header.home' },
-  { to: '/skills/reading', label: 'header.skills' },
-  { to: '/lessons', label: 'header.lessons' },
-  { to: '/community', label: 'header.community' },
-  { to: '/groups', label: 'header.groups' },
-]
-
 export function AppHeader() {
   const location = useLocation()
   const { t } = useTranslation()
@@ -33,7 +26,7 @@ export function AppHeader() {
     <header className="sticky top-0 z-50 w-full bg-background-dark/80 backdrop-blur-md border-b border-border-dark px-4 md:px-10 py-3">
       <div className="max-w-[1440px] mx-auto flex items-center justify-between gap-4">
         <div className="flex items-center gap-8 flex-1">
-          <Link to="/" className="flex items-center gap-2 text-primary">
+          <Link to={ROUTES.HOME} className="flex items-center gap-2 text-primary">
             <LogoIcon />
             <span className="text-2xl font-bold tracking-tight hidden lg:block">EngSocial</span>
           </Link>
@@ -47,14 +40,14 @@ export function AppHeader() {
           </div>
         </div>
         <nav className="hidden xl:flex items-center gap-6">
-          {navItems.map(({ to, label }) => (
+          {NAV_ITEMS.map(({ to, label }) => (
             <Link
               key={to}
               to={to}
               className={`font-medium text-sm transition-colors ${
                 location.pathname === to ||
-                (to === '/skills/reading' && (location.pathname.startsWith('/skills') || location.pathname === '/enter')) ||
-                (to.startsWith('/skills') && to !== '/skills/reading' && location.pathname.startsWith('/skills'))
+                (to === ROUTES.SKILLS.READING && (location.pathname.startsWith('/skills') || location.pathname === ROUTES.ENTER)) ||
+                (to.startsWith('/skills') && to !== ROUTES.SKILLS.READING && location.pathname.startsWith('/skills'))
                   ? 'text-primary font-semibold border-b-2 border-primary pb-1'
                   : 'text-gray-400 hover:text-primary'
               }`}

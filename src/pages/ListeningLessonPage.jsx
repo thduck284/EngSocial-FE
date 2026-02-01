@@ -1,31 +1,10 @@
 import { Link, useParams } from 'react-router-dom'
-
-const chapters = [
-  { id: 'intro', label: 'Introduction', time: '0:00', done: true, active: false },
-  { id: 'main', label: 'Main Argument', time: '2:45', done: false, active: true },
-  { id: 'case', label: 'Case Studies', time: '6:12', done: false, active: false },
-  { id: 'conclusion', label: 'Conclusion', time: '11:30', done: false, active: false },
-]
-
-const quizOptions = [
-  { value: 'a', text: 'The historical impact of the industrial revolution on modern automation.' },
-  { value: 'b', text: 'Recent advancements in artificial intelligence and their ethical implications.', correct: true },
-  { value: 'c', text: 'A detailed review of the latest consumer smartphones released this quarter.' },
-  { value: 'd', text: 'Financial analysis of global tech market fluctuations in early 2024.' },
-]
-
-const vocabCard = {
-  word: 'Implication',
-  phonetic: '/ˌɪmplɪˈkeɪʃn/',
-  meaning: "The conclusion that can be drawn from something although it is not explicitly stated.",
-  progress: '3 / 12',
-}
-
-const leaderboard = [
-  { rank: 1, name: 'Alex Thompson', xp: '2,450 XP', xpColor: 'text-amber-600', border: 'border-amber-500', bg: 'bg-amber-500/10 border-amber-500/20' },
-  { rank: 2, name: 'Sophie Chen', xp: '2,210 XP', xpColor: 'text-slate-500', border: 'border-slate-300 dark:border-slate-600', bg: '' },
-  { rank: 3, name: 'John Doe', xp: '1,980 XP', xpColor: 'text-slate-500', border: 'border-orange-400/50', bg: '' },
-]
+import {
+  mockLessonChapters,
+  mockQuizOptions,
+  mockVocabCard,
+  mockLessonLeaderboard,
+} from '../raw'
 
 export function ListeningLessonPage() {
   const { id } = useParams()
@@ -42,7 +21,7 @@ export function ListeningLessonPage() {
             </h3>
           </div>
           <div className="p-2 space-y-1">
-            {chapters.map((ch) => (
+            {mockLessonChapters.map((ch) => (
               <button
                 key={ch.id}
                 type="button"
@@ -225,7 +204,7 @@ export function ListeningLessonPage() {
             </div>
 
             <div className="grid grid-cols-1 gap-3">
-              {quizOptions.map((opt) => (
+              {mockQuizOptions.map((opt) => (
                 <label
                   key={opt.value}
                   className={`flex items-center p-5 rounded-2xl border cursor-pointer transition-all duration-200 ${
@@ -271,18 +250,18 @@ export function ListeningLessonPage() {
               <span className="material-symbols-outlined text-primary text-xl">style</span>
               Key Vocabulary
             </h3>
-            <span className="text-[10px] font-black text-primary px-2 py-0.5 bg-primary/10 rounded">{vocabCard.progress}</span>
+            <span className="text-[10px] font-black text-primary px-2 py-0.5 bg-primary/10 rounded">{mockVocabCard.progress}</span>
           </div>
           <div className="space-y-4">
             <div className="p-5 bg-gray-800/80 rounded-2xl border-2 border-primary/20 relative group cursor-pointer hover:border-primary transition-all">
               <div className="mb-3">
                 <span className="text-[10px] font-black text-primary uppercase tracking-widest">Active Word</span>
-                <h4 className="text-xl font-black text-white">{vocabCard.word}</h4>
-                <p className="text-[11px] text-gray-500 italic font-medium">{vocabCard.phonetic}</p>
+                <h4 className="text-xl font-black text-white">{mockVocabCard.word}</h4>
+                <p className="text-[11px] text-gray-500 italic font-medium">{mockVocabCard.phonetic}</p>
               </div>
               <div className="pt-3 border-t border-gray-600">
                 <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Meaning</span>
-                <p className="text-sm leading-relaxed text-gray-300 mt-1">{vocabCard.meaning}</p>
+                <p className="text-sm leading-relaxed text-gray-300 mt-1">{mockVocabCard.meaning}</p>
               </div>
               <button type="button" className="absolute top-4 right-4 text-gray-400 hover:text-primary transition-colors">
                 <span className="material-symbols-outlined text-lg">volume_up</span>
@@ -305,7 +284,7 @@ export function ListeningLessonPage() {
             Weekly Leaderboard
           </h3>
           <div className="space-y-3">
-            {leaderboard.map((user) => (
+            {mockLessonLeaderboard.map((user) => (
               <div
                 key={user.rank}
                 className={`flex items-center justify-between p-3 rounded-xl transition-colors ${

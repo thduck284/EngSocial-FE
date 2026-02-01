@@ -1,45 +1,24 @@
 import { useEffect, useRef } from 'react'
 import { Link } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
+import { mockNotifications } from '../../raw'
 
-const notifications = [
-  {
-    id: 1,
-    unread: true,
-    type: 'comment',
-    avatar: 'https://lh3.googleusercontent.com/aida-public/AB6AXuC-oVK9sv1zsEIrhZzFDWplBlNkGHOdWpMbfTbee50oMU_zw-Ke6yEJXg6qfeJMQuzYIBYSCR2NsxAUFBeIt3-HI22-nmAsn1-IWrcRz7UMBQmPBdKmeh2Hly6x0Jh3FdPPmh4TvFYG9uTn6uKbUu5qLMDKcRKuIgylfjQyX3RE9dOnXqEY9hhu9ajD7YxkmmN4JbXVLfCDBKsAgckxTigEveGgkSnICu6GtlSNl3ASvkfcJ949M4pIxOuOgkRa4AsXYZniiPUQLZ30',
-    content: <><span className="font-bold">Elena Rodriguez</span> vừa bình luận vào bài viết của bạn.</>,
-    time: '2 phút trước',
-  },
-  {
-    id: 2,
-    unread: false,
-    type: 'challenge',
-    icon: 'emoji_events',
-    iconBg: 'bg-amber-100 dark:bg-amber-900/30',
-    iconColor: 'text-amber-500',
-    content: <><span className="font-bold">Thử thách mới:</span> Vua Từ Vựng Tuần 48 đã bắt đầu! Tham gia ngay.</>,
-    time: '1 giờ trước',
-  },
-  {
-    id: 3,
-    unread: false,
-    type: 'goal',
-    icon: 'check_circle',
-    iconBg: 'bg-emerald-100 dark:bg-emerald-900/30',
-    iconColor: 'text-emerald-500',
-    content: <>Bạn đã hoàn thành mục tiêu học tập hàng ngày. Chúc mừng!</>,
-    time: '4 giờ trước',
-  },
-  {
-    id: 4,
-    unread: false,
-    type: 'follow',
-    avatar: 'https://lh3.googleusercontent.com/aida-public/AB6AXuAlcLPs4U31IUEEkJ-7hiUMKLh8ld5wo1RGeCtIBeEHQPkQ9Ofijva7BfHev8yilRvXN0WPV1TDMIaTpGbzOuUoOlbfMPoEor2V85bY0F4kWKK4kebj07jDy5_vLBJ1csR9LujDeRN9STlII7d3COtb7raAS-xwu5RFjTTcPx3ONz7Q2NBUxQVSBhZlMDRkw_LwZ8K5gqYmcGI598qawEvh0vzZE2x7589wg9hwhK6vQbh9YXMR7amiN-Pa6H0mmcK1kts2TBtvMFYk',
-    content: <><span className="font-bold">Alex Thompson</span> đã bắt đầu theo dõi bạn.</>,
-    time: 'Hôm qua',
-  },
-]
+// Helper to render notification content based on type
+const renderNotificationContent = (n) => {
+  if (n.type === 'comment') {
+    return <><span className="font-bold">{n.userName}</span> vừa bình luận vào bài viết của bạn.</>
+  }
+  if (n.type === 'challenge') {
+    return <><span className="font-bold">{n.title}</span> {n.message}</>
+  }
+  if (n.type === 'goal') {
+    return <>{n.message}</>
+  }
+  if (n.type === 'follow') {
+    return <><span className="font-bold">{n.userName}</span> đã bắt đầu theo dõi bạn.</>
+  }
+  return null
+}
 
 export function NotificationPopover({ open, onClose, anchorRef }) {
   const panelRef = useRef(null)
@@ -79,7 +58,7 @@ export function NotificationPopover({ open, onClose, anchorRef }) {
         </button>
       </div>
       <div className="max-h-[420px] overflow-y-auto custom-scrollbar">
-        {notifications.map((n) => (
+        {mockNotifications.map((n) => (
           <button
             key={n.id}
             type="button"
@@ -102,7 +81,7 @@ export function NotificationPopover({ open, onClose, anchorRef }) {
                 </div>
               )}
               <div className="flex-1 min-w-0">
-                <p className="text-sm leading-snug text-gray-200">{n.content}</p>
+                <p className="text-sm leading-snug text-gray-200">{renderNotificationContent(n)}</p>
                 <div className="flex items-center justify-between mt-1">
                   <span className="text-xs text-gray-500">{n.time}</span>
                   {n.unread && <span className="size-2 bg-primary rounded-full shrink-0" />}

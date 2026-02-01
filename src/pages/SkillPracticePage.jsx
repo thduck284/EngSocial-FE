@@ -1,179 +1,21 @@
 import { Link, useParams } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
-
-const SKILLS = {
-  reading: { icon: 'menu_book', label: 'skills.reading', color: 'text-blue-400' },
-  listening: { icon: 'headset', label: 'skills.listening', color: 'text-orange-400' },
-  writing: { icon: 'edit_note', label: 'skills.writing', color: 'text-emerald-400' },
-}
-
-const skillTabs = [
-  { to: '/skills/reading', key: 'reading', icon: 'menu_book', label: 'skills.reading' },
-  { to: '/skills/listening', key: 'listening', icon: 'headset', label: 'skills.listening' },
-  { to: '/skills/writing', key: 'writing', icon: 'edit_note', label: 'skills.writing' },
-  { to: '/enter', icon: 'sports_esports', label: 'skills.entertainment' },
-]
-
-// --- Reading (from reading.html) ---
-const readingFilters = [
-  { label: 'Difficulty (All)', options: ['A1 - Beginner', 'B2 - Intermediate', 'C1 - Advanced'] },
-  { label: 'Topic (All)', options: ['Business', 'Science', 'Culture'] },
-  { label: 'Type (All)', options: ['Short Read', 'Long Read'] },
-]
-
-const readingChallenge = {
-  title: 'Ultimate Reading Marathon',
-  desc: 'Complete 5 advanced articles this week to earn 500 bonus XP and a unique badge.',
-  time: '02:14:45',
-  btn: 'buttons.join',
-}
-
-const readingCards = [
-  {
-    title: 'The Future of Sustainable Cities',
-    level: 'B2',
-    levelColor: 'bg-orange-500/10 text-orange-500',
-    desc: 'Explore how urban planning is evolving to meet environmental challenges in the next decade...',
-    topic: 'Science',
-    time: '15m',
-    questions: '10 Questions',
-    rating: '8.5/10',
-    img: 'https://lh3.googleusercontent.com/aida-public/AB6AXuD24NhNfcY-rBlW8a_mwhHsta489aDVdAFE82VSK5a0Vck2wKwkZ6Vhaw_d2XKcRgwcM1Oc_1mtyfj8B43Ca6AhMLMul_MJEPeslF9SvyqjKNTg88ITERxd92cTmEYRbl98OBW2f1VVYSrcpR2J7pFtGYHEoPMU-_X1_C9vNCdhkWbbWt-QHP3iT-89bxCex9dIKVJyYIl5Uzt37--6sH9IEeex6R9PgR1xUVr3erYWpabGB9rbvcSz9Oz_MQNqYHk73azzVn6iyNn-',
-  },
-  {
-    title: 'Effective Business Emails',
-    level: 'A2',
-    levelColor: 'bg-green-500/10 text-green-500',
-    desc: 'Learn the basics of formal communication and how to structure professional inquiries...',
-    topic: 'Business',
-    time: '10m',
-    questions: '5 Questions',
-    rating: '9.2/10',
-    img: 'https://lh3.googleusercontent.com/aida-public/AB6AXuDKqQRcZ2qEUm_G9civhe_WEXiHigCQOkb56jFE6xSQfjLEgB0aZByKocBA4xPNZtFhRTG5TuqjG1kogq3KdZD8cfD6VINztDQdUM2TAwY9Yn8HNzzMjl5yzHc7Eo5SkMYsiTiC4t_f5lxm-nTX1rNn7IXUmFieoc2KhtrWo9kc6a9H8sw20XyDiswbiBiG62iFjYbKEQB7Q63k7DzND2sbrO4hI5jhmTwYkzUtLGuY2cCIhPb8rZ-OelYJqRfAU20NTYUtHW7CqXmW',
-  },
-]
-
-// --- Listening (from listening.html) ---
-const listeningFilters = [
-  { label: 'Difficulty (All)', options: ['A1 - Beginner', 'B2 - Intermediate', 'C1 - Advanced'] },
-  { label: 'Topic (All)', options: ['Technology', 'News', 'Business', 'Entertainment'] },
-  { label: 'Accent (All)', options: ['American', 'British', 'Australian'] },
-  { label: 'Speed (Normal)', options: ['0.75x', '1.25x', '1.5x'] },
-]
-
-const listeningChallenge = {
-  title: 'Listening Mastery: Daily Podcasts',
-  desc: 'Listen to 7 podcasts this week and answer all questions to unlock the "Audio Explorer" badge & 800 XP.',
-  time: '05:22:10',
-  btn: 'buttons.joinChallenge',
-  icon: 'equalizer',
-}
-
-const listeningCards = [
-  {
-    title: 'Global Tech Trends Podcast',
-    level: 'B2',
-    levelColor: 'bg-orange-500/10 text-orange-500',
-    accent: 'American Accent',
-    accentClass: 'bg-primary/10 text-primary border-primary/20',
-    desc: 'Stay updated with the latest technological advancements and how they impact our global economy...',
-    topic: 'Technology',
-    time: '12m',
-    questions: '8 Questions',
-    rating: '8.2/10',
-    img: 'https://lh3.googleusercontent.com/aida-public/AB6AXuD24NhNfcY-rBlW8a_mwhHsta489aDVdAFE82VSK5a0Vck2wKwkZ6Vhaw_d2XKcRgwcM1Oc_1mtyfj8B43Ca6AhMLMul_MJEPeslF9SvyqjKNTg88ITERxd92cTmEYRbl98OBW2f1VVYSrcpR2J7pFtGYHEoPMU-_X1_C9vNCdhkWbbWt-QHP3iT-89bxCex9dIKVJyYIl5Uzt37--6sH9IEeex6R9PgR1xUVr3erYWpabGB9rbvcSz9Oz_MQNqYHk73azzVn6iyNn-',
-  },
-  {
-    title: 'BBC News Highlights',
-    level: 'C1',
-    levelColor: 'bg-red-500/10 text-red-500',
-    accent: 'British Accent',
-    accentClass: 'bg-emerald-500/10 text-emerald-500 border-emerald-500/20',
-    desc: 'A quick summary of the most important world news events reported by expert correspondents...',
-    topic: 'News',
-    time: '5m',
-    questions: '10 Questions',
-    rating: '9.0/10',
-    img: 'https://lh3.googleusercontent.com/aida-public/AB6AXuDKqQRcZ2qEUm_G9civhe_WEXiHigCQOkb56jFE6xSQfjLEgB0aZByKocBA4xPNZtFhRTG5TuqjG1kogq3KdZD8cfD6VINztDQdUM2TAwY9Yn8HNzzMjl5yzHc7Eo5SkMYsiTiC4t_f5lxm-nTX1rNn7IXUmFieoc2KhtrWo9kc6a9H8sw20XyDiswbiBiG62iFjYbKEQB7Q63k7DzND2sbrO4hI5jhmTwYkzUtLGuY2cCIhPb8rZ-OelYJqRfAU20NTYUtHW7CqXmW',
-  },
-]
-
-// --- Writing (from writing.html) ---
-const writingFilters = [
-  { label: 'Difficulty (All)', options: ['A1', 'A2', 'B1', 'B2', 'C1'] },
-  { label: 'Topic (All)', options: ['Business', 'Travel', 'Technology', 'Education', 'Life'] },
-  { label: 'Type (All)', options: ['Essay', 'Email', 'Story', 'Report'] },
-  { label: 'Length (All)', options: ['Short', 'Medium', 'Long'] },
-]
-
-const writingChallenge = {
-  title: 'Writing Challenge: The Future of AI',
-  desc: 'Write a 300-word essay on how AI impacts education. Reward: 1000 XP & "Future Thinker" Badge.',
-  time: '03:15:45',
-  btn: 'buttons.joinChallenge',
-  icon: 'edit_square',
-}
-
-const writingCards = [
-  {
-    title: 'Professional Email Request',
-    level: 'B1',
-    levelColor: 'bg-blue-500/10 text-blue-500',
-    type: 'Email Practice',
-    typeClass: 'bg-primary/10 text-primary border-primary/20',
-    desc: 'Compose a formal request to a manager regarding a schedule change for next month...',
-    topic: 'Business',
-    length: '100-150 words',
-    time: '30 min',
-    rating: '8.5/10',
-    img: 'https://lh3.googleusercontent.com/aida-public/AB6AXuD24NhNfcY-rBlW8a_mwhHsta489aDVdAFE82VSK5a0Vck2wKwkZ6Vhaw_d2XKcRgwcM1Oc_1mtyfj8B43Ca6AhMLMul_MJEPeslF9SvyqjKNTg88ITERxd92cTmEYRbl98OBW2f1VVYSrcpR2J7pFtGYHEoPMU-_X1_C9vNCdhkWbbWt-QHP3iT-89bxCex9dIKVJyYIl5Uzt37--6sH9IEeex6R9PgR1xUVr3erYWpabGB9rbvcSz9Oz_MQNqYHk73azzVn6iyNn-',
-  },
-  {
-    title: 'Travel Blog Entry',
-    level: 'A2',
-    levelColor: 'bg-orange-500/10 text-orange-500',
-    type: 'Storytelling',
-    typeClass: 'bg-emerald-500/10 text-emerald-500 border-emerald-500/20',
-    desc: 'Describe your last vacation and what you enjoyed most about the destination...',
-    topic: 'Travel',
-    length: '150-200 words',
-    time: '45 min',
-    rating: '7.9/10',
-    img: 'https://lh3.googleusercontent.com/aida-public/AB6AXuDKqQRcZ2qEUm_G9civhe_WEXiHigCQOkb56jFE6xSQfjLEgB0aZByKocBA4xPNZtFhRTG5TuqjG1kogq3KdZD8cfD6VINztDQdUM2TAwY9Yn8HNzzMjl5yzHc7Eo5SkMYsiTiC4t_f5lxm-nTX1rNn7IXUmFieoc2KhtrWo9kc6a9H8sw20XyDiswbiBiG62iFjYbKEQB7Q63k7DzND2sbrO4hI5jhmTwYkzUtLGuY2cCIhPb8rZ-OelYJqRfAU20NTYUtHW7CqXmW',
-  },
-]
-
-// Right sidebar: Friends & Achievements (skill-specific)
-const friendsReading = [
-  { name: 'Alex T.', activity: 'Listening: B2 Podcast' },
-  { name: 'Sophie C.', activity: 'Reading: Short Stories' },
-]
-const friendsListening = [
-  { name: 'Alex T.', activity: 'Listening: Tech Trends' },
-  { name: 'Sophie C.', activity: 'Listening: BBC News' },
-]
-const friendsWriting = [
-  { name: 'Alex T.', activity: 'Listening: B2 Podcast' },
-  { name: 'Sophie C.', activity: 'Reading: Short Stories' },
-]
-
-const achievementsBySkill = {
-  reading: [
-    { icon: 'emoji_events', color: 'text-yellow-500', label: '7 Day Streak' },
-    { icon: 'auto_awesome', color: 'text-primary', label: 'Reading Pro' },
-    { icon: 'volunteer_activism', color: 'text-emerald-400', label: 'Contributor' },
-  ],
-  listening: [
-    { icon: 'emoji_events', color: 'text-yellow-500', label: '7 Day Streak' },
-    { icon: 'headset', color: 'text-primary', label: 'Audio Pro' },
-    { icon: 'volunteer_activism', color: 'text-emerald-400', label: 'Contributor' },
-  ],
-  writing: [
-    { icon: 'emoji_events', color: 'text-yellow-500', label: '7 Day Streak' },
-    { icon: 'edit_square', color: 'text-primary', label: 'Writing Pro' },
-    { icon: 'volunteer_activism', color: 'text-emerald-400', label: 'Contributor' },
-  ],
-}
+import {
+  SKILLS,
+  SKILL_TABS,
+  readingFilters,
+  readingChallenge,
+  readingCards,
+  listeningFilters,
+  listeningChallenge,
+  listeningCards,
+  writingFilters,
+  writingChallenge,
+  writingCards,
+  mockFriendsOnline,
+  mockAchievementsBySkill,
+  mockHotGames,
+} from '../raw'
 
 export function SkillPracticePage() {
   const { skill = 'reading' } = useParams()
@@ -187,8 +29,8 @@ export function SkillPracticePage() {
   const challenge = isReading ? readingChallenge : isListening ? listeningChallenge : writingChallenge
   const challengeGradient = isReading ? 'from-indigo-900/40' : isListening ? 'from-orange-900/40' : 'from-emerald-900/40'
   const challengeIcon = isListening ? 'equalizer' : isWriting ? 'edit_square' : 'workspace_premium'
-  const friends = isReading ? friendsReading : isListening ? friendsListening : friendsWriting
-  const achievements = achievementsBySkill[skill] || achievementsBySkill.reading
+  const friends = mockFriendsOnline[skill] || mockFriendsOnline.reading
+  const achievements = mockAchievementsBySkill[skill] || mockAchievementsBySkill.reading
 
   const renderCards = () => {
     if (isReading) {
@@ -418,7 +260,7 @@ export function SkillPracticePage() {
       {/* Center - tabs + filters + challenge + cards */}
       <section className="col-span-12 lg:col-span-6 space-y-6">
         <div className="bg-card-dark p-1 rounded-xl flex border border-border-dark">
-          {skillTabs.map(({ to, key, icon, label }) => (
+          {SKILL_TABS.map(({ to, key, icon, label }) => (
             <Link
               key={to}
               to={to}

@@ -1,28 +1,11 @@
 import { Link } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
-
-const skillStats = [
-  { icon: 'menu_book', label: 'skills.reading', value: '45m', change: '+10%', changeColor: 'text-green-500', to: '/skills/reading' },
-  { icon: 'headset', label: 'skills.listening', value: '1h 20m', change: '-5%', changeColor: 'text-red-500', to: '/skills/listening' },
-  { icon: 'edit_note', label: 'skills.writing', value: '30m', change: '+20%', changeColor: 'text-green-500', to: '/skills/writing' },
-]
-
-const featuredLessons = [
-  { title: 'Đọc hiểu: Sustainable Cities', icon: 'menu_book', skill: 'Reading', level: 'INTERMEDIATE', to: '/skills/reading', learners: '1.8K' },
-  { title: 'Podcast: Global Tech Trends', icon: 'headset', skill: 'Listening', level: 'INTERMEDIATE', to: '/skills/listening', learners: '2.1K' },
-  { title: '10 Idioms cho công sở', icon: 'edit_note', skill: 'Writing', level: 'INTERMEDIATE', to: '/skills/writing', learners: '1.2K' },
-]
-
-const goals = [
-  { done: true, label: 'Hoàn thành 2 bài học' },
-  { done: true, label: 'Đọc 1 bài báo tiếng Anh' },
-  { done: false, label: 'Viết 100 từ đoạn văn' },
-]
-
-const suggestedGroups = [
-  { icon: 'translate', title: 'IELTS Speaking Practice', members: '12.4K thành viên', color: 'bg-indigo-500' },
-  { icon: 'movie', title: 'Học Tiếng Anh Qua Phim', members: '8.2K thành viên', color: 'bg-emerald-500' },
-]
+import {
+  mockSkillStats,
+  mockFeaturedLessons,
+  mockGoals,
+  mockSuggestedGroups,
+} from '../raw'
 
 export function DashboardPage() {
   const { t } = useTranslation()
@@ -66,7 +49,7 @@ export function DashboardPage() {
               {t('dashboard.weeklyStats')}
             </h3>
             <div className="grid grid-cols-1 gap-3">
-              {skillStats.map(({ icon, label, value, change, changeColor, to }) => (
+              {mockSkillStats.map(({ icon, label, value, change, changeColor, to }) => (
                 <Link
                   key={label}
                   to={to}
@@ -94,7 +77,7 @@ export function DashboardPage() {
               <span className="text-[10px] text-primary">2/3 {t('dashboard.completed')}</span>
             </h3>
             <div className="space-y-1">
-              {goals.map(({ done, label }) => (
+              {mockGoals.map(({ done, label }) => (
                 <label key={label} className="flex items-center gap-3 py-2 cursor-pointer group">
                   <input
                     type="checkbox"
@@ -322,7 +305,7 @@ export function DashboardPage() {
           <div className="bg-white dark:bg-[#111e22] rounded-xl p-5 border border-slate-200 dark:border-[#325a67]">
             <h3 className="font-bold text-sm mb-4">{t('dashboard.studyGroups')}</h3>
             <div className="space-y-4">
-              {suggestedGroups.map(({ icon, title, members, color }) => (
+              {mockSuggestedGroups.map(({ icon, title, members, color }) => (
                 <div key={title} className="flex items-start gap-3">
                   <div className={`size-10 rounded-lg ${color} flex items-center justify-center shrink-0`}>
                     <span className="material-symbols-outlined text-white">{icon}</span>
@@ -338,7 +321,7 @@ export function DashboardPage() {
           <div className="bg-white dark:bg-[#111e22] rounded-xl p-5 border border-slate-200 dark:border-[#325a67]">
             <h3 className="font-bold text-sm mb-4">{t('dashboard.featuredLessons')}</h3>
             <div className="space-y-4">
-              {featuredLessons.map(({ title, icon, skill, level, to, learners }) => (
+              {mockFeaturedLessons.map(({ title, icon, skill, level, to, learners }) => (
                 <Link key={title} to={to} className="block group">
                   <div className="flex justify-between items-start">
                     <h4 className="text-sm font-semibold group-hover:text-primary transition-colors">{title}</h4>

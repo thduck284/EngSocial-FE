@@ -1,35 +1,7 @@
 import { Link } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
-
-const skillTabs = [
-  { to: '/skills/reading', icon: 'menu_book', label: 'skills.reading' },
-  { to: '/skills/listening', icon: 'headset', label: 'skills.listening' },
-  { to: '/skills/writing', icon: 'edit_note', label: 'skills.writing' },
-  { to: '/enter', icon: 'sports_esports', label: 'skills.entertainment', active: true },
-]
-
-const games = [
-  {
-    icon: 'spellcheck',
-    title: 'Word Battle',
-    type: 'Vocabulary',
-    difficulty: 'Medium',
-    desc: 'Test your speed and accuracy in defining complex academic and business vocabulary.',
-    playing: 120,
-    badge: 'Silver',
-    rating: '8.5/10',
-  },
-  {
-    icon: 'rocket_launch',
-    title: 'Grammar Galaxy',
-    type: 'Grammar',
-    difficulty: 'Hard',
-    desc: 'Fix broken sentence structures and navigate through complex tenses across the galaxy.',
-    playing: 85,
-    badge: '12 Planets',
-    rating: '7.9/10',
-  },
-]
+import { SKILL_TABS, SKILL_STATS_CONFIG, mockGames, mockFriendsOnline } from '../raw'
+import { ROUTES } from '../constants'
 
 export function EnterPage() {
   const { t } = useTranslation()
@@ -42,17 +14,13 @@ export function EnterPage() {
               {t('skills.skillStats')}
             </h3>
             <div className="space-y-4">
-              {[
-                { icon: 'menu_book', color: 'text-blue-400', label: 'skills.reading', xp: '1,240 XP' },
-                { icon: 'headset', color: 'text-orange-400', label: 'skills.listening', xp: '850 XP' },
-                { icon: 'edit_note', color: 'text-emerald-400', label: 'skills.writing', xp: '420 XP' },
-              ].map(({ icon, color, label, xp }) => (
-                <div key={label} className="flex items-center justify-between">
+              {SKILL_STATS_CONFIG.map(({ icon, color, label, key }) => (
+                <div key={key} className="flex items-center justify-between">
                   <div className="flex items-center gap-3">
                     <span className={`material-symbols-outlined ${color}`}>{icon}</span>
                     <span className="text-sm">{t(label)}</span>
                   </div>
-                  <span className="text-sm font-bold">{xp}</span>
+                  <span className="text-sm font-bold">{key === 'reading' ? '1,240' : key === 'listening' ? '850' : '420'} XP</span>
                 </div>
               ))}
               <div className="pt-4 border-t border-border-dark flex justify-between items-center text-xs text-gray-400">
@@ -64,12 +32,12 @@ export function EnterPage() {
         </aside>
         <section className="col-span-12 lg:col-span-6 space-y-6">
           <div className="bg-card-dark p-1 rounded-xl flex border border-border-dark">
-            {skillTabs.map(({ to, icon, label, active }) => (
+            {SKILL_TABS.map(({ to, icon, label, key }) => (
               <Link
                 key={to}
                 to={to}
                 className={`flex-1 py-2.5 rounded-lg text-sm font-medium flex items-center justify-center gap-2 transition-all ${
-                  active
+                  key === 'enter'
                     ? 'bg-background-dark border border-border-dark text-primary font-bold'
                     : 'hover:bg-gray-700 text-gray-400'
                 }`}
@@ -102,7 +70,7 @@ export function EnterPage() {
             </div>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            {games.map(({ icon, title, type, difficulty, desc, playing, badge, rating }) => (
+            {mockGames.map(({ icon, title, type, difficulty, desc, playing, badge, rating, color }) => (
               <div
                 key={title}
                 className="bg-card-dark rounded-xl border border-border-dark overflow-hidden group hover:border-primary/50 transition-all"
