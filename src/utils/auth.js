@@ -35,3 +35,25 @@ export function getStoredUser() {
     return null
   }
 }
+
+/**
+ * Lấy role của user đã lưu (user | moderator | admin).
+ */
+export function getStoredUserRole() {
+  const u = getStoredUser()
+  return u?.role || 'user'
+}
+
+/**
+ * Kiểm tra user đã lưu có phải moderator không.
+ */
+export function isModerator() {
+  return getStoredUserRole() === 'moderator'
+}
+
+/**
+ * Kiểm tra user đã lưu có phải admin không.
+ */
+export function isAdmin() {
+  return getStoredUserRole() === 'admin'
+}

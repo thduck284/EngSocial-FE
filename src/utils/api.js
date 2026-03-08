@@ -57,9 +57,11 @@ class ApiClient {
    */
   async request(endpoint, options = {}) {
     const url = buildApiUrl(endpoint)
+    const headers = this.getHeaders(options.headers)
+    if (options.body instanceof FormData) delete headers['Content-Type']
     const config = {
       ...options,
-      headers: this.getHeaders(options.headers),
+      headers,
     }
 
     try {
@@ -72,20 +74,24 @@ class ApiClient {
         : await response.text()
 
       if (!response.ok) {
-        if (response.status === 401) {
+        // 401 từ login/register = sai email/mật khẩu → throw để form hiển thị lỗi, không redirect
+        const isAuthForm = endpoint.includes('/auth/login') || endpoint.includes('/auth/register')
+        if (response.status === 401 && !isAuthForm) {
           clearAuthAndRedirectToLogin()
           return
         }
-        throw {
+        const err = {
           status: response.status,
-          message: data.message || 'Request failed',
+          message: (typeof data === 'object' && data?.message) || 'Request failed',
           data,
         }
+        if (response.status === 401 && isAuthForm) err.skipAuthRedirect = true
+        throw err
       }
 
       return data
     } catch (error) {
-      if (error?.status === 401) {
+      if (error?.status === 401 && !error?.skipAuthRedirect) {
         clearAuthAndRedirectToLogin()
         return
       }
