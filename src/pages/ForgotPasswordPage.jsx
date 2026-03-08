@@ -1,9 +1,7 @@
-import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { LanguageSwitcher } from '../components/ui/LanguageSwitcher'
-import { authService } from '../services'
-import { validateEmail } from '../validators'
+import { useForgotPassword } from '../hooks/useForgotPassword'
 import { ROUTES } from '../constants'
 
 const inputBase = 'w-full bg-slate-800/50 border text-white rounded-xl pl-10 pr-4 py-3 focus:ring-0 input-glow transition-all placeholder-slate-600'
@@ -12,42 +10,16 @@ const inputNormal = 'border-slate-700 focus:border-primary'
 
 export function ForgotPasswordPage() {
   const { t } = useTranslation()
-  const [email, setEmail] = useState('')
-  const [loading, setLoading] = useState(false)
-  const [error, setError] = useState('')
-  const [success, setSuccess] = useState(false)
-  const [fieldErrors, setFieldErrors] = useState({})
-
-  const handleSubmit = async (e) => {
-    e.preventDefault()
-    setError('')
-    setFieldErrors({})
-
-    const emailErr = validateEmail(email)
-    if (emailErr) {
-      setFieldErrors({
-        email: emailErr.params ? t(emailErr.key, emailErr.params) : t(emailErr.key),
-      })
-      return
-    }
-
-    setLoading(true)
-    try {
-      const res = await authService.forgotPassword(email.trim().toLowerCase())
-      setSuccess(true)
-      setError('')
-      setFieldErrors({})
-    } catch (err) {
-      const msg = err?.message ?? err?.data?.message ?? t('forgotPassword.error')
-      setError(msg)
-      setSuccess(false)
-    } finally {
-      setLoading(false)
-    }
-  }
-
-  const hasError = fieldErrors.email
-  const showSuccess = success && !error
+  const {
+    email,
+    setEmail,
+    loading,
+    error,
+    fieldErrors,
+    handleSubmit,
+    hasError,
+    showSuccess,
+  } = useForgotPassword(t)
 
   return (
     <div className="bg-textured text-slate-100 min-h-screen flex items-center justify-center p-4 relative">

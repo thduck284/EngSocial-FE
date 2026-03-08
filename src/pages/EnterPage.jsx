@@ -1,10 +1,19 @@
+import { useState, useEffect } from 'react'
 import { Link } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
-import { SKILL_TABS, SKILL_STATS_CONFIG, mockGames, mockFriendsOnline } from '../raw'
-import { ROUTES } from '../constants'
+import { SKILL_TABS, SKILL_STATS_CONFIG } from '../raw'
+import { rawService } from '../services'
 
 export function EnterPage() {
   const { t } = useTranslation()
+  const [games, setGames] = useState([])
+
+  useEffect(() => {
+    rawService.getGames()
+      .then((res) => setGames(res?.data?.games || []))
+      .catch(() => setGames([]))
+  }, [])
+
   return (
     <main className="max-w-[1440px] mx-auto grid grid-cols-12 gap-6 p-6">
         <aside className="col-span-12 lg:col-span-3 space-y-6">
@@ -70,7 +79,7 @@ export function EnterPage() {
             </div>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            {mockGames.map(({ icon, title, type, difficulty, desc, playing, badge, rating, color }) => (
+            {games.map(({ icon, title, type, difficulty, desc, playing, badge, rating, color }) => (
               <div
                 key={title}
                 className="bg-card-dark rounded-xl border border-border-dark overflow-hidden group hover:border-primary/50 transition-all"

@@ -1,340 +1,717 @@
 import { Link, useParams } from 'react-router-dom'
-import {
-  mockLessonChapters,
-  mockQuizOptions,
-  mockVocabCard,
-  mockLessonLeaderboard,
-} from '../raw'
+import { useTranslation } from 'react-i18next'
+import { useListeningLesson } from '../hooks/useListeningLesson'
 
 export function ListeningLessonPage() {
+  const { t } = useTranslation()
   const { id } = useParams()
+  const {
+    audioRef,
+    content,
+    loading,
+    isPlaying,
+    currentTime,
+    duration,
+    volume,
+    setVolume,
+    playbackSpeed,
+    cycleSpeed,
+    showTranscript,
+    setShowTranscript,
+    vocabularyList,
+    lessonChapters,
+    vocabCard,
+    leaderboard,
+    questions,
+    totalQuestions,
+    currentQ,
+    questionOptions,
+    progress,
+    accentLabel,
+    currentQuestion,
+    selectedAnswer,
+    setSelectedAnswer,
+    noteTitle,
+    setNoteTitle,
+    noteContent,
+    setNoteContent,
+    noteCategory,
+    setNoteCategory,
+    noteSaving,
+    noteSavedMessage,
+    handleSaveNote,
+    completingLesson,
+    completeMessage,
+    handleComplete,
+    saveDraftMessage,
+    handleSaveDraft,
+    showHint,
+    setShowHint,
+    editingPage,
+    pageInput,
+    setPageInput,
+    countdownSeconds,
+    vocabIndex,
+    setVocabIndex,
+    showVocabTable,
+    setShowVocabTable,
+    handlePlayPause,
+    handleSeek,
+    handleRewind10,
+    handleForward10,
+    handlePrevious,
+    handleNext,
+    handlePageChange,
+    handlePageInputKeyDown,
+    startEditingPage,
+    currentPage,
+    totalPages,
+    showPrevPages,
+    showNextPages,
+    formatTime,
+  } = useListeningLesson(id, t)
+
+  if (loading) {
+    return (
+      <div className="flex justify-center items-center min-h-[60vh]">
+        <span className="material-symbols-outlined animate-spin text-4xl text-primary">progress_activity</span>
+      </div>
+    )
+  }
+  if (!content) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-[60vh] text-gray-400">
+        <span className="material-symbols-outlined text-5xl mb-4">error</span>
+        <p>{t('listeningLesson.loadError')}</p>
+        <Link to="/lessons?skill=listening" className="mt-4 text-primary hover:underline">{t('listeningLesson.back')}</Link>
+      </div>
+    )
+  }
 
   return (
-    <main className="max-w-[1440px] mx-auto p-6 grid grid-cols-12 gap-6">
-      {/* Left sidebar */}
-      <aside className="col-span-12 lg:col-span-3 space-y-6">
-        <div className="bg-card-dark rounded-2xl border border-border-dark flex flex-col">
-          <div className="p-5 border-b border-border-dark">
-            <h3 className="flex items-center gap-2 font-bold text-white uppercase tracking-wider text-xs">
-              <span className="material-symbols-outlined text-primary text-xl">account_tree</span>
-              Topic Navigation
-            </h3>
+    <main className="max-w-[1600px] mx-auto px-6 py-6 grid grid-cols-12 gap-6 min-h-[calc(100vh-64px)]">
+      {/* Left Sidebar */}
+      <aside className="col-span-12 lg:col-span-3 space-y-6 overflow-y-auto pr-2 pb-6 custom-scrollbar">
+        {/* Lesson Content Navigation */}
+        <div className="bg-card-dark rounded-2xl border border-border-dark shadow-xl overflow-hidden">
+          <div className="p-4 bg-background-dark border-b border-border-dark">
+            <h3 className="font-bold text-xs uppercase tracking-wider text-gray-400">{t('listeningLesson.lessonContent')}</h3>
           </div>
-          <div className="p-2 space-y-1">
-            {mockLessonChapters.map((ch) => (
-              <button
+          <div className="py-2">
+            {lessonChapters.map((ch, idx) => (
+              <div
                 key={ch.id}
-                type="button"
-                className={`w-full flex items-center justify-between p-3 rounded-xl transition-colors ${
+                className={`flex items-center gap-3 p-4 transition-colors cursor-pointer ${
                   ch.active
-                    ? 'text-primary bg-primary/10 border-r-[3px] border-r-primary'
-                    : 'hover:bg-gray-700/50'
+                    ? 'bg-gradient-to-r from-emerald-500/10 to-transparent border-l-[3px] border-l-emerald-400'
+                    : ch.done
+                      ? 'hover:bg-background-dark/50'
+                      : 'hover:bg-background-dark/50 opacity-60'
                 }`}
               >
-                <div className="flex items-center gap-3">
-                  {ch.done ? (
-                    <span className="material-symbols-outlined text-green-500 text-lg fill-icon">check_circle</span>
-                  ) : ch.active ? (
-                    <span className="material-symbols-outlined text-primary text-lg animate-pulse">play_circle</span>
-                  ) : (
-                    <span className="material-symbols-outlined text-gray-500 text-lg">radio_button_unchecked</span>
-                  )}
-                  <span className={`text-sm ${ch.active ? 'font-bold' : 'font-medium text-gray-400'}`}>{ch.label}</span>
+                <span
+                  className={`material-symbols-outlined text-xl ${
+                    ch.active
+                      ? 'text-emerald-400'
+                      : ch.done
+                        ? 'text-green-500 fill-icon'
+                        : 'text-gray-500'
+                  }`}
+                >
+                  {ch.active ? 'play_circle' : ch.done ? 'check_circle' : 'lock'}
+                </span>
+                <div className="flex-1">
+                  <p className={`text-xs font-bold ${ch.active ? 'text-white' : 'text-gray-400'}`}>
+                    {idx + 1}. {ch.label}
+                  </p>
+                  <p className="text-[10px] text-gray-500">
+                    {ch.time} • {ch.done ? t('listeningLesson.chapterDone') : ch.active ? t('listeningLesson.chapterActive') : t('listeningLesson.chapterLocked')}
+                  </p>
                 </div>
-                <span className="text-[10px] font-bold text-gray-400">{ch.time}</span>
-              </button>
+              </div>
             ))}
           </div>
         </div>
 
-        <div className="bg-card-dark rounded-2xl border border-border-dark overflow-hidden">
-          <div className="p-5 border-b border-border-dark">
-            <h3 className="flex items-center gap-2 font-bold text-white uppercase tracking-wider text-xs">
+        {/* Notes Card */}
+        <div className="bg-card-dark rounded-2xl p-5 border border-border-dark shadow-lg">
+          <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center gap-2">
               <span className="material-symbols-outlined text-primary text-xl">edit_note</span>
-              My Study Notes
-            </h3>
+              <h3 className="font-bold text-sm">{t('listeningLesson.notebook')}</h3>
+            </div>
+            <div className="min-w-[120px]">
+              <label className="block text-[10px] font-bold text-gray-400 uppercase mb-1">{t('listeningLesson.noteCategoryLabel')}</label>
+              <select
+                value={noteCategory}
+                onChange={(e) => setNoteCategory(e.target.value)}
+                className="w-full bg-background-dark border border-border-dark text-sm rounded-lg py-2 px-3 text-white focus:ring-2 focus:ring-primary outline-none"
+              >
+                <option value="grammar">{t('listeningLesson.noteCategoryGrammar')}</option>
+                <option value="vocab">{t('listeningLesson.noteCategoryVocab')}</option>
+                <option value="idea">{t('listeningLesson.noteCategoryIdea')}</option>
+              </select>
+            </div>
           </div>
-          <div className="p-4 space-y-4">
-            <input
-              type="text"
-              placeholder="Note Title..."
-              className="w-full bg-background-dark border border-border-dark rounded-xl px-4 py-2.5 text-sm font-semibold focus:ring-1 focus:ring-primary focus:border-primary outline-none placeholder-gray-500"
-            />
-            <div className="border border-border-dark rounded-xl overflow-hidden focus-within:ring-1 focus-within:ring-primary focus-within:border-primary transition-all bg-background-dark">
-              <div className="flex items-center gap-1 p-1.5 bg-gray-800/50 border-b border-border-dark">
-                <button type="button" className="p-1.5 hover:bg-gray-700 rounded transition-all text-gray-400 hover:text-primary">
-                  <span className="material-symbols-outlined text-lg">format_bold</span>
-                </button>
-                <button type="button" className="p-1.5 hover:bg-gray-700 rounded transition-all text-gray-400 hover:text-primary">
-                  <span className="material-symbols-outlined text-lg">format_italic</span>
-                </button>
-                <button type="button" className="p-1.5 hover:bg-gray-700 rounded transition-all text-gray-400 hover:text-primary">
-                  <span className="material-symbols-outlined text-lg">format_list_bulleted</span>
-                </button>
-                <div className="w-px h-4 bg-gray-600 mx-1" />
-                <button type="button" className="p-1.5 hover:bg-gray-700 rounded transition-all text-gray-400 hover:text-primary">
-                  <span className="material-symbols-outlined text-lg">link</span>
-                </button>
-              </div>
+          <div className="space-y-3">
+            <div>
+              <label className="block text-[10px] font-bold text-gray-400 uppercase mb-1">{t('listeningLesson.noteTitle')}</label>
+              <input
+                value={noteTitle}
+                onChange={(e) => setNoteTitle(e.target.value)}
+                className="w-full bg-background-dark border border-border-dark rounded-lg px-3 py-2 text-sm text-white placeholder-gray-500 focus:ring-2 focus:ring-primary outline-none"
+                placeholder={t('listeningLesson.noteTitlePlaceholder')}
+                type="text"
+              />
+            </div>
+            <div>
+              <label className="block text-[10px] font-bold text-gray-400 uppercase mb-1">{t('listeningLesson.noteContentLabel')}</label>
               <textarea
-                placeholder="Start typing your insights here..."
-                className="w-full h-32 bg-transparent border-none p-4 text-sm focus:ring-0 outline-none resize-none placeholder-gray-500"
+                value={noteContent}
+                onChange={(e) => setNoteContent(e.target.value)}
+                className="w-full bg-background-dark border border-border-dark rounded-xl p-3 text-sm text-white placeholder-gray-500 focus:ring-2 focus:ring-primary outline-none resize-none"
+                placeholder={t('listeningLesson.notePlaceholder')}
                 rows={4}
               />
             </div>
-            <div className="space-y-2">
-              <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Select Category</p>
-              <div className="flex flex-wrap gap-2">
-                <button type="button" className="px-3 py-1 text-[10px] font-bold rounded-full border border-primary bg-primary/10 text-primary">
-                  Grammar
-                </button>
-                <button type="button" className="px-3 py-1 text-[10px] font-bold rounded-full border border-border-dark text-gray-400 hover:border-primary/50 hover:text-primary transition-all">
-                  Vocabulary
-                </button>
-                <button type="button" className="px-3 py-1 text-[10px] font-bold rounded-full border border-border-dark text-gray-400 hover:border-primary/50 hover:text-primary transition-all">
-                  Idea
-                </button>
-              </div>
-            </div>
-            <button type="button" className="w-full py-2.5 bg-primary text-background-dark font-bold text-sm rounded-xl hover:brightness-110 transition-all flex items-center justify-center gap-2">
-              <span className="material-symbols-outlined text-sm">save</span>
-              Save Note
-            </button>
           </div>
+          {noteSavedMessage && (
+            <p className="mt-2 text-xs text-emerald-400">{noteSavedMessage}</p>
+          )}
+          <button
+            type="button"
+            onClick={handleSaveNote}
+            disabled={noteSaving}
+            className="mt-4 w-full py-2.5 bg-gradient-to-r from-primary to-emerald-400 text-white rounded-xl text-xs font-bold transition-all shadow-lg shadow-teal-950/20 hover:brightness-110 disabled:opacity-60 disabled:cursor-not-allowed"
+          >
+            {noteSaving ? '...' : t('listeningLesson.saveNote')}
+          </button>
         </div>
 
-        <div className="bg-primary/10 border border-primary/20 rounded-2xl p-4 flex gap-4 items-start">
-          <div className="w-10 h-10 bg-primary/20 rounded-xl flex items-center justify-center shrink-0">
-            <span className="material-symbols-outlined text-primary font-bold">lightbulb</span>
+        {/* Listening Tip */}
+        <div className="bg-gradient-to-br from-primary/5 to-emerald-500/10 rounded-2xl p-5 border border-emerald-500/20">
+          <div className="flex items-center gap-2 mb-3">
+            <span className="material-symbols-outlined text-primary text-lg">psychology</span>
+            <h3 className="font-bold text-primary text-sm">{t('listeningLesson.tipTitle')}</h3>
           </div>
-          <div>
-            <p className="text-xs font-bold text-primary uppercase tracking-widest mb-1">Listening Tip</p>
-            <p className="text-xs text-gray-400 leading-relaxed">
-              Try visualizing the speaker&apos;s environment. Mental imagery helps create stronger neural connections, making it easier to recall specific vocabulary used in context later.
-            </p>
-          </div>
+          <p className="text-xs leading-relaxed text-gray-400 italic">
+            &quot;{t('listeningLesson.tipText')}&quot;
+          </p>
         </div>
       </aside>
 
-      {/* Center - player + quiz */}
-      <div className="col-span-12 lg:col-span-6 space-y-6">
-        <div className="bg-card-dark rounded-3xl overflow-hidden border border-border-dark">
-          <div className="relative h-72 overflow-hidden">
-            <img
-              alt="Global Tech Trends"
-              className="w-full h-full object-cover"
-              src="https://lh3.googleusercontent.com/aida-public/AB6AXuB4HGxIdV3l5X2mkEfiDcHWc2Y5aGHTz2uKSFV1cxjanokQtrBTJwUSKVy0ZIa_BAl54BFADXdywZkVEGqeYH6AXQ7sXrTLZZuQZwZ18ze7GKTQBsRoDSL5S87sB9tE5-qqfQq9E5O0i1ainzpepCs8YqOXSO06GzgPidQm19jGW-7LzvP3uh21RkqF4Qiftao5ScjbX6DvlPiAoSG2g-bQNmzXcqEZcpRKjV4Ag4tn6q16GpFb8tTsGG8FKmg2kDbYpfIzJR7AZcH1"
-            />
-            <div className="absolute inset-0 bg-gradient-to-t from-background-dark via-background-dark/20 to-transparent" />
-            <div className="absolute top-5 left-5">
-              <span className="bg-primary text-background-dark text-[10px] font-black px-3 py-1.5 rounded-full uppercase tracking-widest">
-                Audio Content
-              </span>
+      {/* Main Content */}
+      <div className="col-span-12 lg:col-span-6 flex flex-col gap-6 overflow-hidden">
+        {/* Audio Player Card */}
+        <div className="bg-card-dark rounded-3xl border border-border-dark overflow-hidden shadow-2xl">
+          {content?.audioUrl && <audio ref={audioRef} src={content.audioUrl} />}
+          <div className="p-6 flex flex-col md:flex-row gap-6 items-center">
+            <div className="w-32 h-32 rounded-2xl overflow-hidden flex-shrink-0 shadow-lg border border-border-dark bg-background-dark">
+              {content?.thumbnail ? (
+                <img alt="" className="w-full h-full object-cover" src={content.thumbnail} />
+              ) : (
+                <div className="w-full h-full flex items-center justify-center text-gray-500">
+                  <span className="material-symbols-outlined text-5xl">headset</span>
+                </div>
+              )}
             </div>
-            <div className="absolute bottom-6 left-6 right-6">
-              <h2 className="text-3xl font-black text-white mb-4">Global Tech Trends: AI Evolution</h2>
-              <div className="flex flex-wrap items-center gap-3">
-                <div className="flex items-center gap-1.5 bg-black/40 backdrop-blur-md px-3 py-1.5 rounded-lg border border-white/10">
-                  <span className="material-symbols-outlined text-primary text-sm">signal_cellular_alt</span>
-                  <span className="text-xs font-bold text-white">Difficulty: B2</span>
-                </div>
-                <div className="flex items-center gap-1.5 bg-black/40 backdrop-blur-md px-3 py-1.5 rounded-lg border border-white/10">
-                  <span className="material-symbols-outlined text-primary text-sm">public</span>
-                  <span className="text-xs font-bold text-white">Accent: American</span>
-                </div>
-                <div className="flex items-center gap-1.5 bg-black/40 backdrop-blur-md px-3 py-1.5 rounded-lg border border-white/10">
-                  <span className="material-symbols-outlined text-primary text-sm">schedule</span>
-                  <span className="text-xs font-bold text-white">Duration: 12m</span>
-                </div>
-                <div className="flex items-center gap-1.5 bg-black/40 backdrop-blur-md px-3 py-1.5 rounded-lg border border-white/10">
-                  <span className="material-symbols-outlined text-primary text-sm">quiz</span>
-                  <span className="text-xs font-bold text-white">Total: 10 Questions</span>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <div className="px-8 py-6 bg-gray-800/30 border-b border-border-dark">
-            <div className="flex items-center gap-6">
-              <button type="button" className="w-14 h-14 flex items-center justify-center rounded-full bg-primary text-background-dark hover:scale-105 transition-transform shadow-lg">
-                <span className="material-symbols-outlined text-3xl fill-icon">play_arrow</span>
-              </button>
-              <div className="flex-1">
-                <div className="flex justify-between items-center mb-2">
-                  <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Playback Progress</span>
-                  <div className="flex items-center gap-2">
-                    <span className="text-xs font-bold text-primary">04:12</span>
-                    <span className="text-xs font-bold text-gray-400">/ 12:45</span>
-                  </div>
-                </div>
-                <div className="h-2.5 w-full bg-gray-700 rounded-full relative cursor-pointer group">
-                  <div className="absolute left-0 top-0 h-full w-[35%] bg-primary rounded-full" />
-                  <div className="absolute left-[35%] top-1/2 -translate-y-1/2 w-4 h-4 bg-white border-2 border-primary rounded-full group-hover:scale-125 transition-transform" />
-                </div>
-              </div>
-              <div className="flex items-center gap-4">
-                <button type="button" className="text-gray-400 hover:text-primary transition-colors">
-                  <span className="material-symbols-outlined text-2xl">replay_10</span>
-                </button>
-                <div className="h-8 w-px bg-gray-600" />
-                <div className="flex items-center gap-3">
-                  <span className="material-symbols-outlined text-gray-400 text-xl">volume_up</span>
-                  <div className="w-20 h-1.5 bg-gray-700 rounded-full overflow-hidden">
-                    <div className="w-2/3 h-full bg-primary rounded-full" />
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <div className="p-8 space-y-8">
-            <div className="flex justify-between items-start gap-6">
-              <div className="space-y-3 flex-1">
-                <span className="inline-block px-3 py-1 rounded-md bg-primary/10 text-primary text-[10px] font-black uppercase tracking-widest border border-primary/20">
-                  Question 01 of 10
+            <div className="flex-1 text-center md:text-left">
+              <div className="flex flex-wrap items-center justify-center md:justify-start gap-2 mb-2">
+                <span className="bg-primary/20 text-primary text-[10px] font-bold px-2 py-0.5 rounded uppercase">
+                  {t('listeningLesson.level')} {content?.level || '—'}
                 </span>
-                <h1 className="text-xl font-bold leading-snug text-white">
-                  Based on the audio content, what is the primary factor driving the current &quot;AI Revolution&quot; according to the speaker?
-                </h1>
-              </div>
-              <div className="flex flex-col items-center justify-center w-16 h-16 rounded-2xl border-2 border-primary/20 bg-primary/5 shrink-0">
-                <span className="text-[10px] font-bold text-primary uppercase leading-none mb-1">Timer</span>
-                <span className="text-xl font-black text-primary leading-none">60s</span>
-              </div>
-            </div>
-
-            <div className="grid grid-cols-1 gap-3">
-              {mockQuizOptions.map((opt) => (
-                <label
-                  key={opt.value}
-                  className={`flex items-center p-5 rounded-2xl border cursor-pointer transition-all duration-200 ${
-                    opt.correct
-                      ? 'border-2 border-primary bg-primary/5'
-                      : 'border-border-dark hover:border-primary hover:bg-gray-800/40'
-                  }`}
-                >
-                  <input type="radio" name="quiz" className="hidden peer" defaultChecked={opt.correct} />
-                  <div className="relative w-6 h-6 rounded-full border-2 flex items-center justify-center mr-4 shrink-0 border-primary bg-primary">
-                    <div className="w-2.5 h-2.5 rounded-full bg-white scale-100" />
-                  </div>
-                  <span className={`font-medium ${opt.correct ? 'font-bold text-white' : 'text-gray-400'}`}>
-                    {opt.text}
+                {accentLabel && (
+                  <span className="bg-emerald-500/10 text-emerald-400 text-[10px] font-bold px-2 py-0.5 rounded uppercase flex items-center gap-1">
+                    <span className="material-symbols-outlined text-[12px]">flag</span> {accentLabel} {t('listeningLesson.accent')}
                   </span>
-                </label>
-              ))}
+                )}
+              </div>
+              <h1 className="text-xl font-extrabold text-white mb-1">{content?.title || t('listeningLesson.fallbackTitle')}</h1>
+              <p className="text-xs text-gray-400 mb-4 flex items-center justify-center md:justify-start gap-2">
+                <span className="material-symbols-outlined text-sm">schedule</span>
+                {duration > 0 ? `${Math.floor(duration / 60)} ${t('listeningLesson.minutes')} ${duration % 60} ${t('listeningLesson.seconds')}` : (content?.estimatedTime ? `${content.estimatedTime} ${t('listeningLesson.minutes')}` : content?.time || '—')}
+              </p>
+              <div className="space-y-3">
+                <div className="flex items-center gap-4">
+                  <span className="text-[10px] font-mono text-gray-400 w-10">{formatTime(currentTime)}</span>
+                  <div
+                    className="flex-1 h-1.5 bg-background-dark rounded-full relative overflow-hidden group cursor-pointer"
+                    onClick={handleSeek}
+                    onKeyDown={(e) => e.key === 'Enter' && handleSeek(e)}
+                    role="progressbar"
+                    tabIndex={0}
+                    aria-valuenow={currentTime}
+                    aria-valuemin={0}
+                    aria-valuemax={duration || 1}
+                  >
+                    <div
+                      className="absolute inset-y-0 left-0 bg-gradient-to-r from-primary to-emerald-400 rounded-full"
+                      style={{ width: `${duration ? (currentTime / duration) * 100 : 0}%` }}
+                    />
+                    <div
+                      className="absolute top-1/2 -translate-y-1/2 w-3 h-3 bg-white rounded-full shadow-lg opacity-0 group-hover:opacity-100 transition-opacity"
+                      style={{ left: `${duration ? (currentTime / duration) * 100 : 0}%` }}
+                    />
+                  </div>
+                  <span className="text-[10px] font-mono text-gray-400 w-10 text-right">{formatTime(duration || 0)}</span>
+                </div>
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-4">
+                    <button
+                      type="button"
+                      className="text-gray-400 hover:text-white transition-colors"
+                      onClick={handleRewind10}
+                    >
+                      <span className="material-symbols-outlined">replay_10</span>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={handlePlayPause}
+                      className="w-12 h-12 bg-primary text-background-dark rounded-full flex items-center justify-center shadow-lg shadow-cyan-500/20 hover:scale-105 transition-all"
+                    >
+                      <span className={`material-symbols-outlined text-3xl ${isPlaying ? '' : 'fill-icon'}`}>
+                        {isPlaying ? 'pause' : 'play_arrow'}
+                      </span>
+                    </button>
+                    <button
+                      type="button"
+                      className="text-gray-400 hover:text-white transition-colors"
+                      onClick={handleForward10}
+                    >
+                      <span className="material-symbols-outlined">forward_10</span>
+                    </button>
+                  </div>
+                  <div className="flex items-center gap-6">
+                    <div className="flex items-center gap-2 group">
+                      <span className="material-symbols-outlined text-gray-400 text-lg">volume_up</span>
+                      <input
+                        type="range"
+                        min="0"
+                        max="100"
+                        value={volume}
+                        onChange={(e) => setVolume(Number(e.target.value))}
+                        className="w-20 h-1.5 bg-background-dark rounded-full appearance-none cursor-pointer [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-3 [&::-webkit-slider-thumb]:h-3 [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-primary [&::-webkit-slider-thumb]:cursor-pointer [&::-moz-range-thumb]:w-3 [&::-moz-range-thumb]:h-3 [&::-moz-range-thumb]:rounded-full [&::-moz-range-thumb]:bg-primary [&::-moz-range-thumb]:border-0"
+                        title={t('listeningLesson.volume')}
+                      />
+                    </div>
+                    <button
+                      type="button"
+                      className="text-xs font-bold text-gray-400 border border-border-dark px-2 py-1 rounded hover:bg-background-dark hover:text-white transition-colors min-w-[3rem]"
+                      onClick={cycleSpeed}
+                      title={t('listeningLesson.playbackSpeed')}
+                    >
+                      {playbackSpeed.toFixed(1)}x
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div className="border-t border-border-dark bg-background-dark/30">
+            <button
+              type="button"
+              onClick={() => setShowTranscript(!showTranscript)}
+              className="w-full p-3 flex items-center justify-between text-xs font-bold text-gray-400 hover:text-white transition-colors"
+            >
+              <span className="flex items-center gap-2">
+                <span className="material-symbols-outlined text-sm">subtitles</span> {t('listeningLesson.viewTranscript')}
+              </span>
+              <span className={`material-symbols-outlined transition-transform ${showTranscript ? 'rotate-180' : ''}`}>
+                expand_more
+              </span>
+            </button>
+            {showTranscript && (
+              <div className="p-4 border-t border-border-dark max-h-60 overflow-y-auto">
+                <p className="text-sm text-white leading-relaxed whitespace-pre-wrap">{content?.transcript || '—'}</p>
+              </div>
+            )}
+            {vocabularyList.length > 0 && (
+              <>
+                <button
+                  type="button"
+                  onClick={() => setShowVocabTable(!showVocabTable)}
+                  className="w-full p-3 flex items-center justify-between text-xs font-bold text-gray-400 hover:text-white transition-colors border-t border-border-dark"
+                >
+                  <span className="flex items-center gap-2">
+                    <span className="material-symbols-outlined text-sm">translate</span>
+                    {t('listeningLesson.vocabTableTitle')}
+                  </span>
+                  <span className={`material-symbols-outlined transition-transform ${showVocabTable ? 'rotate-180' : ''}`}>
+                    expand_more
+                  </span>
+                </button>
+                {showVocabTable && (
+                  <div className="border-t border-border-dark overflow-hidden">
+                    <div className="max-h-64 overflow-y-auto">
+                      <table className="w-full text-sm">
+                        <thead className="sticky top-0 bg-card-dark border-b border-border-dark">
+                          <tr>
+                            <th className="text-left py-2.5 px-3 text-xs font-bold text-primary uppercase">{t('listeningLesson.english')}</th>
+                            <th className="text-left py-2.5 px-3 text-xs font-bold text-primary uppercase">{t('listeningLesson.vietnamese')}</th>
+                          </tr>
+                        </thead>
+                        <tbody className="text-white">
+                          {vocabularyList.map((v, i) => (
+                            <tr key={i} className="border-b border-border-dark/50 hover:bg-background-dark/30">
+                              <td className="py-2 px-3 font-medium">{v.word || '—'}</td>
+                              <td className="py-2 px-3 text-gray-400">{v.meaning || v.meaningVi || '—'}</td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
+                )}
+              </>
+            )}
+          </div>
+        </div>
+
+        {/* Quiz Card */}
+        <div className="flex-1 bg-card-dark rounded-2xl border border-border-dark overflow-hidden flex flex-col shadow-2xl">
+          <div className="p-4 border-b border-border-dark flex justify-between items-center bg-background-dark/50">
+            <div className="flex items-center gap-4">
+              <div className="flex flex-col">
+                <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">{t('listeningLesson.progress')}</span>
+                <span className="text-sm font-bold text-white">
+                  {t('listeningLesson.questionCount', { current: currentQuestion + 1, total: totalQuestions })}
+                </span>
+              </div>
+            </div>
+            <div className="flex items-center gap-3">
+              {completeMessage && (
+                <span className="text-xs text-emerald-400">{completeMessage}</span>
+              )}
+              <button
+                type="button"
+                onClick={() => setShowHint((v) => !v)}
+                title={t('listeningLesson.hint')}
+                className={`p-1.5 rounded-lg border transition-all ${showHint ? 'bg-amber-500/20 text-amber-400 border-amber-500/40' : 'border-border-dark text-gray-500 hover:text-amber-400 hover:border-amber-500/30'}`}
+              >
+                <span className="material-symbols-outlined text-lg">lightbulb</span>
+              </button>
+              <div className={`flex items-center gap-2 px-3 py-1.5 rounded-lg border font-mono font-bold text-sm ${(countdownSeconds ?? 1) <= 0 ? 'bg-red-500/20 text-red-400 border-red-500/30' : 'bg-red-500/10 text-red-400 border-red-500/20'}`}>
+                <span className="material-symbols-outlined text-lg">timer</span>
+                <span>{countdownSeconds != null ? formatTime(Math.max(0, countdownSeconds)) : '--:--'}</span>
+                {(countdownSeconds ?? 1) <= 0 && <span className="text-[10px] ml-1">{t('listeningLesson.timeUp')}</span>}
+              </div>
+              <button
+                type="button"
+                onClick={handleComplete}
+                disabled={completingLesson}
+                className="px-3 py-1.5 rounded-lg text-xs font-bold bg-primary/20 text-primary border border-primary/30 hover:bg-primary/30 transition-all disabled:opacity-60 disabled:cursor-not-allowed"
+              >
+                {completingLesson ? '...' : t('listeningLesson.complete')}
+              </button>
+            </div>
+          </div>
+          <div className="flex-1 grid grid-cols-1 md:grid-cols-2 overflow-hidden divide-x divide-border-dark">
+            {/* Instructions */}
+            <div className="overflow-y-auto custom-scrollbar p-6 bg-background-dark/20">
+              <h4 className="text-xs font-bold text-primary uppercase mb-4">{t('listeningLesson.instructions')}</h4>
+              <p className="text-sm text-white leading-relaxed mb-6">
+                {content?.description || t('listeningLesson.instructionsDefault')}
+              </p>
+              {content?.transcript && (
+                <div className="p-4 rounded-xl bg-background-dark border border-border-dark italic text-xs text-gray-400 leading-relaxed max-h-32 overflow-y-auto">
+                  {content.transcript.slice(0, 200)}{content.transcript.length > 200 ? '…' : ''}
+                </div>
+              )}
             </div>
 
-            <div className="mt-4 pt-6 flex items-center justify-between border-t border-border-dark">
-              <button type="button" className="px-6 py-3 flex items-center gap-2 rounded-2xl text-gray-400 hover:text-white hover:bg-gray-700 transition-all">
-                <span className="material-symbols-outlined">arrow_back</span>
-                <span className="font-bold">Previous</span>
-              </button>
-              <div className="flex gap-4">
-                <button type="button" className="px-8 py-3 rounded-2xl border border-border-dark font-bold hover:bg-gray-700 transition-all">
-                  Next
-                </button>
-                <button type="button" className="px-10 py-3 rounded-2xl bg-primary text-background-dark font-black hover:brightness-110 transition-all active:scale-95">
-                  Submit
-                </button>
+            {/* Questions */}
+            <div className="overflow-y-auto custom-scrollbar p-6 bg-card-dark/30">
+              <div className="mb-8">
+                <p className="text-base font-semibold text-white mb-6">
+                  {currentQ?.question || t('listeningLesson.chooseAnswer')}
+                </p>
+                <div className="space-y-3">
+                  {questionOptions.map((opt) => (
+                    <label
+                      key={opt.value}
+                      className={`group flex items-center p-4 rounded-xl border cursor-pointer transition-all ${
+                        selectedAnswer === opt.value
+                          ? 'border-emerald-400 bg-emerald-500/10 shadow-[0_0_15px_rgba(20,184,166,0.1)]'
+                          : 'border-border-dark hover:bg-background-dark hover:border-primary transition-colors'
+                      }`}
+                    >
+                      <input
+                        type="radio"
+                        name="answer"
+                        value={opt.value}
+                        checked={selectedAnswer === opt.value}
+                        onChange={(e) => setSelectedAnswer(e.target.value)}
+                        className="w-4 h-4 text-primary bg-background-dark border-border-dark focus:ring-primary"
+                      />
+                      <span
+                        className={`ml-4 text-sm transition-colors ${
+                          selectedAnswer === opt.value ? 'text-primary font-bold' : 'text-gray-400 group-hover:text-white'
+                        }`}
+                      >
+                        {opt.text}
+                      </span>
+                    </label>
+                  ))}
+                {showHint && currentQ?.explanation && (
+                  <p className="mt-3 p-3 rounded-lg bg-amber-500/10 border border-amber-500/20 text-xs text-amber-200/90 italic">{currentQ.explanation}</p>
+                )}
+                </div>
               </div>
+            </div>
+          </div>
+          <div className="p-4 bg-background-dark border-t border-border-dark flex flex-wrap justify-between items-center gap-3 min-w-0">
+            <button
+              type="button"
+              onClick={handlePrevious}
+              disabled={currentQuestion === 0}
+              className="px-4 py-2 rounded-xl text-xs font-bold border border-border-dark text-gray-400 hover:bg-card-dark hover:text-white transition-all flex items-center gap-2 shrink-0 disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              <span className="material-symbols-outlined text-sm">arrow_back</span> {t('listeningLesson.previous')}
+            </button>
+
+            {/* Pagination */}
+            <div className="flex items-center gap-1.5 flex-1 justify-center min-w-0 max-w-full overflow-x-auto">
+              <button
+                type="button"
+                onClick={() => handlePageChange(currentPage - 1)}
+                disabled={currentPage === 1}
+                className="px-2 py-2 rounded-lg text-xs font-bold text-gray-400 hover:text-white hover:bg-card-dark transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-1 shrink-0"
+              >
+                <span className="material-symbols-outlined text-sm">chevron_left</span>
+              </button>
+
+              {/* Previous pages */}
+              {showPrevPages && (
+                <>
+                  <button
+                    type="button"
+                    onClick={() => handlePageChange(1)}
+                    className="px-2.5 py-2 rounded-lg text-xs font-bold text-gray-400 hover:text-white hover:bg-card-dark transition-all shrink-0"
+                  >
+                    1
+                  </button>
+                  {currentPage > 4 && <span className="text-gray-500 text-xs shrink-0">...</span>}
+                  <button
+                    type="button"
+                    onClick={() => handlePageChange(currentPage - 1)}
+                    className="px-2.5 py-2 rounded-lg text-xs font-bold text-gray-400 hover:text-white hover:bg-card-dark transition-all shrink-0"
+                  >
+                    {currentPage - 1}
+                  </button>
+                </>
+              )}
+
+              {/* Current page - editable */}
+              {editingPage ? (
+                <input
+                  type="number"
+                  min="1"
+                  max={totalQuestions}
+                  value={pageInput}
+                  onChange={(e) => setPageInput(e.target.value)}
+                  onKeyDown={handlePageInputKeyDown}
+                  onBlur={() => {
+                    handlePageChange(pageInput)
+                  }}
+                  className="w-12 px-1 py-2 rounded-lg text-xs font-bold text-center bg-card-dark border border-primary text-primary focus:outline-none focus:ring-2 focus:ring-primary shrink-0"
+                  autoFocus
+                />
+              ) : (
+                <button
+                  type="button"
+                  onClick={startEditingPage}
+                  className="px-3 py-2 rounded-lg text-xs font-black bg-primary text-white hover:brightness-110 transition-all min-w-[2.5rem] shrink-0"
+                >
+                  {currentPage}
+                </button>
+              )}
+
+              {/* Next pages */}
+              {showNextPages && (
+                <>
+                  <button
+                    type="button"
+                    onClick={() => handlePageChange(currentPage + 1)}
+                    className="px-2.5 py-2 rounded-lg text-xs font-bold text-gray-400 hover:text-white hover:bg-card-dark transition-all shrink-0"
+                  >
+                    {currentPage + 1}
+                  </button>
+                  {currentPage < totalQuestions - 3 && <span className="text-gray-500 text-xs shrink-0">...</span>}
+                  <button
+                    type="button"
+                    onClick={() => handlePageChange(totalQuestions)}
+                    className="px-2.5 py-2 rounded-lg text-xs font-bold text-gray-400 hover:text-white hover:bg-card-dark transition-all shrink-0"
+                  >
+                    {totalQuestions}
+                  </button>
+                </>
+              )}
+
+              <span className="text-gray-500 text-xs mx-1 shrink-0">/ {totalQuestions}</span>
+
+              <button
+                type="button"
+                onClick={() => handlePageChange(currentPage + 1)}
+                disabled={currentPage === totalQuestions}
+                className="px-2 py-2 rounded-lg text-xs font-bold text-gray-400 hover:text-white hover:bg-card-dark transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-1 shrink-0"
+              >
+                <span className="material-symbols-outlined text-sm">chevron_right</span>
+              </button>
+            </div>
+
+            <div className="flex gap-2 shrink-0 items-center flex-wrap">
+              {saveDraftMessage && (
+                <span className="text-xs text-emerald-400">{saveDraftMessage}</span>
+              )}
+              <button
+                type="button"
+                onClick={handleSaveDraft}
+                className="px-4 py-2 rounded-xl text-xs font-bold border border-border-dark text-gray-400 hover:bg-card-dark hover:text-white transition-all whitespace-nowrap"
+              >
+                {t('listeningLesson.saveDraft')}
+              </button>
+              {currentQuestion < totalQuestions - 1 ? (
+                <button
+                  type="button"
+                  onClick={handleNext}
+                  className="px-5 py-2 rounded-xl text-xs font-bold bg-primary text-white hover:brightness-110 shadow-lg shadow-primary/20 transition-all flex items-center gap-2 whitespace-nowrap"
+                >
+                  {t('listeningLesson.next')} <span className="material-symbols-outlined text-sm">arrow_forward</span>
+                </button>
+              ) : (
+                <button
+                  type="button"
+                  className="px-5 py-2 rounded-xl text-xs font-bold bg-primary text-white hover:brightness-110 shadow-lg shadow-primary/20 transition-all whitespace-nowrap"
+                >
+                  {t('listeningLesson.submit')}
+                </button>
+              )}
             </div>
           </div>
         </div>
       </div>
 
-      {/* Right sidebar */}
-      <aside className="col-span-12 lg:col-span-3 space-y-6">
-        <div className="bg-card-dark rounded-2xl p-5 border border-border-dark">
-          <div className="flex items-center justify-between mb-4">
-            <h3 className="font-bold flex items-center gap-2 uppercase tracking-wider text-xs text-white">
-              <span className="material-symbols-outlined text-primary text-xl">style</span>
-              Key Vocabulary
-            </h3>
-            <span className="text-[10px] font-black text-primary px-2 py-0.5 bg-primary/10 rounded">{mockVocabCard.progress}</span>
+      {/* Right Sidebar */}
+      <aside className="col-span-12 lg:col-span-3 space-y-6 overflow-y-auto custom-scrollbar pr-2 pb-6">
+        {/* Vocabulary Card */}
+        {vocabularyList.length > 0 && (
+        <div className="bg-card-dark rounded-2xl border border-border-dark shadow-xl overflow-hidden group">
+          <div className="p-4 bg-background-dark border-b border-border-dark flex justify-between items-center">
+            <h3 className="font-bold text-xs uppercase tracking-wider text-gray-400">{t('listeningLesson.vocabHeard')}</h3>
+            <span className="text-[10px] bg-emerald-500/20 text-emerald-400 px-2 py-0.5 rounded-full font-bold">
+              {Math.min(vocabIndex + 1, vocabularyList.length)} / {vocabularyList.length}
+            </span>
           </div>
-          <div className="space-y-4">
-            <div className="p-5 bg-gray-800/80 rounded-2xl border-2 border-primary/20 relative group cursor-pointer hover:border-primary transition-all">
-              <div className="mb-3">
-                <span className="text-[10px] font-black text-primary uppercase tracking-widest">Active Word</span>
-                <h4 className="text-xl font-black text-white">{mockVocabCard.word}</h4>
-                <p className="text-[11px] text-gray-500 italic font-medium">{mockVocabCard.phonetic}</p>
-              </div>
-              <div className="pt-3 border-t border-gray-600">
-                <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Meaning</span>
-                <p className="text-sm leading-relaxed text-gray-300 mt-1">{mockVocabCard.meaning}</p>
-              </div>
-              <button type="button" className="absolute top-4 right-4 text-gray-400 hover:text-primary transition-colors">
-                <span className="material-symbols-outlined text-lg">volume_up</span>
-              </button>
-            </div>
-            <div className="flex justify-center gap-3">
-              <button type="button" className="w-10 h-10 rounded-xl bg-gray-700 flex items-center justify-center text-gray-400 hover:bg-primary hover:text-white transition-all">
+          <div className="p-5">
+            <div className="flex items-center justify-between gap-2 mb-4">
+              <button
+                type="button"
+                onClick={() => setVocabIndex((i) => Math.max(0, i - 1))}
+                disabled={vocabIndex === 0}
+                className="p-2 rounded-lg bg-background-dark border border-border-dark text-gray-400 hover:text-white hover:bg-white/5 disabled:opacity-40 disabled:cursor-not-allowed transition-all"
+                title={t('listeningLesson.prevWord')}
+              >
                 <span className="material-symbols-outlined">chevron_left</span>
               </button>
-              <button type="button" className="w-10 h-10 rounded-xl bg-gray-700 flex items-center justify-center text-gray-400 hover:bg-primary hover:text-white transition-all">
+              <div className="flex-1 text-center min-w-0">
+                <h4 className="text-lg font-black text-primary truncate" title={vocabularyList[vocabIndex]?.word}>
+                  {vocabularyList[vocabIndex]?.word || '—'}
+                </h4>
+                <span className="text-[10px] font-medium text-gray-400">{vocabularyList[vocabIndex]?.phonetic || ''}</span>
+              </div>
+              <button
+                type="button"
+                onClick={() => setVocabIndex((i) => Math.min(vocabularyList.length - 1, i + 1))}
+                disabled={vocabIndex >= vocabularyList.length - 1}
+                className="p-2 rounded-lg bg-background-dark border border-border-dark text-gray-400 hover:text-white hover:bg-white/5 disabled:opacity-40 disabled:cursor-not-allowed transition-all"
+                title={t('listeningLesson.nextWord')}
+              >
                 <span className="material-symbols-outlined">chevron_right</span>
+              </button>
+            </div>
+            <div className="space-y-4">
+              <div>
+                <span className="block text-[10px] font-bold text-gray-400 uppercase mb-1">{t('listeningLesson.meaning')}</span>
+                <p className="text-sm font-medium text-white">{vocabularyList[vocabIndex]?.meaning || vocabularyList[vocabIndex]?.meaningVi || '—'}</p>
+              </div>
+            </div>
+            <div className="flex gap-2 mt-5">
+              <button
+                type="button"
+                className="flex-1 py-2 rounded-lg bg-background-dark border border-border-dark text-[10px] font-bold hover:bg-border-dark transition-colors"
+              >
+                {t('listeningLesson.known')}
+              </button>
+              <button
+                type="button"
+                className="flex-1 py-2 rounded-lg bg-primary text-white text-[10px] font-bold hover:brightness-110 transition-colors shadow-md"
+              >
+                {t('listeningLesson.saveFlashcard')}
               </button>
             </div>
           </div>
         </div>
+        )}
 
-        <div className="bg-card-dark rounded-2xl p-5 border border-border-dark">
-          <h3 className="flex items-center gap-2 font-bold mb-4 uppercase tracking-wider text-xs text-white">
-            <span className="material-symbols-outlined text-orange-400">emoji_events</span>
-            Weekly Leaderboard
-          </h3>
-          <div className="space-y-3">
-            {mockLessonLeaderboard.map((user) => (
+        {/* Leaderboard Card */}
+        <div className="bg-card-dark rounded-2xl p-5 border border-border-dark shadow-xl">
+          <div className="flex items-center justify-between mb-5">
+            <h3 className="font-bold text-sm text-white">{t('listeningLesson.leaderboardTitle')}</h3>
+            <div className="flex items-center gap-1">
+              <span className="text-[10px] font-bold text-emerald-400">GLOBAL</span>
+              <span className="material-symbols-outlined text-yellow-500 text-sm">emoji_events</span>
+            </div>
+          </div>
+          <div className="space-y-4">
+            {leaderboard.map((user) => (
               <div
                 key={user.rank}
-                className={`flex items-center justify-between p-3 rounded-xl transition-colors ${
-                  user.rank === 1 ? 'bg-amber-500/10 border border-amber-500/20' : 'hover:bg-gray-800/50'
-                }`}
+                className="flex items-center justify-between group p-2 rounded-xl hover:bg-background-dark transition-all border border-transparent hover:border-border-dark"
               >
                 <div className="flex items-center gap-3">
+                  <div
+                    className={`w-5 text-center font-black text-xs ${
+                      user.rank === 1 ? 'text-yellow-500' : user.rank === 2 ? 'text-slate-400' : 'text-orange-400'
+                    }`}
+                  >
+                    {user.rank}
+                  </div>
                   <div className="relative">
-                    {user.rank === 1 ? (
-                      <img
-                        alt=""
-                        className="w-10 h-10 rounded-full object-cover border-2 border-amber-500"
-                        src="https://lh3.googleusercontent.com/aida-public/AB6AXuAFxvwb_V3cX3qo4jc2iqwsYSF58Vogud4GgCWmY5oZL7aSDNmcZAQRmhwE-fhejXtlKlavTY7CIjJ0XXKit2ehZu9b1_kAouSONwgAptSXZ7blu5peijn0CjdxvTr-40H9-C1nHQykK6V7Jmmw2OMtfa1M2_PO5IOCq5e22soosJ-AymJmioYxosh4m99GleDCRre38H5ytORBXDSSDZ27CvuS0S3-rRH54SPkbUgtlUQQMBu4EcAK7GPWF7YakgrFJoDs6KbwCndu"
-                      />
-                    ) : user.rank === 2 ? (
-                      <img
-                        alt=""
-                        className="w-10 h-10 rounded-full object-cover border-2 border-gray-500"
-                        src="https://lh3.googleusercontent.com/aida-public/AB6AXuBSt41woVTSo2psosnpS1Mz_cgGlnsOONUZ4kmFSFq_U0T3_YUNnStlUS-t4Og1djYwbWhRQ_X2VWcPoyd8NdZral0xdAh9FFFGBa3jQUMv3PEUHU3nLdfNNDYZRbHnOAWZ8BlDpdXm3DuZW4M-ZISpEzle1tS6AnBvMRJ4wELd4NQbqYRHxNktZZ3LMnpl6wPY18D6nk1C2-N_W-fd7_E1WkdXsV5We2wkWmcWZ32FdhDViSSFBYs7MaqHbsz_RpGF4GuhAS55uXjD"
-                      />
-                    ) : (
-                      <div className="w-10 h-10 rounded-full bg-primary/20 flex items-center justify-center text-primary font-bold border-2 border-orange-400/50">
-                        JD
+                    <img
+                      alt={user.name}
+                      className={`w-9 h-9 rounded-full object-cover ${
+                        user.rank === 1 ? 'ring-2 ring-yellow-500/30' : 'border border-border-dark'
+                      }`}
+                      src="https://lh3.googleusercontent.com/aida-public/AB6AXuCoJVZd231Jj0nw9lqgafh4jkbW38dyp3wO7CD2w6ZgqlP4engdDDADo_ShgW2zb967D4cmMcs3McvEtFOp1PJtMbsgWDmx-iMw2emE6xCW7b3wEWTHwfXNoresSNSjToIirGen0V_IOVJDM8qR1cjUSxBytGiii5OWXxaivUDo5YVrPPZweVOkwew7tqhhmaRv-crwkmUkwhIWb-VSB_25TwEKRw1oru0tL2M3b528uhP-Il2eUmJ7ZIzw8fSRpkb5GHqvwqstCV4"
+                    />
+                    {user.rank === 1 && (
+                      <div className="absolute -top-1 -right-1 w-3.5 h-3.5 bg-yellow-500 rounded-full flex items-center justify-center border border-card-dark">
+                        <span className="material-symbols-outlined text-[8px] text-white fill-icon">grade</span>
                       </div>
                     )}
-                    <span
-                      className={`absolute -top-1 -left-1 w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-black border-2 border-card-dark ${
-                        user.rank === 1 ? 'bg-amber-500 text-white' : user.rank === 2 ? 'bg-gray-500 text-white' : 'bg-orange-400 text-white'
-                      }`}
-                    >
-                      {user.rank}
-                    </span>
                   </div>
                   <div>
-                    <p className="text-sm font-bold text-white">{user.name}</p>
-                    <p className={`text-[10px] font-bold ${user.rank === 1 ? 'text-amber-500' : 'text-gray-500'}`}>{user.xp}</p>
+                    <p className="text-xs font-bold text-white">{user.name}</p>
+                    <p className={`text-[9px] ${user.rank === 1 ? 'text-emerald-400 font-medium' : 'text-gray-400'}`}>
+                      {user.rank === 1 ? t('listeningLesson.xpToday') : t('listeningLesson.levelLearner', { level: 20 + user.rank })}
+                    </p>
                   </div>
                 </div>
-                {user.rank === 1 && <span className="material-symbols-outlined text-amber-500 text-xl fill-icon">star</span>}
-                {user.rank === 2 && <span className="text-[10px] font-black text-green-500">+12%</span>}
-                {user.rank === 3 && <span className="text-[10px] font-black text-green-500">+5%</span>}
+                <div className="text-right">
+                  <p className={`text-xs font-black ${user.rank === 1 ? 'text-primary' : 'text-gray-400'}`}>
+                    {user.rank === 1 ? '4,280' : user.rank === 2 ? '3,950' : '3,820'}
+                  </p>
+                  <p className="text-[9px] text-gray-400 uppercase">XP</p>
+                </div>
               </div>
             ))}
           </div>
-          <Link
-            to="/"
-            className="block w-full mt-4 py-2.5 text-xs font-black text-primary hover:bg-primary/10 rounded-xl transition-all border border-transparent hover:border-primary/20 text-center"
+          <button
+            type="button"
+            className="w-full mt-5 py-2 rounded-lg border border-border-dark text-[10px] font-bold text-gray-400 hover:bg-background-dark hover:text-white transition-all uppercase tracking-widest"
           >
-            View Full Rankings
-          </Link>
+            {t('listeningLesson.viewFullLeaderboard')}
+          </button>
         </div>
       </aside>
     </main>

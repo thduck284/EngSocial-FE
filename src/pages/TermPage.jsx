@@ -10,7 +10,7 @@ export function TermPage() {
       <div className="scroll-indicator fixed top-0 left-0 h-1 bg-primary z-[100] w-[30%]" />
       <header className="sticky top-0 z-50 bg-background-dark/80 backdrop-blur-md border-b border-slate-800">
         <div className="max-w-7xl mx-auto px-4 h-20 flex items-center justify-between">
-          <Link to="/" className="flex items-center gap-3 text-primary">
+          <Link to="/home" className="flex items-center gap-3 text-primary">
             <div className="size-10">
               <svg fill="none" viewBox="0 0 48 48" xmlns="http://www.w3.org/2000/svg" className="w-full h-full">
                 <path
