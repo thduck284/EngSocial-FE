@@ -9,8 +9,18 @@ import { DashboardPage } from './pages/DashboardPage'
 import { EnterPage } from './pages/EnterPage'
 import { SkillPracticePage } from './pages/SkillPracticePage'
 import { ListeningLessonPage } from './pages/ListeningLessonPage'
+import { ReadingLessonPage } from './pages/ReadingLessonPage'
+import { WritingLessonPage } from './pages/WritingLessonPage'
 import { ProfilePage } from './pages/ProfilePage'
+import { UserProfilePage } from './pages/UserProfilePage'
+import { LessonsPage } from './pages/LessonsPage'
+import { QuestsPage } from './pages/QuestsPage'
+import { AchievementsPage } from './pages/AchievementsPage'
+import { ManageLessonsPage } from './pages/ManageLessonsPage'
+import { ManageQuestsPage } from './pages/ManageQuestsPage'
+import { SearchPage } from './pages/SearchPage'
 import { DashboardLayout } from './components/layout/DashboardLayout'
+import { RequireModeratorOrAdmin } from './components/layout/RequireModeratorOrAdmin'
 import { GuestOnlyLayout } from './components/layout/GuestOnlyLayout'
 
 function App() {
@@ -28,15 +38,29 @@ function App() {
 
       {/* Các route cần đăng nhập: DashboardLayout dùng useAuth() để redirect */}
       <Route path="/" element={<DashboardLayout />}>
-        <Route index element={<DashboardPage />} />
+        <Route index element={<Navigate to="/home" replace />} />
+        <Route path="home" element={<DashboardPage />} />
+        <Route path="search" element={<SearchPage />} />
         <Route path="enter" element={<EnterPage />} />
         <Route path="skills" element={<Navigate to="/skills/reading" replace />} />
         <Route path="skills/:skill" element={<SkillPracticePage />} />
         <Route path="lesson/listening/:id" element={<ListeningLessonPage />} />
+        <Route path="lesson/reading/:id" element={<ReadingLessonPage />} />
+        <Route path="lesson/writing/:id" element={<WritingLessonPage />} />
+        <Route path="lessons" element={<LessonsPage />} />
+        <Route path="manage/lessons" element={<RequireModeratorOrAdmin><ManageLessonsPage /></RequireModeratorOrAdmin>} />
+        <Route path="manage/lessons/:id" element={<RequireModeratorOrAdmin><ManageLessonsPage /></RequireModeratorOrAdmin>} />
+        <Route path="manage/skills" element={<RequireModeratorOrAdmin><ManageLessonsPage /></RequireModeratorOrAdmin>} />
+        <Route path="manage/skills/:id" element={<RequireModeratorOrAdmin><ManageLessonsPage /></RequireModeratorOrAdmin>} />
+        <Route path="manage/quests" element={<RequireModeratorOrAdmin><ManageQuestsPage /></RequireModeratorOrAdmin>} />
+        <Route path="manage/quests/:id" element={<RequireModeratorOrAdmin><ManageQuestsPage /></RequireModeratorOrAdmin>} />
+        <Route path="quests" element={<QuestsPage />} />
+        <Route path="achievements" element={<AchievementsPage />} />
+        <Route path="profile/:userId" element={<UserProfilePage />} />
         <Route path="profile" element={<ProfilePage />} />
       </Route>
 
-      <Route path="*" element={<Navigate to="/" replace />} />
+      <Route path="*" element={<Navigate to="/home" replace />} />
       </Routes>
     </AuthProvider>
   )
