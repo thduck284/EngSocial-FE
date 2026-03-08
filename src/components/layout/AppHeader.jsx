@@ -1,10 +1,14 @@
 import { Link, useLocation, useNavigate, useSearchParams } from 'react-router-dom'
-import { useRef, useState, useEffect } from 'react'
+import { useRef, useState, useEffect, useCallback } from 'react'
 import { useTranslation } from 'react-i18next'
+import { io } from 'socket.io-client'
 import { useAuth } from '../../context/AuthContext'
 import { NotificationPopover } from '../ui/NotificationPopover'
 import { LanguageSwitcher } from '../ui/LanguageSwitcher'
 import { NAV_ITEMS, ROUTES } from '../../constants'
+import { API_BASE_URL } from '../../constants/api'
+import { getAuthToken } from '../../utils/auth'
+import { notificationsService, conversationService } from '../../services'
 
 const LogoIcon = () => (
   <div className="size-8">
@@ -22,14 +26,72 @@ export function AppHeader() {
   const navigate = useNavigate()
   const [searchParams] = useSearchParams()
   const { t } = useTranslation()
-  const { user, role, isModerator, isAdmin, logout } = useAuth()
+  const { user, logout } = useAuth()
   const avatarUrl = user?.avatar || 'https://ui-avatars.com/api/?name=' + encodeURIComponent(user?.name || 'User') + '&background=13b6ec&color=fff'
-  const roleBadge = isAdmin ? 'Admin' : isModerator ? 'Moderator' : null
   const [notifOpen, setNotifOpen] = useState(false)
   const [avatarOpen, setAvatarOpen] = useState(false)
+  const [unreadCount, setUnreadCount] = useState(0)
+  const [messagesUnreadCount, setMessagesUnreadCount] = useState(0)
   const [searchValue, setSearchValue] = useState(() => (location.pathname === ROUTES.SEARCH ? searchParams.get('q') || '' : ''))
   const notifButtonRef = useRef(null)
   const avatarRef = useRef(null)
+
+  const fetchUnreadCount = useCallback(() => {
+    if (!user) return
+    notificationsService
+      .getUnreadCount()
+      .then((res) => setUnreadCount(res?.data?.unreadCount ?? 0))
+      .catch(() => setUnreadCount(0))
+  }, [user])
+
+  const fetchMessagesUnreadCount = useCallback(() => {
+    if (!user) return
+    conversationService
+      .getUnreadTotal()
+      .then((res) => setMessagesUnreadCount(res?.data?.total ?? 0))
+      .catch(() => setMessagesUnreadCount(0))
+  }, [user])
+
+  useEffect(() => {
+    fetchUnreadCount()
+  }, [fetchUnreadCount])
+
+  useEffect(() => {
+    fetchMessagesUnreadCount()
+  }, [fetchMessagesUnreadCount])
+
+  const isOnMessagesSection = location.pathname === ROUTES.MESSAGES || location.pathname.startsWith(ROUTES.MESSAGES + '/')
+
+  useEffect(() => {
+    if (isOnMessagesSection) fetchMessagesUnreadCount()
+  }, [isOnMessagesSection, fetchMessagesUnreadCount])
+
+  useEffect(() => {
+    const onFocus = () => { if (isOnMessagesSection) fetchMessagesUnreadCount() }
+    window.addEventListener('focus', onFocus)
+    return () => window.removeEventListener('focus', onFocus)
+  }, [isOnMessagesSection, fetchMessagesUnreadCount])
+
+  useEffect(() => {
+    if (!user) return
+    const token = getAuthToken()
+    if (!token) return
+    const socketUrl = API_BASE_URL.replace(/\/api\/?$/, '')
+    const socket = io(socketUrl, {
+      auth: { token },
+      transports: ['websocket', 'polling'],
+    })
+    socket.on('notification', () => {
+      setUnreadCount((prev) => prev + 1)
+    })
+    socket.on('conversation:message', () => {
+      fetchMessagesUnreadCount()
+    })
+    socket.on('conversation:read', () => {
+      fetchMessagesUnreadCount()
+    })
+    return () => socket.disconnect()
+  }, [user, fetchMessagesUnreadCount])
 
   useEffect(() => {
     if (location.pathname === ROUTES.SEARCH) {
@@ -82,8 +144,8 @@ export function AppHeader() {
                 to={to}
                 className={`font-medium text-sm transition-colors whitespace-nowrap ${
                   location.pathname === to ||
-                  (to === ROUTES.SKILLS.READING && (location.pathname.startsWith('/skills') || location.pathname === ROUTES.ENTER)) ||
-                  (to.startsWith('/skills') && to !== ROUTES.SKILLS.READING && location.pathname.startsWith('/skills'))
+                  (to === ROUTES.LESSON && (location.pathname === '/lesson' || location.pathname.startsWith('/lesson/') || location.pathname === '/lessons')) ||
+                  (to === ROUTES.PRACTICE && (location.pathname === '/practice' || location.pathname.startsWith('/practice/') || location.pathname.startsWith('/skills')))
                     ? 'text-primary font-semibold border-b-2 border-primary pb-1'
                     : 'text-gray-400 hover:text-primary'
                 }`}
@@ -101,36 +163,41 @@ export function AppHeader() {
                 ref={notifButtonRef}
                 type="button"
                 onClick={() => setNotifOpen((o) => !o)}
-                className="w-10 h-10 flex items-center justify-center rounded-xl bg-card-dark text-gray-300 hover:bg-gray-700 hover:text-primary transition-all border border-border-dark"
+                className="relative w-10 h-10 flex items-center justify-center rounded-xl bg-card-dark text-gray-300 hover:bg-gray-700 hover:text-primary transition-all border border-border-dark"
               >
                 <span className="material-symbols-outlined">notifications</span>
-                <span className="absolute top-2 right-2.5 size-2 bg-red-500 rounded-full border-2 border-background-dark" />
+                {unreadCount > 0 && (
+                  <span className="absolute -top-0.5 -right-0.5 min-w-[18px] h-[18px] px-1 flex items-center justify-center bg-red-500 text-white text-[10px] font-bold rounded-full border-2 border-background-dark">
+                    {unreadCount > 99 ? '99+' : unreadCount}
+                  </span>
+                )}
               </button>
               <NotificationPopover
                 open={notifOpen}
                 onClose={() => setNotifOpen(false)}
                 anchorRef={notifButtonRef}
+                unreadCount={unreadCount}
+                onMarkAllRead={fetchUnreadCount}
+                onUnreadChange={fetchUnreadCount}
               />
             </div>
-            <button
-              type="button"
-              className="relative w-10 h-10 flex items-center justify-center rounded-xl bg-card-dark text-gray-300 hover:bg-gray-700 hover:text-primary transition-all border border-border-dark"
+            <Link
+              to={ROUTES.MESSAGES}
+              className={`relative w-10 h-10 flex items-center justify-center rounded-xl border transition-all shrink-0 ${
+                isOnMessagesSection
+                  ? 'bg-primary/20 text-primary border-primary'
+                  : 'bg-card-dark text-gray-300 hover:bg-gray-700 hover:text-primary border-border-dark'
+              }`}
             >
               <span className="material-symbols-outlined">chat_bubble</span>
-              <span className="absolute top-2 right-2.5 size-2 bg-red-500 rounded-full border-2 border-background-dark" />
-            </button>
+              {messagesUnreadCount > 0 && (
+                <span className="absolute -top-0.5 -right-0.5 min-w-[18px] h-[18px] px-1 flex items-center justify-center bg-red-500 text-white text-[10px] font-bold rounded-full border-2 border-background-dark">
+                  {messagesUnreadCount > 99 ? '99+' : messagesUnreadCount}
+                </span>
+              )}
+            </Link>
           </div>
           <div className="relative flex items-center gap-2" ref={avatarRef}>
-            {roleBadge && (
-              <span
-                className={`text-[10px] font-bold px-2 py-0.5 rounded-full border ${
-                  isAdmin ? 'bg-amber-500/20 text-amber-400 border-amber-500/40' : 'bg-emerald-500/20 text-emerald-400 border-emerald-500/40'
-                }`}
-                title={roleBadge}
-              >
-                {roleBadge}
-              </span>
-            )}
             <button
               type="button"
               onClick={(e) => { e.stopPropagation(); setAvatarOpen((o) => !o) }}

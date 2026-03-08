@@ -72,7 +72,7 @@ export function ReadingLessonPage() {
       <div className="flex flex-col items-center justify-center min-h-[60vh] text-gray-400">
         <span className="material-symbols-outlined text-5xl mb-4">error</span>
         <p>{t('readingLesson.loadError')}</p>
-        <Link to="/lessons?skill=reading" className="mt-4 text-primary hover:underline">{t('readingLesson.back')}</Link>
+        <Link to="/lesson?skill=reading" className="mt-4 text-primary hover:underline">{t('readingLesson.back')}</Link>
       </div>
     )
   }

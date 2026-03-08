@@ -83,7 +83,7 @@ export function ListeningLessonPage() {
       <div className="flex flex-col items-center justify-center min-h-[60vh] text-gray-400">
         <span className="material-symbols-outlined text-5xl mb-4">error</span>
         <p>{t('listeningLesson.loadError')}</p>
-        <Link to="/lessons?skill=listening" className="mt-4 text-primary hover:underline">{t('listeningLesson.back')}</Link>
+        <Link to="/lesson?skill=listening" className="mt-4 text-primary hover:underline">{t('listeningLesson.back')}</Link>
       </div>
     )
   }

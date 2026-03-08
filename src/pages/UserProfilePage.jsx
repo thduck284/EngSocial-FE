@@ -1,43 +1,39 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback, useRef } from 'react'
 import { Link, useParams, useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { useAuth } from '../context/AuthContext'
 import { ROUTES } from '../constants'
 import { DEFAULT_AVATAR } from '../constants/ui'
+import { userService, friendsService } from '../services'
 
-// Mock data — thay bằng API getUserProfile(userId) khi có backend
-const mockUserProfile = (userId) => ({
-  id: userId,
-  name: 'Nguyen Minh Anh',
-  avatar: 'https://lh3.googleusercontent.com/aida-public/AB6AXuBPFDojZwagKqQY1FIAwaWUEHBjDloHyeR2NPmd-2M4bykLSIrfH9cr-_TLqvNZJQgwYS5Pg6ApzdFg39A_B3TKk9CiBTYXdnUkNJhn5d5602repqMAuJclOE6QtKH_GcdVgP6_t53bGJKBRKNTNcmT5FnrdlkKuwENYkQgaXWilnEvmG9x9atJBcGHhGESdlaOuUkPC0YMO6Itu34qlXjrl7f59KJtRoC35ZINeX4EUFm8o2te0Ch6NVGMu5aASYD-mT-w3SyZgQ',
-  level: 18,
-  xp: 5200,
-  xpMax: 7000,
-  xpPercent: 75,
-  mutualFriendsCount: 20,
-  friendsCount: 150,
-  friendStatus: 'none', // 'none' | 'pending' | 'connected'
-  bio: 'Passionate English learner and IELTS 8.0 achiever. Sharing tips and resources for everyone!',
-  joinedAt: 'Tháng 3, 2023',
-  skills: [
-    { key: 'reading', labelKey: 'skills.reading', level: 20, percent: 100 },
-    { key: 'listening', labelKey: 'skills.listening', level: 18, percent: 85 },
-    { key: 'writing', labelKey: 'skills.writing', level: 15, percent: 60 },
-  ],
-  achievements: [
-    { id: '1', icon: 'wb_sunny', title: 'Early Bird', boxClass: 'bg-yellow-500/10 border-yellow-500/20', iconClass: 'text-yellow-500' },
-    { id: '2', icon: 'local_fire_department', title: 'Top Learner', boxClass: 'bg-primary/10 border-primary/20', iconClass: 'text-primary' },
-    { id: '3', icon: 'groups', title: 'Social Butterfly', boxClass: 'bg-pink-500/10 border-pink-500/20', iconClass: 'text-pink-500' },
-  ],
-  friends: [
-    { id: 'f1', name: 'Hoàng Nam', avatar: 'https://lh3.googleusercontent.com/aida-public/AB6AXuCLPmCstom4Q_DC7ORJyWerqypR48cPmsuQ9D6yybvQdf8CpLlqwC6Saq3ZyOHlQ91M1VPJWi3vZKB0Wl1uMAu1ER9ee43upM3d9zEUsnTUnELxs2qypiUP0EHyzcB32LUrhhXzVslcHifCCk7JgHY_CytPMFn3xsyjKCjcxKyi6i7jUzzUqrA0TNtyf1TvNds11hCOvflBJn8hSOupRTy9Sfv965lMF-V936IzVDJ7OCK8jY8ae4V4sLfJc795UFXqBRR29RRZaQ' },
-    { id: 'f2', name: 'Lê Thu', avatar: 'https://lh3.googleusercontent.com/aida-public/AB6AXuDuk8UkytuiASkc423A1ZQV45hJZo9j2NoVxZwRr_GHKabHuONpMAxurp3e_6302RjSrvhwLVjn4WKJ8E2THPpXhlWCJfSqfsUMxS3IAQ2Eog5u-Z8OO9luzgmS14yQFRhxrdnev-e5yIi9SaSzBLvisJqGCNBvhuD_Gjz-vMwt0MM1HY9l7sCZxd0Gvioa6AUJuHOOCABqy2BglxhMJ7QSqAAPqguFUtUAI4pQE3LlU1XtamhC1incGZ-UYEBwOIUZqYRk3n26vw' },
-    { id: 'f3', name: 'Minh Tuấn', avatar: 'https://lh3.googleusercontent.com/aida-public/AB6AXuBEqZrNBtF9O6FvBBs08plk0nGW4s9qoWFPYPknt0BN2aV1Mdw4Rwas4VVzNEy5OUh-2kfJUc08EjfepW5Hh6XLya7x9aMYo7ixGeV3-mPgo87T-knFjjRQ-g-2tyr9enw2Zksbl-29q5RzvFkxP26UAxgi722uSf72y_Ta24zvAKBwLQT7UAm7ETKKZwDdBFmO88HzQfgjlErA012BJYL6tIy_-nOki5OOApNvPdmWe5trTnM05jd5V2hJ7THsd-F_MMq7v2wYKA' },
-    { id: 'f4', name: 'Thanh Hà', avatar: 'https://lh3.googleusercontent.com/aida-public/AB6AXuCJbYDKFBc4nkrfyP6Se_rtPt0A61wpoxLvh4x1lEbCTrFeNcSuAZWztOztyweognDh6jIIwoi4tNgoqJ2j1ngAt8BaQxMFVG3gu1piPcC8aOOn3JEn0ZnHIg9WCEYrwPgNpdTNM8UnTbCiskTwAhN0Sxk_yJWtSH7inVeYuJKQgQl8v8Juhw5Y4sPkdMej-WjSCoTvu9vtnMqWKs4m3jTKdA73ML77NOIG6RYHzKRfvYEVSCBxRmJaUbaE9Dw_-MoFKRhPzFJE3A' },
-    { id: 'f5', name: 'Văn Hùng', avatar: 'https://lh3.googleusercontent.com/aida-public/AB6AXuAqHi65dshd96_sLjWeQZeA0rOnqpLZasWz0VBMLxrKjr3XxoR1XOiivH9efmaBegAq8mKIJ5lFag-lhKuRx_SFTGFl4xJxdIin2s-Qaph6cfsbJJ0noD6WP4SRM4URQKByntERNWxPa56fkJluosnIxeZ1hWIS4hRLga4PeXTftWhX6nmGQrPbOifN0WgjcJx-xNE9m9VYajqR9uDQjAIuRXPi4lRsd1TIg1nyM0udBxt8w5gXsOFT5OqAD8en0pC1RxWLRRT7-A' },
-    { id: 'f6', name: 'Mai Anh', avatar: 'https://lh3.googleusercontent.com/aida-public/AB6AXuBBbMUG47faHUrppTHUU1hkIjz-7yi_fcK4Ek4Wwf8NMqxHVUloMGtdHjEcEy1OGVfODbtMz8kxeuDlaMpTml4_TJJZ3j8mzizudEqezwHoweUiJAHYWTPg7ljQGGMdBAVD_sK6j2TIjD8Uwvjr42eyF-nIACrlZ86Zsf0UdrgYC2cmOhEYHUwrBh6QykDD_lCYpcymJhde8N_gYaaRhBC3J-h6Zv07xRs9Vf-cSz76-xUtnpQK-ZLTefARipACkZ1JKxjAJVQ6wA' },
-  ],
-})
+function formatJoinedAt(createdAt) {
+  if (!createdAt) return ''
+  const d = new Date(createdAt)
+  return d.toLocaleDateString('vi-VN', { month: 'long', year: 'numeric' })
+}
+
+function mapApiProfileToState(data) {
+  if (!data) return null
+  return {
+    id: data.id,
+    name: data.name,
+    avatar: data.avatar,
+    bio: data.bio,
+    level: data.level ?? 1,
+    xp: data.xp ?? 0,
+    totalXp: data.totalXp ?? 0,
+    xpPercent: 0,
+    mutualFriendsCount: data.mutualFriendsCount ?? 0,
+    friendsCount: data.friendsCount ?? 0,
+    friendStatus: data.friendStatus ?? 'none',
+    friendshipId: data.friendshipId,
+    pendingSentByMe: data.pendingSentByMe,
+    joinedAt: formatJoinedAt(data.createdAt),
+    skills: [],
+    achievements: [],
+    friends: Array.isArray(data.friends) ? data.friends : [],
+  }
+}
 
 export function UserProfilePage() {
   const { t } = useTranslation()
@@ -48,6 +44,73 @@ export function UserProfilePage() {
   const [activeTab, setActiveTab] = useState('about')
   const [profile, setProfile] = useState(null)
   const [loading, setLoading] = useState(true)
+  const [friendActionLoading, setFriendActionLoading] = useState(false)
+  const [friendsMenuOpen, setFriendsMenuOpen] = useState(false)
+  const friendsMenuRef = useRef(null)
+
+  const refetchProfile = useCallback(() => {
+    if (!userId) return
+    userService.getUserProfile(userId).then((res) => setProfile(mapApiProfileToState(res?.data))).catch(() => setProfile(null))
+  }, [userId])
+
+  const handleAddFriend = useCallback(() => {
+    if (!userId || friendActionLoading) return
+    setFriendActionLoading(true)
+    friendsService
+      .sendRequest(userId)
+      .then((res) => {
+        const friendship = res?.data?.friendship
+        setProfile((prev) =>
+          prev
+            ? {
+                ...prev,
+                friendStatus: 'pending',
+                pendingSentByMe: true,
+                friendshipId: friendship?.id ?? prev.friendshipId,
+              }
+            : prev
+        )
+      })
+      .catch(() => refetchProfile())
+      .finally(() => setFriendActionLoading(false))
+  }, [userId, friendActionLoading, refetchProfile])
+
+  const handleCancelRequest = useCallback(() => {
+    const friendshipId = profile?.friendshipId
+    if (!friendshipId || friendActionLoading) return
+    setFriendActionLoading(true)
+    friendsService
+      .cancelRequest(friendshipId)
+      .then(() => {
+        setProfile((prev) =>
+          prev ? { ...prev, friendStatus: 'none', friendshipId: null, pendingSentByMe: false } : prev
+        )
+      })
+      .catch(() => refetchProfile())
+      .finally(() => setFriendActionLoading(false))
+  }, [profile?.friendshipId, friendActionLoading, refetchProfile])
+
+  const handleRemoveFriend = useCallback(() => {
+    if (!userId || friendActionLoading) return
+    setFriendActionLoading(true)
+    setFriendsMenuOpen(false)
+    friendsService
+      .removeFriend(userId)
+      .then(() => {
+        setProfile((prev) => (prev ? { ...prev, friendStatus: 'none', friendshipId: null, pendingSentByMe: false } : prev))
+      })
+      .catch(() => refetchProfile())
+      .finally(() => setFriendActionLoading(false))
+  }, [userId, friendActionLoading, refetchProfile])
+
+  useEffect(() => {
+    if (!friendsMenuOpen) return
+    const handleClickOutside = (e) => {
+      if (friendsMenuRef.current && !friendsMenuRef.current.contains(e.target)) setFriendsMenuOpen(false)
+    }
+    document.addEventListener('click', handleClickOutside)
+    return () => document.removeEventListener('click', handleClickOutside)
+  }, [friendsMenuOpen])
 
   useEffect(() => {
     if (!userId) {
@@ -59,10 +122,10 @@ export function UserProfilePage() {
       navigate(ROUTES.PROFILE, { replace: true })
       return
     }
-    // TODO: gọi API userService.getUserProfile(userId)
     setLoading(true)
-    Promise.resolve(mockUserProfile(userId))
-      .then((data) => setProfile(data))
+    userService
+      .getUserProfile(userId)
+      .then((res) => setProfile(mapApiProfileToState(res?.data)))
       .catch(() => setProfile(null))
       .finally(() => setLoading(false))
   }, [userId, currentUser?.id, currentUser?._id, navigate])
@@ -124,22 +187,102 @@ export function UserProfilePage() {
             )}
             <div className="w-full flex flex-col gap-3">
               <div className="flex gap-2">
-                {profile.friendStatus !== 'connected' && (
-                  <button
-                    type="button"
-                    className="flex-1 bg-primary hover:bg-primary/90 text-white py-2.5 rounded-lg font-bold text-sm flex items-center justify-center gap-2"
-                  >
-                    <span className="material-symbols-outlined text-lg">person_add</span>
-                    {profile.friendStatus === 'pending' ? t('userProfile.pendingRequest') : t('userProfile.addFriend')}
-                  </button>
+                {profile.friendStatus === 'connected' && (
+                  <>
+                    <button
+                      type="button"
+                      className="flex-1 bg-primary hover:bg-primary/90 text-white py-2.5 rounded-lg font-bold text-sm flex items-center justify-center gap-2"
+                    >
+                      <span className="material-symbols-outlined text-lg">chat</span>
+                      {t('userProfile.sendMessage')}
+                    </button>
+                    <div className="relative shrink-0" ref={friendsMenuRef}>
+                      <button
+                        type="button"
+                        onClick={() => setFriendsMenuOpen((o) => !o)}
+                        className="w-11 h-[42px] bg-border-dark hover:bg-border-dark/70 text-white rounded-lg font-bold flex items-center justify-center"
+                        aria-expanded={friendsMenuOpen}
+                      >
+                        <span className="material-symbols-outlined">expand_more</span>
+                      </button>
+                      {friendsMenuOpen && (
+                        <div className="absolute right-0 left-0 top-full z-10 mt-1 py-1 rounded-lg border border-border-dark bg-card-dark shadow-xl min-w-[160px]">
+                          <button
+                            type="button"
+                            disabled={friendActionLoading}
+                            onClick={handleRemoveFriend}
+                            className="w-full flex items-center gap-2 px-4 py-2.5 text-sm text-left text-gray-200 hover:bg-white/5 disabled:opacity-60"
+                          >
+                            <span className="material-symbols-outlined text-lg">person_remove</span>
+                            {t('userProfile.removeFriend')}
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => { setFriendsMenuOpen(false) }}
+                            className="w-full flex items-center gap-2 px-4 py-2.5 text-sm text-left text-red-400 hover:bg-red-500/10"
+                          >
+                            <span className="material-symbols-outlined text-lg">block</span>
+                            {t('userProfile.block')}
+                          </button>
+                        </div>
+                      )}
+                    </div>
+                  </>
                 )}
-                <button
-                  type="button"
-                  className="flex-1 bg-border-dark hover:bg-border-dark/70 text-white py-2.5 rounded-lg font-bold text-sm flex items-center justify-center gap-2"
-                >
-                  <span className="material-symbols-outlined text-lg">chat</span>
-                  {t('userProfile.sendMessage')}
-                </button>
+                {profile.friendStatus === 'none' && (
+                  <>
+                    <button
+                      type="button"
+                      disabled={friendActionLoading}
+                      onClick={handleAddFriend}
+                      className="flex-1 bg-primary hover:bg-primary/90 disabled:opacity-60 text-white py-2.5 rounded-lg font-bold text-sm flex items-center justify-center gap-2"
+                    >
+                      {friendActionLoading ? (
+                        <span className="material-symbols-outlined text-lg animate-spin">progress_activity</span>
+                      ) : (
+                        <span className="material-symbols-outlined text-lg">person_add</span>
+                      )}
+                      {t('userProfile.addFriend')}
+                    </button>
+                    <button
+                      type="button"
+                      className="flex-1 bg-border-dark hover:bg-border-dark/70 text-white py-2.5 rounded-lg font-bold text-sm flex items-center justify-center gap-2"
+                    >
+                      <span className="material-symbols-outlined text-lg">chat</span>
+                      {t('userProfile.sendMessage')}
+                    </button>
+                  </>
+                )}
+                {profile.friendStatus === 'pending' && profile.pendingSentByMe && (
+                  <>
+                    <button
+                      type="button"
+                      disabled={friendActionLoading}
+                      onClick={handleCancelRequest}
+                      className="flex-1 bg-amber-600 hover:bg-amber-700 disabled:opacity-60 text-white py-2.5 rounded-lg font-bold text-sm flex items-center justify-center gap-2"
+                    >
+                      {friendActionLoading ? (
+                        <span className="material-symbols-outlined text-lg animate-spin">progress_activity</span>
+                      ) : (
+                        <span className="material-symbols-outlined text-lg">person_remove</span>
+                      )}
+                      {t('userProfile.cancelRequest')}
+                    </button>
+                    <button
+                      type="button"
+                      className="flex-1 bg-border-dark hover:bg-border-dark/70 text-white py-2.5 rounded-lg font-bold text-sm flex items-center justify-center gap-2"
+                    >
+                      <span className="material-symbols-outlined text-lg">chat</span>
+                      {t('userProfile.sendMessage')}
+                    </button>
+                  </>
+                )}
+                {profile.friendStatus === 'pending' && !profile.pendingSentByMe && (
+                  <span className="flex-1 bg-border-dark text-gray-400 py-2.5 rounded-lg font-bold text-sm flex items-center justify-center gap-2 cursor-default">
+                    <span className="material-symbols-outlined text-lg">schedule</span>
+                    {t('userProfile.pendingRequest')}
+                  </span>
+                )}
               </div>
               <button
                 type="button"

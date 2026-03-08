@@ -22,6 +22,7 @@ export const API_ENDPOINTS = {
   // User
   USER: {
     PROFILE: '/user/profile',
+    PROFILE_BY_ID: (userId) => `/user/profile/${userId}`,
     UPDATE_PROFILE: '/user/profile',
     UPLOAD_AVATAR: '/user/avatar',
     CHANGE_PASSWORD: '/user/change-password',
@@ -101,12 +102,34 @@ export const API_ENDPOINTS = {
     COMMENT_POST: (id) => `/community/posts/${id}/comments`,
   },
 
+  // Conversations (chat)
+  CONVERSATIONS: {
+    LIST: '/conversations',
+    UNREAD_TOTAL: '/conversations/unread-total',
+    GET_OR_CREATE_WITH: (userId) => `/conversations/with?with=${encodeURIComponent(userId)}`,
+    MESSAGES: (conversationId) => `/conversations/${conversationId}/messages`,
+    SEND_MESSAGE: (conversationId) => `/conversations/${conversationId}/messages`,
+    UPDATE_MESSAGE: (conversationId, messageId) => `/conversations/${conversationId}/messages/${messageId}`,
+    REACTION: (conversationId, messageId) => `/conversations/${conversationId}/messages/${messageId}/reaction`,
+    DELETE_MESSAGE: (conversationId, messageId) => `/conversations/${conversationId}/messages/${messageId}`,
+    DELETE_ALL_MESSAGES: (conversationId) => `/conversations/${conversationId}/messages/delete-all`,
+    MARK_READ: (conversationId) => `/conversations/${conversationId}/read`,
+    SETTINGS: (conversationId) => `/conversations/${conversationId}/settings`,
+    ATTACHMENT_DOWNLOAD: '/conversations/attachment-download',
+  },
+
   // Friends
   FRIENDS: {
     LIST: '/friends',
+    SEARCH: '/friends/search',
     SUGGESTIONS: '/friends/suggestions',
+    PENDING_REQUESTS: '/friends/requests/pending',
+    SENT_REQUESTS: '/friends/requests/sent',
+    REQUEST: (userId) => `/friends/request/${userId}`,
+    REQUEST_DELETE: (friendshipId) => `/friends/request/${friendshipId}`,
+    REQUEST_ACCEPT: (friendshipId) => `/friends/request/${friendshipId}/accept`,
     ADD: (userId) => `/friends/${userId}/add`,
-    REMOVE: (userId) => `/friends/${userId}/remove`,
+    REMOVE: (userId) => `/friends/${userId}`,
     ACCEPT: (userId) => `/friends/${userId}/accept`,
     REJECT: (userId) => `/friends/${userId}/reject`,
   },
@@ -124,6 +147,7 @@ export const API_ENDPOINTS = {
   // Notifications
   NOTIFICATIONS: {
     LIST: '/notifications',
+    UNREAD_COUNT: '/notifications/unread-count',
     MARK_READ: (id) => `/notifications/${id}/read`,
     MARK_ALL_READ: '/notifications/read-all',
     DELETE: (id) => `/notifications/${id}`,
@@ -183,9 +207,11 @@ export const ROUTES = {
   },
   ENTER: '/enter',
   LESSONS: '/lessons',
+  LESSON: '/lesson',
+  PRACTICE: '/practice',
   QUESTS: '/quests',
   ACHIEVEMENTS: '/achievements',
-  LESSON: {
+  LESSON_DETAIL: {
     LISTENING: (id) => `/lesson/listening/${id}`,
     READING: (id) => `/lesson/reading/${id}`,
     WRITING: (id) => `/lesson/writing/${id}`,
@@ -195,6 +221,8 @@ export const ROUTES = {
   PROFILE: '/profile',
   PROFILE_USER: (userId) => `/profile/${userId}`,
   SEARCH: '/search',
+  MESSAGES: '/messages',
+  MESSAGES_CONVERSATION: (id) => `/messages/conversation/${id}`,
   FRIENDS: '/friends',
   NOTIFICATIONS: '/notifications',
   MANAGE_LESSONS: '/manage/lessons',
@@ -205,10 +233,9 @@ export const ROUTES = {
 // Navigation items (for AppHeader)
 export const NAV_ITEMS = [
   { to: ROUTES.HOME, label: 'header.home' },
-  { to: ROUTES.SKILLS.READING, label: 'header.skills' },
-  { to: ROUTES.LESSONS, label: 'header.lessons' },
+  { to: ROUTES.LESSON, label: 'header.lesson' },
+  { to: ROUTES.PRACTICE, label: 'header.practice' },
   { to: ROUTES.QUESTS, label: 'header.quests' },
   { to: ROUTES.ACHIEVEMENTS, label: 'header.achievements' },
   { to: ROUTES.COMMUNITY, label: 'header.community' },
-  { to: ROUTES.GROUPS, label: 'header.groups' },
 ]

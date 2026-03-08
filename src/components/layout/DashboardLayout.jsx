@@ -13,9 +13,11 @@ export function DashboardLayout() {
   }
 
   return (
-    <div className="bg-background-dark text-white min-h-screen">
+    <div className="bg-background-dark text-white min-h-screen flex flex-col">
       <AppHeader />
-      <Outlet />
+      <div className="flex-1 min-h-0 flex flex-col">
+        <Outlet />
+      </div>
       <ChatbotButton />
     </div>
   )

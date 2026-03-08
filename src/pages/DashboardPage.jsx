@@ -1,14 +1,16 @@
-import { useState, useEffect } from 'react'
-import { Link } from 'react-router-dom'
+import { useState, useEffect, useRef } from 'react'
+import { Link, useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { useAuth } from '../context/AuthContext'
-import { rawService, communityService } from '../services'
+import { rawService, communityService, friendsService } from '../services'
 import { CreatePostModal } from '../components/CreatePostModal'
+import { ROUTES } from '../constants'
 import { DEFAULT_AVATAR } from '../constants/ui'
 import { formatPostTime } from '../utils/dateTime'
 
 export function DashboardPage() {
   const { t } = useTranslation()
+  const navigate = useNavigate()
   const { user } = useAuth()
   const [raw, setRaw] = useState({
     skillStats: [],
@@ -19,6 +21,14 @@ export function DashboardPage() {
   const [posts, setPosts] = useState([])
   const [postsLoading, setPostsLoading] = useState(true)
   const [showCreateModal, setShowCreateModal] = useState(false)
+  const [onlineFriends, setOnlineFriends] = useState([])
+  const [friendTab, setFriendTab] = useState('suggestions')
+  const [suggestionsList, setSuggestionsList] = useState([])
+  const [sentRequestsList, setSentRequestsList] = useState([])
+  const [receivedRequestsList, setReceivedRequestsList] = useState([])
+  const [friendTabLoading, setFriendTabLoading] = useState(false)
+  const [friendSelectOpen, setFriendSelectOpen] = useState(false)
+  const friendSelectRef = useRef(null)
 
   useEffect(() => {
     communityService.getPosts({ limit: 20 })
@@ -47,6 +57,58 @@ export function DashboardPage() {
       })
       .catch(() => {})
   }, [])
+
+  useEffect(() => {
+    friendsService.getList({ limit: 8 })
+      .then((res) => {
+        const list = res?.data?.data ?? res?.data ?? []
+        setOnlineFriends(Array.isArray(list) ? list : [])
+      })
+      .catch(() => setOnlineFriends([]))
+  }, [])
+
+  const loadFriendTabData = (tab) => {
+    setFriendTabLoading(true)
+    if (tab === 'suggestions') {
+      friendsService.search({ limit: 10 })
+        .then((res) => {
+          const list = res?.data?.data ?? res?.data ?? []
+          const arr = Array.isArray(list) ? list : []
+          setSuggestionsList(arr.filter((u) => u.friendStatus === 'none'))
+        })
+        .catch(() => setSuggestionsList([]))
+        .finally(() => setFriendTabLoading(false))
+    } else if (tab === 'sent') {
+      friendsService.getSentRequests({ limit: 10 })
+        .then((res) => {
+          const list = res?.data?.data ?? res?.data ?? []
+          setSentRequestsList(Array.isArray(list) ? list : [])
+        })
+        .catch(() => setSentRequestsList([]))
+        .finally(() => setFriendTabLoading(false))
+    } else {
+      friendsService.getPendingRequests({ limit: 10 })
+        .then((res) => {
+          const list = res?.data?.data ?? res?.data ?? []
+          setReceivedRequestsList(Array.isArray(list) ? list : [])
+        })
+        .catch(() => setReceivedRequestsList([]))
+        .finally(() => setFriendTabLoading(false))
+    }
+  }
+
+  useEffect(() => {
+    loadFriendTabData(friendTab)
+  }, [friendTab])
+
+  useEffect(() => {
+    if (!friendSelectOpen) return
+    const handleClickOutside = (e) => {
+      if (friendSelectRef.current && !friendSelectRef.current.contains(e.target)) setFriendSelectOpen(false)
+    }
+    document.addEventListener('click', handleClickOutside)
+    return () => document.removeEventListener('click', handleClickOutside)
+  }, [friendSelectOpen])
   const displayAvatar = user?.avatar || (user?.name ? `https://ui-avatars.com/api/?name=${encodeURIComponent(user.name)}&background=13b6ec&color=fff` : DEFAULT_AVATAR)
   const displayName = user?.name || 'User'
   return (
@@ -123,6 +185,55 @@ export function DashboardPage() {
                 </label>
               ))}
             </div>
+          </div>
+          <div className="bg-white dark:bg-[#111e22] rounded-xl p-5 border border-slate-200 dark:border-[#325a67]">
+            <h3 className="font-bold text-sm mb-4 flex items-center gap-2">
+              <span className="material-symbols-outlined text-primary text-lg">groups</span>
+              {t('dashboard.studyGroups')}
+            </h3>
+            <div className="space-y-4">
+              {raw.suggestedGroups.map(({ icon, title, members, color }) => (
+                <div key={title} className="flex items-start gap-3">
+                  <div className={`size-10 rounded-lg ${color} flex items-center justify-center shrink-0`}>
+                    <span className="material-symbols-outlined text-white">{icon}</span>
+                  </div>
+                  <div className="text-xs min-w-0">
+                    <p className="font-bold line-clamp-1">{title}</p>
+                    <p className="text-[#92bbc9]">{members}</p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+          <div className="bg-white dark:bg-[#111e22] rounded-xl p-5 border border-slate-200 dark:border-[#325a67]">
+            <h3 className="font-bold text-sm mb-4 flex items-center gap-2">
+              <span className="material-symbols-outlined text-primary text-lg">menu_book</span>
+              {t('dashboard.featuredLessons')}
+            </h3>
+            <div className="space-y-4">
+              {raw.featuredLessons.map(({ title, icon, skill, level, to, learners }) => (
+                <Link key={title} to={to} className="block group">
+                  <div className="flex justify-between items-start">
+                    <h4 className="text-sm font-semibold group-hover:text-primary transition-colors">{title}</h4>
+                    <span className="px-1.5 py-0.5 bg-orange-500/10 text-orange-500 text-[9px] font-bold rounded uppercase shrink-0 ml-2">
+                      {level}
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-3 mt-1 text-[10px] text-slate-500 dark:text-[#92bbc9]">
+                    <span className="flex items-center gap-1">
+                      <span className="material-symbols-outlined text-sm">
+                        {icon === 'menu_book' ? 'menu_book' : icon === 'headset' ? 'headset' : 'edit_note'}
+                      </span>
+                      {t(`skills.${skill.toLowerCase()}`)}
+                    </span>
+                    <span>• {learners} {t('dashboard.views')}</span>
+                  </div>
+                </Link>
+              ))}
+            </div>
+            <Link to="/lesson" className="block w-full mt-4 py-2 text-xs font-bold text-primary hover:underline text-center">
+              {t('dashboard.viewAllLessons')}
+            </Link>
           </div>
           <div className="bg-primary/5 dark:bg-primary/10 rounded-xl p-5 border border-primary/20">
             <h3 className="font-bold text-sm text-primary mb-3 flex items-center gap-2">
@@ -277,7 +388,7 @@ export function DashboardPage() {
             <div className="h-[1px] flex-1 bg-slate-200 dark:bg-[#325a67]" />
           </div>
           <Link
-            to="/lessons"
+            to="/lesson"
             className="block bg-gradient-to-br from-[#111e22] to-[#1a353d] dark:from-[#111e22] dark:to-[#1a353d] rounded-xl border border-primary/30 p-5 relative overflow-hidden group hover:border-primary/50 transition-colors"
           >
             <div className="relative z-10 flex gap-6">
@@ -313,85 +424,214 @@ export function DashboardPage() {
         </section>
         {/* Right Sidebar */}
         <aside className="col-span-12 lg:col-span-3 space-y-6">
-          <div className="bg-white dark:bg-[#111e22] rounded-xl p-4 border border-slate-200 dark:border-[#325a67]">
-            <div className="relative">
-              <span className="material-symbols-outlined absolute left-3 top-2.5 text-slate-400 dark:text-[#92bbc9] text-xl">
-                search
-              </span>
-              <input
-                type="text"
-                placeholder={t('dashboard.quickSearch')}
-                className="w-full bg-slate-50 dark:bg-[#233f48] border-none rounded-lg pl-10 pr-4 py-2 text-sm focus:ring-1 focus:ring-primary"
-              />
-            </div>
-          </div>
           <div className="bg-white dark:bg-[#111e22] rounded-xl p-5 border border-slate-200 dark:border-[#325a67]">
-            <h3 className="font-bold text-sm mb-4">{t('dashboard.friendSuggestions')}</h3>
-            <div className="space-y-4">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                  <div
-                    className="size-9 rounded-full bg-cover bg-center bg-slate-300"
-                    style={{
-                      backgroundImage: `url('https://lh3.googleusercontent.com/aida-public/AB6AXuAoXGEnJoxgQxywYi4WPAOtB40WXq8kh7fTyMwuGC7gYFcPp-B8qbQSmv6GuXs2p8IxvtC370Z0WAKCeDg2V1nGjZ4wz1c_QdyvecDrnCWfENaMpRxjidsw1gwYH__A52WrC_AT7egrH4lVh_cHhbYZpfQRVyPrvHFJ9vanYhKSpeBxJjI7eQOOUdkJ7er9keiH4rNw6O2KKUJ6m2y3YWtHLNhxep-iokctHHSC339RpsrOn73tZt4vy40SleGpbtqCGFhiwfZJtg2G')`,
-                    }}
-                  />
-                  <div className="text-xs">
-                    <p className="font-bold">Alex Thompson</p>
-                    <p className="text-[#92bbc9]">8 {t('dashboard.mutualFriends')}</p>
-                  </div>
-                </div>
-                <button className="material-symbols-outlined text-primary hover:bg-primary/10 rounded-full p-1 transition-colors">
-                  person_add
+            <div className="flex items-center justify-between gap-2 mb-4">
+              <h3 className="font-bold text-sm shrink-0">{t('dashboard.friendSuggestions')}</h3>
+              <div className="relative min-w-0 max-w-[220px]" ref={friendSelectRef}>
+                <button
+                  type="button"
+                  onClick={() => setFriendSelectOpen((o) => !o)}
+                  className="w-full flex items-center gap-1.5 rounded-lg border border-slate-200 dark:border-[#325a67] bg-slate-50 dark:bg-[#233f48] hover:bg-slate-100 dark:hover:bg-[#2d4a54] px-2.5 py-0.5 text-left transition-colors"
+                >
+                  <span className="material-symbols-outlined text-primary shrink-0 text-lg">
+                    {friendTab === 'suggestions' ? 'person_add' : friendTab === 'sent' ? 'send' : 'mail'}
+                  </span>
+                  <span className="flex-1 text-[11px] font-medium text-slate-700 dark:text-[#92bbc9] truncate">
+                    {friendTab === 'suggestions' ? t('dashboard.friendSuggestions') : friendTab === 'sent' ? t('dashboard.friendSentRequests') : t('dashboard.friendReceivedRequests')}
+                  </span>
+                  <span className={`material-symbols-outlined text-slate-400 dark:text-[#92bbc9] text-base shrink-0 transition-transform ${friendSelectOpen ? 'rotate-180' : ''}`}>
+                    expand_more
+                  </span>
                 </button>
+                {friendSelectOpen && (
+                  <div className="absolute right-0 left-0 top-full z-10 mt-1.5 rounded-xl border border-slate-200 dark:border-[#325a67] bg-white dark:bg-[#111e22] shadow-lg py-1 overflow-hidden">
+                    {[
+                      { value: 'suggestions', label: t('dashboard.friendSuggestions'), icon: 'person_add' },
+                      { value: 'sent', label: t('dashboard.friendSentRequests'), icon: 'send' },
+                      { value: 'received', label: t('dashboard.friendReceivedRequests'), icon: 'mail' },
+                    ].map(({ value, label, icon }) => (
+                      <button
+                        key={value}
+                        type="button"
+                        onClick={() => { setFriendTab(value); setFriendSelectOpen(false) }}
+                        className={`w-full flex items-center gap-2 px-3 py-2.5 text-xs font-medium transition-colors ${
+                          friendTab === value
+                            ? 'bg-primary/10 text-primary dark:bg-primary/20'
+                            : 'text-slate-700 dark:text-[#92bbc9] hover:bg-slate-50 dark:hover:bg-[#233f48]'
+                        }`}
+                      >
+                        <span className="material-symbols-outlined text-[18px]">{icon}</span>
+                        <span className="truncate">{label}</span>
+                      </button>
+                    ))}
+                  </div>
+                )}
               </div>
+            </div>
+            <div className="space-y-4 min-h-[80px]">
+              {friendTabLoading ? (
+                <div className="flex items-center justify-center py-6">
+                  <span className="material-symbols-outlined animate-spin text-2xl text-primary">progress_activity</span>
+                </div>
+              ) : friendTab === 'suggestions' ? (
+                suggestionsList.length === 0 ? (
+                  <p className="text-xs text-slate-500 dark:text-[#92bbc9] py-2">{t('dashboard.noSuggestions')}</p>
+                ) : (
+                  suggestionsList.map((u) => {
+                    const id = u?.id ?? u?._id
+                    const name = u?.name || 'User'
+                    const avatar = u?.avatar || (name ? `https://ui-avatars.com/api/?name=${encodeURIComponent(name)}&background=13b6ec&color=fff` : DEFAULT_AVATAR)
+                    return (
+                      <div key={id} className="flex items-center justify-between">
+                        <Link to={id ? `/profile/${id}` : '#'} className="flex items-center gap-3 min-w-0">
+                          <img src={avatar} alt="" className="size-9 rounded-full object-cover shrink-0" />
+                          <div className="text-xs min-w-0">
+                            <p className="font-bold truncate">{name}</p>
+                            {u.mutualFriendsCount != null && u.mutualFriendsCount > 0 && (
+                              <p className="text-[#92bbc9]">{u.mutualFriendsCount} {t('dashboard.mutualFriends')}</p>
+                            )}
+                          </div>
+                        </Link>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            friendsService.sendRequest(id).then(() => loadFriendTabData('suggestions'))
+                          }}
+                          className="material-symbols-outlined text-primary hover:bg-primary/10 rounded-full p-1 transition-colors shrink-0"
+                          title={t('dashboard.friendSuggestions')}
+                        >
+                          person_add
+                        </button>
+                      </div>
+                    )
+                  })
+                )
+              ) : friendTab === 'sent' ? (
+                sentRequestsList.length === 0 ? (
+                  <p className="text-xs text-slate-500 dark:text-[#92bbc9] py-2">Chưa có lời mời đã gửi.</p>
+                ) : (
+                  sentRequestsList.map((r) => {
+                    const to = r?.to || {}
+                    const id = to?.id ?? to?._id
+                    const name = to?.name || 'User'
+                    const avatar = to?.avatar || (name ? `https://ui-avatars.com/api/?name=${encodeURIComponent(name)}&background=13b6ec&color=fff` : DEFAULT_AVATAR)
+                    return (
+                      <div key={r.friendshipId} className="flex items-center justify-between">
+                        <Link to={id ? `/profile/${id}` : '#'} className="flex items-center gap-3 min-w-0">
+                          <img src={avatar} alt="" className="size-9 rounded-full object-cover shrink-0" />
+                          <p className="text-xs font-bold truncate">{name}</p>
+                        </Link>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            friendsService.cancelRequest(r.friendshipId).then(() => loadFriendTabData('sent'))
+                          }}
+                          className="text-xs font-medium text-amber-500 hover:bg-amber-500/10 px-2 py-1 rounded transition-colors shrink-0"
+                        >
+                          {t('userProfile.cancelRequest')}
+                        </button>
+                      </div>
+                    )
+                  })
+                )
+              ) : (
+                receivedRequestsList.length === 0 ? (
+                  <p className="text-xs text-slate-500 dark:text-[#92bbc9] py-2">{t('dashboard.noReceivedRequests')}</p>
+                ) : (
+                  receivedRequestsList.map((r) => {
+                    const from = r?.from || {}
+                    const id = from?.id ?? from?._id
+                    const name = from?.name || 'User'
+                    const avatar = from?.avatar || (name ? `https://ui-avatars.com/api/?name=${encodeURIComponent(name)}&background=13b6ec&color=fff` : DEFAULT_AVATAR)
+                    return (
+                      <div key={r.friendshipId} className="flex items-center justify-between">
+                        <Link to={id ? `/profile/${id}` : '#'} className="flex items-center gap-3 min-w-0">
+                          <img src={avatar} alt="" className="size-9 rounded-full object-cover shrink-0" />
+                          <p className="text-xs font-bold truncate">{name}</p>
+                        </Link>
+                        <div className="flex items-center gap-1 shrink-0">
+                          <button
+                            type="button"
+                            onClick={() => {
+                              friendsService.acceptRequest(r.friendshipId).then(() => loadFriendTabData('received'))
+                            }}
+                            className="material-symbols-outlined text-green-500 hover:bg-green-500/10 rounded-full p-1 transition-colors"
+                            title={t('dashboard.acceptRequest')}
+                          >
+                            check
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              friendsService.cancelRequest(r.friendshipId).then(() => loadFriendTabData('received'))
+                            }}
+                            className="material-symbols-outlined text-red-400 hover:bg-red-500/10 rounded-full p-1 transition-colors"
+                            title={t('userProfile.cancelRequest')}
+                          >
+                            close
+                          </button>
+                        </div>
+                      </div>
+                    )
+                  })
+                )
+              )}
             </div>
             <Link to="/friends" className="block w-full mt-4 py-2 text-xs font-bold text-primary hover:underline text-center">
               {t('dashboard.viewAllSuggestions')}
             </Link>
           </div>
           <div className="bg-white dark:bg-[#111e22] rounded-xl p-5 border border-slate-200 dark:border-[#325a67]">
-            <h3 className="font-bold text-sm mb-4">{t('dashboard.studyGroups')}</h3>
-            <div className="space-y-4">
-              {raw.suggestedGroups.map(({ icon, title, members, color }) => (
-                <div key={title} className="flex items-start gap-3">
-                  <div className={`size-10 rounded-lg ${color} flex items-center justify-center shrink-0`}>
-                    <span className="material-symbols-outlined text-white">{icon}</span>
-                  </div>
-                  <div className="text-xs min-w-0">
-                    <p className="font-bold line-clamp-1">{title}</p>
-                    <p className="text-[#92bbc9]">{members}</p>
-                  </div>
-                </div>
-              ))}
+            <h3 className="font-bold text-sm mb-4 flex items-center gap-2">
+              <span className="material-symbols-outlined text-primary text-lg">people</span>
+              {t('dashboard.friendsOnline')}
+              <Link
+                to={ROUTES.MESSAGES}
+                className="ml-auto p-1 rounded-lg text-slate-500 hover:bg-primary/10 hover:text-primary transition-colors"
+                title={t('messages.title')}
+              >
+                <span className="material-symbols-outlined text-lg">chat_bubble</span>
+              </Link>
+            </h3>
+            <div className="space-y-3">
+              {onlineFriends.length === 0 ? (
+                <p className="text-xs text-slate-500 dark:text-[#92bbc9]">{t('dashboard.noFriendsOnline')}</p>
+              ) : (
+                onlineFriends.map((item) => {
+                  const u = item?.user || item
+                  const id = u?.id ?? u?._id
+                  const name = u?.name || 'User'
+                  const avatar = u?.avatar || (name ? `https://ui-avatars.com/api/?name=${encodeURIComponent(name)}&background=13b6ec&color=fff` : DEFAULT_AVATAR)
+                  return (
+                    <div
+                      key={id}
+                      className="flex items-center gap-3 p-2 rounded-lg hover:bg-slate-50 dark:hover:bg-[#233f48] transition-colors group"
+                    >
+                      <Link to={id ? `/profile/${id}` : '#'} className="flex items-center gap-3 min-w-0 flex-1">
+                        <div className="relative shrink-0">
+                          <img src={avatar} alt="" className="size-9 rounded-full object-cover" />
+                          <span className="absolute bottom-0 right-0 size-2.5 bg-green-500 rounded-full border-2 border-white dark:border-[#111e22]" title={t('userProfile.online')} />
+                        </div>
+                        <span className="text-sm font-medium truncate">{name}</span>
+                      </Link>
+                      <button
+                        type="button"
+                        onClick={() => navigate(`${ROUTES.MESSAGES}?with=${encodeURIComponent(id)}`, { state: { withUser: { id, name, avatar } } })}
+                        className="p-1.5 rounded-lg text-slate-400 hover:bg-primary/10 hover:text-primary transition-colors shrink-0"
+                        title={t('messages.title')}
+                      >
+                        <span className="material-symbols-outlined text-lg">chat_bubble</span>
+                      </button>
+                    </div>
+                  )
+                })
+              )}
             </div>
-          </div>
-          <div className="bg-white dark:bg-[#111e22] rounded-xl p-5 border border-slate-200 dark:border-[#325a67]">
-            <h3 className="font-bold text-sm mb-4">{t('dashboard.featuredLessons')}</h3>
-            <div className="space-y-4">
-              {raw.featuredLessons.map(({ title, icon, skill, level, to, learners }) => (
-                <Link key={title} to={to} className="block group">
-                  <div className="flex justify-between items-start">
-                    <h4 className="text-sm font-semibold group-hover:text-primary transition-colors">{title}</h4>
-                    <span className="px-1.5 py-0.5 bg-orange-500/10 text-orange-500 text-[9px] font-bold rounded uppercase shrink-0 ml-2">
-                      {level}
-                    </span>
-                  </div>
-                  <div className="flex items-center gap-3 mt-1 text-[10px] text-slate-500 dark:text-[#92bbc9]">
-                    <span className="flex items-center gap-1">
-                      <span className="material-symbols-outlined text-sm">
-                        {icon === 'menu_book' ? 'menu_book' : icon === 'headset' ? 'headset' : 'edit_note'}
-                      </span>
-                      {t(`skills.${skill.toLowerCase()}`)}
-                    </span>
-                    <span>• {learners} {t('dashboard.views')}</span>
-                  </div>
-                </Link>
-              ))}
-            </div>
-            <Link to="/lessons" className="block w-full mt-4 py-2 text-xs font-bold text-primary hover:underline text-center">
-              {t('dashboard.viewAllLessons')}
-            </Link>
+            {onlineFriends.length > 0 && (
+              <Link to="/friends" className="block w-full mt-4 py-2 text-xs font-bold text-primary hover:underline text-center">
+                {t('dashboard.viewAllFriends')}
+              </Link>
+            )}
           </div>
           <div className="bg-white dark:bg-[#111e22] rounded-xl p-5 border border-slate-200 dark:border-[#325a67]">
             <h3 className="font-bold text-sm mb-4 flex items-center justify-between">

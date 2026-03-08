@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import { lessonsService } from '../services'
 import { sortLessonsByLevelThenSkill } from '../utils/lesson'
@@ -21,17 +21,7 @@ export function useLessonsList() {
   const [pagination, setPagination] = useState({ perPage: 10, total: 0, totalPages: 0 })
   const [deletingId, setDeletingId] = useState(null)
 
-  const prevFilters = useRef({ skillFilter, topicFilter, levelFilter })
   useEffect(() => {
-    if (
-      prevFilters.current.skillFilter !== skillFilter ||
-      prevFilters.current.topicFilter !== topicFilter ||
-      prevFilters.current.levelFilter !== levelFilter
-    ) {
-      prevFilters.current = { skillFilter, topicFilter, levelFilter }
-      setPage(1)
-      return
-    }
     const filters = { status: 'published', page, limit: 10, category: 'lesson' }
     if (skillFilter && skillFilter !== 'all') filters.skill = skillFilter
     if (topicFilter && topicFilter !== 'all') filters.topic = topicFilter
@@ -53,7 +43,7 @@ export function useLessonsList() {
         setError(err?.message || 'Failed to load lessons')
       })
       .finally(() => setLoading(false))
-  }, [skillFilter, topicFilter, levelFilter, page, pagination.perPage])
+  }, [skillFilter, topicFilter, levelFilter, page])
 
   const setSkill = (key) => {
     setPage(1)

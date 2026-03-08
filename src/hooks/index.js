@@ -1,4 +1,5 @@
 export { useRegister, useLogin } from './useAuthForm'
+export { useSearchPage } from './useSearchPage'
 export { useLessonsList } from './useLessonsList'
 export { useReadingLesson } from './useReadingLesson'
 export { useListeningLesson } from './useListeningLesson'

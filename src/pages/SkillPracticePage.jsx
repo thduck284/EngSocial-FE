@@ -179,7 +179,7 @@ export function SkillPracticePage() {
                   </>
                 )}
                 <button
-                  onClick={() => navigate(`/lesson/listening/${card.id}`)}
+                  onClick={() => navigate(`/practice/listening/${card.id}`)}
                   className="px-4 py-1.5 bg-primary/10 text-primary hover:bg-primary hover:text-background-dark font-bold text-xs rounded transition-all"
                 >
                   {t('buttons.startListening')}

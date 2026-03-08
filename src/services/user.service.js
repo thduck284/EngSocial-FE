@@ -1,0 +1,31 @@
+import { apiClient } from '../utils/api'
+import { API_ENDPOINTS } from '../constants'
+import { authService } from './auth.service.js'
+
+export const userService = {
+  getProfile: async () => {
+    return authService.getMe()
+  },
+
+  getUserProfile: async (userId) => {
+    return apiClient.get(API_ENDPOINTS.USER.PROFILE_BY_ID(userId))
+  },
+
+  updateProfile: async (userData) => {
+    return apiClient.patch(API_ENDPOINTS.USER.UPDATE_PROFILE, userData)
+  },
+
+  uploadAvatar: async (file) => {
+    const formData = new FormData()
+    formData.append('avatar', file)
+    return apiClient.upload(API_ENDPOINTS.USER.UPLOAD_AVATAR, formData)
+  },
+
+  getStats: async () => {
+    return apiClient.get(API_ENDPOINTS.USER.STATS)
+  },
+
+  getGoals: async () => {
+    return apiClient.get(API_ENDPOINTS.USER.GOALS)
+  },
+}

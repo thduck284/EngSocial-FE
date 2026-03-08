@@ -42,7 +42,7 @@ export function WritingLessonPage() {
       <div className="flex flex-col items-center justify-center min-h-[60vh] text-gray-400">
         <span className="material-symbols-outlined text-5xl mb-4">error</span>
         <p>Không thể tải nội dung bài học.</p>
-        <Link to="/lessons?skill=writing" className="mt-4 text-primary hover:underline">
+        <Link to="/lesson?skill=writing" className="mt-4 text-primary hover:underline">
           Quay lại
         </Link>
       </div>
@@ -183,7 +183,7 @@ export function WritingLessonPage() {
             <div className="mt-6 flex items-center justify-between">
               <button
                 type="button"
-                onClick={() => navigate('/lessons?skill=writing')}
+                onClick={() => navigate('/lesson?skill=writing')}
                 className="px-4 py-2 border border-border-dark rounded-xl text-gray-400 hover:bg-white/5 text-sm font-medium"
               >
                 Quay lại

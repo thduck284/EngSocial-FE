@@ -19,6 +19,7 @@ import { AchievementsPage } from './pages/AchievementsPage'
 import { ManageLessonsPage } from './pages/ManageLessonsPage'
 import { ManageQuestsPage } from './pages/ManageQuestsPage'
 import { SearchPage } from './pages/SearchPage'
+import { MessagesPage } from './pages/MessagesPage'
 import { DashboardLayout } from './components/layout/DashboardLayout'
 import { RequireModeratorOrAdmin } from './components/layout/RequireModeratorOrAdmin'
 import { GuestOnlyLayout } from './components/layout/GuestOnlyLayout'
@@ -41,13 +42,20 @@ function App() {
         <Route index element={<Navigate to="/home" replace />} />
         <Route path="home" element={<DashboardPage />} />
         <Route path="search" element={<SearchPage />} />
+        <Route path="messages/conversation/:conversationId" element={<MessagesPage />} />
+        <Route path="messages" element={<MessagesPage />} />
         <Route path="enter" element={<EnterPage />} />
+        <Route path="lesson" element={<LessonsPage />} />
+        <Route path="lesson/reading/:id" element={<ReadingLessonPage />} />
+        <Route path="lesson/listening/:id" element={<ListeningLessonPage />} />
+        <Route path="lesson/writing/:id" element={<WritingLessonPage />} />
+        <Route path="practice" element={<Navigate to="/skills/reading" replace />} />
         <Route path="skills" element={<Navigate to="/skills/reading" replace />} />
         <Route path="skills/:skill" element={<SkillPracticePage />} />
-        <Route path="lesson/listening/:id" element={<ListeningLessonPage />} />
-        <Route path="lesson/reading/:id" element={<ReadingLessonPage />} />
-        <Route path="lesson/writing/:id" element={<WritingLessonPage />} />
-        <Route path="lessons" element={<LessonsPage />} />
+        <Route path="practice/reading/:id" element={<ReadingLessonPage />} />
+        <Route path="practice/listening/:id" element={<ListeningLessonPage />} />
+        <Route path="practice/writing/:id" element={<WritingLessonPage />} />
+        <Route path="lessons" element={<Navigate to="/lesson" replace />} />
         <Route path="manage/lessons" element={<RequireModeratorOrAdmin><ManageLessonsPage /></RequireModeratorOrAdmin>} />
         <Route path="manage/lessons/:id" element={<RequireModeratorOrAdmin><ManageLessonsPage /></RequireModeratorOrAdmin>} />
         <Route path="manage/skills" element={<RequireModeratorOrAdmin><ManageLessonsPage /></RequireModeratorOrAdmin>} />

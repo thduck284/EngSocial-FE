@@ -2,3 +2,5 @@
 export * from './api'
 export * from './lessons'
 export * from './ui'
+export * from './search'
+export * from './emoji'

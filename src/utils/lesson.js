@@ -7,7 +7,7 @@ export function getLessonLink(lesson) {
   if (lesson.skill === 'reading') return `/lesson/reading/${lesson.id}`
   if (lesson.skill === 'listening') return `/lesson/listening/${lesson.id}`
   if (lesson.skill === 'writing') return `/lesson/writing/${lesson.id}`
-  return '/lessons'
+  return '/lesson'
 }
 
 /**
