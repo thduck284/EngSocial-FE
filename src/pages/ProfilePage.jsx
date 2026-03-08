@@ -3,34 +3,43 @@ import { Link } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { useAuth } from '../context/AuthContext'
 import { getAuthStorage } from '../utils/auth'
-import { userService } from '../services'
+import { userService, rawService } from '../services'
 import { ROUTES } from '../constants'
-import {
-  mockUserProfile,
-  mockGoals,
-  mockProfileFriends,
-  mockProfileSkillStats,
-  mockProfileAchievements,
-} from '../raw'
-
-const DEFAULT_AVATAR = 'https://lh3.googleusercontent.com/aida-public/AB6AXuDct5nPGH4oUnT_R2ZEnIFsmXozuCVn0_7PHkBfjAJDt2O13SVHKAalMfsBcAN1rqU58_yGdfL4-h-b-iDFSF16gOGEvLpu4Zg1aMZ7N_jubkhCEyr_0rHedluAuAMXtkJ6MjKYAnf7Cd4yBz70n-7m3ioWoDVIGL9QfkbrRoc3DEqoVPw6ELm_fp2qEp_anJJxTGC1GZ-y_SWU_6dsfkmec8mke5r0ZWzrrSfb3v2IJCqrFUciY2aVMAhEjQRYMskwmbSEeOKysQ1C'
-
-function formatDateForInput(date) {
-  if (!date) return ''
-  const d = new Date(date)
-  if (Number.isNaN(d.getTime())) return ''
-  return d.toISOString().slice(0, 10)
-}
+import { DEFAULT_AVATAR } from '../constants/ui'
+import { formatDateForInput } from '../utils/profile'
 
 export function ProfilePage() {
   const { t } = useTranslation()
   const { user, setAuth, logout } = useAuth()
+  const [raw, setRaw] = useState({
+    userProfile: { name: '', level: 1, xp: 0, xpMax: 500, avatar: '' },
+    goals: [],
+    profileFriends: [],
+    profileSkillStats: [],
+    profileAchievements: [],
+  })
 
-  const displayName = user?.name ?? mockUserProfile.name
-  const displayLevel = user?.level ?? mockUserProfile.level
-  const displayXp = Number(user?.xp ?? mockUserProfile.xp) || 0
-  const displayXpMax = Number(user?.xpMax ?? mockUserProfile.xpMax ?? 500) || 500
-  const displayAvatar = user?.avatar ?? mockUserProfile.avatar ?? DEFAULT_AVATAR
+  useEffect(() => {
+    rawService.getDashboard()
+      .then((res) => {
+        const d = res?.data || {}
+        setRaw({
+          userProfile: d.userProfile || raw.userProfile,
+          goals: d.goals || [],
+          profileFriends: d.profileFriends || [],
+          profileSkillStats: d.profileSkillStats || [],
+          profileAchievements: d.profileAchievements || [],
+        })
+      })
+      .catch(() => {})
+  }, [])
+
+  const profile = raw.userProfile
+  const displayName = user?.name ?? profile.name
+  const displayLevel = user?.level ?? profile.level
+  const displayXp = Number(user?.xp ?? profile.xp) || 0
+  const displayXpMax = Number(user?.xpMax ?? profile.xpMax ?? 500) || 500
+  const displayAvatar = user?.avatar ?? profile.avatar ?? DEFAULT_AVATAR
   const xpPercent = displayXpMax ? Math.min(100, Math.round((displayXp / displayXpMax) * 100)) : 0
 
   const [form, setForm] = useState({
@@ -46,12 +55,13 @@ export function ProfilePage() {
   const [message, setMessage] = useState({ type: '', text: '' })
   const [friendSearch, setFriendSearch] = useState('')
   const [showAvatarModal, setShowAvatarModal] = useState(false)
-  const [avatarUrl, setAvatarUrl] = useState('')
+  const [avatarFile, setAvatarFile] = useState(null)
+  const [avatarPreview, setAvatarPreview] = useState('')
   const [avatarSaving, setAvatarSaving] = useState(false)
   const [avatarError, setAvatarError] = useState('')
 
   useEffect(() => {
-    const name = user?.name ?? mockUserProfile.name
+    const name = user?.name ?? raw.userProfile?.name ?? ''
     const phone = user?.phone ?? ''
     const bio = user?.bio ?? ''
     const address = user?.address ?? ''
@@ -60,7 +70,7 @@ export function ProfilePage() {
     const next = { name, phone, bio, address, dateOfBirth, gender }
     setForm(next)
     setInitialForm(next)
-  }, [user])
+  }, [user, raw.userProfile?.name])
 
   const handleChange = (field, value) => {
     setForm((prev) => ({ ...prev, [field]: value }))
@@ -104,26 +114,57 @@ export function ProfilePage() {
   }
 
   const openAvatarModal = () => {
-    setAvatarUrl(user?.avatar ?? '')
+    setAvatarFile(null)
+    setAvatarPreview((prev) => {
+      if (prev) URL.revokeObjectURL(prev)
+      return ''
+    })
     setAvatarError('')
     setShowAvatarModal(true)
   }
 
+  const closeAvatarModal = () => {
+    setAvatarPreview((prev) => {
+      if (prev) URL.revokeObjectURL(prev)
+      return ''
+    })
+    setShowAvatarModal(false)
+  }
+
+  const handleAvatarFileChange = (e) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+    const allowed = ['image/jpeg', 'image/png', 'image/gif', 'image/webp']
+    if (!allowed.includes(file.type)) {
+      setAvatarError(t('profile.avatarInvalidType'))
+      return
+    }
+    if (file.size > 5 * 1024 * 1024) {
+      setAvatarError(t('profile.avatarTooLarge'))
+      return
+    }
+    setAvatarError('')
+    setAvatarPreview((prev) => {
+      if (prev) URL.revokeObjectURL(prev)
+      return URL.createObjectURL(file)
+    })
+    setAvatarFile(file)
+  }
+
   const handleSaveAvatar = async () => {
-    const url = (avatarUrl || '').trim()
-    if (!url) {
-      setAvatarError(t('profile.avatarUrlRequired'))
+    if (!avatarFile) {
+      setAvatarError(t('profile.avatarChooseRequired'))
       return
     }
     setAvatarSaving(true)
     setAvatarError('')
     try {
-      const res = await userService.updateProfile({ avatar: url })
+      const res = await userService.uploadAvatar(avatarFile)
       if (res?.success !== false && res?.data?.user) {
         const updatedUser = res.data.user
         setAuth({ user: updatedUser })
         getAuthStorage().setItem('user', JSON.stringify(updatedUser))
-        setShowAvatarModal(false)
+        closeAvatarModal()
       }
       setMessage({ type: 'success', text: res?.message || t('profile.saveSuccess') })
     } catch (err) {
@@ -133,14 +174,14 @@ export function ProfilePage() {
     }
   }
 
-  const filteredFriends = mockProfileFriends.filter(
+  const filteredFriends = raw.profileFriends.filter(
     (f) =>
       !friendSearch.trim() ||
       f.name.toLowerCase().includes(friendSearch.toLowerCase())
   )
 
-  const goalsDone = mockGoals.filter((g) => g.done).length
-  const goalsTotal = mockGoals.length
+  const goalsDone = raw.goals.filter((g) => g.done).length
+  const goalsTotal = raw.goals.length
 
   return (
     <main className="max-w-7xl mx-auto px-4 py-8">
@@ -197,7 +238,7 @@ export function ProfilePage() {
 
           <div className="bg-white dark:bg-card-dark rounded-2xl p-6 border border-slate-200 dark:border-border-dark">
             <div className="flex items-center justify-between mb-4">
-              <h3 className="font-bold dark:text-white">{t('profile.friends', { count: mockProfileFriends.length })}</h3>
+              <h3 className="font-bold dark:text-white">{t('profile.friends', { count: raw.profileFriends.length })}</h3>
               <Link to={ROUTES.FRIENDS} className="text-xs font-semibold text-primary hover:underline">
                 {t('buttons.viewAll')}
               </Link>
@@ -238,27 +279,39 @@ export function ProfilePage() {
 
         {/* Modal đổi avatar */}
         {showAvatarModal && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50" onClick={() => setShowAvatarModal(false)}>
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50" onClick={closeAvatarModal}>
             <div className="bg-white dark:bg-card-dark rounded-2xl p-6 w-full max-w-md border border-slate-200 dark:border-border-dark shadow-xl" onClick={(e) => e.stopPropagation()}>
               <h3 className="text-lg font-bold dark:text-white mb-4 flex items-center gap-2">
                 <span className="material-symbols-outlined text-primary">photo_camera</span>
                 {t('profile.avatarModalTitle')}
               </h3>
-              <input
-                type="url"
-                className="w-full bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-border-dark rounded-lg px-4 py-2.5 outline-none focus:ring-2 focus:ring-primary/50 dark:text-white mb-2"
-                placeholder={t('profile.avatarUrlPlaceholder')}
-                value={avatarUrl}
-                onChange={(e) => setAvatarUrl(e.target.value)}
-              />
-              {avatarUrl.trim() && (
+              <div className="mb-4">
+                <label className="block w-full cursor-pointer">
+                  <span className="flex items-center justify-center gap-2 w-full py-3 px-4 rounded-lg border-2 border-dashed border-slate-300 dark:border-slate-600 hover:border-primary/50 dark:hover:border-primary/50 transition-colors text-slate-600 dark:text-slate-400">
+                    <span className="material-symbols-outlined">image</span>
+                    {t('profile.avatarChooseFile')}
+                  </span>
+                  <input
+                    type="file"
+                    accept="image/jpeg,image/png,image/gif,image/webp"
+                    className="sr-only"
+                    onChange={handleAvatarFileChange}
+                  />
+                </label>
+              </div>
+              {avatarPreview && (
                 <div className="mb-4 flex justify-center">
-                  <img src={avatarUrl.trim()} alt="" className="w-24 h-24 rounded-full object-cover border-2 border-slate-200 dark:border-border-dark" onError={(e) => { e.target.style.display = 'none' }} />
+                  <img
+                    src={avatarPreview}
+                    alt=""
+                    className="w-24 h-24 rounded-full object-cover border-2 border-slate-200 dark:border-border-dark"
+                    onError={(e) => { e.target.style.display = 'none' }}
+                  />
                 </div>
               )}
               {avatarError && <p className="text-sm text-red-500 dark:text-red-400 mb-2">{avatarError}</p>}
               <div className="flex gap-3 justify-end">
-                <button type="button" className="px-4 py-2 rounded-lg border border-slate-200 dark:border-border-dark font-medium text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800" onClick={() => setShowAvatarModal(false)}>
+                <button type="button" className="px-4 py-2 rounded-lg border border-slate-200 dark:border-border-dark font-medium text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800" onClick={closeAvatarModal}>
                   {t('profile.cancel')}
                 </button>
                 <button type="button" className="px-4 py-2 rounded-lg bg-primary text-white font-medium hover:bg-primary/90 disabled:opacity-60" onClick={handleSaveAvatar} disabled={avatarSaving}>
@@ -380,7 +433,7 @@ export function ProfilePage() {
             {t('profile.skillStats')}
           </h4>
           <div className="space-y-4">
-            {mockProfileSkillStats.map((item) => (
+            {raw.profileSkillStats.map((item) => (
               <div
                 key={item.labelKey}
                 className="flex items-center justify-between p-3 rounded-xl bg-slate-50 dark:bg-slate-800/50 border border-slate-100 dark:border-border-dark"
@@ -404,7 +457,7 @@ export function ProfilePage() {
             <span className="text-xs font-bold text-primary">{goalsDone}/{goalsTotal} {t('dashboard.completed')}</span>
           </div>
           <div className="space-y-4">
-            {mockGoals.map((goal) => (
+            {raw.goals.map((goal) => (
               <label key={goal.labelKey} className="flex items-center gap-3 cursor-pointer">
                 <div
                   className={`w-5 h-5 rounded border-2 flex items-center justify-center ${
@@ -436,7 +489,7 @@ export function ProfilePage() {
             {t('profile.achievements')}
           </h4>
           <div className="grid grid-cols-2 gap-4">
-            {mockProfileAchievements.map((a) => (
+            {raw.profileAchievements.map((a) => (
               <div
                 key={a.title}
                 className={`p-4 rounded-xl border text-center ${a.bgClass}`}

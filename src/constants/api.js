@@ -1,5 +1,8 @@
-// API Base URL (backend default port 5000)
-export const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000/api' || 'https://eng-social-6kouw6tly-amrnoobs-projects.vercel.app/'
+// API Base URL: set VITE_API_BASE_URL khi deploy (Vercel/Railway); dev mặc định localhost
+export const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000/api'
+
+// Admin app URL: dùng cho nút "Thêm bài học" / "Thêm bài tập" (moderator/admin)
+export const ADMIN_APP_URL = import.meta.env.VITE_ADMIN_APP_URL || 'http://localhost:4000'
 
 // API Endpoints
 export const API_ENDPOINTS = {
@@ -20,6 +23,7 @@ export const API_ENDPOINTS = {
   USER: {
     PROFILE: '/user/profile',
     UPDATE_PROFILE: '/user/profile',
+    UPLOAD_AVATAR: '/user/avatar',
     CHANGE_PASSWORD: '/user/change-password',
     STATS: '/user/stats',
     GOALS: '/user/goals',
@@ -53,7 +57,37 @@ export const API_ENDPOINTS = {
     LIST: '/lessons',
     DETAIL: (id) => `/lessons/${id}`,
     PROGRESS: (id) => `/lessons/${id}/progress`,
+    NOTES: (id) => `/lessons/${id}/notes`,
     COMPLETE: (id) => `/lessons/${id}/complete`,
+    READING_CONTENT: (id) => `/lessons/reading/${id}/content`,
+    LISTENING_CONTENT: (id) => `/lessons/listening/${id}/content`,
+    WRITING_CONTENT: (id) => `/lessons/writing/${id}/content`,
+  },
+
+  UPLOAD: {
+    ASSET: '/upload/asset',
+    POST_MEDIA: '/upload/post-media',
+  },
+
+  // Practices (Skill Practice - tách biệt với Lessons)
+  PRACTICES: {
+    LIST: '/practices',
+    FALLBACK: '/practices/fallback',
+  },
+
+  // Quests
+  QUESTS: {
+    LIST: '/quests',
+    DETAIL: (id) => `/quests/${id}`,
+  },
+
+  // Mock tạm (gọi từ lesson, practice, quest controller)
+  RAW: {
+    DASHBOARD: '/lessons/dashboard',
+    GAMES: '/practices/games',
+    FRIENDS: '/quests/friends',
+    NOTIFICATIONS: '/quests/notifications',
+    CHATBOT: '/quests/chatbot',
   },
 
   // Community
@@ -136,12 +170,12 @@ export const buildApiUrl = (endpoint) => {
 
 // Application Routes (frontend)
 export const ROUTES = {
-  HOME: '/',
+  HOME: '/home',
   LOGIN: '/login',
   REGISTER: '/register',
   FORGOT_PASSWORD: '/forgot-password',
   RESET_PASSWORD: '/reset-password',
-  DASHBOARD: '/',
+  DASHBOARD: '/home',
   SKILLS: {
     READING: '/skills/reading',
     LISTENING: '/skills/listening',
@@ -149,14 +183,23 @@ export const ROUTES = {
   },
   ENTER: '/enter',
   LESSONS: '/lessons',
+  QUESTS: '/quests',
+  ACHIEVEMENTS: '/achievements',
   LESSON: {
     LISTENING: (id) => `/lesson/listening/${id}`,
+    READING: (id) => `/lesson/reading/${id}`,
+    WRITING: (id) => `/lesson/writing/${id}`,
   },
   COMMUNITY: '/community',
   GROUPS: '/groups',
   PROFILE: '/profile',
+  PROFILE_USER: (userId) => `/profile/${userId}`,
+  SEARCH: '/search',
   FRIENDS: '/friends',
   NOTIFICATIONS: '/notifications',
+  MANAGE_LESSONS: '/manage/lessons',
+  MANAGE_SKILLS: '/manage/skills',
+  MANAGE_QUESTS: '/manage/quests',
 }
 
 // Navigation items (for AppHeader)
@@ -164,6 +207,8 @@ export const NAV_ITEMS = [
   { to: ROUTES.HOME, label: 'header.home' },
   { to: ROUTES.SKILLS.READING, label: 'header.skills' },
   { to: ROUTES.LESSONS, label: 'header.lessons' },
+  { to: ROUTES.QUESTS, label: 'header.quests' },
+  { to: ROUTES.ACHIEVEMENTS, label: 'header.achievements' },
   { to: ROUTES.COMMUNITY, label: 'header.community' },
   { to: ROUTES.GROUPS, label: 'header.groups' },
 ]

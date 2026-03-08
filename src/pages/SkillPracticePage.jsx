@@ -1,45 +1,73 @@
-import { Link, useParams } from 'react-router-dom'
+import { Link, useParams, useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
-import {
-  SKILLS,
-  SKILL_TABS,
-  readingFilters,
-  readingChallenge,
-  readingCards,
-  listeningFilters,
-  listeningChallenge,
-  listeningCards,
-  writingFilters,
-  writingChallenge,
-  writingCards,
-  mockFriendsOnline,
-  mockAchievementsBySkill,
-  mockHotGames,
-} from '../raw'
+import { useAuth } from '../context/AuthContext'
+import { SKILLS, SKILL_TABS } from '../raw'
+import { ROUTES } from '../constants'
+import { useSkillPractices } from '../hooks/useSkillPractices'
 
 export function SkillPracticePage() {
   const { skill = 'reading' } = useParams()
   const { t } = useTranslation()
+  const navigate = useNavigate()
+  const { isModerator, isAdmin } = useAuth()
+  const canAddPractice = isModerator || isAdmin
+
+  const {
+    loading,
+    page,
+    setPage,
+    pagination,
+    filterLevel,
+    setFilterLevel,
+    filterTopic,
+    setFilterTopic,
+    handleApplyFilters,
+    handleResetFilters,
+    handleDeletePractice,
+    deletingId,
+    rawData,
+    cards,
+  } = useSkillPractices(skill, t)
+
   const current = SKILLS[skill] || SKILLS.reading
   const isReading = skill === 'reading'
   const isListening = skill === 'listening'
   const isWriting = skill === 'writing'
-
-  const filters = isReading ? readingFilters : isListening ? listeningFilters : writingFilters
-  const challenge = isReading ? readingChallenge : isListening ? listeningChallenge : writingChallenge
+  const challenge = rawData.challenge?.title ? rawData.challenge : { title: t('skills.challengeDefaultTitle'), desc: '', time: '', btn: 'buttons.join' }
   const challengeGradient = isReading ? 'from-indigo-900/40' : isListening ? 'from-orange-900/40' : 'from-emerald-900/40'
   const challengeIcon = isListening ? 'equalizer' : isWriting ? 'edit_square' : 'workspace_premium'
-  const friends = mockFriendsOnline[skill] || mockFriendsOnline.reading
-  const achievements = mockAchievementsBySkill[skill] || mockAchievementsBySkill.reading
+  const friendsOnline = rawData.friendsOnline[skill] || rawData.friendsOnline.reading || []
+  const achievements = rawData.achievementsBySkill[skill] || rawData.achievementsBySkill.reading || []
 
   const renderCards = () => {
+    if (loading) {
+      return (
+        <div className="col-span-2 flex justify-center py-16">
+          <span className="material-symbols-outlined animate-spin text-4xl text-primary">progress_activity</span>
+        </div>
+      )
+    }
+    if (cards.length === 0) {
+      return (
+        <div className="col-span-2 flex flex-col items-center justify-center py-16 px-4 rounded-xl bg-card-dark border border-border-dark text-center">
+          <span className="material-symbols-outlined text-5xl text-gray-500 mb-4">folder_off</span>
+          <p className="text-gray-400 text-sm mb-4">{t('skills.emptyPractices')}</p>
+          {canAddPractice && (
+            <Link to={ROUTES.MANAGE_SKILLS} className="inline-flex items-center gap-2 px-4 py-2.5 bg-primary hover:bg-primary/90 text-background-dark font-bold rounded-xl text-sm transition-all">
+              <span className="material-symbols-outlined text-lg">add_circle</span>
+              {t('skills.addPractice')}
+            </Link>
+          )}
+        </div>
+      )
+    }
     if (isReading) {
-      return readingCards.map((card) => (
+      return cards.map((card) => (
         <div
-          key={card.title}
+          key={card.id || card.title}
           className="bg-card-dark rounded-xl border border-border-dark overflow-hidden group hover:border-primary/50 transition-all"
         >
-          <div className="h-32 bg-cover bg-center" style={{ backgroundImage: `url('${card.img}')` }} />
+          <div className="h-32 bg-cover bg-center" style={{ backgroundImage: card.img ? `url('${card.img}')` : undefined }} />
           <div className="p-4 space-y-3">
             <div className="flex justify-between items-start">
               <h5 className="font-bold text-sm leading-snug group-hover:text-primary transition-colors">{card.title}</h5>
@@ -47,42 +75,63 @@ export function SkillPracticePage() {
             </div>
             <p className="text-xs text-gray-400 line-clamp-2">{card.desc}</p>
             <div className="flex flex-wrap gap-2 py-2">
-              <span className="px-2 py-0.5 bg-gray-700 text-gray-300 text-[10px] rounded flex items-center gap-1">
-                <span className="material-symbols-outlined text-xs">category</span> {card.topic}
-              </span>
-              <span className="px-2 py-0.5 bg-gray-700 text-gray-300 text-[10px] rounded flex items-center gap-1">
-                <span className="material-symbols-outlined text-xs">timer</span> {card.time}
-              </span>
-              <span className="px-2 py-0.5 bg-gray-700 text-gray-300 text-[10px] rounded flex items-center gap-1">
-                <span className="material-symbols-outlined text-xs">quiz</span> {card.questions}
-              </span>
+              {card.topic && (
+                <span className="px-2 py-0.5 bg-gray-700 text-gray-300 text-[10px] rounded flex items-center gap-1">
+                  <span className="material-symbols-outlined text-xs">category</span> {card.topic}
+                </span>
+              )}
+              {card.time && (
+                <span className="px-2 py-0.5 bg-gray-700 text-gray-300 text-[10px] rounded flex items-center gap-1">
+                  <span className="material-symbols-outlined text-xs">timer</span> {card.time}
+                </span>
+              )}
+              {card.questions && (
+                <span className="px-2 py-0.5 bg-gray-700 text-gray-300 text-[10px] rounded flex items-center gap-1">
+                  <span className="material-symbols-outlined text-xs">quiz</span> {card.questions}
+                </span>
+              )}
             </div>
             <div className="flex items-center justify-between pt-2 border-t border-border-dark">
               <div className="flex items-center gap-1">
                 <span className="material-symbols-outlined text-yellow-500 text-sm fill-icon">star</span>
-                <span className="text-[10px] font-bold">TB: {card.rating}</span>
+                <span className="text-[10px] font-bold">{t('skills.ratingLabel')}: {card.rating}</span>
               </div>
-              <button className="px-4 py-1.5 bg-primary/10 text-primary hover:bg-primary hover:text-background-dark font-bold text-xs rounded transition-all">
-                {t('buttons.start')}
-              </button>
+              <div className="flex items-center gap-2">
+                {canAddPractice && card.id && (
+                  <>
+                    <Link to={`/manage/skills/${card.id}`} className="p-2 rounded-lg text-gray-400 hover:bg-white/10 hover:text-primary transition-colors" title={t('quests.edit')}>
+                      <span className="material-symbols-outlined text-sm">edit</span>
+                    </Link>
+                    <button type="button" onClick={() => handleDeletePractice(card)} disabled={deletingId === card.id} className="p-2 rounded-lg text-gray-400 hover:bg-red-500/10 hover:text-red-400 transition-colors disabled:opacity-50" title={t('quests.delete')}>
+                      <span className="material-symbols-outlined text-sm">delete</span>
+                    </button>
+                  </>
+                )}
+                <button
+                  onClick={() => navigate(`/lesson/reading/${card.id}`)}
+                  className="px-4 py-1.5 bg-primary/10 text-primary hover:bg-primary hover:text-background-dark font-bold text-xs rounded transition-all"
+                >
+                  {t('buttons.start')}
+                </button>
+              </div>
             </div>
           </div>
         </div>
       ))
     }
     if (isListening) {
-      return listeningCards.map((card) => (
+      return cards.map((card) => (
         <div
-          key={card.title}
+          key={card.id || card.title}
           className="bg-card-dark rounded-xl border border-border-dark overflow-hidden group hover:border-primary/50 transition-all"
         >
-          <div className="h-32 bg-cover bg-center relative" style={{ backgroundImage: `url('${card.img}')` }}>
+          <div className="h-32 bg-cover bg-center relative" style={{ backgroundImage: card.img ? `url('${card.img}')` : undefined }}>
             <div className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
               <span className="material-symbols-outlined text-white text-5xl">play_circle</span>
             </div>
             <div className="absolute bottom-2 left-2 flex items-center gap-1.5 px-2 py-1 bg-black/60 backdrop-blur rounded text-[10px] font-medium">
               <span className="material-symbols-outlined text-xs text-primary">equalizer</span>
-              Audio Content
+              {t('skills.audioContent')}
             </div>
           </div>
           <div className="p-4 space-y-3">
@@ -90,47 +139,70 @@ export function SkillPracticePage() {
               <h5 className="font-bold text-sm leading-snug group-hover:text-primary transition-colors">{card.title}</h5>
               <span className={`px-1.5 py-0.5 ${card.levelColor} text-[9px] font-bold rounded`}>{card.level}</span>
             </div>
-            <div className="flex items-center gap-2">
-              <span className={`px-2 py-0.5 ${card.accentClass} text-[10px] font-bold rounded-full border`}>{card.accent}</span>
-            </div>
+            {card.accent && (
+              <div className="flex items-center gap-2">
+                <span className={`px-2 py-0.5 ${card.accentClass} text-[10px] font-bold rounded-full border`}>{card.accent}</span>
+              </div>
+            )}
             <p className="text-xs text-gray-400 line-clamp-2">{card.desc}</p>
             <div className="flex flex-wrap gap-2 py-2">
-              <span className="px-2 py-0.5 bg-gray-700 text-gray-300 text-[10px] rounded flex items-center gap-1">
-                <span className="material-symbols-outlined text-xs">category</span> {card.topic}
-              </span>
-              <span className="px-2 py-0.5 bg-gray-700 text-gray-300 text-[10px] rounded flex items-center gap-1">
-                <span className="material-symbols-outlined text-xs">timer</span> {card.time}
-              </span>
-              <span className="px-2 py-0.5 bg-gray-700 text-gray-300 text-[10px] rounded flex items-center gap-1">
-                <span className="material-symbols-outlined text-xs">quiz</span> {card.questions}
-              </span>
+              {card.topic && (
+                <span className="px-2 py-0.5 bg-gray-700 text-gray-300 text-[10px] rounded flex items-center gap-1">
+                  <span className="material-symbols-outlined text-xs">category</span> {card.topic}
+                </span>
+              )}
+              {card.time && (
+                <span className="px-2 py-0.5 bg-gray-700 text-gray-300 text-[10px] rounded flex items-center gap-1">
+                  <span className="material-symbols-outlined text-xs">timer</span> {card.time}
+                </span>
+              )}
+              {card.questions && (
+                <span className="px-2 py-0.5 bg-gray-700 text-gray-300 text-[10px] rounded flex items-center gap-1">
+                  <span className="material-symbols-outlined text-xs">quiz</span> {card.questions}
+                </span>
+              )}
             </div>
             <div className="flex items-center justify-between pt-2 border-t border-border-dark">
               <div className="flex items-center gap-1">
                 <span className="material-symbols-outlined text-yellow-500 text-sm fill-icon">star</span>
-                <span className="text-[10px] font-bold">TB: {card.rating}</span>
+                <span className="text-[10px] font-bold">{t('skills.ratingLabel')}: {card.rating}</span>
               </div>
-              <button className="px-4 py-1.5 bg-primary/10 text-primary hover:bg-primary hover:text-background-dark font-bold text-xs rounded transition-all">
-                {t('buttons.startListening')}
-              </button>
+              <div className="flex items-center gap-2">
+                {canAddPractice && card.id && (
+                  <>
+                    <Link to={`/manage/skills/${card.id}`} className="p-2 rounded-lg text-gray-400 hover:bg-white/10 hover:text-primary transition-colors" title={t('quests.edit')}>
+                      <span className="material-symbols-outlined text-sm">edit</span>
+                    </Link>
+                    <button type="button" onClick={() => handleDeletePractice(card)} disabled={deletingId === card.id} className="p-2 rounded-lg text-gray-400 hover:bg-red-500/10 hover:text-red-400 transition-colors disabled:opacity-50" title={t('quests.delete')}>
+                      <span className="material-symbols-outlined text-sm">delete</span>
+                    </button>
+                  </>
+                )}
+                <button
+                  onClick={() => navigate(`/lesson/listening/${card.id}`)}
+                  className="px-4 py-1.5 bg-primary/10 text-primary hover:bg-primary hover:text-background-dark font-bold text-xs rounded transition-all"
+                >
+                  {t('buttons.startListening')}
+                </button>
+              </div>
             </div>
           </div>
         </div>
       ))
     }
     if (isWriting) {
-      return writingCards.map((card) => (
+      return cards.map((card) => (
         <div
-          key={card.title}
+          key={card.id || card.title}
           className="bg-card-dark rounded-xl border border-border-dark overflow-hidden group hover:border-primary/50 transition-all"
         >
-          <div className="h-32 bg-cover bg-center relative" style={{ backgroundImage: `url('${card.img}')` }}>
+          <div className="h-32 bg-cover bg-center relative" style={{ backgroundImage: card.img ? `url('${card.img}')` : undefined }}>
             <div className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
               <span className="material-symbols-outlined text-white text-5xl">edit_note</span>
             </div>
             <div className="absolute bottom-2 left-2 flex items-center gap-1.5 px-2 py-1 bg-black/60 backdrop-blur rounded text-[10px] font-medium">
               <span className="material-symbols-outlined text-xs text-primary">description</span>
-              Writing Task
+              {t('skills.writingTask')}
             </div>
           </div>
           <div className="p-4 space-y-3">
@@ -138,29 +210,52 @@ export function SkillPracticePage() {
               <h5 className="font-bold text-sm leading-snug group-hover:text-primary transition-colors">{card.title}</h5>
               <span className={`px-1.5 py-0.5 ${card.levelColor} text-[9px] font-bold rounded`}>{card.level}</span>
             </div>
-            <div className="flex items-center gap-2">
-              <span className={`px-2 py-0.5 ${card.typeClass} text-[10px] font-bold rounded-full border`}>{card.type}</span>
-            </div>
+            {card.type && (
+              <div className="flex items-center gap-2">
+                <span className={`px-2 py-0.5 ${card.typeClass} text-[10px] font-bold rounded-full border`}>{card.type}</span>
+              </div>
+            )}
             <p className="text-xs text-gray-400 line-clamp-2">{card.desc}</p>
             <div className="flex flex-wrap gap-2 py-2">
-              <span className="px-2 py-0.5 bg-gray-700 text-gray-300 text-[10px] rounded flex items-center gap-1">
-                <span className="material-symbols-outlined text-xs">category</span> {card.topic}
-              </span>
-              <span className="px-2 py-0.5 bg-gray-700 text-gray-300 text-[10px] rounded flex items-center gap-1">
-                <span className="material-symbols-outlined text-xs">straighten</span> {card.length}
-              </span>
-              <span className="px-2 py-0.5 bg-gray-700 text-gray-300 text-[10px] rounded flex items-center gap-1">
-                <span className="material-symbols-outlined text-xs">timer</span> {card.time}
-              </span>
+              {card.topic && (
+                <span className="px-2 py-0.5 bg-gray-700 text-gray-300 text-[10px] rounded flex items-center gap-1">
+                  <span className="material-symbols-outlined text-xs">category</span> {card.topic}
+                </span>
+              )}
+              {card.length && (
+                <span className="px-2 py-0.5 bg-gray-700 text-gray-300 text-[10px] rounded flex items-center gap-1">
+                  <span className="material-symbols-outlined text-xs">straighten</span> {card.length}
+                </span>
+              )}
+              {card.time && (
+                <span className="px-2 py-0.5 bg-gray-700 text-gray-300 text-[10px] rounded flex items-center gap-1">
+                  <span className="material-symbols-outlined text-xs">timer</span> {card.time}
+                </span>
+              )}
             </div>
             <div className="flex items-center justify-between pt-2 border-t border-border-dark">
               <div className="flex items-center gap-1">
                 <span className="material-symbols-outlined text-yellow-500 text-sm fill-icon">star</span>
-                <span className="text-[10px] font-bold">TB: {card.rating}</span>
+                <span className="text-[10px] font-bold">{t('skills.ratingLabel')}: {card.rating}</span>
               </div>
-              <button className="px-4 py-1.5 bg-primary/10 text-primary hover:bg-primary hover:text-background-dark font-bold text-xs rounded transition-all">
-                {t('buttons.startWriting')}
-              </button>
+              <div className="flex items-center gap-2">
+                {canAddPractice && card.id && (
+                  <>
+                    <Link to={`/manage/skills/${card.id}`} className="p-2 rounded-lg text-gray-400 hover:bg-white/10 hover:text-primary transition-colors" title={t('quests.edit')}>
+                      <span className="material-symbols-outlined text-sm">edit</span>
+                    </Link>
+                    <button type="button" onClick={() => handleDeletePractice(card)} disabled={deletingId === card.id} className="p-2 rounded-lg text-gray-400 hover:bg-red-500/10 hover:text-red-400 transition-colors disabled:opacity-50" title={t('quests.delete')}>
+                      <span className="material-symbols-outlined text-sm">delete</span>
+                    </button>
+                  </>
+                )}
+                <button
+                  onClick={() => navigate(`/lesson/writing/${card.id}`)}
+                  className="px-4 py-1.5 bg-primary/10 text-primary hover:bg-primary hover:text-background-dark font-bold text-xs rounded transition-all"
+                >
+                  {t('buttons.startWriting')}
+                </button>
+              </div>
             </div>
           </div>
         </div>
@@ -171,7 +266,195 @@ export function SkillPracticePage() {
 
   return (
     <main className="max-w-[1440px] mx-auto grid grid-cols-12 gap-6 p-6">
-      {/* Left sidebar - same for all skills */}
+      {/* Left sidebar - Add practice + Tabs + Filters + Goals + Roadmap */}
+      <aside className="col-span-12 lg:col-span-3 space-y-5 overflow-hidden">
+        <div className="space-y-4">
+          {canAddPractice && (
+            <Link
+              to={ROUTES.MANAGE_SKILLS}
+              className="flex items-center justify-center gap-2 w-full py-3 bg-primary hover:bg-primary/90 text-background-dark font-semibold rounded-xl text-sm transition-all shadow-lg shadow-primary/25 border border-primary/30"
+            >
+              <span className="material-symbols-outlined text-xl">add_circle</span>
+              {t('skills.addPractice')}
+            </Link>
+          )}
+          <div className="bg-card-dark rounded-xl border border-border-dark overflow-hidden">
+            <div className="grid grid-cols-2 gap-1 p-1.5">
+              {SKILL_TABS.map(({ to, key, icon, label }) => (
+                <Link
+                  key={to}
+                  to={to}
+                  className={`py-2.5 px-2 rounded-lg text-xs font-medium flex items-center justify-center gap-1.5 transition-all min-w-0 ${
+                    key && key === skill
+                      ? 'bg-primary/20 text-primary border border-primary/40 font-semibold'
+                      : 'hover:bg-white/5 text-gray-400 hover:text-white border border-transparent'
+                  }`}
+                >
+                  <span className="material-symbols-outlined text-base shrink-0">{icon}</span>
+                  <span className="truncate">{t(label)}</span>
+                </Link>
+              ))}
+            </div>
+          </div>
+          <div className="bg-card-dark rounded-xl border border-border-dark p-4 space-y-4">
+            <h4 className="text-xs font-semibold text-gray-400 uppercase tracking-wider flex items-center gap-1.5">
+              <span className="material-symbols-outlined text-sm">filter_list</span>
+              {t('skills.filters')}
+            </h4>
+            <div className="space-y-3">
+              <label className="block text-xs font-medium text-gray-400">{t('skills.filterLevel')}</label>
+              <select
+                value={filterLevel}
+                onChange={(e) => setFilterLevel(e.target.value)}
+                className="w-full bg-background-dark border border-border-dark text-sm rounded-lg focus:ring-2 focus:ring-primary focus:border-primary px-3 py-2.5 text-white"
+              >
+                <option value="">{t('skills.filterAll')}</option>
+                <option value="A1">A1</option>
+                <option value="A2">A2</option>
+                <option value="B1">B1</option>
+                <option value="B2">B2</option>
+                <option value="C1">C1</option>
+                <option value="C2">C2</option>
+              </select>
+            </div>
+            <div className="space-y-3">
+              <label className="block text-xs font-medium text-gray-400">{t('skills.filterTopic')}</label>
+              <select
+                value={filterTopic}
+                onChange={(e) => setFilterTopic(e.target.value)}
+                className="w-full bg-background-dark border border-border-dark text-sm rounded-lg focus:ring-2 focus:ring-primary focus:border-primary px-3 py-2.5 text-white"
+              >
+                <option value="">{t('skills.filterAll')}</option>
+                <option value="Work">{t('skills.topicWork')}</option>
+                <option value="Study">{t('skills.topicStudy')}</option>
+                <option value="Travel">{t('skills.topicTravel')}</option>
+                <option value="Food and drink">{t('skills.topicFood')}</option>
+                <option value="Transport">{t('skills.topicTransport')}</option>
+                <option value="Business">{t('skills.topicBusiness')}</option>
+              </select>
+            </div>
+            <div className="flex gap-2 pt-1">
+              <button onClick={handleResetFilters} type="button" className="flex-1 py-2.5 text-sm font-medium text-gray-400 hover:text-white rounded-lg bg-background-dark border border-border-dark transition-colors">
+                {t('buttons.reset')}
+              </button>
+              <button onClick={handleApplyFilters} type="button" className="flex-1 py-2.5 bg-primary text-white font-semibold text-sm rounded-lg hover:brightness-110 transition-all">
+                {t('buttons.save')}
+              </button>
+            </div>
+          </div>
+        </div>
+        <div className="bg-card-dark rounded-xl border border-border-dark p-5">
+          <div className="flex justify-between items-center mb-4">
+            <h3 className="font-semibold text-sm text-white flex items-center gap-2">
+              <span className="material-symbols-outlined text-primary text-lg">flag</span>
+              {t('skills.goals')}
+            </h3>
+            <div className="flex gap-1.5">
+              <button className="size-8 flex items-center justify-center rounded-lg bg-white/5 hover:bg-white/10 text-gray-400 hover:text-white border border-border-dark transition-colors" type="button" title={t('buttons.edit')}>
+                <span className="material-symbols-outlined text-sm">edit</span>
+              </button>
+              <button className="size-8 flex items-center justify-center rounded-lg bg-primary/20 hover:bg-primary/30 text-primary border border-primary/30 transition-colors" type="button" title={t('buttons.add')}>
+                <span className="material-symbols-outlined text-sm">add</span>
+              </button>
+            </div>
+          </div>
+          <div className="space-y-5">
+            <div>
+              <div className="flex justify-between items-center mb-2">
+                <span className="text-xs font-medium text-gray-300">{t('skills.readingDaily')}</span>
+                <span className="text-xs font-bold text-primary">80%</span>
+              </div>
+              <div className="h-2 w-full bg-gray-700/80 rounded-full overflow-hidden">
+                <div className="h-full bg-primary rounded-full transition-all" style={{ width: '80%' }} />
+              </div>
+            </div>
+            <div>
+              <div className="flex justify-between items-center mb-2">
+                <span className="text-xs font-medium text-gray-300">{t('skills.vocabularyGoal')}</span>
+                <span className="text-xs font-bold text-orange-400">45%</span>
+              </div>
+              <div className="h-2 w-full bg-gray-700/80 rounded-full overflow-hidden">
+                <div className="h-full bg-orange-400 rounded-full transition-all" style={{ width: '45%' }} />
+              </div>
+            </div>
+          </div>
+        </div>
+        <div className="bg-card-dark rounded-xl border border-border-dark p-5">
+          <h3 className="font-semibold text-sm text-white mb-4">{t('skills.roadmapProgress')}</h3>
+          <div className="flex items-center gap-4 mb-4">
+            <div className="size-12 rounded-full border-4 border-primary border-t-transparent flex items-center justify-center font-bold text-primary shrink-0">
+              B2
+            </div>
+            <div className="min-w-0">
+              <p className="text-xs text-gray-400">{t('skills.currentLevel')}</p>
+              <p className="font-semibold text-white truncate">{t('skills.levelIntermediate')}</p>
+            </div>
+          </div>
+          <div className="space-y-2 mb-4">
+            <div className="flex justify-between text-[10px] text-gray-400">
+              <span>{t('skills.roadmapToLevel')}</span>
+            </div>
+            <div className="h-2 w-full bg-gray-700/80 rounded-full overflow-hidden">
+              <div className="h-full bg-emerald-500 rounded-full transition-all" style={{ width: '65%' }} />
+            </div>
+          </div>
+          <button className="w-full py-2.5 bg-white/5 hover:bg-white/10 text-gray-300 hover:text-white rounded-lg text-sm font-medium border border-border-dark transition-colors" type="button">
+            {t('skills.viewDetails')}
+          </button>
+        </div>
+      </aside>
+
+      {/* Center - challenge + cards */}
+      <section className="col-span-12 lg:col-span-6 space-y-6">
+        <div className={`bg-gradient-to-r ${challengeGradient} to-primary/20 border border-primary/30 rounded-xl p-5 relative overflow-hidden`}>
+          <div className="relative z-10 flex items-center justify-between">
+            <div className="space-y-2">
+              <div className="flex items-center gap-2">
+                <span className="px-2 py-0.5 bg-primary text-background-dark text-[10px] font-bold rounded">{t('enter.weeklyChallenge')}</span>
+                <span className="text-xs text-primary flex items-center gap-1">
+                  <span className="material-symbols-outlined text-sm">schedule</span> {challenge.time}
+                </span>
+              </div>
+              <h4 className="font-bold text-lg text-white">{challenge.title}</h4>
+              <p className="text-xs text-gray-300">{challenge.desc}</p>
+              <button className="mt-2 px-6 py-2 bg-primary text-background-dark font-bold text-sm rounded-lg hover:brightness-110" type="button">
+                {t(challenge.btn)}
+              </button>
+            </div>
+            <span className="material-symbols-outlined text-7xl text-primary/20">{challengeIcon}</span>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">{renderCards()}</div>
+
+        {!loading && pagination.total > 0 && (
+          <div className="flex flex-wrap items-center justify-center gap-3 pt-6 pb-2">
+            <button
+              type="button"
+              disabled={page <= 1}
+              onClick={() => setPage((p) => Math.max(1, p - 1))}
+              className="px-4 py-2 rounded-lg bg-card-dark border border-border-dark text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-700 transition-colors flex items-center gap-1"
+            >
+              <span className="material-symbols-outlined text-lg">chevron_left</span>
+              {t('buttons.prev') || 'Trước'}
+            </button>
+            <span className="px-4 py-2 text-sm text-gray-300">
+              {t('skills.page') || 'Trang'} {page} / {pagination.totalPages} ({pagination.total} {t('skills.items') || 'bài'})
+            </span>
+            <button
+              type="button"
+              disabled={page >= pagination.totalPages}
+              onClick={() => setPage((p) => Math.min(pagination.totalPages, p + 1))}
+              className="px-4 py-2 rounded-lg bg-card-dark border border-border-dark text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-700 transition-colors flex items-center gap-1"
+            >
+              {t('buttons.next') || 'Sau'}
+              <span className="material-symbols-outlined text-lg">chevron_right</span>
+            </button>
+          </div>
+        )}
+      </section>
+
+      {/* Right sidebar - Skill Stats + Friends, Achievements, Hot Games */}
       <aside className="col-span-12 lg:col-span-3 space-y-6">
         <div className="bg-card-dark rounded-xl p-5 border border-border-dark">
           <h3 className="font-bold text-sm mb-4 flex items-center gap-2">
@@ -197,136 +480,12 @@ export function SkillPracticePage() {
           </div>
         </div>
         <div className="bg-card-dark rounded-xl p-5 border border-border-dark">
-          <div className="flex justify-between items-center mb-4">
-            <h3 className="font-bold text-sm flex items-center gap-2">
-              <span className="material-symbols-outlined text-primary">flag</span>
-              {t('skills.goals')}
-            </h3>
-            <div className="flex gap-1">
-              <button className="size-7 flex items-center justify-center rounded bg-gray-700 hover:bg-gray-600" type="button">
-                <span className="material-symbols-outlined text-xs">edit</span>
-              </button>
-              <button className="size-7 flex items-center justify-center rounded bg-primary/20 text-primary hover:bg-primary/30" type="button">
-                <span className="material-symbols-outlined text-xs">add</span>
-              </button>
-            </div>
-          </div>
-          <div className="space-y-4">
-            <div>
-              <div className="flex justify-between text-[10px] mb-1">
-                <span>{t('skills.readingDaily')}</span>
-                <span>80%</span>
-              </div>
-              <div className="h-1.5 w-full bg-gray-700 rounded-full">
-                <div className="h-full bg-primary rounded-full" style={{ width: '80%' }} />
-              </div>
-            </div>
-            <div>
-              <div className="flex justify-between text-[10px] mb-1">
-                <span>{t('skills.vocabularyGoal')}</span>
-                <span>45%</span>
-              </div>
-              <div className="h-1.5 w-full bg-gray-700 rounded-full">
-                <div className="h-full bg-orange-400 rounded-full" style={{ width: '45%' }} />
-              </div>
-            </div>
-          </div>
-        </div>
-        <div className="bg-card-dark rounded-xl p-5 border border-border-dark">
-          <h3 className="font-bold text-sm mb-4">{t('skills.roadmapProgress')}</h3>
-          <div className="flex items-center gap-4 mb-4">
-            <div className="size-12 rounded-full border-4 border-primary border-t-transparent flex items-center justify-center font-bold text-primary">
-              B2
-            </div>
-            <div>
-              <p className="text-xs text-gray-400">{t('skills.currentLevel')}</p>
-              <p className="font-bold">Intermediate</p>
-            </div>
-          </div>
-          <div className="space-y-2 mb-4">
-            <div className="flex justify-between text-[10px]">
-              <span>65% to C1 Advanced</span>
-            </div>
-            <div className="h-2 w-full bg-gray-700 rounded-full">
-              <div className="h-full bg-emerald-500 rounded-full" style={{ width: '65%' }} />
-            </div>
-          </div>
-          <button className="w-full py-2 bg-gray-700 hover:bg-gray-600 rounded-lg text-xs font-bold transition-all" type="button">
-            {t('skills.viewDetails')}
-          </button>
-        </div>
-      </aside>
-
-      {/* Center - tabs + filters + challenge + cards */}
-      <section className="col-span-12 lg:col-span-6 space-y-6">
-        <div className="bg-card-dark p-1 rounded-xl flex border border-border-dark">
-          {SKILL_TABS.map(({ to, key, icon, label }) => (
-            <Link
-              key={to}
-              to={to}
-              className={`flex-1 py-2.5 rounded-lg text-sm font-medium flex items-center justify-center gap-2 transition-all ${
-                key && key === skill
-                  ? 'bg-background-dark border border-border-dark text-primary font-bold'
-                  : 'hover:bg-gray-700 text-gray-400'
-              }`}
-            >
-              <span className="material-symbols-outlined text-lg">{icon}</span>
-              {t(label)}
-            </Link>
-          ))}
-        </div>
-
-        <div className="bg-card-dark p-4 rounded-xl border border-border-dark flex flex-wrap gap-3 items-center">
-          {filters.map((f) => (
-            <select
-              key={f.label}
-              className="bg-background-dark border-border-dark text-xs rounded-lg focus:ring-primary focus:border-primary px-3 py-2 min-w-[120px]"
-            >
-              <option>{f.label}</option>
-              {f.options.map((opt) => (
-                <option key={opt}>{opt}</option>
-              ))}
-            </select>
-          ))}
-          <div className="flex gap-2 ml-auto">
-            <button className="px-3 py-2 text-xs font-medium text-gray-400 hover:text-white" type="button">Đặt lại</button>
-            <button className="px-4 py-2 bg-primary text-background-dark font-bold text-xs rounded-lg hover:brightness-110" type="button">
-              Lưu
-            </button>
-          </div>
-        </div>
-
-        <div className={`bg-gradient-to-r ${challengeGradient} to-primary/20 border border-primary/30 rounded-xl p-5 relative overflow-hidden`}>
-          <div className="relative z-10 flex items-center justify-between">
-            <div className="space-y-2">
-              <div className="flex items-center gap-2">
-                <span className="px-2 py-0.5 bg-primary text-background-dark text-[10px] font-bold rounded">{t('enter.weeklyChallenge')}</span>
-                <span className="text-xs text-primary flex items-center gap-1">
-                  <span className="material-symbols-outlined text-sm">schedule</span> {challenge.time}
-                </span>
-              </div>
-              <h4 className="font-bold text-lg text-white">{challenge.title}</h4>
-              <p className="text-xs text-gray-300">{challenge.desc}</p>
-              <button className="mt-2 px-6 py-2 bg-primary text-background-dark font-bold text-sm rounded-lg hover:brightness-110" type="button">
-                {t(challenge.btn)}
-              </button>
-            </div>
-            <span className="material-symbols-outlined text-7xl text-primary/20">{challengeIcon}</span>
-          </div>
-        </div>
-
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">{renderCards()}</div>
-      </section>
-
-      {/* Right sidebar - Friends, Achievements, Hot Games */}
-      <aside className="col-span-12 lg:col-span-3 space-y-6">
-        <div className="bg-card-dark rounded-xl p-5 border border-border-dark">
           <h3 className="font-bold text-sm mb-4 flex items-center justify-between">
             {t('enter.friendsOnline')}
             <span className="size-2 bg-green-500 rounded-full animate-pulse" />
           </h3>
           <div className="space-y-4">
-            {friends.map(({ name, activity }) => (
+            {friendsOnline.map(({ name, activity }) => (
               <div key={name} className="flex items-center gap-3">
                 <div className="size-9 rounded-full bg-slate-600 border border-primary relative" />
                 <div className="text-xs">
@@ -357,34 +516,22 @@ export function SkillPracticePage() {
             {t('enter.hotGames')}
           </h3>
           <div className="space-y-4">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <div className="size-8 rounded bg-indigo-500 flex items-center justify-center">
-                  <span className="material-symbols-outlined text-white text-sm">spellcheck</span>
+            {rawData.hotGames.map(({ id, icon, title, playing, bgColor }) => (
+              <div key={id} className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <div className={`size-8 rounded ${bgColor || 'bg-indigo-500'} flex items-center justify-center`}>
+                    <span className="material-symbols-outlined text-white text-sm">{icon || 'spellcheck'}</span>
+                  </div>
+                  <div className="text-[10px]">
+                    <p className="font-bold">{title}</p>
+                    <p className="text-gray-400">{playing} {t('enter.playing')}</p>
+                  </div>
                 </div>
-                <div className="text-[10px]">
-                  <p className="font-bold">Word Battle</p>
-                  <p className="text-gray-400">120 {t('enter.playing')}</p>
-                </div>
+                <button className="px-3 py-1 bg-primary/20 text-primary text-[10px] font-bold rounded hover:bg-primary hover:text-background-dark transition-all" type="button">
+                  {t('buttons.join')}
+                </button>
               </div>
-              <button className="px-3 py-1 bg-primary/20 text-primary text-[10px] font-bold rounded hover:bg-primary hover:text-background-dark transition-all" type="button">
-                {t('buttons.join')}
-              </button>
-            </div>
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <div className="size-8 rounded bg-emerald-500 flex items-center justify-center">
-                  <span className="material-symbols-outlined text-white text-sm">psychology</span>
-                </div>
-                <div className="text-[10px]">
-                  <p className="font-bold">Quiz Arena</p>
-                  <p className="text-gray-400">85 {t('enter.playing')}</p>
-                </div>
-              </div>
-              <button className="px-3 py-1 bg-primary/20 text-primary text-[10px] font-bold rounded hover:bg-primary hover:text-background-dark transition-all" type="button">
-                {t('buttons.join')}
-              </button>
-            </div>
+            ))}
           </div>
         </div>
       </aside>

@@ -63,12 +63,93 @@ export const userService = {
     return apiClient.patch(API_ENDPOINTS.USER.UPDATE_PROFILE, userData)
   },
 
+  uploadAvatar: async (file) => {
+    const formData = new FormData()
+    formData.append('avatar', file)
+    return apiClient.upload(API_ENDPOINTS.USER.UPLOAD_AVATAR, formData)
+  },
+
   getStats: async () => {
     return apiClient.get(API_ENDPOINTS.USER.STATS)
   },
 
   getGoals: async () => {
     return apiClient.get(API_ENDPOINTS.USER.GOALS)
+  },
+}
+
+/**
+ * Practices Services (Skill Practice - tách biệt với Lessons)
+ */
+export const practicesService = {
+  getPractices: async (filters = {}) => {
+    const params = new URLSearchParams(filters).toString()
+    return apiClient.get(`${API_ENDPOINTS.PRACTICES.LIST}${params ? `?${params}` : ''}`)
+  },
+  getFallback: async (skill = 'reading') => {
+    return apiClient.get(`${API_ENDPOINTS.PRACTICES.FALLBACK}?skill=${skill}`)
+  },
+}
+
+/**
+ * Raw Services (mock data từ BE)
+ */
+export const rawService = {
+  getDashboard: () => apiClient.get(API_ENDPOINTS.RAW.DASHBOARD),
+  getGames: () => apiClient.get(API_ENDPOINTS.RAW.GAMES),
+  getFriends: () => apiClient.get(API_ENDPOINTS.RAW.FRIENDS),
+  getNotifications: () => apiClient.get(API_ENDPOINTS.RAW.NOTIFICATIONS),
+  getChatbot: () => apiClient.get(API_ENDPOINTS.RAW.CHATBOT),
+}
+
+/**
+ * Quests Services
+ */
+export const questsService = {
+  getQuests: async (filters = {}) => {
+    const params = new URLSearchParams(filters).toString()
+    return apiClient.get(`${API_ENDPOINTS.QUESTS.LIST}${params ? `?${params}` : ''}`)
+  },
+  getById: (id) => apiClient.get(API_ENDPOINTS.QUESTS.DETAIL(id)),
+  create: (body) => apiClient.post(API_ENDPOINTS.QUESTS.LIST, body),
+  update: (id, body) => apiClient.put(API_ENDPOINTS.QUESTS.DETAIL(id), body),
+  delete: (id) => apiClient.delete(API_ENDPOINTS.QUESTS.DETAIL(id)),
+}
+
+/**
+ * Lessons Services
+ */
+export const lessonsService = {
+  getLessons: async (filters = {}) => {
+    const params = new URLSearchParams(filters).toString()
+    return apiClient.get(`${API_ENDPOINTS.LESSONS.LIST}${params ? `?${params}` : ''}`)
+  },
+  getById: (id) => apiClient.get(API_ENDPOINTS.LESSONS.DETAIL(id)),
+  create: (body) => apiClient.post(API_ENDPOINTS.LESSONS.LIST, body),
+  update: (id, body) => apiClient.put(API_ENDPOINTS.LESSONS.DETAIL(id), body),
+  delete: (id) => apiClient.delete(API_ENDPOINTS.LESSONS.DETAIL(id)),
+  getReadingContent: (id) => apiClient.get(API_ENDPOINTS.LESSONS.READING_CONTENT(id || 'demo')),
+  getListeningContent: (id) => apiClient.get(API_ENDPOINTS.LESSONS.LISTENING_CONTENT(id || 'demo')),
+  getWritingContent: (id) => apiClient.get(API_ENDPOINTS.LESSONS.WRITING_CONTENT(id || '')),
+  getProgress: (id) => apiClient.get(API_ENDPOINTS.LESSONS.PROGRESS(id)),
+  updateProgress: (id, body) => apiClient.patch(API_ENDPOINTS.LESSONS.PROGRESS(id), body),
+  addNote: (id, body) => apiClient.post(API_ENDPOINTS.LESSONS.NOTES(id), body),
+  complete: (id) => apiClient.post(API_ENDPOINTS.LESSONS.COMPLETE(id)),
+}
+
+export const uploadService = {
+  uploadAsset: async (file) => {
+    const formData = new FormData()
+    formData.append('file', file)
+    const res = await apiClient.upload(API_ENDPOINTS.UPLOAD.ASSET, formData)
+    return res?.data?.url
+  },
+
+  uploadPostMedia: async (file) => {
+    const formData = new FormData()
+    formData.append('file', file)
+    const res = await apiClient.upload(API_ENDPOINTS.UPLOAD.POST_MEDIA, formData)
+    return res?.data
   },
 }
 

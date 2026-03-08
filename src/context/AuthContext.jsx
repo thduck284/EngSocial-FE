@@ -59,6 +59,7 @@ export function AuthProvider({ children }) {
   const value = useMemo(() => {
     const isAuthenticated = !!getAuthToken()
     const currentUser = user ?? getStoredUser()
+    const role = currentUser?.role || 'user'
 
     const setAuth = (data) => {
       if (data?.user) setUser(data.user)
@@ -76,7 +77,10 @@ export function AuthProvider({ children }) {
 
     return {
       user: currentUser,
+      role,
       isAuthenticated,
+      isModerator: role === 'moderator',
+      isAdmin: role === 'admin',
       setAuth,
       logout,
     }
