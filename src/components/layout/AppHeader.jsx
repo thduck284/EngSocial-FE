@@ -1,4 +1,4 @@
-import { Link, useLocation } from 'react-router-dom'
+import { Link, useLocation, useNavigate, useSearchParams } from 'react-router-dom'
 import { useRef, useState, useEffect } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useAuth } from '../../context/AuthContext'
@@ -19,12 +19,23 @@ const LogoIcon = () => (
 
 export function AppHeader() {
   const location = useLocation()
+  const navigate = useNavigate()
+  const [searchParams] = useSearchParams()
   const { t } = useTranslation()
-  const { logout } = useAuth()
+  const { user, role, isModerator, isAdmin, logout } = useAuth()
+  const avatarUrl = user?.avatar || 'https://ui-avatars.com/api/?name=' + encodeURIComponent(user?.name || 'User') + '&background=13b6ec&color=fff'
+  const roleBadge = isAdmin ? 'Admin' : isModerator ? 'Moderator' : null
   const [notifOpen, setNotifOpen] = useState(false)
   const [avatarOpen, setAvatarOpen] = useState(false)
+  const [searchValue, setSearchValue] = useState(() => (location.pathname === ROUTES.SEARCH ? searchParams.get('q') || '' : ''))
   const notifButtonRef = useRef(null)
   const avatarRef = useRef(null)
+
+  useEffect(() => {
+    if (location.pathname === ROUTES.SEARCH) {
+      setSearchValue(searchParams.get('q') || '')
+    }
+  }, [location.pathname, searchParams])
 
   useEffect(() => {
     if (!avatarOpen) return
@@ -43,38 +54,46 @@ export function AppHeader() {
   return (
     <header className="sticky top-0 z-50 w-full bg-background-dark/80 backdrop-blur-md border-b border-border-dark px-4 md:px-10 py-3">
       <div className="max-w-[1440px] mx-auto flex items-center justify-between gap-4">
-        <div className="flex items-center gap-8 flex-1">
-          <Link to={ROUTES.HOME} className="flex items-center gap-2 text-primary">
+        <div className="flex items-center gap-6 flex-1 min-w-0">
+          <Link to={ROUTES.HOME} className="flex items-center gap-2 text-primary shrink-0">
             <LogoIcon />
             <span className="text-2xl font-bold tracking-tight hidden lg:block">EngSocial</span>
           </Link>
-          <div className="hidden md:flex flex-1 max-w-md items-center bg-card-dark rounded-lg px-3 py-2 border border-border-dark">
-            <span className="material-symbols-outlined text-gray-400 text-xl">search</span>
+          <div className="hidden md:flex flex-1 max-w-[320px] items-center bg-card-dark rounded-lg px-3 py-2 border border-border-dark">
+            <span className="material-symbols-outlined text-gray-400 text-xl shrink-0">search</span>
             <input
-              className="bg-transparent border-none focus:ring-0 text-white placeholder-gray-400 w-full text-sm"
+              className="bg-transparent border-none focus:ring-0 text-white placeholder-gray-400 w-full text-sm min-w-0"
               placeholder={t('header.searchPlaceholder')}
               type="text"
+              value={searchValue}
+              onChange={(e) => setSearchValue(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') {
+                  const q = (e.target.value || '').trim()
+                  if (q) navigate(`${ROUTES.SEARCH}?q=${encodeURIComponent(q)}`)
+                }
+              }}
             />
           </div>
+          <nav className="hidden xl:flex items-center gap-6 shrink-0">
+            {NAV_ITEMS.map(({ to, label }) => (
+              <Link
+                key={to}
+                to={to}
+                className={`font-medium text-sm transition-colors whitespace-nowrap ${
+                  location.pathname === to ||
+                  (to === ROUTES.SKILLS.READING && (location.pathname.startsWith('/skills') || location.pathname === ROUTES.ENTER)) ||
+                  (to.startsWith('/skills') && to !== ROUTES.SKILLS.READING && location.pathname.startsWith('/skills'))
+                    ? 'text-primary font-semibold border-b-2 border-primary pb-1'
+                    : 'text-gray-400 hover:text-primary'
+                }`}
+              >
+                {t(label)}
+              </Link>
+            ))}
+          </nav>
         </div>
-        <nav className="hidden xl:flex items-center gap-6">
-          {NAV_ITEMS.map(({ to, label }) => (
-            <Link
-              key={to}
-              to={to}
-              className={`font-medium text-sm transition-colors ${
-                location.pathname === to ||
-                (to === ROUTES.SKILLS.READING && (location.pathname.startsWith('/skills') || location.pathname === ROUTES.ENTER)) ||
-                (to.startsWith('/skills') && to !== ROUTES.SKILLS.READING && location.pathname.startsWith('/skills'))
-                  ? 'text-primary font-semibold border-b-2 border-primary pb-1'
-                  : 'text-gray-400 hover:text-primary'
-              }`}
-            >
-              {t(label)}
-            </Link>
-          ))}
-        </nav>
-        <div className="flex items-center gap-4 flex-1 justify-end">
+        <div className="flex items-center gap-4 shrink-0">
           <LanguageSwitcher />
           <div className="flex gap-2">
             <div className="relative">
@@ -101,17 +120,26 @@ export function AppHeader() {
               <span className="absolute top-2 right-2.5 size-2 bg-red-500 rounded-full border-2 border-background-dark" />
             </button>
           </div>
-          <div className="relative" ref={avatarRef}>
+          <div className="relative flex items-center gap-2" ref={avatarRef}>
+            {roleBadge && (
+              <span
+                className={`text-[10px] font-bold px-2 py-0.5 rounded-full border ${
+                  isAdmin ? 'bg-amber-500/20 text-amber-400 border-amber-500/40' : 'bg-emerald-500/20 text-emerald-400 border-emerald-500/40'
+                }`}
+                title={roleBadge}
+              >
+                {roleBadge}
+              </span>
+            )}
             <button
               type="button"
               onClick={(e) => { e.stopPropagation(); setAvatarOpen((o) => !o) }}
-              className="size-10 rounded-full bg-cover bg-center border-2 border-primary cursor-pointer focus:ring-2 focus:ring-primary/50 focus:ring-offset-2 focus:ring-offset-background-dark"
-              style={{
-                backgroundImage: `url('https://lh3.googleusercontent.com/aida-public/AB6AXuA0AwCXYFkKZ6OadHZuVXKbGgPnJwXEbZ7mju_OspTxQDgYeb0a7ElTqsjD8BloFjbwxu8hlLpzQAXTpvgzA0Oe83pZ0xHTWNw47GKOKrRCMuPOBauT2uxw3bc9ydH3ojxuBArP752_-YvDYlqVx92pZjU111tnLtzgh2--MFFydJLdo4hVJfVeQlHd8jPPxNnSi4WMYG0gYJgD-Hsb2QuJZuQeZWjGlwKtSVnhhux0tIMKpd-muKa5gZUASKoxqXsnHH5ge6MgyVmx')`,
-              }}
+              className="size-10 rounded-full overflow-hidden border-2 border-primary cursor-pointer focus:ring-2 focus:ring-primary/50 focus:ring-offset-2 focus:ring-offset-background-dark flex items-center justify-center shrink-0"
               aria-expanded={avatarOpen}
               aria-haspopup="true"
-            />
+            >
+              <img src={avatarUrl} alt="" className="w-full h-full object-cover" />
+            </button>
             {avatarOpen && (
               <div className="absolute right-0 top-full mt-2 w-48 py-1 rounded-xl bg-card-dark border border-border-dark shadow-xl z-50">
                 <Link

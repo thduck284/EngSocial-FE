@@ -1,12 +1,33 @@
 import { useRef, useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { mockConversations, mockChatMessages } from '../../raw'
+import { rawService } from '../../services'
 
 export function ChatbotPanel({ open, onClose, onMinimize }) {
   const messagesEndRef = useRef(null)
   const inputRef = useRef(null)
   const { t } = useTranslation()
-  const [activeId, setActiveId] = useState(mockConversations.find((c) => c.active)?.id ?? mockConversations[0].id)
+  const [conversations, setConversations] = useState([])
+  const [messages, setMessages] = useState([])
+  const [activeId, setActiveId] = useState(null)
+
+  useEffect(() => {
+    if (open) {
+      rawService.getChatbot()
+        .then((res) => {
+          const convs = res?.data?.conversations || []
+          const msgs = res?.data?.messages || []
+          setConversations(convs)
+          setMessages(msgs)
+          const active = convs.find((c) => c.active) ?? convs[0]
+          setActiveId(active?.id ?? null)
+        })
+        .catch(() => {
+          setConversations([])
+          setMessages([])
+          setActiveId(null)
+        })
+    }
+  }, [open])
 
   useEffect(() => {
     if (open) messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
@@ -32,7 +53,7 @@ export function ChatbotPanel({ open, onClose, onMinimize }) {
             <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider px-2 py-1">{t('chatbot.conversations')}</p>
           </div>
           <div className="flex-1 overflow-y-auto custom-scrollbar min-h-0">
-            {mockConversations.map((c) => (
+            {conversations.map((c) => (
               <button
                 key={c.id}
                 type="button"
@@ -83,7 +104,7 @@ export function ChatbotPanel({ open, onClose, onMinimize }) {
 
         {/* Messages */}
         <div className="flex-1 overflow-y-auto p-4 space-y-4 custom-scrollbar min-h-0">
-          {mockChatMessages.map((msg) => (
+          {messages.map((msg) => (
             <div
               key={msg.id}
               className={`flex gap-3 ${msg.type === 'user' ? 'flex-row-reverse' : ''}`}

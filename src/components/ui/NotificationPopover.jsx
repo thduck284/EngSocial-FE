@@ -1,7 +1,7 @@
-import { useEffect, useRef } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
-import { mockNotifications } from '../../raw'
+import { rawService } from '../../services'
 
 // Helper to render notification content based on type
 const renderNotificationContent = (n) => {
@@ -23,6 +23,15 @@ const renderNotificationContent = (n) => {
 export function NotificationPopover({ open, onClose, anchorRef }) {
   const panelRef = useRef(null)
   const { t } = useTranslation()
+  const [notifications, setNotifications] = useState([])
+
+  useEffect(() => {
+    if (open) {
+      rawService.getNotifications()
+        .then((res) => setNotifications(Array.isArray(res?.data) ? res.data : []))
+        .catch(() => setNotifications([]))
+    }
+  }, [open])
 
   useEffect(() => {
     if (!open) return
@@ -58,7 +67,7 @@ export function NotificationPopover({ open, onClose, anchorRef }) {
         </button>
       </div>
       <div className="max-h-[420px] overflow-y-auto custom-scrollbar">
-        {mockNotifications.map((n) => (
+        {notifications.map((n) => (
           <button
             key={n.id}
             type="button"
