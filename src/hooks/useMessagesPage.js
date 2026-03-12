@@ -1,26 +1,20 @@
-import { useState, useRef, useEffect, useCallback, useMemo } from 'react'
+import { useState, useRef, useEffect, useLayoutEffect, useCallback, useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
-import { useLocation, useNavigate, useSearchParams, useParams } from 'react-router-dom'
-import { io } from 'socket.io-client'
+import { useLocation, useNavigate, useSearchParams } from 'react-router-dom'
 import { ROUTES } from '../constants'
 import { API_BASE_URL, API_ENDPOINTS } from '../constants/api'
 import { useAuth } from '../context/AuthContext'
-import { conversationService, friendsService } from '../services'
+import { conversationService, friendsService, uploadService } from '../services'
 import { searchGiphy as giphySearch, hasGiphyKey } from '../services/giphy.service'
 import { getAuthToken } from '../utils/auth'
 import { getMessageEmojiCategories } from '../utils/emoji'
-import {
-  formatConversationTime,
-  mapApiMessagesToUi,
-  extractRightBarMedia,
-  extractRightBarFiles,
-  extractRightBarLinks,
-  RIGHT_BAR_MEDIA_INITIAL,
-  RIGHT_BAR_FILES_INITIAL,
-  RIGHT_BAR_LINKS_INITIAL,
-} from '../utils/messages'
+import { formatConversationTime, mapApiMessagesToUi } from '../utils/messages'
+import { useConversationList } from './useConversationList'
+import { useConversationSocket } from './useConversationSocket'
+import { useRightBarData } from './useRightBarData'
 
 const SETTINGS_FOREVER_MS = 10 * 365 * 24 * 60 * 60 * 1000
+const MESSAGES_PAGE_SIZE = 10
 
 export function useMessagesPage() {
   const { t } = useTranslation()
@@ -28,19 +22,33 @@ export function useMessagesPage() {
   const location = useLocation()
   const navigate = useNavigate()
   const [searchParams, setSearchParams] = useSearchParams()
-  const { conversationId: conversationIdParam } = useParams()
-  const selectedId = conversationIdParam ?? null
 
-  const [tab, setTab] = useState('all')
-  const [searchConversations, setSearchConversations] = useState('')
-  const [friendsSearchResult, setFriendsSearchResult] = useState([])
-  const [friendsSearchLoading, setFriendsSearchLoading] = useState(false)
-  const [conversations, setConversations] = useState([])
+  const {
+    conversations,
+    setConversations,
+    conversationsLoading,
+    loadConversations,
+    filteredConversations,
+    tab,
+    setTab,
+    searchConversations,
+    setSearchConversations,
+    friendsSearchResult,
+    friendsSearchLoading,
+    handleSelectFriendToChat,
+    showCreateGroupModal,
+    setShowCreateGroupModal,
+    handleCreateGroupSuccess,
+    selectedId,
+    currentUserId,
+    normalizeLastMessage,
+    withUserId,
+  } = useConversationList()
+
   const [messages, setMessages] = useState([])
   const [messagesLoading, setMessagesLoading] = useState(false)
   const [inputText, setInputText] = useState('')
   const [withUserLoading, setWithUserLoading] = useState(false)
-  const [conversationsLoading, setConversationsLoading] = useState(true)
   const [sendLoading, setSendLoading] = useState(false)
 
   const messagesEndRef = useRef(null)
@@ -58,6 +66,7 @@ export function useMessagesPage() {
   const emojiPickerRef = useRef(null)
   const messageMenuRef = useRef(null)
   const editingMessageRef = useRef(null)
+  const rightBarSearchInputRef = useRef(null)
 
   const [openMessageMenuId, setOpenMessageMenuId] = useState(null)
   const [editingMessage, setEditingMessage] = useState(null)
@@ -72,30 +81,51 @@ export function useMessagesPage() {
   const [openReactionPickerId, setOpenReactionPickerId] = useState(null)
   const [openReactionDetailMessageId, setOpenReactionDetailMessageId] = useState(null)
   const [selectedReactionEmojiInModal, setSelectedReactionEmojiInModal] = useState(null)
-  const [rightBarMediaVisible, setRightBarMediaVisible] = useState(RIGHT_BAR_MEDIA_INITIAL)
-  const [rightBarFilesVisible, setRightBarFilesVisible] = useState(RIGHT_BAR_FILES_INITIAL)
-  const [rightBarLinksVisible, setRightBarLinksVisible] = useState(RIGHT_BAR_LINKS_INITIAL)
-  const [loadMoreMedia, setLoadMoreMedia] = useState(false)
-  const [loadMoreFiles, setLoadMoreFiles] = useState(false)
-  const [loadMoreLinks, setLoadMoreLinks] = useState(false)
   const [showNewMessageBanner, setShowNewMessageBanner] = useState(false)
   const [reactionNotification, setReactionNotification] = useState(null)
   const [openSettingsMenu, setOpenSettingsMenu] = useState(null)
   const [showDeleteAllConfirm, setShowDeleteAllConfirm] = useState(false)
+  const [showDisbandConfirm, setShowDisbandConfirm] = useState(false)
+  const [showLeaveConfirm, setShowLeaveConfirm] = useState(false)
+  const [headerActionPanel, setHeaderActionPanel] = useState(null) // 'search' | 'mute' | 'disappearing' – panel mở bên trái (main)
 
-  const currentUserId = user?.id ?? user?._id
+  const rightBar = useRightBarData(messages)
+  const {
+    rightBarSearchQuery: rightBarSearchQueryFromHook,
+    setRightBarSearchQuery: setRightBarSearchQueryFromHook,
+    panelSearchQuery: panelSearchQueryFromHook,
+    setPanelSearchQuery: setPanelSearchQueryFromHook,
+    rightBarMedia,
+    rightBarFiles,
+    rightBarLinks,
+    rightBarSearchResults,
+    panelSearchResults,
+    rightBarMediaVisible,
+    rightBarFilesVisible,
+    rightBarLinksVisible,
+    loadMoreMedia,
+    loadMoreFiles,
+    loadMoreLinks,
+    setRightBarMediaVisibleCount,
+    setRightBarFilesVisibleCount,
+    setRightBarLinksVisibleCount,
+    resetOnConversationChange: rightBarResetOnConversationChange,
+  } = rightBar
+  const rightBarSearchQuery = rightBarSearchQueryFromHook
+  const setRightBarSearchQuery = setRightBarSearchQueryFromHook
+  const panelSearchQuery = panelSearchQueryFromHook
+  const setPanelSearchQuery = setPanelSearchQueryFromHook
+  const [hasMoreOlderMessages, setHasMoreOlderMessages] = useState(false)
+  const [loadMoreMessagesLoading, setLoadMoreMessagesLoading] = useState(false)
+  const scrollRestoreRef = useRef(null) // { scrollHeight, scrollTop } sau khi prepend older messages
+  const didScrollToBottomForRef = useRef(null)
+  const messagesRef = useRef(messages)
+  messagesRef.current = messages
+
   selectedIdRef.current = selectedId
   const selected = useMemo(() => conversations.find((c) => c.id === selectedId), [conversations, selectedId])
   selectedNameRef.current = selected?.name ?? null
 
-  const normalizeLastMessage = useCallback(
-    (text) => {
-      if (!text || typeof text !== 'string') return ''
-      if (/^\[\d+\s*file\]$/i.test(String(text).trim())) return t('messages.attachedFile')
-      return String(text)
-    },
-    [t]
-  )
   const displayLastMessage = useCallback(
     (msg) => {
       if (!msg) return ''
@@ -249,104 +279,54 @@ export function useMessagesPage() {
     else setImageViewer(null)
   }, [imageViewer?.messageId, scrollToMessage])
 
-  const searchQ = searchConversations.trim().toLowerCase()
-  const filteredConversations = useMemo(
-    () =>
-      conversations.filter((c) => {
-        if (!searchQ) return true
-        const nameMatch = (c.name || '').toLowerCase().includes(searchQ)
-        const lastMsgMatch = (c.lastMessage || '').toLowerCase().includes(searchQ)
-        return nameMatch || lastMsgMatch
-      }),
-    [conversations, searchQ]
-  )
-
-  const friendsSearchQueryRef = useRef('')
-  useEffect(() => {
-    if (!searchQ) {
-      friendsSearchQueryRef.current = ''
-      setFriendsSearchResult([])
-      setFriendsSearchLoading(false)
-      return
-    }
-    const timer = setTimeout(() => {
-      const q = searchConversations.trim()
-      friendsSearchQueryRef.current = q
-      setFriendsSearchLoading(true)
-      friendsService
-        .search({ q, limit: 10, friendFilter: 'connected' })
-        .then((res) => {
-          if (friendsSearchQueryRef.current !== q) return
-          const list = Array.isArray(res?.data) ? res.data : res?.data?.data ?? []
-          setFriendsSearchResult(list)
-        })
-        .catch(() => {
-          if (friendsSearchQueryRef.current === q) setFriendsSearchResult([])
-        })
-        .finally(() => {
-          if (friendsSearchQueryRef.current === q) setFriendsSearchLoading(false)
-        })
-    }, 300)
-    return () => clearTimeout(timer)
-  }, [searchConversations, searchQ])
-
-  const handleSelectFriendToChat = useCallback(
-    (userId) => {
-      setSearchConversations('')
-      setSearchParams({ with: userId }, { replace: true })
-    },
-    [setSearchParams]
-  )
-
-  const withUserIdFromUrl = searchParams.get('with')
-  const withUserFromState = location.state?.withUser
-  const withUserId =
-    withUserIdFromUrl != null && withUserIdFromUrl !== ''
-      ? String(withUserIdFromUrl)
-      : withUserFromState?.id != null
-        ? String(withUserFromState.id)
-        : null
-
-  const loadConversations = useCallback(() => {
-    if (!currentUserId) return
-    setConversationsLoading(true)
-    conversationService
-      .getList()
-      .then((res) => {
-        const list = res?.data ?? []
-        setConversations(
-          list.map((c) => ({
-            ...c,
-            lastMessage: normalizeLastMessage(c.lastMessage),
-            time: formatConversationTime(c.lastMessageAt),
-            isGroup: false,
-          }))
-        )
-      })
-      .catch(() => setConversations([]))
-      .finally(() => setConversationsLoading(false))
-  }, [currentUserId, normalizeLastMessage])
-
-  useEffect(() => {
-    loadConversations()
-  }, [loadConversations])
-
   useEffect(() => {
     if (!selectedId || !currentUserId) {
       setMessages([])
+      setHasMoreOlderMessages(false)
+      didScrollToBottomForRef.current = null
+      scrollRestoreRef.current = null
       return
     }
+    didScrollToBottomForRef.current = null
+    scrollRestoreRef.current = null
     const otherUserId = selected?.otherUserId
     setMessagesLoading(true)
+    setHasMoreOlderMessages(false)
     conversationService
-      .getMessages(selectedId)
-      .then((res) => setMessages(mapApiMessagesToUi(res?.data ?? [], currentUserId, otherUserId)))
+      .getMessages(selectedId, { limit: MESSAGES_PAGE_SIZE })
+      .then((res) => {
+        const list = mapApiMessagesToUi(res?.data ?? [], currentUserId, otherUserId)
+        setMessages(list)
+        setHasMoreOlderMessages(list.length >= MESSAGES_PAGE_SIZE)
+      })
       .catch(() => setMessages([]))
       .finally(() => setMessagesLoading(false))
     conversationService.markAsRead(selectedId).then(() => {
       setConversations((prev) => prev.map((c) => (c.id === selectedId ? { ...c, unread: false, unreadCount: 0 } : c)))
     }).catch(() => {})
   }, [selectedId, currentUserId, selected?.otherUserId])
+
+  // Khi mở conversation, cuộn xuống tin nhắn mới nhất (đáy) — dùng useLayoutEffect để chạy trước paint, tránh nháy lên trên
+  useLayoutEffect(() => {
+    if (messagesLoading || !messages.length || !selectedId) return
+    if (didScrollToBottomForRef.current === selectedId) return
+    didScrollToBottomForRef.current = selectedId
+    const root = messagesScrollRef.current
+    if (!root) return
+    root.scrollTop = root.scrollHeight
+  }, [selectedId, messagesLoading, messages.length])
+
+  // Fallback: scroll lại sau khi layout ổn định (ảnh/iframe load có thể làm thay đổi chiều cao)
+  useEffect(() => {
+    if (messagesLoading || !messages.length || !selectedId) return
+    const scrollToBottom = () => {
+      const el = messagesScrollRef.current
+      if (el) el.scrollTop = el.scrollHeight
+    }
+    const t1 = setTimeout(scrollToBottom, 80)
+    const t2 = setTimeout(scrollToBottom, 200)
+    return () => { clearTimeout(t1); clearTimeout(t2) }
+  }, [selectedId, messagesLoading, messages.length])
 
   useEffect(() => {
     const lastMsg = messages[messages.length - 1]
@@ -414,7 +394,7 @@ export function useMessagesPage() {
       .getOrCreateWithUser(withUserId)
       .then((res) => {
         if (cancelled) return
-        const { conversation, otherUser, messages: apiMessages } = res?.data ?? {}
+        const { conversation, otherUser, messages: apiMessages, online } = res?.data ?? {}
         if (!conversation?.id || !otherUser) return
         const convId = conversation.id
         const uiMessages = mapApiMessagesToUi(apiMessages || [], currentUserId, otherUser?.id)
@@ -433,6 +413,8 @@ export function useMessagesPage() {
             mutedUntil: conversation.mutedUntil ?? null,
             disappearing: conversation.disappearing ?? false,
             disappearingUntil: conversation.disappearingUntil ?? null,
+            online: online ?? false,
+            lastActiveDate: otherUser?.lastActiveDate ?? null,
           }
           const idx = prev.findIndex((c) => c.id === convId || String(c.otherUserId) === String(otherUser.id))
           if (idx >= 0) {
@@ -457,161 +439,27 @@ export function useMessagesPage() {
     return () => {
       cancelled = true
     }
-  }, [withUserId, currentUserId, setSearchParams, navigate, t, normalizeLastMessage])
+  }, [withUserId, currentUserId, setSearchParams, navigate, t, normalizeLastMessage, setConversations, setMessages])
 
-  useEffect(() => {
-    if (!currentUserId) return
-    const token = getAuthToken()
-    if (!token) return
-    const socketUrl = API_BASE_URL.replace(/\/api\/?$/, '')
-    const socket = io(socketUrl, { auth: { token }, transports: ['websocket', 'polling'] })
-    socketRef.current = socket
-    socket.on('conversation:read', (payload) => {
-      const { conversationId } = payload || {}
-      if (!conversationId) return
-      setConversations((prev) => prev.map((c) => (c.id === conversationId ? { ...c, lastMessageSeen: true } : c)))
-      if (selectedIdRef.current === conversationId) {
-        setMessages((prev) => prev.map((m) => (m.fromMe ? { ...m, read: true } : m)))
-      }
-    })
-    socket.on('conversation:message', (payload) => {
-      const { conversationId, message } = payload || {}
-      if (!conversationId || !message) return
-      const isCurrentConversation = selectedIdRef.current === conversationId
-      setMessages((prev) => {
-        if (!isCurrentConversation) return prev
-        const ui = {
-          id: message.id,
-          fromMe: String(message.senderId) === String(currentUserId),
-          text: message.content || '',
-          time: message.createdAt ? new Date(message.createdAt).toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' }) : '',
-          read: false,
-          attachments:
-            Array.isArray(message.attachments) && message.attachments.length
-              ? message.attachments
-              : message.attachment?.url
-                ? [{ url: message.attachment.url, name: message.attachment.name, type: message.attachment.type }]
-                : [],
-          reactions: Array.isArray(message.reactions) ? message.reactions : [],
-          createdAt: message.createdAt || null,
-        }
-        if (prev.some((m) => m.id === ui.id)) return prev
-        return [...prev, ui]
-      })
-      if (isCurrentConversation && String(message.senderId) !== String(currentUserId)) setShowNewMessageBanner(true)
-      if (isCurrentConversation) {
-        conversationService.markAsRead(conversationId).then(() => {
-          setMessages((prev) => prev.map((m) => (m.id === message.id ? { ...m, read: true } : m)))
-        }).catch(() => {})
-      }
-      setConversations((prev) =>
-        prev.map((c) => {
-          if (c.id !== conversationId) return c
-          const fromMe = String(message.senderId) === String(currentUserId)
-          const hasAttachments = (Array.isArray(message.attachments) && message.attachments.length) || message.attachment?.url
-          const onlyGif = hasAttachments && (
-            (Array.isArray(message.attachments) && message.attachments.length > 0 && message.attachments.every((a) => (a.type || '').toLowerCase() === 'image/gif')) ||
-            (message.attachment?.type || '').toLowerCase() === 'image/gif'
-          )
-          const contentTrimmed = (message.content || '').trim().slice(0, 100)
-          const isOnlyFilePlaceholder = /^\[\d+\s*file\]$/i.test(contentTrimmed)
-          const lastMessageText =
-            (contentTrimmed && !isOnlyFilePlaceholder)
-              ? contentTrimmed
-              : (onlyGif ? '[GIF]' : hasAttachments ? t('messages.attachedFile') : '')
-          const updated = {
-            ...c,
-            lastMessage: lastMessageText,
-            lastMessageAt: message.createdAt,
-            time: formatConversationTime(message.createdAt),
-            lastMessageFromMe: fromMe,
-            lastMessageSeen: false,
-          }
-          if (!isCurrentConversation) {
-            updated.unread = true
-            updated.unreadCount = (c.unreadCount || 0) + 1
-          }
-          return updated
-        })
-      )
-    })
-    socket.on('conversation:messageReaction', (payload) => {
-      const { conversationId, messageId, reactions } = payload || {}
-      if (!conversationId || !messageId || selectedIdRef.current !== conversationId) return
-      setMessages((prev) => {
-        const msg = prev.find((m) => m.id === messageId)
-        const isMyMessage = msg?.fromMe === true
-        const lastReaction = Array.isArray(reactions) && reactions.length ? reactions[reactions.length - 1] : null
-        if (isMyMessage && lastReaction?.emoji) {
-          const userName = selectedNameRef.current || t('messages.someone')
-          setTimeout(() => setReactionNotification({ messageId, userName, emoji: lastReaction.emoji }), 0)
-        }
-        return prev.map((m) => (m.id === messageId ? { ...m, reactions: Array.isArray(reactions) ? reactions : m.reactions || [] } : m))
-      })
-    })
-    socket.on('conversation:messageUpdated', (payload) => {
-      const { conversationId, messageId, message } = payload || {}
-      if (!conversationId || !messageId || !message) return
-      if (selectedIdRef.current !== conversationId) return
-      const ui = {
-        id: message.id || messageId,
-        fromMe: false,
-        text: message.content || '',
-        time: message.createdAt ? new Date(message.createdAt).toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' }) : '',
-        read: (message.readBy || []).some((id) => String(id) === String(currentUserId)),
-        attachments: Array.isArray(message.attachments) ? message.attachments : message.attachment?.url ? [message.attachment] : [],
-      }
-      setMessages((prev) => prev.map((m) => (m.id === messageId ? ui : m)))
-    })
-    socket.on('conversation:messageDeleted', (payload) => {
-      const { conversationId, messageId } = payload || {}
-      if (!conversationId || !messageId) return
-      const isCurrentConversation = selectedIdRef.current === conversationId
-      if (!isCurrentConversation) {
-        loadConversations()
-        return
-      }
-      setMessages((prev) => {
-        const next = prev.filter((m) => m.id !== messageId)
-        const newLast = next[next.length - 1]
-        const hasAtt = newLast?.attachments?.length
-        const onlyGif = hasAtt && (newLast.attachments || []).every((a) => (a.type || '').toLowerCase() === 'image/gif')
-        const contentTrimmed = (newLast?.text || '').trim().slice(0, 100)
-        const isOnlyFilePlaceholder = /^\[\d+\s*file\]$/i.test(contentTrimmed)
-        const lastMessageText = !newLast
-          ? ''
-          : (contentTrimmed && !isOnlyFilePlaceholder)
-            ? contentTrimmed
-            : (onlyGif ? '[GIF]' : hasAtt ? t('messages.attachedFile') : (newLast?.text || '').slice(0, 100))
-        setConversations((cPrev) =>
-          cPrev.map((c) =>
-            c.id !== conversationId
-              ? c
-              : {
-                  ...c,
-                  lastMessage: lastMessageText,
-                  lastMessageAt: newLast?.createdAt ?? null,
-                  time: newLast?.createdAt ? formatConversationTime(newLast.createdAt) : '',
-                  lastMessageFromMe: newLast?.fromMe ?? c.lastMessageFromMe,
-                  lastMessageSeen: newLast?.fromMe ? (newLast?.read ?? c.lastMessageSeen) : c.lastMessageSeen,
-                }
-          )
-        )
-        return next
-      })
-    })
-    return () => {
-      socket.disconnect()
-      socketRef.current = null
-    }
-  }, [currentUserId, t, loadConversations])
+  const onClearSelection = useCallback(() => navigate(ROUTES.MESSAGES), [navigate])
+  useConversationSocket({
+    currentUserId,
+    setConversations,
+    setMessages,
+    selectedIdRef,
+    selectedNameRef,
+    loadConversations,
+    onClearSelection,
+    t,
+    setShowNewMessageBanner,
+    setReactionNotification,
+    socketRef,
+  })
 
   editingMessageRef.current = editingMessage
 
   useEffect(() => {
-    setRightBarMediaVisible(RIGHT_BAR_MEDIA_INITIAL)
-    setRightBarFilesVisible(RIGHT_BAR_FILES_INITIAL)
-    setRightBarLinksVisible(RIGHT_BAR_LINKS_INITIAL)
+    rightBarResetOnConversationChange?.()
     setOpenMessageMenuId(null)
     setOpenReactionPickerId(null)
     setOpenReactionDetailMessageId(null)
@@ -620,7 +468,7 @@ export function useMessagesPage() {
     setReactionNotification(null)
     setOpenSettingsMenu(null)
     setEditingMessage(null)
-  }, [selectedId])
+  }, [selectedId, rightBarResetOnConversationChange])
 
   const handleSend = useCallback(() => {
     const currentEditing = editingMessageRef.current
@@ -723,16 +571,125 @@ export function useMessagesPage() {
     [t]
   )
 
+  const loadMoreOlderMessages = useCallback(() => {
+    if (loadMoreMessagesLoading || !hasMoreOlderMessages || !selectedId || !currentUserId || !selected?.otherUserId) return
+    const current = messagesRef.current
+    const oldestId = current[0]?.id
+    if (!oldestId) return
+    const root = messagesScrollRef.current
+    const scrollHeightBefore = root?.scrollHeight ?? 0
+    const scrollTopBefore = root?.scrollTop ?? 0
+
+    setLoadMoreMessagesLoading(true)
+    setTimeout(() => {
+      conversationService
+        .getMessages(selectedId, { limit: MESSAGES_PAGE_SIZE, before: oldestId })
+        .then((res) => {
+          const older = mapApiMessagesToUi(res?.data ?? [], currentUserId, selected.otherUserId)
+          setHasMoreOlderMessages(older.length >= MESSAGES_PAGE_SIZE)
+          setMessages((prev) => [...older, ...prev])
+          scrollRestoreRef.current = { scrollHeightBefore, scrollTopBefore }
+        })
+        .catch(() => {})
+        .finally(() => setLoadMoreMessagesLoading(false))
+    }, 1000)
+  }, [selectedId, currentUserId, selected?.otherUserId, loadMoreMessagesLoading, hasMoreOlderMessages])
+
+  useEffect(() => {
+    const saved = scrollRestoreRef.current
+    if (!saved || !messagesScrollRef.current) return
+    scrollRestoreRef.current = null
+    const root = messagesScrollRef.current
+    requestAnimationFrame(() => {
+      const newHeight = root.scrollHeight
+      root.scrollTop = newHeight - saved.scrollHeightBefore + saved.scrollTopBefore
+    })
+  }, [messages])
+
   const handleDeleteAllMessagesForMe = useCallback(() => {
     if (!selectedId || !currentUserId || !selected?.otherUserId) return
     conversationService.deleteAllMessagesForMe(selectedId).then(() => {
-      conversationService.getMessages(selectedId).then((res) => {
+      conversationService.getMessages(selectedId, { limit: MESSAGES_PAGE_SIZE }).then((res) => {
         const nextMessages = mapApiMessagesToUi(res?.data ?? [], currentUserId, selected.otherUserId)
         setMessages(nextMessages)
+        setHasMoreOlderMessages(nextMessages.length >= MESSAGES_PAGE_SIZE)
         updateConversationLastMessage(selectedId, nextMessages)
       }).catch(() => {})
     }).catch(() => {})
   }, [selectedId, currentUserId, selected?.otherUserId, updateConversationLastMessage])
+
+  const handleDisbandGroup = useCallback(() => {
+    if (!selectedId || !selected?.isGroup || selected?.myRole !== 'host') return
+    conversationService.disbandGroup(selectedId).then(() => {
+      navigate(ROUTES.MESSAGES)
+      setMessages([])
+      loadConversations()
+    }).catch(() => {})
+  }, [selectedId, selected?.isGroup, selected?.myRole, loadConversations, navigate])
+
+  const handleLeaveGroup = useCallback(() => {
+    if (!selectedId || !selected?.isGroup) return
+    conversationService.leaveGroup(selectedId).then(() => {
+      navigate(ROUTES.MESSAGES)
+      setMessages([])
+      loadConversations()
+    }).catch(() => {})
+  }, [selectedId, selected?.isGroup, loadConversations, navigate])
+
+  const handleSetMemberAdmin = useCallback((conversationId, userId) => {
+    if (!conversationId || !userId) return
+    conversationService.setMemberRole(conversationId, userId, 'admin').then(() => loadConversations()).catch(() => {})
+  }, [loadConversations])
+
+  const handleMessageUser = useCallback((userId) => {
+    if (!userId) return
+    setSearchParams({ with: userId })
+  }, [setSearchParams])
+
+  const updateConversationMembersAfterKick = useCallback((conversationId, userId) => {
+    setConversations((prev) =>
+      prev.map((c) =>
+        c.id === conversationId && Array.isArray(c.members)
+          ? { ...c, members: c.members.filter((m) => String(m.userId) !== String(userId)), memberCount: Math.max(0, (c.memberCount ?? c.members.length) - 1) }
+          : c
+      )
+    )
+  }, [])
+
+  const handleKickMember = useCallback((conversationId, userId) => {
+    if (!conversationId || !userId) return
+    conversationService.blockUserInGroup(conversationId, userId).then(() => {
+      updateConversationMembersAfterKick(conversationId, userId)
+      loadConversations()
+    }).catch(() => {})
+  }, [loadConversations, updateConversationMembersAfterKick])
+
+  const handleBlockMember = useCallback((conversationId, userId) => {
+    if (!conversationId || !userId) return
+    conversationService.blockUserInGroup(conversationId, userId).then(() => {
+      updateConversationMembersAfterKick(conversationId, userId)
+      loadConversations()
+    }).catch(() => {})
+  }, [loadConversations, updateConversationMembersAfterKick])
+
+  const handleUploadGroupAvatar = useCallback((file) => {
+    if (!selectedId || !selected?.isGroup || !file) return Promise.reject()
+    return uploadService.uploadPostMedia(file).then((data) => {
+      const url = data?.url
+      if (!url) return Promise.reject()
+      return conversationService.updateGroupSettings(selectedId, { avatar: url })
+    }).then(() => {
+      loadConversations()
+    })
+  }, [selectedId, selected?.isGroup, loadConversations])
+
+  const handleSaveGroupName = useCallback((conversationId, newName) => {
+    const trimmed = (newName || '').trim()
+    if (!conversationId || !selected?.isGroup || trimmed === '') return Promise.reject()
+    return conversationService.updateGroupSettings(conversationId, { name: trimmed }).then(() => {
+      loadConversations()
+    })
+  }, [selected?.isGroup, loadConversations])
 
   const handleMessageAction = useCallback(
     (action, msg) => {
@@ -807,32 +764,6 @@ export function useMessagesPage() {
     [emojiCategories, emojiCategoryId]
   )
 
-  const rightBarMedia = useMemo(() => extractRightBarMedia(messages), [messages])
-  const rightBarFiles = useMemo(() => extractRightBarFiles(messages), [messages])
-  const rightBarLinks = useMemo(() => extractRightBarLinks(messages), [messages])
-
-  const setRightBarMediaVisibleCount = useCallback(() => {
-    setLoadMoreMedia(true)
-    setTimeout(() => {
-      setRightBarMediaVisible((prev) => prev + RIGHT_BAR_MEDIA_INITIAL)
-      setLoadMoreMedia(false)
-    }, 1000)
-  }, [])
-  const setRightBarFilesVisibleCount = useCallback(() => {
-    setLoadMoreFiles(true)
-    setTimeout(() => {
-      setRightBarFilesVisible((prev) => prev + RIGHT_BAR_FILES_INITIAL)
-      setLoadMoreFiles(false)
-    }, 1000)
-  }, [])
-  const setRightBarLinksVisibleCount = useCallback(() => {
-    setLoadMoreLinks(true)
-    setTimeout(() => {
-      setRightBarLinksVisible((prev) => prev + RIGHT_BAR_LINKS_INITIAL)
-      setLoadMoreLinks(false)
-    }, 1000)
-  }, [])
-
   return {
     t,
     user,
@@ -846,6 +777,9 @@ export function useMessagesPage() {
     friendsSearchResult,
     friendsSearchLoading,
     handleSelectFriendToChat,
+    showCreateGroupModal,
+    setShowCreateGroupModal,
+    handleCreateGroupSuccess,
     conversations,
     filteredConversations,
     conversationsLoading,
@@ -897,6 +831,13 @@ export function useMessagesPage() {
     setOpenReactionDetailMessageId,
     selectedReactionEmojiInModal,
     setSelectedReactionEmojiInModal,
+    rightBarSearchQuery,
+    setRightBarSearchQuery,
+    rightBarSearchInputRef,
+    rightBarSearchResults,
+    panelSearchQuery,
+    setPanelSearchQuery,
+    panelSearchResults,
     rightBarMedia,
     rightBarFiles,
     rightBarLinks,
@@ -917,6 +858,23 @@ export function useMessagesPage() {
     setOpenSettingsMenu,
     showDeleteAllConfirm,
     setShowDeleteAllConfirm,
+    showDisbandConfirm,
+    setShowDisbandConfirm,
+    handleDisbandGroup,
+    showLeaveConfirm,
+    setShowLeaveConfirm,
+    handleLeaveGroup,
+    handleSetMemberAdmin,
+    handleMessageUser,
+    handleKickMember,
+    handleBlockMember,
+    handleUploadGroupAvatar,
+    handleSaveGroupName,
+    headerActionPanel,
+    setHeaderActionPanel,
+    hasMoreOlderMessages,
+    loadMoreMessagesLoading,
+    loadMoreOlderMessages,
     currentUserId,
     normalizeLastMessage,
     displayLastMessage,

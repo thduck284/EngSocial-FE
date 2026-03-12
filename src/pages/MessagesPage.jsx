@@ -1,3 +1,5 @@
+import { useState } from 'react'
+import { ROUTES } from '../constants'
 import { useMessagesPage } from '../hooks/useMessagesPage'
 import {
   ConversationSidebar,
@@ -6,9 +8,16 @@ import {
   ImageViewerModal,
   ReactionDetailModal,
   DeleteAllConfirmModal,
+  DisbandGroupConfirmModal,
+  LeaveGroupConfirmModal,
+  CreateGroupModal,
+  GroupSettingsModal,
+  AddMembersToGroupModal,
 } from '../components/messages'
 
 export function MessagesPage() {
+  const [showGroupSettingsModal, setShowGroupSettingsModal] = useState(false)
+  const [showAddMembersModal, setShowAddMembersModal] = useState(false)
   const api = useMessagesPage()
   const {
     t,
@@ -51,12 +60,25 @@ export function MessagesPage() {
     showDeleteAllConfirm,
     setShowDeleteAllConfirm,
     handleDeleteAllMessagesForMe,
+    showDisbandConfirm,
+    setShowDisbandConfirm,
+    handleDisbandGroup,
+    showLeaveConfirm,
+    setShowLeaveConfirm,
+    handleLeaveGroup,
+    handleUploadGroupAvatar,
+    handleSaveGroupName,
     user,
     withUserLoading,
     withUserId,
     imageViewer,
     openSettingsMenu,
     setOpenSettingsMenu,
+    headerActionPanel,
+    setHeaderActionPanel,
+    hasMoreOlderMessages,
+    loadMoreMessagesLoading,
+    loadMoreOlderMessages,
     getSettingsUntil,
     getDisappearingDurationSeconds,
     applyConversationSettings,
@@ -72,6 +94,17 @@ export function MessagesPage() {
     setRightBarMediaVisibleCount,
     setRightBarFilesVisibleCount,
     setRightBarLinksVisibleCount,
+    rightBarSearchQuery,
+    setRightBarSearchQuery,
+    rightBarSearchResults,
+    rightBarSearchInputRef,
+    panelSearchQuery,
+    setPanelSearchQuery,
+    panelSearchResults,
+    showCreateGroupModal,
+    setShowCreateGroupModal,
+    handleCreateGroupSuccess,
+    loadConversations,
   } = api
 
   const composerProps = {
@@ -128,6 +161,7 @@ export function MessagesPage() {
         friendsSearchResult={friendsSearchResult}
         friendsSearchLoading={friendsSearchLoading}
         onSelectFriendToChat={handleSelectFriendToChat}
+        onCreateGroup={() => setShowCreateGroupModal(true)}
       />
 
       <section className="flex-1 flex flex-col min-h-0 bg-background-dark relative min-w-0">
@@ -196,7 +230,27 @@ export function MessagesPage() {
             reactionNotification={reactionNotification}
             setReactionNotification={setReactionNotification}
             scrollToMessage={scrollToMessage}
+            onViewProfile={() => selected?.otherUserId && navigate(ROUTES.PROFILE_USER(selected.otherUserId))}
+            onSearchMessages={() => setHeaderActionPanel('search')}
+            onOpenMute={() => setHeaderActionPanel('mute')}
+            onOpenDisappearing={() => setHeaderActionPanel('disappearing')}
+            onDeleteAll={() => setShowDeleteAllConfirm(true)}
+            onBlock={() => {}}
+            onReport={() => {}}
+            headerActionPanel={headerActionPanel}
+            setHeaderActionPanel={setHeaderActionPanel}
+            panelSearchQuery={panelSearchQuery}
+            setPanelSearchQuery={setPanelSearchQuery}
+            panelSearchResults={panelSearchResults}
+            getSettingsUntil={getSettingsUntil}
+            getDisappearingDurationSeconds={getDisappearingDurationSeconds}
+            applyConversationSettings={applyConversationSettings}
+            hasMoreOlderMessages={hasMoreOlderMessages}
+            loadMoreMessagesLoading={loadMoreMessagesLoading}
+            onLoadMoreOlderMessages={loadMoreOlderMessages}
             composerProps={composerProps}
+            onUploadGroupAvatar={handleUploadGroupAvatar}
+            onSaveGroupName={handleSaveGroupName}
           />
           </>
         ) : (
@@ -218,6 +272,9 @@ export function MessagesPage() {
           getDisappearingDurationSeconds={getDisappearingDurationSeconds}
           applyConversationSettings={applyConversationSettings}
           setShowDeleteAllConfirm={setShowDeleteAllConfirm}
+          rightBarSearchQuery={api.rightBarSearchQuery}
+          setRightBarSearchQuery={api.setRightBarSearchQuery}
+          rightBarSearchResults={api.rightBarSearchResults}
           rightBarMedia={rightBarMedia}
           rightBarFiles={rightBarFiles}
           rightBarLinks={rightBarLinks}
@@ -233,6 +290,20 @@ export function MessagesPage() {
           openImageViewer={openImageViewer}
           scrollToMessage={scrollToMessage}
           downloadAttachment={downloadAttachment}
+          rightBarSearchInputRef={rightBarSearchInputRef}
+          onBlock={() => {}}
+          onReport={() => {}}
+          onOpenGroupSettings={() => setShowGroupSettingsModal(true)}
+          onUploadGroupAvatar={handleUploadGroupAvatar}
+          onSaveGroupName={handleSaveGroupName}
+          onAddMembers={() => setShowAddMembersModal(true)}
+          onDisbandGroup={() => setShowDisbandConfirm(true)}
+          onLeaveGroup={() => setShowLeaveConfirm(true)}
+          currentUserId={api.currentUserId}
+          onSetMemberAdmin={api.handleSetMemberAdmin}
+          onMessageUser={api.handleMessageUser}
+          onKickMember={api.handleKickMember}
+          onBlockMember={api.handleBlockMember}
         />
       )}
 
@@ -258,6 +329,40 @@ export function MessagesPage() {
         open={showDeleteAllConfirm}
         onClose={() => setShowDeleteAllConfirm(false)}
         onConfirm={handleDeleteAllMessagesForMe}
+      />
+      <DisbandGroupConfirmModal
+        t={t}
+        open={showDisbandConfirm}
+        onClose={() => setShowDisbandConfirm(false)}
+        onConfirm={handleDisbandGroup}
+      />
+      <LeaveGroupConfirmModal
+        t={t}
+        open={showLeaveConfirm}
+        onClose={() => setShowLeaveConfirm(false)}
+        onConfirm={handleLeaveGroup}
+      />
+      <CreateGroupModal
+        t={t}
+        open={showCreateGroupModal}
+        onClose={() => setShowCreateGroupModal(false)}
+        onSuccess={handleCreateGroupSuccess}
+      />
+      <GroupSettingsModal
+        t={t}
+        open={showGroupSettingsModal}
+        onClose={() => setShowGroupSettingsModal(false)}
+        selected={selected?.isGroup ? selected : null}
+        currentUserId={api.currentUserId}
+        onSuccess={() => loadConversations()}
+      />
+      <AddMembersToGroupModal
+        t={t}
+        open={showAddMembersModal}
+        onClose={() => setShowAddMembersModal(false)}
+        selected={selected?.isGroup ? selected : null}
+        currentUserId={api.currentUserId}
+        onSuccess={() => loadConversations()}
       />
     </main>
   )

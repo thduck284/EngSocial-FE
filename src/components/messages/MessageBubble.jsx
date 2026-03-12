@@ -22,6 +22,16 @@ export function MessageBubble({
   const isMenuOpen = openMessageMenuId === msg.id
   const showTheirAvatar = !msg.fromMe && (index === 0 || messages[index - 1].fromMe)
 
+  if (msg.isSystem) {
+    return (
+      <div className="flex justify-center py-2 w-full" data-message-id={msg.id}>
+        <span className="text-xs text-gray-400 bg-card-dark/60 px-3 py-1.5 rounded-full max-w-[90%] text-center">
+          {msg.text}
+        </span>
+      </div>
+    )
+  }
+
   const byEmoji = (msg.reactions || []).reduce((acc, r) => {
     acc[r.emoji] = (acc[r.emoji] || 0) + 1
     return acc

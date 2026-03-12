@@ -14,6 +14,7 @@ export function ConversationSidebar({
   friendsSearchResult = [],
   friendsSearchLoading = false,
   onSelectFriendToChat,
+  onCreateGroup,
 }) {
   const showFriendsSection = searchConversations.trim() && (friendsSearchResult.length > 0 || friendsSearchLoading)
   const hasMessages = (c) => c.lastMessageAt != null || (typeof c.lastMessage === 'string' && c.lastMessage.trim() !== '')
@@ -47,27 +48,36 @@ export function ConversationSidebar({
             onChange={(e) => setSearchConversations(e.target.value)}
           />
         </div>
-        <div className="flex gap-2 flex-wrap">
+        <div className="flex w-full items-center justify-between">
           <button
             type="button"
             onClick={() => setTab('all')}
-            className={`px-4 py-1.5 rounded-full text-sm font-semibold transition-colors ${tab === 'all' ? 'bg-primary text-background-dark' : 'bg-card-dark text-gray-400 hover:bg-primary/20'}`}
+            className={`h-8 min-w-[4.5rem] px-4 rounded-full text-sm font-semibold transition-colors flex items-center justify-center shrink-0 ${tab === 'all' ? 'bg-primary text-background-dark' : 'bg-card-dark text-gray-400 hover:bg-primary/20'}`}
           >
             {t('messages.all')}
           </button>
           <button
             type="button"
             onClick={() => setTab('unread')}
-            className={`px-4 py-1.5 rounded-full text-sm font-semibold transition-colors ${tab === 'unread' ? 'bg-primary text-background-dark' : 'bg-card-dark text-gray-400 hover:bg-primary/20'}`}
+            className={`h-8 min-w-[4.5rem] px-4 rounded-full text-sm font-semibold transition-colors flex items-center justify-center shrink-0 ${tab === 'unread' ? 'bg-primary text-background-dark' : 'bg-card-dark text-gray-400 hover:bg-primary/20'}`}
           >
             {t('messages.unread')}
           </button>
           <button
             type="button"
             onClick={() => setTab('groups')}
-            className={`px-4 py-1.5 rounded-full text-sm font-semibold transition-colors ${tab === 'groups' ? 'bg-primary text-background-dark' : 'bg-card-dark text-gray-400 hover:bg-primary/20'}`}
+            className={`h-8 min-w-[4.5rem] px-4 rounded-full text-sm font-semibold transition-colors flex items-center justify-center shrink-0 ${tab === 'groups' ? 'bg-primary text-background-dark' : 'bg-card-dark text-gray-400 hover:bg-primary/20'}`}
           >
             {t('messages.groups')}
+          </button>
+          <button
+            type="button"
+            onClick={() => onCreateGroup?.()}
+            className="h-8 w-8 shrink-0 rounded-full flex items-center justify-center bg-card-dark text-gray-400 hover:bg-primary/20 hover:text-primary transition-colors"
+            title={t('messages.createGroup')}
+            aria-label={t('messages.createGroup')}
+          >
+            <span className="material-symbols-outlined text-lg">add</span>
           </button>
         </div>
       </div>
@@ -116,18 +126,29 @@ export function ConversationSidebar({
                 }`}
               >
                 <div className="relative flex-shrink-0">
-                  <img
-                    src={conv.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(conv.name || '')}&background=13b6ec&color=fff`}
-                    alt=""
-                    className="w-12 h-12 rounded-full object-cover"
-                  />
+                  {conv.isGroup && !conv.avatar ? (
+                    <div className="w-12 h-12 rounded-full bg-amber-400/90 flex items-center justify-center shrink-0">
+                      <i className="fa-solid fa-people-group text-xl text-white" aria-hidden />
+                    </div>
+                  ) : (
+                    <img
+                      src={conv.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(conv.name || '')}&background=13b6ec&color=fff`}
+                      alt=""
+                      className="w-12 h-12 rounded-full object-cover"
+                    />
+                  )}
                   {conv.online && (
                     <span className="absolute bottom-0 right-0 w-3.5 h-3.5 bg-green-500 border-2 border-background-dark rounded-full" />
                   )}
                 </div>
                 <div className="flex-1 min-w-0">
-                  <div className="flex justify-between items-center mb-0.5">
-                    <span className={`text-sm truncate ${conv.unread ? 'font-bold text-white' : 'font-medium text-gray-300'}`}>{conv.name}</span>
+                  <div className="flex justify-between items-center gap-1.5 mb-0.5">
+                    <span className={`flex items-center gap-1.5 min-w-0 flex-1 ${conv.unread ? 'font-bold text-white' : 'font-medium text-gray-300'}`}>
+                      {conv.isGroup && (
+                        <i className="fa-solid fa-people-group text-base text-gray-400 shrink-0" aria-hidden />
+                      )}
+                      <span className="truncate">{conv.name}</span>
+                    </span>
                     <span className="text-xs text-gray-500 shrink-0">{conv.time || ''}</span>
                   </div>
                   <div className="flex justify-between items-center gap-2 min-w-0">

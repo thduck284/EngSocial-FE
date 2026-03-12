@@ -1,5 +1,8 @@
-// API Base URL: set VITE_API_BASE_URL khi deploy (Vercel/Railway); dev mặc định localhost
-export const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000/api'
+// API Base URL: ưu tiên localhost khi chạy trên localhost, không thì dùng BE Vercel; set VITE_API_BASE_URL để ghi đè
+const isLocalhost = typeof window !== 'undefined' && window.location.hostname === 'localhost'
+export const API_BASE_URL =
+  import.meta.env.VITE_API_BASE_URL ||
+  (isLocalhost ? 'http://localhost:5000/api' : 'https://eng-social-be.vercel.app/api')
 
 // Admin app URL: dùng cho nút "Thêm bài học" / "Thêm bài tập" (moderator/admin)
 export const ADMIN_APP_URL = import.meta.env.VITE_ADMIN_APP_URL || 'http://localhost:4000'
@@ -115,6 +118,13 @@ export const API_ENDPOINTS = {
     DELETE_ALL_MESSAGES: (conversationId) => `/conversations/${conversationId}/messages/delete-all`,
     MARK_READ: (conversationId) => `/conversations/${conversationId}/read`,
     SETTINGS: (conversationId) => `/conversations/${conversationId}/settings`,
+    GROUP_SETTINGS: (conversationId) => `/conversations/${conversationId}/group-settings`,
+    ADD_MEMBERS: (conversationId) => `/conversations/${conversationId}/members`,
+    SET_MEMBER_ROLE: (conversationId, userId) => `/conversations/${conversationId}/members/${userId}/role`,
+    DISBAND: (conversationId) => `/conversations/${conversationId}/disband`,
+    LEAVE: (conversationId) => `/conversations/${conversationId}/leave`,
+    BLOCK_USER: (conversationId) => `/conversations/${conversationId}/block`,
+    UNBLOCK_USER: (conversationId, userId) => `/conversations/${conversationId}/block/${userId}`,
     ATTACHMENT_DOWNLOAD: '/conversations/attachment-download',
   },
 

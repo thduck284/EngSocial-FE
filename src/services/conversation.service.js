@@ -11,11 +11,26 @@ export const conversationService = {
 
   getList: () => apiClient.get(API_ENDPOINTS.CONVERSATIONS.LIST),
 
+  /** Tạo nhóm chat. Body: { type: 'group', name, avatar?, participantIds } */
+  createGroup: (name, participantIds, avatar = null) =>
+    apiClient.post(API_ENDPOINTS.CONVERSATIONS.LIST, {
+      type: 'group',
+      name: name || 'Nhóm chat',
+      ...(avatar && { avatar }),
+      participantIds: participantIds || [],
+    }),
+
   /** Tổng tin nhắn chưa đọc (trừ hội thoại đã tắt thông báo). */
   getUnreadTotal: () => apiClient.get(API_ENDPOINTS.CONVERSATIONS.UNREAD_TOTAL),
 
-  getMessages: (conversationId) =>
-    apiClient.get(API_ENDPOINTS.CONVERSATIONS.MESSAGES(conversationId)),
+  /** limit (default 10), before (messageId cursor for older messages) */
+  getMessages: (conversationId, params = {}) => {
+    const q = new URLSearchParams()
+    if (params.limit != null) q.set('limit', String(params.limit))
+    if (params.before) q.set('before', params.before)
+    const query = q.toString()
+    return apiClient.get(API_ENDPOINTS.CONVERSATIONS.MESSAGES(conversationId) + (query ? `?${query}` : ''))
+  },
 
   /**
    * Send a message. If files are provided, sends multipart/form-data (content + files).
@@ -67,6 +82,34 @@ export const conversationService = {
 
   updateSettings: (conversationId, payload) =>
     apiClient.patch(API_ENDPOINTS.CONVERSATIONS.SETTINGS(conversationId), payload),
+
+  /** Cập nhật thông tin nhóm: name, avatar?, maxMembers?, groupPermissions?. Chỉ host/admin (theo quyền) mới gọi được. */
+  updateGroupSettings: (conversationId, payload) =>
+    apiClient.patch(API_ENDPOINTS.CONVERSATIONS.GROUP_SETTINGS(conversationId), payload),
+
+  /** Thêm thành viên vào nhóm (body: { userIds: string[] }). Chỉ host/admin có quyền thêm. */
+  addMembersToGroup: (conversationId, userIds) =>
+    apiClient.post(API_ENDPOINTS.CONVERSATIONS.ADD_MEMBERS(conversationId), { userIds }),
+
+  /** Đặt role thành viên (body: { role: 'admin' | 'user' }). Chỉ host mới được đặt admin. */
+  setMemberRole: (conversationId, userId, role) =>
+    apiClient.patch(API_ENDPOINTS.CONVERSATIONS.SET_MEMBER_ROLE(conversationId, userId), { role }),
+
+  /** Chặn thành viên khỏi nhóm (body: { userId }). Chỉ host/admin có quyền kick. */
+  blockUserInGroup: (conversationId, userId) =>
+    apiClient.post(API_ENDPOINTS.CONVERSATIONS.BLOCK_USER(conversationId), { userId }),
+
+  /** Bỏ chặn thành viên. */
+  unblockUserInGroup: (conversationId, userId) =>
+    apiClient.delete(API_ENDPOINTS.CONVERSATIONS.UNBLOCK_USER(conversationId, userId)),
+
+  /** Giải tán nhóm. Chỉ host mới được gọi. */
+  disbandGroup: (conversationId) =>
+    apiClient.post(API_ENDPOINTS.CONVERSATIONS.DISBAND(conversationId)),
+
+  /** Rời nhóm. Mọi thành viên đều được gọi. */
+  leaveGroup: (conversationId) =>
+    apiClient.post(API_ENDPOINTS.CONVERSATIONS.LEAVE(conversationId)),
 
   reactToMessage: (conversationId, messageId, emoji) =>
     apiClient.put(API_ENDPOINTS.CONVERSATIONS.REACTION(conversationId, messageId), { emoji }),

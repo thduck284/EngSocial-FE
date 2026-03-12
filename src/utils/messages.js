@@ -54,6 +54,7 @@ export function mapApiMessagesToUi(apiMessages, currentUserId, otherUserId) {
       attachments,
       reactions: Array.isArray(m.reactions) ? m.reactions : [],
       createdAt: m.createdAt || null,
+      isSystem: m.messageType === 'system',
     }
   })
 }
