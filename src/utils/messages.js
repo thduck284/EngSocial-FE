@@ -51,6 +51,7 @@ export function mapApiMessagesToUi(apiMessages, currentUserId, otherUserId) {
       text: m.content || '',
       time: m.createdAt ? new Date(m.createdAt).toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' }) : '',
       read,
+      readBy: readBy,
       attachments,
       reactions: Array.isArray(m.reactions) ? m.reactions : [],
       createdAt: m.createdAt || null,

@@ -13,6 +13,7 @@ import {
   CreateGroupModal,
   GroupSettingsModal,
   AddMembersToGroupModal,
+  ForwardMessageModal,
 } from '../components/messages'
 
 export function MessagesPage() {
@@ -105,6 +106,11 @@ export function MessagesPage() {
     setShowCreateGroupModal,
     handleCreateGroupSuccess,
     loadConversations,
+    forwardMessage,
+    setForwardMessage,
+    handleForwardMessage,
+    forwardingToId,
+    conversations,
   } = api
 
   const composerProps = {
@@ -162,16 +168,23 @@ export function MessagesPage() {
         friendsSearchLoading={friendsSearchLoading}
         onSelectFriendToChat={handleSelectFriendToChat}
         onCreateGroup={() => setShowCreateGroupModal(true)}
+        onViewProfile={(conv) => conv?.otherUserId && navigate(ROUTES.PROFILE_USER(conv.otherUserId))}
+        onOpenMute={(conv) => { navigate(ROUTES.MESSAGES_CONVERSATION(conv.id)); setHeaderActionPanel('mute') }}
+        onOpenDisappearing={(conv) => { navigate(ROUTES.MESSAGES_CONVERSATION(conv.id)); setHeaderActionPanel('disappearing') }}
+        onDeleteMessages={(conv) => { navigate(ROUTES.MESSAGES_CONVERSATION(conv.id)); setShowDeleteAllConfirm(true) }}
+        onBlock={(conv) => conv?.otherUserId && api.handleBlockDirect(conv.otherUserId)}
+        onReport={(conv) => {}}
+        onLeaveGroup={(conv) => { navigate(ROUTES.MESSAGES_CONVERSATION(conv.id)); setShowLeaveConfirm(true) }}
       />
 
-      <section className="flex-1 flex flex-col min-h-0 bg-background-dark relative min-w-0">
+      <section className="flex-1 flex flex-col min-h-0 min-w-0 bg-background-dark relative w-full">
         {withUserLoading && withUserId ? (
           <div className="flex-1 flex items-center justify-center text-gray-400">
             <span className="material-symbols-outlined animate-spin text-4xl">progress_activity</span>
             <span className="ml-3">{t('messages.loadingConversation')}</span>
           </div>
         ) : selected ? (
-          <>
+          <div className="w-full flex-1 flex flex-col min-h-0 min-w-0">
             {/* Input file ẩn đặt ở page để ref luôn gắn đúng khi có conversation */}
             <input
               ref={api.fileInputRef}
@@ -210,6 +223,7 @@ export function MessagesPage() {
             t={t}
             selected={selected}
             messages={messages}
+            currentUserId={api.currentUserId}
             messagesLoading={messagesLoading}
             messagesScrollRef={messagesScrollRef}
             messagesEndRef={messagesEndRef}
@@ -235,7 +249,8 @@ export function MessagesPage() {
             onOpenMute={() => setHeaderActionPanel('mute')}
             onOpenDisappearing={() => setHeaderActionPanel('disappearing')}
             onDeleteAll={() => setShowDeleteAllConfirm(true)}
-            onBlock={() => {}}
+            onBlock={() => selected?.otherUserId && api.handleBlockDirect(selected.otherUserId)}
+            onUnblock={api.handleUnblockDirect}
             onReport={() => {}}
             headerActionPanel={headerActionPanel}
             setHeaderActionPanel={setHeaderActionPanel}
@@ -252,7 +267,7 @@ export function MessagesPage() {
             onUploadGroupAvatar={handleUploadGroupAvatar}
             onSaveGroupName={handleSaveGroupName}
           />
-          </>
+          </div>
         ) : (
           <div className="flex-1 flex flex-col items-center justify-center text-center px-6 text-gray-400">
             <span className="material-symbols-outlined text-6xl mb-4 opacity-50">chat_bubble</span>
@@ -291,7 +306,7 @@ export function MessagesPage() {
           scrollToMessage={scrollToMessage}
           downloadAttachment={downloadAttachment}
           rightBarSearchInputRef={rightBarSearchInputRef}
-          onBlock={() => {}}
+          onBlock={() => selected?.otherUserId && api.handleBlockDirect(selected.otherUserId)}
           onReport={() => {}}
           onOpenGroupSettings={() => setShowGroupSettingsModal(true)}
           onUploadGroupAvatar={handleUploadGroupAvatar}
@@ -303,7 +318,7 @@ export function MessagesPage() {
           onSetMemberAdmin={api.handleSetMemberAdmin}
           onMessageUser={api.handleMessageUser}
           onKickMember={api.handleKickMember}
-          onBlockMember={api.handleBlockMember}
+          onBlockUserInChat={(userId) => api.handleBlockDirect(userId)}
         />
       )}
 
@@ -354,7 +369,10 @@ export function MessagesPage() {
         onClose={() => setShowGroupSettingsModal(false)}
         selected={selected?.isGroup ? selected : null}
         currentUserId={api.currentUserId}
-        onSuccess={() => loadConversations()}
+        onSuccess={(data) => {
+          if (selected?.id && data) api.updateConversationData(selected.id, data)
+          loadConversations()
+        }}
       />
       <AddMembersToGroupModal
         t={t}
@@ -363,6 +381,15 @@ export function MessagesPage() {
         selected={selected?.isGroup ? selected : null}
         currentUserId={api.currentUserId}
         onSuccess={() => loadConversations()}
+      />
+      <ForwardMessageModal
+        t={t}
+        open={!!forwardMessage}
+        onClose={() => setForwardMessage(null)}
+        message={forwardMessage}
+        currentConversationId={selectedId}
+        onForward={handleForwardMessage}
+        forwarding={forwardingToId}
       />
     </main>
   )

@@ -1,8 +1,10 @@
-// API Base URL: ưu tiên localhost khi chạy trên localhost, không thì dùng BE Vercel; set VITE_API_BASE_URL để ghi đè
 const isLocalhost = typeof window !== 'undefined' && window.location.hostname === 'localhost'
-export const API_BASE_URL =
-  import.meta.env.VITE_API_BASE_URL ||
-  (isLocalhost ? 'http://localhost:5000/api' : 'https://eng-social-be.vercel.app/api')
+const LOCAL_API = 'http://localhost:5000/api'
+const VERCEL_API = 'https://eng-social-be.vercel.app/api'
+export const API_BASE_URL = isLocalhost
+  ? (import.meta.env.VITE_API_BASE_URL || LOCAL_API)
+  : (import.meta.env.VITE_API_BASE_URL || VERCEL_API)
+export const API_FALLBACK_BASE_URL = isLocalhost ? VERCEL_API : null
 
 // Admin app URL: dùng cho nút "Thêm bài học" / "Thêm bài tập" (moderator/admin)
 export const ADMIN_APP_URL = import.meta.env.VITE_ADMIN_APP_URL || 'http://localhost:4000'
@@ -32,6 +34,8 @@ export const API_ENDPOINTS = {
     STATS: '/user/stats',
     GOALS: '/user/goals',
     ACHIEVEMENTS: '/user/achievements',
+    BLOCK: (userId) => `/user/block/${userId}`,
+    UNBLOCK: (userId) => `/user/block/${userId}`,
   },
 
   // Skills
@@ -108,6 +112,7 @@ export const API_ENDPOINTS = {
   // Conversations (chat)
   CONVERSATIONS: {
     LIST: '/conversations',
+    FOR_FORWARD: '/conversations/for-forward',
     UNREAD_TOTAL: '/conversations/unread-total',
     GET_OR_CREATE_WITH: (userId) => `/conversations/with?with=${encodeURIComponent(userId)}`,
     MESSAGES: (conversationId) => `/conversations/${conversationId}/messages`,
@@ -197,9 +202,8 @@ export const API_ENDPOINTS = {
   },
 }
 
-// Helper function to build full API URL
-export const buildApiUrl = (endpoint) => {
-  return `${API_BASE_URL}${endpoint}`
+export const buildApiUrl = (endpoint, baseUrl = API_BASE_URL) => {
+  return `${baseUrl}${endpoint}`
 }
 
 // Application Routes (frontend)
@@ -238,6 +242,7 @@ export const ROUTES = {
   MANAGE_LESSONS: '/manage/lessons',
   MANAGE_SKILLS: '/manage/skills',
   MANAGE_QUESTS: '/manage/quests',
+  MANAGE_CHALLENGES: '/manage/challenges',
 }
 
 // Navigation items (for AppHeader)

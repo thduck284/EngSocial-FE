@@ -90,7 +90,7 @@ export async function submitLoginForm(data, i18n) {
 
     return { success: false, error: res.message || i18n.t('auth.loginFailed') }
   } catch (err) {
-    const msg = err?.message ?? err?.data?.message
+    const msg = err?.isNetworkError ? i18n.t('auth.networkError') : (err?.message ?? err?.data?.message)
     const errors = err?.data?.errors
     let fieldErrors = {}
     if (Array.isArray(errors) && errors.length) {

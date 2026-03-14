@@ -114,7 +114,7 @@ export function AppHeader() {
   }
 
   return (
-    <header className="sticky top-0 z-50 w-full bg-background-dark/80 backdrop-blur-md border-b border-border-dark px-4 md:px-10 py-3">
+    <header className="sticky top-0 z-50 w-screen max-w-none ml-[calc(-50vw+50%)] bg-background-dark/80 backdrop-blur-md border-b border-border-dark px-4 md:px-10 py-3">
       <div className="max-w-[1440px] mx-auto flex items-center justify-between gap-4">
         <div className="flex items-center gap-6 flex-1 min-w-0">
           <Link to={ROUTES.HOME} className="flex items-center gap-2 text-primary shrink-0">

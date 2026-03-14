@@ -1,4 +1,4 @@
-import { buildApiUrl, ROUTES } from '../constants'
+import { buildApiUrl, API_FALLBACK_BASE_URL, ROUTES } from '../constants'
 
 /** Xóa auth storage và chuyển về trang đăng nhập (khi không token hoặc token hết hạn) */
 function clearAuthAndRedirectToLogin() {
@@ -52,11 +52,9 @@ class ApiClient {
     }
   }
 
-  /**
-   * Generic request handler
-   */
-  async request(endpoint, options = {}) {
-    const url = buildApiUrl(endpoint)
+  async request(endpoint, options = {}, useFallback = false) {
+    const baseUrl = useFallback && API_FALLBACK_BASE_URL ? API_FALLBACK_BASE_URL : null
+    const url = baseUrl ? buildApiUrl(endpoint, baseUrl) : buildApiUrl(endpoint)
     const headers = this.getHeaders(options.headers)
     if (options.body instanceof FormData) delete headers['Content-Type']
     const config = {
@@ -66,15 +64,13 @@ class ApiClient {
 
     try {
       const response = await fetch(url, config)
-      
-      // Handle non-JSON responses
+
       const contentType = response.headers.get('content-type')
       const data = contentType?.includes('application/json')
         ? await response.json()
         : await response.text()
 
       if (!response.ok) {
-        // 401 từ login/register = sai email/mật khẩu → throw để form hiển thị lỗi, không redirect
         const isAuthForm = endpoint.includes('/auth/login') || endpoint.includes('/auth/register')
         if (response.status === 401 && !isAuthForm) {
           clearAuthAndRedirectToLogin()
@@ -94,6 +90,27 @@ class ApiClient {
       if (error?.status === 401 && !error?.skipAuthRedirect) {
         clearAuthAndRedirectToLogin()
         return
+      }
+      const isNetworkError =
+        error?.name === 'TypeError' &&
+        (error?.message === 'Failed to fetch' || error?.message?.includes('fetch'))
+      if (
+        isNetworkError &&
+        API_FALLBACK_BASE_URL &&
+        !useFallback
+      ) {
+        console.warn('[API] Local BE không kết nối được, thử Vercel...')
+        return this.request(endpoint, options, true)
+      }
+      if (isNetworkError) {
+        const friendly = {
+          message: useFallback
+            ? 'Cannot connect to server. Local and Vercel API both failed. Check network or try again.'
+            : 'Cannot connect to server. Run EngSocial-BE locally (npm run dev on port 5000) or try again.',
+          isNetworkError: true,
+        }
+        console.error('API Error:', error)
+        throw friendly
       }
       console.error('API Error:', error)
       throw error

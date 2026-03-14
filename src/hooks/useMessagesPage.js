@@ -4,7 +4,7 @@ import { useLocation, useNavigate, useSearchParams } from 'react-router-dom'
 import { ROUTES } from '../constants'
 import { API_BASE_URL, API_ENDPOINTS } from '../constants/api'
 import { useAuth } from '../context/AuthContext'
-import { conversationService, friendsService, uploadService } from '../services'
+import { conversationService, friendsService, uploadService, userService } from '../services'
 import { searchGiphy as giphySearch, hasGiphyKey } from '../services/giphy.service'
 import { getAuthToken } from '../utils/auth'
 import { getMessageEmojiCategories } from '../utils/emoji'
@@ -88,6 +88,8 @@ export function useMessagesPage() {
   const [showDisbandConfirm, setShowDisbandConfirm] = useState(false)
   const [showLeaveConfirm, setShowLeaveConfirm] = useState(false)
   const [headerActionPanel, setHeaderActionPanel] = useState(null) // 'search' | 'mute' | 'disappearing' – panel mở bên trái (main)
+  const [forwardMessage, setForwardMessage] = useState(null)
+  const [forwardingToId, setForwardingToId] = useState(null)
 
   const rightBar = useRightBarData(messages)
   const {
@@ -672,6 +674,16 @@ export function useMessagesPage() {
     }).catch(() => {})
   }, [loadConversations, updateConversationMembersAfterKick])
 
+  const handleBlockDirect = useCallback((otherUserId) => {
+    if (!otherUserId) return
+    userService.blockUser(otherUserId).then(() => loadConversations()).catch(() => {})
+  }, [loadConversations])
+
+  const handleUnblockDirect = useCallback((otherUserId) => {
+    if (!otherUserId) return
+    userService.unblockUser(otherUserId).then(() => loadConversations()).catch(() => {})
+  }, [loadConversations])
+
   const handleUploadGroupAvatar = useCallback((file) => {
     if (!selectedId || !selected?.isGroup || !file) return Promise.reject()
     return uploadService.uploadPostMedia(file).then((data) => {
@@ -690,6 +702,13 @@ export function useMessagesPage() {
       loadConversations()
     })
   }, [selected?.isGroup, loadConversations])
+
+  const updateConversationData = useCallback((conversationId, patch) => {
+    if (!conversationId || !patch || typeof patch !== 'object') return
+    setConversations((prev) =>
+      prev.map((c) => (c.id === conversationId ? { ...c, ...patch } : c))
+    )
+  }, [])
 
   const handleMessageAction = useCallback(
     (action, msg) => {
@@ -718,10 +737,28 @@ export function useMessagesPage() {
         editingMessageRef.current = editPayload
         setEditingMessage(editPayload)
         setInputText(msg.text || '')
+      } else if (action === 'forward') {
+        setForwardMessage(msg)
       }
     },
     [selectedId, updateConversationLastMessage]
   )
+
+  const handleForwardMessage = useCallback((conversationId, message) => {
+    if (!conversationId || !message) return
+    const content = (message.text || '').replace(/\[\d+\s*file\]/gi, '').trim()
+    const attachments = (message.attachments || []).map((a) => ({ url: a.url, name: a.name || null, type: a.type || null }))
+    if (!content && attachments.length === 0) return
+    setForwardingToId(conversationId)
+    conversationService
+      .sendMessage(conversationId, content || (attachments.length ? `[${attachments.length} file]` : ''), null, attachments.length ? attachments : null)
+      .then(() => {
+        setForwardMessage(null)
+        setForwardingToId(null)
+        loadConversations()
+      })
+      .catch(() => setForwardingToId(null))
+  }, [loadConversations])
 
   const cancelEditMessage = useCallback(() => {
     editingMessageRef.current = null
@@ -864,12 +901,19 @@ export function useMessagesPage() {
     showLeaveConfirm,
     setShowLeaveConfirm,
     handleLeaveGroup,
+    forwardMessage,
+    setForwardMessage,
+    handleForwardMessage,
+    forwardingToId,
     handleSetMemberAdmin,
     handleMessageUser,
     handleKickMember,
     handleBlockMember,
+    handleBlockDirect,
+    handleUnblockDirect,
     handleUploadGroupAvatar,
     handleSaveGroupName,
+    updateConversationData,
     headerActionPanel,
     setHeaderActionPanel,
     hasMoreOlderMessages,

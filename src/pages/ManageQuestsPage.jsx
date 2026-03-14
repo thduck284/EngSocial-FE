@@ -63,9 +63,9 @@ export function ManageQuestsPage() {
               <div>
                 <label className="block text-sm font-medium text-gray-400 mb-2">{t('manageQuests.type')}</label>
                 <select value={form.type} onChange={(e) => setForm({ ...form, type: e.target.value })} className="w-full bg-background-dark border border-border-dark rounded-xl px-4 py-2.5 text-white outline-none focus:ring-2 focus:ring-primary">
+                  <option value="one_time">{t('manageQuests.typeOneTime')}</option>
                   <option value="daily">{t('manageQuests.typeDaily')}</option>
                   <option value="weekly">{t('manageQuests.typeWeekly')}</option>
-                  <option value="one_time">{t('manageQuests.typeOneTime')}</option>
                 </select>
               </div>
               <div>

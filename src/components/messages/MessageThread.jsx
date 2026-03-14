@@ -86,6 +86,7 @@ export function MessageThread({
   onOpenDisappearing,
   onDeleteAll,
   onBlock,
+  onUnblock,
   onReport,
   headerActionPanel,
   setHeaderActionPanel,
@@ -101,6 +102,7 @@ export function MessageThread({
   composerProps,
   onUploadGroupAvatar,
   onSaveGroupName,
+  currentUserId,
 }) {
   const { t: tI18n, i18n } = useTranslation()
   const t = tProp ?? tI18n
@@ -200,6 +202,28 @@ export function MessageThread({
     return -1
   })()
 
+  // Nhóm: với mỗi tin nhắn, danh sách thành viên có tin này là "đã đọc cuối" (để hiện avatar nhỏ)
+  const lastReadByMembersPerMessage = (() => {
+    if (!selected?.isGroup || !Array.isArray(messages) || messages.length === 0) return []
+    const myId = currentUserId != null ? String(currentUserId) : ''
+    const members = selected?.members ?? []
+    const lastReadIndexByUser = {}
+    for (let i = 0; i < messages.length; i++) {
+      const readBy = messages[i].readBy || []
+      for (const uid of readBy) {
+        const id = String(uid)
+        lastReadIndexByUser[id] = i
+      }
+    }
+    return messages.map((_, i) => {
+      return members.filter((m) => {
+        const uid = String(m.userId)
+        if (uid === myId) return false
+        return lastReadIndexByUser[uid] === i
+      }).map((m) => ({ userId: m.userId, name: m.name, avatar: m.avatar }))
+    })
+  })()
+
   const handleOpenReactionDetail = (msg) => {
     if (openReactionDetailMessageId === msg.id) {
       setOpenReactionDetailMessageId(null)
@@ -213,8 +237,9 @@ export function MessageThread({
 
   return (
     <>
-      <header className="p-4 border-b border-border-dark flex items-center justify-between shrink-0">
-        <input
+      <div className="w-full shrink-0 flex flex-col min-w-0">
+        <header className="w-full min-w-0 p-4 flex items-center justify-between">
+          <input
           ref={avatarInputRef}
           type="file"
           accept="image/jpeg,image/png,image/gif,image/webp"
@@ -289,7 +314,10 @@ export function MessageThread({
                 <>
                   {selected?.online ? t('messages.activeNow') : (selected?.lastActiveDate ? formatGroupActiveAgo(selected.lastActiveDate, t) : t('messages.groupOffline'))}
                   {selected?.memberCount != null && (
-                    <><span className="text-sm mx-0.5 align-middle">·</span>{t('messages.memberCount', { count: selected.memberCount })}</>
+                    <>
+                      <span className="text-base mx-1 align-middle">·</span>
+                      {t('messages.memberCount', { count: selected.memberCount })}
+                    </>
                   )}
                 </>
               ) : selected?.online ? (
@@ -353,7 +381,7 @@ export function MessageThread({
                 {!selected?.isGroup && onBlock && (
                   <button type="button" onClick={() => { onBlock(); setHeaderMenuOpen(false) }} className="w-full px-4 py-2.5 text-left text-sm text-white hover:bg-white/10 flex items-center gap-3">
                     <span className="material-symbols-outlined text-lg">block</span>
-                    {t('messages.blockUser')}
+                    {t('messages.block')}
                   </button>
                 )}
                 {!selected?.isGroup && onReport && (
@@ -366,7 +394,9 @@ export function MessageThread({
             )}
           </div>
         </div>
-      </header>
+        </header>
+        <div className="w-full border-b border-border-dark shrink-0" aria-hidden />
+      </div>
 
       {headerActionPanel && (
         <div className="shrink-0 border-b border-border-dark bg-card-dark/80 p-4">
@@ -479,6 +509,7 @@ export function MessageThread({
                 index={index}
                 messages={messages}
                 lastReadByThemIndex={lastReadByThemIndex}
+                lastReadByMembers={selected?.isGroup ? (lastReadByMembersPerMessage[index] || []) : undefined}
                 openMessageMenuId={openMessageMenuId}
                 setOpenMessageMenuId={setOpenMessageMenuId}
                 openReactionPickerId={openReactionPickerId}
@@ -496,6 +527,26 @@ export function MessageThread({
         )}
         <div ref={messagesEndRef} />
       </div>
+
+      {!selected?.isGroup && selected?.iBlockedThem && (
+        <div className="shrink-0 border-t border-border-dark bg-card-dark/90 p-4 flex flex-col gap-3">
+          <p className="text-sm font-semibold text-white text-center">
+            {t('messages.youBlockedUser', { name: selected?.name || 'User' })}
+          </p>
+          <p className="text-xs text-gray-400 text-center">
+            {t('messages.cannotMessageInThisChat')}
+          </p>
+          {onUnblock && selected?.otherUserId && (
+            <button
+              type="button"
+              onClick={() => onUnblock(selected.otherUserId)}
+              className="w-full py-2.5 rounded-xl bg-white/10 text-white hover:bg-white/20 text-sm font-medium transition-colors"
+            >
+              {t('messages.unblock')}
+            </button>
+          )}
+        </div>
+      )}
 
       {(showNewMessageBanner || reactionNotification) && (
         <div className="flex flex-col items-center gap-2 shrink-0 mb-[10px]">
@@ -528,7 +579,15 @@ export function MessageThread({
         </div>
       )}
 
-      <MessageComposer {...composerProps} />
+      {!selected?.isGroup && selected?.theyBlockedMe && (
+        <div className="shrink-0 border-t border-border-dark bg-primary/20 px-4 py-3 flex items-center justify-center gap-2">
+          <span className="text-sm text-white">{t('messages.cannotReplyToThisConversation')}</span>
+          <a href="#" onClick={(e) => e.preventDefault()} className="text-sm text-primary hover:underline shrink-0">
+            {t('messages.learnMore')}
+          </a>
+        </div>
+      )}
+      {((selected?.isGroup) || (!selected?.iBlockedThem && !selected?.theyBlockedMe)) && <MessageComposer {...composerProps} />}
     </>
   )
 }

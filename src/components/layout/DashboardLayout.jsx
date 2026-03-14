@@ -13,7 +13,7 @@ export function DashboardLayout() {
   }
 
   return (
-    <div className="bg-background-dark text-white min-h-screen flex flex-col">
+    <div className="bg-background-dark text-white min-h-screen flex flex-col w-full min-w-0 overflow-x-hidden">
       <AppHeader />
       <div className="flex-1 min-h-0 flex flex-col">
         <Outlet />

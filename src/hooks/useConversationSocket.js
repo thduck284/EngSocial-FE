@@ -32,11 +32,20 @@ export function useConversationSocket({
     if (socketRef) socketRef.current = socket
 
     socket.on('conversation:read', (payload) => {
-      const { conversationId } = payload || {}
+      const { conversationId, userId: readerUserId } = payload || {}
       if (!conversationId) return
       setConversations((prev) => prev.map((c) => (c.id === conversationId ? { ...c, lastMessageSeen: true } : c)))
       if (selectedIdRef?.current === conversationId) {
-        setMessages((prev) => prev.map((m) => (m.fromMe ? { ...m, read: true } : m)))
+        const readerId = readerUserId != null ? String(readerUserId) : null
+        setMessages((prev) => {
+          if (!readerId) return prev.map((m) => (m.fromMe ? { ...m, read: true } : m))
+          return prev.map((m) => {
+            const readBy = m.readBy || []
+            const alreadyRead = readBy.some((id) => String(id) === readerId)
+            if (alreadyRead) return m.fromMe ? { ...m, read: true } : m
+            return { ...m, readBy: [...readBy, readerId], read: m.fromMe ? true : m.read }
+          })
+        })
       }
     })
     socket.on('conversation:userOnline', (payload) => {
@@ -228,6 +237,18 @@ export function useConversationSocket({
         )
         return next
       })
+    })
+    socket.on('conversation:memberBlocked', () => {
+      loadConversations()
+    })
+    socket.on('conversation:memberUnblocked', () => {
+      loadConversations()
+    })
+    socket.on('user:blocked', () => {
+      loadConversations()
+    })
+    socket.on('user:unblocked', () => {
+      loadConversations()
     })
 
     return () => {

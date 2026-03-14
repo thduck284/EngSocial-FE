@@ -61,6 +61,7 @@ export function ConversationRightSidebar({
   downloadAttachment,
   rightBarSearchInputRef,
   onBlock,
+  onBlockUserInChat,
   onReport,
   onOpenGroupSettings,
   onUploadGroupAvatar,
@@ -72,7 +73,6 @@ export function ConversationRightSidebar({
   onSetMemberAdmin,
   onMessageUser,
   onKickMember,
-  onBlockMember,
 }) {
   const [expandedSections, setExpandedSections] = useState(DEFAULT_EXPANDED)
   const [avatarUploading, setAvatarUploading] = useState(false)
@@ -263,7 +263,10 @@ export function ConversationRightSidebar({
             <p className={`text-xs mt-1 ${selected?.online ? 'text-green-500' : 'text-gray-500'}`}>
               {selected?.online ? t('messages.activeNow') : (selected?.lastActiveDate ? formatGroupActiveAgo(selected.lastActiveDate, t) : t('messages.groupOffline'))}
               {selected?.memberCount != null && (
-                <><span className="text-sm mx-0.5 align-middle">·</span>{t('messages.memberCount', { count: selected.memberCount })}</>
+                <>
+                  <span className="text-base mx-1 align-middle">·</span>
+                  {t('messages.memberCount', { count: selected.memberCount })}
+                </>
               )}
             </p>
           )}
@@ -476,7 +479,7 @@ export function ConversationRightSidebar({
             <div className="space-y-1">
               {!selected?.isGroup && onBlock && (
                 <button type="button" onClick={onBlock} className="w-full flex items-center justify-between p-3 rounded-xl hover:bg-card-dark transition-colors text-white">
-                  <span className="text-sm font-medium">{t('messages.blockUser')}</span>
+                  <span className="text-sm font-medium">{t('messages.block')}</span>
                   <span className="material-symbols-outlined text-gray-400">block</span>
                 </button>
               )}
@@ -604,10 +607,10 @@ export function ConversationRightSidebar({
                 {t('messages.messageUser')}
               </button>
             )}
-            {onBlockMember && (
-              <button type="button" onClick={() => { onBlockMember(selected.id, m.userId); closeMemberMenu() }} className="w-full px-4 py-2 text-left text-sm text-white hover:bg-white/10 flex items-center gap-2">
+            {onBlockUserInChat && (
+              <button type="button" onClick={() => { onBlockUserInChat(m.userId); closeMemberMenu() }} className="w-full px-4 py-2 text-left text-sm text-white hover:bg-white/10 flex items-center gap-2">
                 <span className="material-symbols-outlined text-lg">block</span>
-                {t('messages.blockUser')}
+                {t('messages.block')}
               </button>
             )}
             {onReport && (

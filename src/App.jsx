@@ -18,6 +18,7 @@ import { QuestsPage } from './pages/QuestsPage'
 import { AchievementsPage } from './pages/AchievementsPage'
 import { ManageLessonsPage } from './pages/ManageLessonsPage'
 import { ManageQuestsPage } from './pages/ManageQuestsPage'
+import { ManageChallengesPage } from './pages/ManageChallengesPage'
 import { SearchPage } from './pages/SearchPage'
 import { MessagesPage } from './pages/MessagesPage'
 import { DashboardLayout } from './components/layout/DashboardLayout'
@@ -62,6 +63,8 @@ function App() {
         <Route path="manage/skills/:id" element={<RequireModeratorOrAdmin><ManageLessonsPage /></RequireModeratorOrAdmin>} />
         <Route path="manage/quests" element={<RequireModeratorOrAdmin><ManageQuestsPage /></RequireModeratorOrAdmin>} />
         <Route path="manage/quests/:id" element={<RequireModeratorOrAdmin><ManageQuestsPage /></RequireModeratorOrAdmin>} />
+        <Route path="manage/challenges" element={<RequireModeratorOrAdmin><ManageChallengesPage /></RequireModeratorOrAdmin>} />
+        <Route path="manage/challenges/:id" element={<RequireModeratorOrAdmin><ManageChallengesPage /></RequireModeratorOrAdmin>} />
         <Route path="quests" element={<QuestsPage />} />
         <Route path="achievements" element={<AchievementsPage />} />
         <Route path="profile/:userId" element={<UserProfilePage />} />

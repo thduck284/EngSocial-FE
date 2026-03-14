@@ -28,4 +28,7 @@ export const userService = {
   getGoals: async () => {
     return apiClient.get(API_ENDPOINTS.USER.GOALS)
   },
+
+  blockUser: (userId) => apiClient.post(API_ENDPOINTS.USER.BLOCK(userId)),
+  unblockUser: (userId) => apiClient.request(API_ENDPOINTS.USER.UNBLOCK(userId), { method: 'DELETE' }),
 }

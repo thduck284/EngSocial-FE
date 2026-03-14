@@ -1,3 +1,4 @@
+import { useState, useRef, useEffect } from 'react'
 import { ROUTES } from '../../constants'
 
 export function ConversationSidebar({
@@ -15,18 +16,43 @@ export function ConversationSidebar({
   friendsSearchLoading = false,
   onSelectFriendToChat,
   onCreateGroup,
+  onViewProfile,
+  onOpenMute,
+  onOpenDisappearing,
+  onDeleteMessages,
+  onBlock,
+  onReport,
+  onLeaveGroup,
 }) {
+  const [openConvMenuId, setOpenConvMenuId] = useState(null)
+  const convMenuRef = useRef(null)
+
+  useEffect(() => {
+    if (!openConvMenuId) return
+    const handleClickOutside = (e) => {
+      if (convMenuRef.current && !convMenuRef.current.contains(e.target)) {
+        setOpenConvMenuId(null)
+      }
+    }
+    document.addEventListener('mousedown', handleClickOutside)
+    return () => document.removeEventListener('mousedown', handleClickOutside)
+  }, [openConvMenuId])
+
   const showFriendsSection = searchConversations.trim() && (friendsSearchResult.length > 0 || friendsSearchLoading)
   const hasMessages = (c) => c.lastMessageAt != null || (typeof c.lastMessage === 'string' && c.lastMessage.trim() !== '')
+  const totalUnread = filteredConversations.reduce((sum, c) => sum + (c.unreadCount || 0), 0)
+  const totalUnreadGroups = filteredConversations.filter((c) => c.isGroup).reduce((sum, c) => sum + (c.unreadCount || 0), 0)
   const convList = filteredConversations.filter((c) => {
-    const passTab = tab === 'all' || (tab === 'unread' && c.unread) || (tab === 'groups' && c.isGroup)
+    const passTab = tab === 'all' || (tab === 'unread' && c.unread) || (tab === 'groups' && c.isGroup && c.unread)
     if (!passTab) return false
     const isSelected = c.id === selectedId
     return hasMessages(c) || isSelected
   })
 
+  const closeMenu = () => setOpenConvMenuId(null)
+
   return (
-    <aside className="w-full md:w-[280px] lg:w-[340px] flex-shrink-0 min-h-0 border-r border-border-dark flex flex-col bg-background-dark">
+    <aside className="w-full md:w-[280px] lg:w-[340px] flex-shrink-0 min-h-0 border-r border-border-dark flex flex-col bg-background-dark overflow-hidden">
       <div className="p-5 space-y-4">
         <div className="flex items-center justify-between">
           <h2 className="text-xl font-bold text-white">{t('messages.title')}</h2>
@@ -48,32 +74,42 @@ export function ConversationSidebar({
             onChange={(e) => setSearchConversations(e.target.value)}
           />
         </div>
-        <div className="flex w-full items-center justify-between">
+        <div className="flex w-full items-center justify-center gap-2 -mx-3">
           <button
             type="button"
             onClick={() => setTab('all')}
-            className={`h-8 min-w-[4.5rem] px-4 rounded-full text-sm font-semibold transition-colors flex items-center justify-center shrink-0 ${tab === 'all' ? 'bg-primary text-background-dark' : 'bg-card-dark text-gray-400 hover:bg-primary/20'}`}
+            className={`h-8 min-w-[4.5rem] px-3 rounded-full text-sm font-semibold transition-colors flex items-center justify-center shrink-0 ${tab === 'all' ? 'bg-primary text-background-dark' : 'bg-card-dark text-gray-400 hover:bg-primary/20'}`}
           >
             {t('messages.all')}
           </button>
           <button
             type="button"
             onClick={() => setTab('unread')}
-            className={`h-8 min-w-[4.5rem] px-4 rounded-full text-sm font-semibold transition-colors flex items-center justify-center shrink-0 ${tab === 'unread' ? 'bg-primary text-background-dark' : 'bg-card-dark text-gray-400 hover:bg-primary/20'}`}
+            className={`h-8 min-w-[4.5rem] px-3 rounded-full text-sm font-semibold transition-colors flex items-center justify-center gap-1.5 shrink-0 overflow-hidden ${totalUnread > 0 ? 'max-w-[5.5rem]' : ''} ${tab === 'unread' ? 'bg-primary text-background-dark' : 'bg-card-dark text-gray-400 hover:bg-primary/20'}`}
           >
-            {t('messages.unread')}
+            <span className="truncate min-w-0">{t('messages.unread')}</span>
+            {totalUnread > 0 && (
+              <span className={`min-w-[1.25rem] h-5 px-1.5 rounded-full text-xs font-bold flex items-center justify-center shrink-0 ${tab === 'unread' ? 'bg-background-dark/30 text-background-dark' : 'bg-primary/30 text-primary'}`}>
+                {totalUnread > 99 ? '99+' : totalUnread}
+              </span>
+            )}
           </button>
           <button
             type="button"
             onClick={() => setTab('groups')}
-            className={`h-8 min-w-[4.5rem] px-4 rounded-full text-sm font-semibold transition-colors flex items-center justify-center shrink-0 ${tab === 'groups' ? 'bg-primary text-background-dark' : 'bg-card-dark text-gray-400 hover:bg-primary/20'}`}
+            className={`h-8 min-w-[4.5rem] px-3 rounded-full text-sm font-semibold transition-colors flex items-center justify-center gap-1.5 shrink-0 overflow-hidden ${totalUnreadGroups > 0 ? 'max-w-[5.5rem]' : ''} ${tab === 'groups' ? 'bg-primary text-background-dark' : 'bg-card-dark text-gray-400 hover:bg-primary/20'}`}
           >
-            {t('messages.groups')}
+            <span className="truncate min-w-0">{t('messages.groups')}</span>
+            {totalUnreadGroups > 0 && (
+              <span className={`min-w-[1.25rem] h-5 px-1.5 rounded-full text-xs font-bold flex items-center justify-center shrink-0 ${tab === 'groups' ? 'bg-background-dark/30 text-background-dark' : 'bg-primary/30 text-primary'}`}>
+                {totalUnreadGroups > 99 ? '99+' : totalUnreadGroups}
+              </span>
+            )}
           </button>
           <button
             type="button"
             onClick={() => onCreateGroup?.()}
-            className="h-8 w-8 shrink-0 rounded-full flex items-center justify-center bg-card-dark text-gray-400 hover:bg-primary/20 hover:text-primary transition-colors"
+            className="h-8 w-8 shrink-0 rounded-full flex items-center justify-center bg-card-dark text-gray-400 hover:bg-primary/20 hover:text-primary transition-colors -mr-5"
             title={t('messages.createGroup')}
             aria-label={t('messages.createGroup')}
           >
@@ -117,58 +153,120 @@ export function ConversationSidebar({
           </div>
         ) : (
           convList.map((conv) => (
-              <button
+              <div
                 key={conv.id}
-                type="button"
-                onClick={() => navigate(ROUTES.MESSAGES_CONVERSATION(conv.id))}
-                className={`w-full flex items-center gap-4 p-3 rounded-xl text-left transition-colors ${
-                  selectedId === conv.id ? 'bg-primary/10 border-l-4 border-primary' : 'hover:bg-card-dark border-l-4 border-transparent'
-                }`}
+                ref={openConvMenuId === conv.id ? convMenuRef : undefined}
+                className={`group/conversation relative flex items-center rounded-xl border-l-4 ${
+                  selectedId === conv.id ? 'bg-primary/10 border-primary' : 'border-transparent'
+                } ${openConvMenuId === conv.id ? 'z-20' : ''}`}
               >
-                <div className="relative flex-shrink-0">
-                  {conv.isGroup && !conv.avatar ? (
-                    <div className="w-12 h-12 rounded-full bg-amber-400/90 flex items-center justify-center shrink-0">
-                      <i className="fa-solid fa-people-group text-xl text-white" aria-hidden />
-                    </div>
-                  ) : (
-                    <img
-                      src={conv.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(conv.name || '')}&background=13b6ec&color=fff`}
-                      alt=""
-                      className="w-12 h-12 rounded-full object-cover"
-                    />
-                  )}
-                  {conv.online && (
-                    <span className="absolute bottom-0 right-0 w-3.5 h-3.5 bg-green-500 border-2 border-background-dark rounded-full" />
-                  )}
-                </div>
-                <div className="flex-1 min-w-0">
-                  <div className="flex justify-between items-center gap-1.5 mb-0.5">
-                    <span className={`flex items-center gap-1.5 min-w-0 flex-1 ${conv.unread ? 'font-bold text-white' : 'font-medium text-gray-300'}`}>
-                      {conv.isGroup && (
-                        <i className="fa-solid fa-people-group text-base text-gray-400 shrink-0" aria-hidden />
-                      )}
-                      <span className="truncate">{conv.name}</span>
-                    </span>
-                    <span className="text-xs text-gray-500 shrink-0">{conv.time || ''}</span>
-                  </div>
-                  <div className="flex justify-between items-center gap-2 min-w-0">
-                    <p className={`text-sm truncate min-w-0 flex-1 ${conv.unread ? 'font-semibold text-gray-200' : 'text-gray-500'}`}>
-                      {conv.lastMessageFromMe
-                        ? `${t('messages.you')}: ${displayLastMessage(conv.lastMessage) || ''}`.trim() || t('messages.noMessagesYet')
-                        : (displayLastMessage(conv.lastMessage) || t('messages.noMessagesYet'))}
-                    </p>
-                    {conv.unread && <span className="w-2 h-2 bg-primary rounded-full shrink-0" />}
-                    {!conv.unread && conv.lastMessageFromMe && conv.lastMessageSeen && (
+                <button
+                  type="button"
+                  onClick={() => navigate(ROUTES.MESSAGES_CONVERSATION(conv.id))}
+                  className={`flex-1 flex items-center gap-4 p-3 rounded-xl text-left transition-colors min-w-0 ${
+                    selectedId === conv.id ? '' : 'hover:bg-card-dark'
+                  }`}
+                >
+                  <div className="relative flex-shrink-0">
+                    {conv.isGroup && !conv.avatar ? (
+                      <div className="w-12 h-12 rounded-full bg-amber-400/90 flex items-center justify-center shrink-0">
+                        <i className="fa-solid fa-people-group text-xl text-white" aria-hidden />
+                      </div>
+                    ) : (
                       <img
                         src={conv.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(conv.name || '')}&background=13b6ec&color=fff`}
                         alt=""
-                        className="w-5 h-5 rounded-full object-cover shrink-0 border border-border-dark"
-                        title={t('messages.seen')}
+                        className="w-12 h-12 rounded-full object-cover"
                       />
                     )}
+                    {conv.online && (
+                      <span className="absolute bottom-0 right-0 w-3.5 h-3.5 bg-green-500 border-2 border-background-dark rounded-full" />
+                    )}
                   </div>
-                </div>
-              </button>
+                  <div className="flex-1 min-w-0">
+                    <div className="flex justify-between items-center gap-1.5 mb-0.5">
+                      <span className={`flex items-center gap-1.5 min-w-0 flex-1 ${conv.unread ? 'font-bold text-white' : 'font-medium text-gray-300'}`}>
+                        {conv.isGroup && (
+                          <i className="fa-solid fa-people-group text-base text-gray-400 shrink-0" aria-hidden />
+                        )}
+                        <span className="truncate">{conv.name}</span>
+                      </span>
+                      <span className="text-xs text-gray-500 shrink-0">{conv.time || ''}</span>
+                    </div>
+                    <div className="flex justify-between items-center gap-2 min-w-0">
+                      <p className={`text-sm truncate min-w-0 flex-1 ${conv.unread ? 'font-semibold text-gray-200' : 'text-gray-500'}`}>
+                        {conv.lastMessageFromMe
+                          ? `${t('messages.you')}: ${displayLastMessage(conv.lastMessage) || ''}`.trim() || t('messages.noMessagesYet')
+                          : (displayLastMessage(conv.lastMessage) || t('messages.noMessagesYet'))}
+                      </p>
+                      {conv.unread && <span className="w-2 h-2 bg-primary rounded-full shrink-0" />}
+                      {!conv.unread && conv.lastMessageFromMe && conv.lastMessageSeen && (
+                        <img
+                          src={conv.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(conv.name || '')}&background=13b6ec&color=fff`}
+                          alt=""
+                          className="w-5 h-5 rounded-full object-cover shrink-0 border border-border-dark"
+                          title={t('messages.seen')}
+                        />
+                      )}
+                    </div>
+                  </div>
+                </button>
+                <button
+                  type="button"
+                  onClick={(e) => { e.stopPropagation(); setOpenConvMenuId((prev) => (prev === conv.id ? null : conv.id)) }}
+                  className={`absolute right-2 top-1/2 -translate-y-1/2 p-1.5 rounded-lg text-gray-400 hover:text-white hover:bg-card-dark transition-colors z-10 ${openConvMenuId === conv.id ? 'opacity-100' : 'opacity-0 group-hover/conversation:opacity-100'}`}
+                  aria-label={t('messages.options')}
+                >
+                  <span className="material-symbols-outlined text-xl">more_vert</span>
+                </button>
+                {openConvMenuId === conv.id && (
+                  <div className="absolute right-2 top-full mt-1 py-1 min-w-[200px] rounded-xl bg-card-dark border border-border-dark shadow-xl z-30">
+                    {!conv.isGroup && onViewProfile && (
+                      <button type="button" onClick={() => { onViewProfile(conv); closeMenu() }} className="w-full px-4 py-2.5 text-left text-sm text-white hover:bg-white/10 flex items-center gap-3">
+                        <span className="material-symbols-outlined text-lg">person</span>
+                        {t('messages.viewProfile')}
+                      </button>
+                    )}
+                    {onOpenMute && (
+                      <button type="button" onClick={() => { onOpenMute(conv); closeMenu() }} className="w-full px-4 py-2.5 text-left text-sm text-white hover:bg-white/10 flex items-center gap-3">
+                        <span className="material-symbols-outlined text-lg">{conv.muted ? 'notifications' : 'notifications_off'}</span>
+                        {t('messages.muteNotifications')}
+                      </button>
+                    )}
+                    {onOpenDisappearing && (
+                      <button type="button" onClick={() => { onOpenDisappearing(conv); closeMenu() }} className="w-full px-4 py-2.5 text-left text-sm text-white hover:bg-white/10 flex items-center gap-3">
+                        <span className="material-symbols-outlined text-lg">timer</span>
+                        {t('messages.disappearingMessages')}
+                      </button>
+                    )}
+                    <div className="border-t border-border-dark my-1" />
+                    {onDeleteMessages && (
+                      <button type="button" onClick={() => { onDeleteMessages(conv); closeMenu() }} className="w-full px-4 py-2.5 text-left text-sm text-white hover:bg-white/10 flex items-center gap-3">
+                        <span className="material-symbols-outlined text-lg">delete</span>
+                        {t('messages.deleteAllMessages')}
+                      </button>
+                    )}
+                    {conv.isGroup && onLeaveGroup && (
+                      <button type="button" onClick={() => { onLeaveGroup(conv); closeMenu() }} className="w-full px-4 py-2.5 text-left text-sm text-white hover:bg-white/10 flex items-center gap-3">
+                        <span className="material-symbols-outlined text-lg">exit_to_app</span>
+                        {t('messages.leaveGroup')}
+                      </button>
+                    )}
+                    {!conv.isGroup && onBlock && (
+                      <button type="button" onClick={() => { onBlock(conv); closeMenu() }} className="w-full px-4 py-2.5 text-left text-sm text-white hover:bg-white/10 flex items-center gap-3">
+                        <span className="material-symbols-outlined text-lg">block</span>
+                        {t('messages.block')}
+                      </button>
+                    )}
+                    {onReport && (
+                      <button type="button" onClick={() => { onReport(conv); closeMenu() }} className="w-full px-4 py-2.5 text-left text-sm text-white hover:bg-white/10 flex items-center gap-3">
+                        <span className="material-symbols-outlined text-lg">flag</span>
+                        {t('messages.report')}
+                      </button>
+                    )}
+                  </div>
+                )}
+              </div>
             ))
         )}
       </div>

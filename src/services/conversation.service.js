@@ -9,7 +9,20 @@ export const conversationService = {
   getOrCreateWithUser: (otherUserId) =>
     apiClient.get(API_ENDPOINTS.CONVERSATIONS.GET_OR_CREATE_WITH(otherUserId)),
 
-  getList: () => apiClient.get(API_ENDPOINTS.CONVERSATIONS.LIST),
+  getList: (params = {}) => {
+    const q = new URLSearchParams()
+    if (params.q != null && params.q !== '') q.set('q', params.q)
+    const query = q.toString()
+    return apiClient.get(API_ENDPOINTS.CONVERSATIONS.LIST + (query ? `?${query}` : ''))
+  },
+
+  /** Paginated list of conversations that have messages (for forward modal). limit=5, offset=0 */
+  getForForward: (limit = 5, offset = 0) => {
+    const q = new URLSearchParams()
+    q.set('limit', String(limit))
+    q.set('offset', String(offset))
+    return apiClient.get(API_ENDPOINTS.CONVERSATIONS.FOR_FORWARD + `?${q.toString()}`)
+  },
 
   /** Tạo nhóm chat. Body: { type: 'group', name, avatar?, participantIds } */
   createGroup: (name, participantIds, avatar = null) =>

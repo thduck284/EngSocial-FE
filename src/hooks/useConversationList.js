@@ -64,16 +64,15 @@ export function useConversationList() {
   }, [loadConversations])
 
   const searchQ = searchConversations.trim().toLowerCase()
-  const filteredConversations = useMemo(
-    () =>
-      conversations.filter((c) => {
-        if (!searchQ) return true
-        const nameMatch = (c.name || '').toLowerCase().includes(searchQ)
-        const lastMsgMatch = (c.lastMessage || '').toLowerCase().includes(searchQ)
-        return nameMatch || lastMsgMatch
-      }),
-    [conversations, searchQ]
-  )
+  const filteredConversations = useMemo(() => {
+    const list = conversations.filter((c) => {
+      if (!searchQ) return true
+      const nameMatch = (c.name || '').toLowerCase().includes(searchQ)
+      const lastMsgMatch = (c.lastMessage || '').toLowerCase().includes(searchQ)
+      return nameMatch || lastMsgMatch
+    })
+    return list.slice().sort((a, b) => (new Date(b.lastMessageAt) || 0) - (new Date(a.lastMessageAt) || 0))
+  }, [conversations, searchQ])
 
   useEffect(() => {
     if (!searchQ) {

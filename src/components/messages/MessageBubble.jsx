@@ -7,6 +7,7 @@ export function MessageBubble({
   index,
   messages,
   lastReadByThemIndex,
+  lastReadByMembers,
   openMessageMenuId,
   setOpenMessageMenuId,
   openReactionPickerId,
@@ -223,13 +224,26 @@ export function MessageBubble({
                   </span>
                 )}
               </div>
-              {index === lastReadByThemIndex && msg.fromMe && (
+              {index === lastReadByThemIndex && msg.fromMe && !lastReadByMembers && (
                 <img
                   src={selected?.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(selected?.name || '')}&background=13b6ec&color=fff`}
                   alt=""
                   className="w-5 h-5 rounded-full object-cover border border-border-dark"
                   title={t('messages.seen')}
                 />
+              )}
+              {Array.isArray(lastReadByMembers) && lastReadByMembers.length > 0 && (
+                <div className="flex items-center gap-0.5 -space-x-1.5 flex-wrap justify-end max-w-[80px]" title={t('messages.seen')}>
+                  {lastReadByMembers.map((m) => (
+                    <img
+                      key={m.userId}
+                      src={m.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(m.name || '')}&background=13b6ec&color=fff`}
+                      alt=""
+                      className="w-5 h-5 rounded-full object-cover border border-border-dark shrink-0"
+                      title={m.name || ''}
+                    />
+                  ))}
+                </div>
               )}
             </div>
           </div>
