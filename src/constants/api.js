@@ -6,6 +6,9 @@ export const API_BASE_URL = isLocalhost
   : (import.meta.env.VITE_API_BASE_URL || VERCEL_API)
 export const API_FALLBACK_BASE_URL = isLocalhost ? VERCEL_API : null
 
+// Socket.IO only works with a long-lived server (localhost). Vercel serverless does not support WebSocket.
+export const SOCKET_ENABLED = typeof window !== 'undefined' && API_BASE_URL.includes('localhost')
+
 // Admin app URL: dùng cho nút "Thêm bài học" / "Thêm bài tập" (moderator/admin)
 export const ADMIN_APP_URL = import.meta.env.VITE_ADMIN_APP_URL || 'http://localhost:4000'
 

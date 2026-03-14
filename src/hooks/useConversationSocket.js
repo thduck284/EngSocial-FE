@@ -1,7 +1,7 @@
 import { useEffect } from 'react'
 import { io } from 'socket.io-client'
 import { ROUTES } from '../constants'
-import { API_BASE_URL } from '../constants/api'
+import { API_BASE_URL, SOCKET_ENABLED } from '../constants/api'
 import { conversationService } from '../services'
 import { getAuthToken } from '../utils/auth'
 import { formatConversationTime } from '../utils/messages'
@@ -24,7 +24,7 @@ export function useConversationSocket({
   socketRef,
 }) {
   useEffect(() => {
-    if (!currentUserId) return
+    if (!SOCKET_ENABLED || !currentUserId) return
     const token = getAuthToken()
     if (!token) return
     const socketUrl = API_BASE_URL.replace(/\/api\/?$/, '')

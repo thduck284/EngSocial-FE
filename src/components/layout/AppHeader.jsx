@@ -6,7 +6,7 @@ import { useAuth } from '../../context/AuthContext'
 import { NotificationPopover } from '../ui/NotificationPopover'
 import { LanguageSwitcher } from '../ui/LanguageSwitcher'
 import { NAV_ITEMS, ROUTES } from '../../constants'
-import { API_BASE_URL } from '../../constants/api'
+import { API_BASE_URL, SOCKET_ENABLED } from '../../constants/api'
 import { getAuthToken } from '../../utils/auth'
 import { notificationsService, conversationService } from '../../services'
 
@@ -73,7 +73,7 @@ export function AppHeader() {
   }, [isOnMessagesSection, fetchMessagesUnreadCount])
 
   useEffect(() => {
-    if (!user) return
+    if (!SOCKET_ENABLED || !user) return
     const token = getAuthToken()
     if (!token) return
     const socketUrl = API_BASE_URL.replace(/\/api\/?$/, '')
