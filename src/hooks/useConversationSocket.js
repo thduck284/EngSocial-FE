@@ -1,7 +1,7 @@
-import { useEffect } from 'react'
+import { useEffect, useRef } from 'react'
 import { io } from 'socket.io-client'
 import { ROUTES } from '../constants'
-import { API_BASE_URL, SOCKET_ENABLED } from '../constants/api'
+import { SOCKET_ENABLED, SOCKET_BASE_URL, SOCKET_FALLBACK_BASE_URL } from '../constants/api'
 import { conversationService } from '../services'
 import { getAuthToken } from '../utils/auth'
 import { formatConversationTime } from '../utils/messages'
@@ -9,6 +9,7 @@ import { formatConversationTime } from '../utils/messages'
 /**
  * Thiết lập socket cho realtime: read, online/offline, message, reaction, updated, deleted, disbanded, left, memberLeft.
  * Khi disband/left cần clear selection: gọi onClearSelection (thường là () => navigate(ROUTES.MESSAGES)).
+ * Khi chạy local mà BE local không chạy thì thử fallback (Render).
  */
 export function useConversationSocket({
   currentUserId,
@@ -23,15 +24,18 @@ export function useConversationSocket({
   setReactionNotification,
   socketRef,
 }) {
+  const currentSocketRef = useRef(null)
+  const triedFallbackRef = useRef(false)
+
   useEffect(() => {
     if (!SOCKET_ENABLED || !currentUserId) return
     const token = getAuthToken()
     if (!token) return
-    const socketUrl = API_BASE_URL.replace(/\/api\/?$/, '')
-    const socket = io(socketUrl, { auth: { token }, transports: ['websocket', 'polling'] })
-    if (socketRef) socketRef.current = socket
 
-    socket.on('conversation:read', (payload) => {
+    const opts = { auth: { token }, transports: ['websocket', 'polling'] }
+
+    function attachListeners(socket) {
+      socket.on('conversation:read', (payload) => {
       const { conversationId, userId: readerUserId } = payload || {}
       if (!conversationId) return
       setConversations((prev) => prev.map((c) => (c.id === conversationId ? { ...c, lastMessageSeen: true } : c)))
@@ -247,12 +251,31 @@ export function useConversationSocket({
     socket.on('user:blocked', () => {
       loadConversations()
     })
-    socket.on('user:unblocked', () => {
-      loadConversations()
+      socket.on('user:unblocked', () => {
+        loadConversations()
+      })
+    }
+
+    let socket = io(SOCKET_BASE_URL, opts)
+    currentSocketRef.current = socket
+    if (socketRef) socketRef.current = socket
+    attachListeners(socket)
+
+    socket.on('connect_error', () => {
+      if (!SOCKET_FALLBACK_BASE_URL || triedFallbackRef.current) return
+      triedFallbackRef.current = true
+      socket.removeAllListeners()
+      socket.disconnect()
+      socket = io(SOCKET_FALLBACK_BASE_URL, opts)
+      currentSocketRef.current = socket
+      if (socketRef) socketRef.current = socket
+      attachListeners(socket)
     })
 
     return () => {
-      socket.disconnect()
+      triedFallbackRef.current = false
+      currentSocketRef.current?.disconnect()
+      currentSocketRef.current = null
       if (socketRef) socketRef.current = null
     }
   }, [currentUserId, t, loadConversations, onClearSelection, setConversations, setMessages, setShowNewMessageBanner, setReactionNotification])

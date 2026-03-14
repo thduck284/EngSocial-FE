@@ -6,7 +6,7 @@ import { useAuth } from '../../context/AuthContext'
 import { NotificationPopover } from '../ui/NotificationPopover'
 import { LanguageSwitcher } from '../ui/LanguageSwitcher'
 import { NAV_ITEMS, ROUTES } from '../../constants'
-import { API_BASE_URL, SOCKET_ENABLED } from '../../constants/api'
+import { SOCKET_ENABLED, SOCKET_BASE_URL, SOCKET_FALLBACK_BASE_URL } from '../../constants/api'
 import { getAuthToken } from '../../utils/auth'
 import { notificationsService, conversationService } from '../../services'
 
@@ -72,25 +72,39 @@ export function AppHeader() {
     return () => window.removeEventListener('focus', onFocus)
   }, [isOnMessagesSection, fetchMessagesUnreadCount])
 
+  const headerSocketRef = useRef(null)
+  const headerTriedFallbackRef = useRef(false)
+
   useEffect(() => {
     if (!SOCKET_ENABLED || !user) return
     const token = getAuthToken()
     if (!token) return
-    const socketUrl = API_BASE_URL.replace(/\/api\/?$/, '')
-    const socket = io(socketUrl, {
-      auth: { token },
-      transports: ['websocket', 'polling'],
+    const opts = { auth: { token }, transports: ['websocket', 'polling'] }
+
+    function attachListeners(s) {
+      s.on('notification', () => setUnreadCount((prev) => prev + 1))
+      s.on('conversation:message', () => fetchMessagesUnreadCount())
+      s.on('conversation:read', () => fetchMessagesUnreadCount())
+    }
+
+    let socket = io(SOCKET_BASE_URL, opts)
+    headerSocketRef.current = socket
+    attachListeners(socket)
+    socket.on('connect_error', () => {
+      if (!SOCKET_FALLBACK_BASE_URL || headerTriedFallbackRef.current) return
+      headerTriedFallbackRef.current = true
+      socket.removeAllListeners()
+      socket.disconnect()
+      socket = io(SOCKET_FALLBACK_BASE_URL, opts)
+      headerSocketRef.current = socket
+      attachListeners(socket)
     })
-    socket.on('notification', () => {
-      setUnreadCount((prev) => prev + 1)
-    })
-    socket.on('conversation:message', () => {
-      fetchMessagesUnreadCount()
-    })
-    socket.on('conversation:read', () => {
-      fetchMessagesUnreadCount()
-    })
-    return () => socket.disconnect()
+
+    return () => {
+      headerTriedFallbackRef.current = false
+      headerSocketRef.current?.disconnect()
+      headerSocketRef.current = null
+    }
   }, [user, fetchMessagesUnreadCount])
 
   useEffect(() => {

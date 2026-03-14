@@ -1,13 +1,18 @@
 const isLocalhost = typeof window !== 'undefined' && window.location.hostname === 'localhost'
 const LOCAL_API = 'http://localhost:5000/api'
-const VERCEL_API = 'https://eng-social-be.vercel.app/api'
+const RENDER_API = 'https://engsocial-be.onrender.com/api'
 export const API_BASE_URL = isLocalhost
   ? (import.meta.env.VITE_API_BASE_URL || LOCAL_API)
-  : (import.meta.env.VITE_API_BASE_URL || VERCEL_API)
-export const API_FALLBACK_BASE_URL = isLocalhost ? VERCEL_API : null
+  : (import.meta.env.VITE_API_BASE_URL || RENDER_API)
+export const API_FALLBACK_BASE_URL = isLocalhost ? RENDER_API : null
 
-// Socket.IO only works with a long-lived server (localhost). Vercel serverless does not support WebSocket.
-export const SOCKET_ENABLED = typeof window !== 'undefined' && window.location.hostname === 'localhost'
+// Socket base URL (no /api suffix). When localhost, fallback = Render so socket works if local BE is down.
+const stripApi = (url) => (url || '').replace(/\/api\/?$/, '')
+export const SOCKET_BASE_URL = stripApi(isLocalhost ? (import.meta.env.VITE_API_BASE_URL || LOCAL_API) : (import.meta.env.VITE_API_BASE_URL || RENDER_API))
+export const SOCKET_FALLBACK_BASE_URL = isLocalhost ? stripApi(RENDER_API) : null
+
+// Socket.IO works with Render (long-lived server). Only disabled when no backend or serverless.
+export const SOCKET_ENABLED = typeof window !== 'undefined'
 
 // Admin app URL: dùng cho nút "Thêm bài học" / "Thêm bài tập" (moderator/admin)
 export const ADMIN_APP_URL = import.meta.env.VITE_ADMIN_APP_URL || 'http://localhost:4000'
