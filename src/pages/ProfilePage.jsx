@@ -1,23 +1,49 @@
 import { useState, useEffect } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { useAuth } from '../context/AuthContext'
 import { getAuthStorage } from '../utils/auth'
-import { userService, rawService } from '../services'
+import { userService, rawService, friendsService } from '../services'
 import { ROUTES } from '../constants'
+import { useDashboardSocket } from '../hooks/useDashboardSocket'
 import { DEFAULT_AVATAR } from '../constants/ui'
 import { formatDateForInput } from '../utils/profile'
+import { getDefaultSkillStats, normalizeSkillStatsFromStats } from '../utils/dashboard'
 
 export function ProfilePage() {
   const { t } = useTranslation()
+  const navigate = useNavigate()
   const { user, setAuth, logout } = useAuth()
   const [raw, setRaw] = useState({
     userProfile: { name: '', level: 1, xp: 0, xpMax: 500, avatar: '' },
     goals: [],
-    profileFriends: [],
-    profileSkillStats: [],
     profileAchievements: [],
   })
+  const defaultSkillStats = getDefaultSkillStats()
+  const [profileSkillStats, setProfileSkillStats] = useState(defaultSkillStats)
+  const [profileFriends, setProfileFriends] = useState([])
+  const [profileFriendsLoading, setProfileFriendsLoading] = useState(true)
+  const { onlineUserIds } = useDashboardSocket(user, () => {})
+
+  useEffect(() => {
+    setProfileFriendsLoading(true)
+    friendsService.getList({ limit: 100 })
+      .then((res) => {
+        const list = res?.data?.data ?? res?.data ?? []
+        const arr = Array.isArray(list) ? list : []
+        setProfileFriends(arr.map((item) => {
+          const u = item?.user ?? item
+          const id = u?.id ?? u?._id ?? item?.userId
+          const name = u?.name ?? item?.name ?? 'User'
+          const avatar = u?.avatar ?? item?.avatar ?? (name ? `https://ui-avatars.com/api/?name=${encodeURIComponent(name)}&background=13b6ec&color=fff` : DEFAULT_AVATAR)
+          const level = u?.level ?? item?.level ?? 1
+          const lastActiveAt = u?.lastActiveAt ?? u?.lastSeen ?? u?.lastActiveDate ?? item?.lastActiveAt ?? item?.updatedAt ?? item?.createdAt ?? null
+          return { id, name, avatar, level, online: false, lastActiveAt }
+        }))
+      })
+      .catch(() => setProfileFriends([]))
+      .finally(() => setProfileFriendsLoading(false))
+  }, [])
 
   useEffect(() => {
     rawService.getDashboard()
@@ -26,12 +52,20 @@ export function ProfilePage() {
         setRaw({
           userProfile: d.userProfile || raw.userProfile,
           goals: d.goals || [],
-          profileFriends: d.profileFriends || [],
-          profileSkillStats: d.profileSkillStats || [],
           profileAchievements: d.profileAchievements || [],
         })
       })
       .catch(() => {})
+  }, [])
+
+  useEffect(() => {
+    userService.getStats()
+      .then((res) => {
+        const data = res?.data || res || {}
+        const list = normalizeSkillStatsFromStats(data, defaultSkillStats)
+        setProfileSkillStats(list)
+      })
+      .catch(() => setProfileSkillStats(defaultSkillStats))
   }, [])
 
   const profile = raw.userProfile
@@ -44,6 +78,7 @@ export function ProfilePage() {
 
   const [form, setForm] = useState({
     name: '',
+    email: '',
     phone: '',
     bio: '',
     address: '',
@@ -59,15 +94,17 @@ export function ProfilePage() {
   const [avatarPreview, setAvatarPreview] = useState('')
   const [avatarSaving, setAvatarSaving] = useState(false)
   const [avatarError, setAvatarError] = useState('')
+  const [profileTab, setProfileTab] = useState('personalInfo')
 
   useEffect(() => {
     const name = user?.name ?? raw.userProfile?.name ?? ''
+    const email = user?.email ?? ''
     const phone = user?.phone ?? ''
     const bio = user?.bio ?? ''
     const address = user?.address ?? ''
     const dateOfBirth = formatDateForInput(user?.dateOfBirth)
     const gender = user?.gender ?? ''
-    const next = { name, phone, bio, address, dateOfBirth, gender }
+    const next = { name, email, phone, bio, address, dateOfBirth, gender }
     setForm(next)
     setInitialForm(next)
   }, [user, raw.userProfile?.name])
@@ -174,14 +211,39 @@ export function ProfilePage() {
     }
   }
 
-  const filteredFriends = raw.profileFriends.filter(
-    (f) =>
-      !friendSearch.trim() ||
-      f.name.toLowerCase().includes(friendSearch.toLowerCase())
-  )
+  const filteredFriends = profileFriends
+    .filter(
+      (f) =>
+        !friendSearch.trim() ||
+        (f.name && f.name.toLowerCase().includes(friendSearch.toLowerCase()))
+    )
+    .sort((a, b) => {
+      const idA = a.id != null ? String(a.id) : null
+      const idB = b.id != null ? String(b.id) : null
+      const onlineA = idA && onlineUserIds && onlineUserIds.has(idA)
+      const onlineB = idB && onlineUserIds && onlineUserIds.has(idB)
+      if (onlineA && !onlineB) return -1
+      if (!onlineA && onlineB) return 1
+      const timeA = a.lastActiveAt ? new Date(a.lastActiveAt).getTime() : 0
+      const timeB = b.lastActiveAt ? new Date(b.lastActiveAt).getTime() : 0
+      return timeB - timeA
+    })
 
   const goalsDone = raw.goals.filter((g) => g.done).length
   const goalsTotal = raw.goals.length
+
+  const getFriendActivityLabel = (friend, isOnline) => {
+    if (isOnline) return t('messages.activeNow')
+    if (!friend.lastActiveAt) return t('dashboard.level') + ' ' + friend.level
+    const diffMs = Date.now() - new Date(friend.lastActiveAt).getTime()
+    const diffM = Math.floor(diffMs / 60000)
+    const diffH = Math.floor(diffMs / 3600000)
+    const diffD = Math.floor(diffMs / 86400000)
+    if (diffM < 1) return t('messages.activeNow')
+    if (diffM < 60) return t('messages.activeMinutesAgo', { count: diffM })
+    if (diffH < 24) return t('messages.activeHoursAgo', { count: diffH })
+    return t('messages.activeDaysAgo', { count: diffD })
+  }
 
   return (
     <main className="max-w-7xl mx-auto px-4 py-8">
@@ -196,9 +258,9 @@ export function ProfilePage() {
         <span className="text-primary font-medium">{t('profile.title')}</span>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 mb-8">
+      <div className="flex flex-col lg:flex-row gap-6 mb-8">
         {/* Left: Avatar + Level + Friends */}
-        <div className="lg:col-span-4 flex flex-col gap-6">
+        <div className="lg:w-[calc(100%/3)] lg:shrink-0 flex flex-col gap-6">
           <div className="bg-white dark:bg-card-dark rounded-2xl p-8 border border-slate-200 dark:border-border-dark flex flex-col items-center text-center">
             <div className="relative mb-6">
               <div className="w-40 h-40 rounded-full border-4 border-primary p-1 overflow-hidden">
@@ -238,7 +300,7 @@ export function ProfilePage() {
 
           <div className="bg-white dark:bg-card-dark rounded-2xl p-6 border border-slate-200 dark:border-border-dark">
             <div className="flex items-center justify-between mb-4">
-              <h3 className="font-bold dark:text-white">{t('profile.friends', { count: raw.profileFriends.length })}</h3>
+              <h3 className="font-bold dark:text-white">{t('profile.friends', { count: profileFriends.length })}</h3>
               <Link to={ROUTES.FRIENDS} className="text-xs font-semibold text-primary hover:underline">
                 {t('buttons.viewAll')}
               </Link>
@@ -254,25 +316,47 @@ export function ProfilePage() {
               />
             </div>
             <div className="space-y-4 custom-scrollbar max-h-64 overflow-y-auto">
-              {filteredFriends.map((friend) => (
-                <div key={friend.name} className="flex items-center justify-between group cursor-pointer">
-                  <div className="flex items-center gap-3">
-                    <div className="relative">
-                      <img alt="" className="w-10 h-10 rounded-full bg-slate-200 dark:bg-slate-700 object-cover" src={friend.avatar} />
-                      <span
-                        className={`absolute bottom-0 right-0 w-3 h-3 border-2 border-white dark:border-card-dark rounded-full ${
-                          friend.online ? 'bg-green-500' : 'bg-slate-400'
-                        }`}
-                      />
-                    </div>
-                    <div>
-                      <p className="text-sm font-semibold dark:text-slate-200 group-hover:text-primary transition-colors">{friend.name}</p>
-                      <p className="text-[10px] text-slate-500">{friend.level}</p>
-                    </div>
-                  </div>
-                  <span className="material-symbols-outlined text-slate-400 text-xl">chat_bubble</span>
+              {profileFriendsLoading ? (
+                <div className="flex justify-center py-8">
+                  <span className="material-symbols-outlined animate-spin text-2xl text-primary">progress_activity</span>
                 </div>
-              ))}
+              ) : filteredFriends.length === 0 ? (
+                <p className="text-xs text-slate-500 dark:text-slate-400 py-4 text-center">{t('profile.noFriends')}</p>
+              ) : (
+                filteredFriends.map((friend) => {
+                  const friendId = friend.id != null ? String(friend.id) : null
+                  const isOnline = Boolean(friendId && onlineUserIds && onlineUserIds.has(friendId))
+                  return (
+                  <div key={friend.id ?? friend.name ?? ''} className="flex items-center justify-between group">
+                    <Link to={friend.id ? `${ROUTES.PROFILE_USER(friend.id)}` : '#'} className="flex items-center gap-3 min-w-0 flex-1 cursor-pointer">
+                      <div className="relative shrink-0">
+                        <img alt="" className="w-10 h-10 rounded-full bg-slate-200 dark:bg-slate-700 object-cover" src={friend.avatar || DEFAULT_AVATAR} />
+                        <span
+                          className={`absolute bottom-0 right-0 w-3 h-3 border-2 border-white dark:border-card-dark rounded-full ${
+                            isOnline ? 'bg-green-500' : 'bg-gray-400 dark:bg-gray-500'
+                          }`}
+                          title={isOnline ? t('userProfile.online') : t('profile.offline')}
+                        />
+                      </div>
+                      <div className="min-w-0">
+                        <p className="text-sm font-semibold dark:text-slate-200 group-hover:text-primary transition-colors truncate">{friend.name}</p>
+                        <p className="text-[10px] text-slate-500">{getFriendActivityLabel(friend, isOnline)}</p>
+                      </div>
+                    </Link>
+                    {friend.id && (
+                      <button
+                        type="button"
+                        onClick={() => navigate(`${ROUTES.MESSAGES}?with=${encodeURIComponent(friend.id)}`, { state: { withUser: { id: friend.id, name: friend.name, avatar: friend.avatar } } })}
+                        className="p-2 rounded-lg text-slate-400 hover:bg-primary/10 hover:text-primary transition-colors shrink-0"
+                        title={t('messages.title')}
+                      >
+                        <span className="material-symbols-outlined text-xl">chat_bubble</span>
+                      </button>
+                    )}
+                  </div>
+                  )
+                })
+              )}
             </div>
           </div>
         </div>
@@ -322,8 +406,32 @@ export function ProfilePage() {
           </div>
         )}
 
-        {/* Right: Edit form */}
-        <div className="lg:col-span-8 bg-white dark:bg-card-dark rounded-2xl p-8 border border-slate-200 dark:border-border-dark">
+        {/* Right: Tabs + content - min-w-[800px] để bọc hết 4 tab (mỗi tab 200px) */}
+        <div className="lg:flex-[1_1_0%] lg:min-w-[800px] w-full bg-white dark:bg-card-dark rounded-2xl border border-slate-200 dark:border-border-dark overflow-hidden">
+          <nav className="flex pt-2 border-b border-slate-200 dark:border-border-dark">
+            {[
+              { id: 'personalInfo', key: 'tabPersonalInfo' },
+              { id: 'posts', key: 'tabPosts' },
+              { id: 'photos', key: 'tabPhotos' },
+              { id: 'video', key: 'tabVideo' },
+            ].map(({ id, key }) => (
+              <button
+                key={id}
+                type="button"
+                onClick={() => setProfileTab(id)}
+                className={`shrink-0 w-[200px] py-5 text-base font-medium border-b-2 transition-colors text-center ${
+                  profileTab === id
+                    ? 'text-primary border-primary'
+                    : 'text-slate-500 dark:text-slate-400 border-transparent hover:text-slate-700 dark:hover:text-slate-200'
+                }`}
+              >
+                {t(`profile.${key}`)}
+              </button>
+            ))}
+          </nav>
+          <div className="p-8 w-full min-w-[32rem] flex flex-col">
+          {profileTab === 'personalInfo' && (
+          <>
           <h3 className="text-lg font-bold mb-6 dark:text-white flex items-center gap-2">
             <span className="material-symbols-outlined text-primary">edit</span>
             {t('profile.editInfo')}
@@ -347,6 +455,16 @@ export function ProfilePage() {
                 className="w-full bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-border-dark rounded-lg px-4 py-2.5 outline-none focus:ring-2 focus:ring-primary/50 transition-all dark:text-white"
                 value={form.name}
                 onChange={(e) => handleChange('name', e.target.value)}
+              />
+            </div>
+            <div className="space-y-2">
+              <label className="text-sm font-semibold text-slate-600 dark:text-slate-400">{t('auth.email')}</label>
+              <input
+                type="email"
+                disabled
+                className="w-full bg-slate-100 dark:bg-slate-800/80 border border-slate-200 dark:border-border-dark rounded-lg px-4 py-2.5 text-slate-600 dark:text-slate-400 cursor-not-allowed"
+                value={form.email}
+                readOnly
               />
             </div>
             <div className="space-y-2">
@@ -405,7 +523,7 @@ export function ProfilePage() {
             </div>
           </div>
 
-          <div className="mt-8 flex justify-end gap-3">
+          <div className="mt-8 flex flex-wrap items-center justify-end gap-3">
             <button
               type="button"
               className="px-6 py-2.5 rounded-lg border border-slate-200 dark:border-border-dark font-medium text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors"
@@ -415,12 +533,33 @@ export function ProfilePage() {
             </button>
             <button
               type="button"
+              className="px-6 py-2.5 rounded-lg border-2 border-slate-200 dark:border-border-dark font-medium text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors flex items-center gap-2"
+              onClick={() => {}}
+            >
+              <span className="material-symbols-outlined text-lg">lock_reset</span>
+              {t('profile.changePassword')}
+            </button>
+            <button
+              type="button"
               className="px-8 py-2.5 rounded-lg bg-primary text-white font-semibold shadow-lg shadow-primary/20 hover:bg-primary/90 transition-colors disabled:opacity-60"
               onClick={handleSave}
               disabled={saving}
             >
               {saving ? t('profile.saving') : t('profile.saveChanges')}
             </button>
+          </div>
+          </>
+          )}
+
+          {(profileTab === 'posts' || profileTab === 'photos' || profileTab === 'video') && (
+            <div className="w-full min-h-[16rem] flex items-center justify-center">
+              <p className="text-sm text-slate-500 dark:text-slate-400 text-center">
+                {profileTab === 'posts' && t('profile.tabPosts')}
+                {profileTab === 'photos' && t('profile.tabPhotos')}
+                {profileTab === 'video' && t('profile.tabVideo')} – {t('profile.comingSoon')}
+              </p>
+            </div>
+          )}
           </div>
         </div>
       </div>
@@ -433,17 +572,20 @@ export function ProfilePage() {
             {t('profile.skillStats')}
           </h4>
           <div className="space-y-4">
-            {raw.profileSkillStats.map((item) => (
-              <div
-                key={item.labelKey}
-                className="flex items-center justify-between p-3 rounded-xl bg-slate-50 dark:bg-slate-800/50 border border-slate-100 dark:border-border-dark"
+            {profileSkillStats.map(({ icon, label, value, change, changeColor, to }) => (
+              <Link
+                key={label}
+                to={to}
+                className="flex items-center justify-between p-3 rounded-xl bg-slate-50 dark:bg-slate-800/50 border border-slate-100 dark:border-border-dark hover:bg-slate-100 dark:hover:bg-slate-700/50 transition-colors"
               >
                 <div className="flex items-center gap-3">
-                  <span className={`material-symbols-outlined ${item.iconColor}`}>{item.icon}</span>
-                  <span className="text-sm font-medium">{t(item.labelKey)}</span>
+                  <span className={`material-symbols-outlined ${changeColor || 'text-primary'}`}>{icon}</span>
+                  <span className="text-sm font-medium">{t(label)}</span>
                 </div>
-                <span className="font-bold">{item.xp}</span>
-              </div>
+                <span className="font-bold text-sm">
+                  {value} {change && <span className={`text-[10px] ml-1 ${changeColor}`}>{change}</span>}
+                </span>
+              </Link>
             ))}
           </div>
         </div>
@@ -510,21 +652,6 @@ export function ProfilePage() {
 
       {/* Actions */}
       <div className="flex flex-col sm:flex-row items-center justify-center gap-4 border-t border-slate-200 dark:border-border-dark pt-8">
-        <button
-          type="button"
-          className="flex items-center gap-2 px-6 py-3 rounded-xl border-2 border-slate-200 dark:border-border-dark font-bold text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800 transition-all w-full sm:w-auto"
-          onClick={() => {}}
-        >
-          <span className="material-symbols-outlined">lock_reset</span>
-          {t('profile.changePassword')}
-        </button>
-        <Link
-          to={ROUTES.HOME}
-          className="flex items-center gap-2 px-6 py-3 rounded-xl bg-slate-100 dark:bg-slate-800 font-bold text-slate-900 dark:text-white hover:bg-slate-200 dark:hover:bg-slate-700 transition-all w-full sm:w-auto justify-center"
-        >
-          <span className="material-symbols-outlined">dashboard</span>
-          {t('profile.backToDashboard')}
-        </Link>
         <button
           type="button"
           className="flex items-center gap-2 px-6 py-3 rounded-xl border-2 border-red-100 dark:border-red-900/30 font-bold text-red-500 hover:bg-red-50 dark:hover:bg-red-500/10 transition-all w-full sm:w-auto"

@@ -21,6 +21,11 @@ export const friendsService = {
     return apiClient.get(`${API_ENDPOINTS.FRIENDS.LIST}${searchParams ? `?${searchParams}` : ''}`)
   },
 
+  getSuggestions: (params = {}) => {
+    const searchParams = new URLSearchParams(params).toString()
+    return apiClient.get(`${API_ENDPOINTS.FRIENDS.SUGGESTIONS}${searchParams ? `?${searchParams}` : ''}`)
+  },
+
   getPendingRequests: (params = {}) => {
     const searchParams = new URLSearchParams(params).toString()
     return apiClient.get(`${API_ENDPOINTS.FRIENDS.PENDING_REQUESTS}${searchParams ? `?${searchParams}` : ''}`)

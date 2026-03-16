@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from 'react'
+import { useNavigate, useLocation } from 'react-router-dom'
 import { lessonsService } from '../services'
 import { SPEED_OPTIONS } from '../constants/lessons'
 import { formatTime } from '../utils/dateTime'
@@ -74,8 +75,8 @@ export function useListeningLesson(id, t) {
   const accentLabel = content?.accent ? content.accent.charAt(0).toUpperCase() + content.accent.slice(1) : ''
   const currentPage = currentQuestion + 1
   const totalPages = totalQuestions
-  const showPrevPages = currentPage > 3
-  const showNextPages = currentPage < totalPages - 2
+  const showPrevPages = currentPage > 2
+  const showNextPages = currentPage < totalPages
 
   useEffect(() => {
     if (countdownSeconds == null || countdownSeconds <= 0) return
@@ -150,7 +151,12 @@ export function useListeningLesson(id, t) {
         setCompleteMessage(
           xp != null ? t('listeningLesson.completeSuccess', { xp }) : t('listeningLesson.completeSuccessShort')
         )
-        setTimeout(() => setCompleteMessage(''), 3000)
+        const fromPractice = location.pathname.startsWith('/practice/')
+        const redirectTo = fromPractice ? '/practice' : '/lesson'
+        setTimeout(() => {
+          setCompleteMessage('')
+          navigate(redirectTo)
+        }, 3000)
       })
       .catch(() => setCompleteMessage(t('listeningLesson.completeFailed')))
       .finally(() => setCompletingLesson(false))

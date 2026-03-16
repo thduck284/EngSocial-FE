@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback, useRef } from 'react'
 import { Link, useParams, useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { useAuth } from '../context/AuthContext'
+import { useDashboardSocket } from '../hooks/useDashboardSocket'
 import { ROUTES } from '../constants'
 import { DEFAULT_AVATAR } from '../constants/ui'
 import { userService, friendsService } from '../services'
@@ -17,8 +18,13 @@ function mapApiProfileToState(data) {
   return {
     id: data.id,
     name: data.name,
+    email: data.email ?? '',
     avatar: data.avatar,
     bio: data.bio,
+    phone: data.phone ?? '',
+    address: data.address ?? '',
+    dateOfBirth: data.dateOfBirth ?? '',
+    gender: data.gender ?? '',
     level: data.level ?? 1,
     xp: data.xp ?? 0,
     totalXp: data.totalXp ?? 0,
@@ -28,8 +34,9 @@ function mapApiProfileToState(data) {
     friendStatus: data.friendStatus ?? 'none',
     friendshipId: data.friendshipId,
     pendingSentByMe: data.pendingSentByMe,
+    blockedByMe: data.blockedByMe ?? false,
     joinedAt: formatJoinedAt(data.createdAt),
-    skills: [],
+    skills: Array.isArray(data.skills) ? data.skills : [],
     achievements: [],
     friends: Array.isArray(data.friends) ? data.friends : [],
   }
@@ -40,11 +47,13 @@ export function UserProfilePage() {
   const { userId } = useParams()
   const navigate = useNavigate()
   const { user: currentUser } = useAuth()
+  const { onlineUserIds } = useDashboardSocket(currentUser, () => {})
 
   const [activeTab, setActiveTab] = useState('about')
   const [profile, setProfile] = useState(null)
   const [loading, setLoading] = useState(true)
   const [friendActionLoading, setFriendActionLoading] = useState(false)
+  const [blockActionLoading, setBlockActionLoading] = useState(false)
   const [friendsMenuOpen, setFriendsMenuOpen] = useState(false)
   const friendsMenuRef = useRef(null)
 
@@ -102,6 +111,38 @@ export function UserProfilePage() {
       .catch(() => refetchProfile())
       .finally(() => setFriendActionLoading(false))
   }, [userId, friendActionLoading, refetchProfile])
+
+  const handleBlock = useCallback(() => {
+    if (!userId || blockActionLoading) return
+    setBlockActionLoading(true)
+    setFriendsMenuOpen(false)
+    userService
+      .blockUser(userId)
+      .then(() => {
+        setProfile((prev) => (prev ? { ...prev, blockedByMe: true } : prev))
+      })
+      .catch(() => refetchProfile())
+      .finally(() => setBlockActionLoading(false))
+  }, [userId, blockActionLoading, refetchProfile])
+
+  const handleUnblock = useCallback(() => {
+    if (!userId || blockActionLoading) return
+    setBlockActionLoading(true)
+    userService
+      .unblockUser(userId)
+      .then(() => {
+        setProfile((prev) => (prev ? { ...prev, blockedByMe: false } : prev))
+      })
+      .catch(() => refetchProfile())
+      .finally(() => setBlockActionLoading(false))
+  }, [userId, blockActionLoading, refetchProfile])
+
+  const handleMessage = useCallback(() => {
+    if (!userId || !profile) return
+    navigate(`${ROUTES.MESSAGES}?with=${encodeURIComponent(userId)}`, {
+      state: { withUser: { id: userId, name: profile.name, avatar: profile.avatar } },
+    })
+  }, [navigate, userId, profile])
 
   useEffect(() => {
     if (!friendsMenuOpen) return
@@ -161,7 +202,15 @@ export function UserProfilePage() {
               <div className="size-32 rounded-full border-4 border-primary p-1 overflow-hidden">
                 <img alt={profile.name} className="w-full h-full rounded-full object-cover" src={displayAvatar} />
               </div>
-              <div className="absolute bottom-1 right-1 bg-green-500 size-5 rounded-full border-4 border-card-dark" title={t('userProfile.online')} />
+              {(() => {
+                const isOnline = Boolean(userId && onlineUserIds && onlineUserIds.has(String(userId)))
+                return (
+                  <span
+                    className={`absolute bottom-1 right-1 size-5 rounded-full border-4 border-card-dark ${isOnline ? 'bg-green-500' : 'bg-gray-400 dark:bg-gray-500'}`}
+                    title={isOnline ? t('userProfile.online') : t('profile.offline')}
+                  />
+                )
+              })()}
             </div>
             <h1 className="text-2xl font-bold text-white mb-1">{profile.name}</h1>
             <div className="flex items-center gap-2 text-gray-400 text-sm mb-4">
@@ -191,7 +240,9 @@ export function UserProfilePage() {
                   <>
                     <button
                       type="button"
-                      className="flex-1 bg-primary hover:bg-primary/90 text-white py-2.5 rounded-lg font-bold text-sm flex items-center justify-center gap-2"
+                      disabled={profile.blockedByMe}
+                      onClick={handleMessage}
+                      className="flex-1 bg-primary hover:bg-primary/90 disabled:opacity-50 text-white py-2.5 rounded-lg font-bold text-sm flex items-center justify-center gap-2"
                     >
                       <span className="material-symbols-outlined text-lg">chat</span>
                       {t('userProfile.sendMessage')}
@@ -216,14 +267,27 @@ export function UserProfilePage() {
                             <span className="material-symbols-outlined text-lg">person_remove</span>
                             {t('userProfile.removeFriend')}
                           </button>
-                          <button
-                            type="button"
-                            onClick={() => { setFriendsMenuOpen(false) }}
-                            className="w-full flex items-center gap-2 px-4 py-2.5 text-sm text-left text-red-400 hover:bg-red-500/10"
-                          >
-                            <span className="material-symbols-outlined text-lg">block</span>
-                            {t('userProfile.block')}
-                          </button>
+                          {profile.blockedByMe ? (
+                            <button
+                              type="button"
+                              disabled={blockActionLoading}
+                              onClick={handleUnblock}
+                              className="w-full flex items-center gap-2 px-4 py-2.5 text-sm text-left text-gray-200 hover:bg-white/5 disabled:opacity-60"
+                            >
+                              <span className="material-symbols-outlined text-lg">block</span>
+                              {t('messages.unblock')}
+                            </button>
+                          ) : (
+                            <button
+                              type="button"
+                              disabled={blockActionLoading}
+                              onClick={handleBlock}
+                              className="w-full flex items-center gap-2 px-4 py-2.5 text-sm text-left text-red-400 hover:bg-red-500/10 disabled:opacity-60"
+                            >
+                              <span className="material-symbols-outlined text-lg">block</span>
+                              {t('userProfile.block')}
+                            </button>
+                          )}
                         </div>
                       )}
                     </div>
@@ -246,7 +310,9 @@ export function UserProfilePage() {
                     </button>
                     <button
                       type="button"
-                      className="flex-1 bg-border-dark hover:bg-border-dark/70 text-white py-2.5 rounded-lg font-bold text-sm flex items-center justify-center gap-2"
+                      disabled={profile.blockedByMe}
+                      onClick={handleMessage}
+                      className="flex-1 bg-border-dark hover:bg-border-dark/70 disabled:opacity-50 text-white py-2.5 rounded-lg font-bold text-sm flex items-center justify-center gap-2"
                     >
                       <span className="material-symbols-outlined text-lg">chat</span>
                       {t('userProfile.sendMessage')}
@@ -270,7 +336,9 @@ export function UserProfilePage() {
                     </button>
                     <button
                       type="button"
-                      className="flex-1 bg-border-dark hover:bg-border-dark/70 text-white py-2.5 rounded-lg font-bold text-sm flex items-center justify-center gap-2"
+                      disabled={profile.blockedByMe}
+                      onClick={handleMessage}
+                      className="flex-1 bg-border-dark hover:bg-border-dark/70 disabled:opacity-50 text-white py-2.5 rounded-lg font-bold text-sm flex items-center justify-center gap-2"
                     >
                       <span className="material-symbols-outlined text-lg">chat</span>
                       {t('userProfile.sendMessage')}
@@ -318,9 +386,9 @@ export function UserProfilePage() {
           </div>
         </div>
 
-        {/* Right: Tabs & Content */}
-        <div className="lg:col-span-8">
-          <div className="flex border-b border-border-dark mb-6 overflow-x-auto">
+        {/* Right: Tabs & Content - giống profile cá nhân: tab 201px, card min-w bọc hết */}
+        <div className="lg:col-span-8 lg:flex-[1_1_0%] lg:min-w-[755px] w-full bg-white dark:bg-card-dark rounded-2xl border border-slate-200 dark:border-border-dark overflow-hidden">
+          <nav className="flex pt-2 border-b border-slate-200 dark:border-border-dark">
             {[
               { key: 'about', label: 'userProfile.tabAbout' },
               { key: 'personalInfo', label: 'userProfile.tabPersonalInfo' },
@@ -332,16 +400,18 @@ export function UserProfilePage() {
                 key={key}
                 type="button"
                 onClick={() => setActiveTab(key)}
-                className={`shrink-0 px-4 sm:px-6 py-4 text-sm font-bold transition-colors whitespace-nowrap ${
-                  activeTab === key ? 'border-b-2 border-primary text-primary' : 'text-gray-500 hover:text-gray-300'
+                className={`shrink-0 w-[151px] py-5 text-base font-medium border-b-2 transition-colors text-center ${
+                  activeTab === key
+                    ? 'text-primary border-primary'
+                    : 'text-slate-500 dark:text-slate-400 border-transparent hover:text-slate-700 dark:hover:text-slate-200'
                 }`}
               >
                 {t(label)}
               </button>
             ))}
-          </div>
+          </nav>
 
-          <div className="space-y-6">
+          <div className="p-8 w-full min-w-[32rem] flex flex-col space-y-6">
             {activeTab === 'about' && (
               <>
                 <div className="bg-card-dark border border-border-dark rounded-xl p-6">
@@ -364,15 +434,19 @@ export function UserProfilePage() {
                     {t('userProfile.mySkills')}
                   </h3>
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                    {profile.skills.map((skill) => (
-                      <div key={skill.key} className="p-4 bg-background-dark/50 rounded-xl border border-border-dark">
-                        <div className="text-xs text-gray-500 uppercase font-bold mb-1">{t(skill.labelKey)}</div>
-                        <div className="text-2xl font-black text-primary mb-2">{t('userProfile.levelLabel', { level: skill.level })}</div>
-                        <div className="h-1 w-full bg-border-dark rounded-full overflow-hidden">
-                          <div className="h-full bg-primary transition-all" style={{ width: `${skill.percent}%` }} />
+                    {profile.skills.length === 0 ? (
+                      <p className="text-gray-400 col-span-full">{t('userProfile.noSkillStats')}</p>
+                    ) : (
+                      profile.skills.map((skill) => (
+                        <div key={skill.key} className="p-4 bg-background-dark/50 rounded-xl border border-border-dark">
+                          <div className="text-xs text-gray-500 uppercase font-bold mb-1">{t(skill.labelKey)}</div>
+                          <div className="text-2xl font-black text-primary mb-2">{t('userProfile.levelLabel', { level: skill.level })}</div>
+                          <div className="h-1 w-full bg-border-dark rounded-full overflow-hidden">
+                            <div className="h-full bg-primary transition-all" style={{ width: `${skill.percent}%` }} />
+                          </div>
                         </div>
-                      </div>
-                    ))}
+                      ))
+                    )}
                   </div>
                 </div>
 
@@ -406,7 +480,58 @@ export function UserProfilePage() {
                   <span className="material-symbols-outlined text-primary">badge</span>
                   {t('userProfile.personalInfoTitle')}
                 </h3>
-                <p className="text-gray-400">{t('userProfile.noPersonalInfo')}</p>
+                {(() => {
+                  const name = profile.name ?? ''
+                  const email = profile.email ?? ''
+                  const phone = profile.phone ?? ''
+                  const bio = profile.bio ?? ''
+                  const address = profile.address ?? ''
+                  const dateOfBirth = profile.dateOfBirth ?? ''
+                  const gender = profile.gender ?? ''
+                  const formatDoB = (val) => {
+                    if (!val) return ''
+                    const d = new Date(val)
+                    return Number.isNaN(d.getTime()) ? val : d.toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit', year: 'numeric' })
+                  }
+                  const genderLabel = gender ? t(`auth.gender${gender.charAt(0).toUpperCase() + gender.slice(1)}`) : ''
+                  const emptyClass = 'text-gray-500 dark:text-gray-500'
+                  const valueClass = 'text-slate-800 dark:text-white'
+                  const Value = ({ children, isEmpty }) => (
+                    <div className={isEmpty ? emptyClass : valueClass}>{children || '—'}</div>
+                  )
+                  return (
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                      <div className="space-y-1">
+                        <div className="text-sm font-semibold text-slate-500 dark:text-slate-400">{t('profile.displayName')}</div>
+                        <Value isEmpty={!name}>{name}</Value>
+                      </div>
+                      <div className="space-y-1">
+                        <div className="text-sm font-semibold text-slate-500 dark:text-slate-400">{t('auth.email')}</div>
+                        <Value isEmpty={!email}>{email}</Value>
+                      </div>
+                      <div className="space-y-1">
+                        <div className="text-sm font-semibold text-slate-500 dark:text-slate-400">{t('profile.phone')}</div>
+                        <Value isEmpty={!phone}>{phone}</Value>
+                      </div>
+                      <div className="md:col-span-2 space-y-1">
+                        <div className="text-sm font-semibold text-slate-500 dark:text-slate-400">{t('profile.bio')}</div>
+                        <div className={!bio ? emptyClass : valueClass}>{bio ? <span className="whitespace-pre-wrap">{bio}</span> : '—'}</div>
+                      </div>
+                      <div className="space-y-1">
+                        <div className="text-sm font-semibold text-slate-500 dark:text-slate-400">{t('profile.address')}</div>
+                        <Value isEmpty={!address}>{address}</Value>
+                      </div>
+                      <div className="space-y-1">
+                        <div className="text-sm font-semibold text-slate-500 dark:text-slate-400">{t('auth.dateOfBirth')}</div>
+                        <Value isEmpty={!dateOfBirth}>{formatDoB(dateOfBirth)}</Value>
+                      </div>
+                      <div className="space-y-1">
+                        <div className="text-sm font-semibold text-slate-500 dark:text-slate-400">{t('auth.gender')}</div>
+                        <Value isEmpty={!gender}>{genderLabel}</Value>
+                      </div>
+                    </div>
+                  )
+                })()}
               </div>
             )}
 

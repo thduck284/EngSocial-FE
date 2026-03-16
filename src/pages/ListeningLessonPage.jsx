@@ -89,109 +89,95 @@ export function ListeningLessonPage() {
   }
 
   return (
-    <main className="max-w-[1600px] mx-auto px-6 py-6 grid grid-cols-12 gap-6 min-h-[calc(100vh-64px)]">
-      {/* Left Sidebar */}
-      <aside className="col-span-12 lg:col-span-3 space-y-6 overflow-y-auto pr-2 pb-6 custom-scrollbar">
-        {/* Lesson Content Navigation */}
-        <div className="bg-card-dark rounded-2xl border border-border-dark shadow-xl overflow-hidden">
-          <div className="p-4 bg-background-dark border-b border-border-dark">
-            <h3 className="font-bold text-xs uppercase tracking-wider text-gray-400">{t('listeningLesson.lessonContent')}</h3>
+    <main className="max-w-[1600px] mx-auto px-6 py-6 flex flex-col lg:flex-row gap-6 min-h-[calc(100vh-64px)]">
+      {/* Left Sidebar - ~200px, can shrink */}
+      <aside className="w-full lg:w-[300px] lg:min-w-[240px] lg:shrink lg:basis-[300px] space-y-6 overflow-y-auto pr-2 pb-6 custom-scrollbar">
+        {/* Lesson Info Card */}
+        <div className="bg-card-dark rounded-2xl p-6 border border-border-dark shadow-xl">
+          <div className="flex justify-between items-start mb-4">
+            <span className="bg-primary/20 text-primary text-xs font-bold px-2 py-1 rounded">
+              {t('listeningLesson.level')} {content?.level || 'A1'}
+            </span>
+            <div className="flex items-center text-yellow-500">
+              <span className="material-symbols-outlined text-sm mr-1">star</span>
+              <span className="text-xs font-bold">{content?.xpReward ?? 50} XP</span>
+            </div>
           </div>
-          <div className="py-2">
-            {lessonChapters.map((ch, idx) => (
+          <h2 className="text-lg font-bold mb-4 text-white leading-tight">{content?.title || ''}</h2>
+          <div className="space-y-3">
+            <div className="flex items-center gap-3 text-sm text-gray-400">
+              <span className="material-symbols-outlined text-lg text-primary">topic</span>
+              <span>{content?.topic || '—'}</span>
+            </div>
+            <div className="flex items-center gap-3 text-sm text-gray-400">
+              <span className="material-symbols-outlined text-lg text-primary">schedule</span>
+              <span>{content?.time || (content?.estimatedTime ? `${content.estimatedTime}m` : '—')}</span>
+            </div>
+            <div className="flex items-center gap-3 text-sm text-gray-400">
+              <span className="material-symbols-outlined text-lg text-primary">quiz</span>
+              <span>{t('listeningLesson.questionCountShort', { count: totalQuestions })}</span>
+            </div>
+          </div>
+          <div className="mt-6 pt-6 border-t border-border-dark">
+            <div className="flex justify-between text-xs font-bold mb-2">
+              <span className="text-gray-400">{t('listeningLesson.progress')}</span>
+              <span className="text-primary">{Math.round(progress)}%</span>
+            </div>
+            <div className="w-full bg-background-dark rounded-full h-2">
               <div
-                key={ch.id}
-                className={`flex items-center gap-3 p-4 transition-colors cursor-pointer ${
-                  ch.active
-                    ? 'bg-gradient-to-r from-emerald-500/10 to-transparent border-l-[3px] border-l-emerald-400'
-                    : ch.done
-                      ? 'hover:bg-background-dark/50'
-                      : 'hover:bg-background-dark/50 opacity-60'
-                }`}
-              >
-                <span
-                  className={`material-symbols-outlined text-xl ${
-                    ch.active
-                      ? 'text-emerald-400'
-                      : ch.done
-                        ? 'text-green-500 fill-icon'
-                        : 'text-gray-500'
-                  }`}
-                >
-                  {ch.active ? 'play_circle' : ch.done ? 'check_circle' : 'lock'}
-                </span>
-                <div className="flex-1">
-                  <p className={`text-xs font-bold ${ch.active ? 'text-white' : 'text-gray-400'}`}>
-                    {idx + 1}. {ch.label}
-                  </p>
-                  <p className="text-[10px] text-gray-500">
-                    {ch.time} • {ch.done ? t('listeningLesson.chapterDone') : ch.active ? t('listeningLesson.chapterActive') : t('listeningLesson.chapterLocked')}
-                  </p>
-                </div>
-              </div>
-            ))}
+                className="bg-primary h-2 rounded-full shadow-[0_0_10px_rgba(19,182,236,0.4)] transition-all duration-1000"
+                style={{ width: `${progress}%` }}
+              />
+            </div>
           </div>
         </div>
 
         {/* Notes Card */}
         <div className="bg-card-dark rounded-2xl p-5 border border-border-dark shadow-lg">
-          <div className="flex items-center justify-between mb-4">
+          <div className="flex flex-wrap items-center justify-between gap-2 mb-4">
             <div className="flex items-center gap-2">
-              <span className="material-symbols-outlined text-primary text-xl">edit_note</span>
+              <span className="material-symbols-outlined text-primary">note_alt</span>
               <h3 className="font-bold text-sm">{t('listeningLesson.notebook')}</h3>
             </div>
-            <div className="min-w-[120px]">
-              <label className="block text-[10px] font-bold text-gray-400 uppercase mb-1">{t('listeningLesson.noteCategoryLabel')}</label>
-              <select
-                value={noteCategory}
-                onChange={(e) => setNoteCategory(e.target.value)}
-                className="w-full bg-background-dark border border-border-dark text-sm rounded-lg py-2 px-3 text-white focus:ring-2 focus:ring-primary outline-none"
-              >
-                <option value="grammar">{t('listeningLesson.noteCategoryGrammar')}</option>
-                <option value="vocab">{t('listeningLesson.noteCategoryVocab')}</option>
-                <option value="idea">{t('listeningLesson.noteCategoryIdea')}</option>
-              </select>
-            </div>
+            <select
+              value={noteCategory}
+              onChange={(e) => setNoteCategory(e.target.value)}
+              className="bg-background-dark border border-border-dark rounded-lg px-3 py-2 text-sm text-white min-w-[120px]"
+            >
+              <option value="grammar">{t('listeningLesson.noteCategoryGrammar')}</option>
+              <option value="vocab">{t('listeningLesson.noteCategoryVocab')}</option>
+              <option value="idea">{t('listeningLesson.noteCategoryIdea')}</option>
+            </select>
           </div>
-          <div className="space-y-3">
-            <div>
-              <label className="block text-[10px] font-bold text-gray-400 uppercase mb-1">{t('listeningLesson.noteTitle')}</label>
-              <input
-                value={noteTitle}
-                onChange={(e) => setNoteTitle(e.target.value)}
-                className="w-full bg-background-dark border border-border-dark rounded-lg px-3 py-2 text-sm text-white placeholder-gray-500 focus:ring-2 focus:ring-primary outline-none"
-                placeholder={t('listeningLesson.noteTitlePlaceholder')}
-                type="text"
-              />
-            </div>
-            <div>
-              <label className="block text-[10px] font-bold text-gray-400 uppercase mb-1">{t('listeningLesson.noteContentLabel')}</label>
-              <textarea
-                value={noteContent}
-                onChange={(e) => setNoteContent(e.target.value)}
-                className="w-full bg-background-dark border border-border-dark rounded-xl p-3 text-sm text-white placeholder-gray-500 focus:ring-2 focus:ring-primary outline-none resize-none"
-                placeholder={t('listeningLesson.notePlaceholder')}
-                rows={4}
-              />
-            </div>
-          </div>
-          {noteSavedMessage && (
-            <p className="mt-2 text-xs text-emerald-400">{noteSavedMessage}</p>
-          )}
+          <input
+            type="text"
+            value={noteTitle}
+            onChange={(e) => setNoteTitle(e.target.value)}
+            className="w-full bg-background-dark border border-border-dark rounded-xl p-3 text-sm focus:ring-primary focus:border-primary placeholder:text-gray-500 text-white mb-3"
+            placeholder={t('listeningLesson.noteTitlePlaceholder')}
+          />
+          <textarea
+            value={noteContent}
+            onChange={(e) => setNoteContent(e.target.value)}
+            className="w-full bg-background-dark border border-border-dark rounded-xl p-3 text-sm focus:ring-primary focus:border-primary placeholder:text-gray-500 text-white"
+            placeholder={t('listeningLesson.notePlaceholder')}
+            rows={3}
+          />
+          {noteSavedMessage && <p className="text-xs text-emerald-400 mb-2">{noteSavedMessage}</p>}
           <button
             type="button"
             onClick={handleSaveNote}
             disabled={noteSaving}
-            className="mt-4 w-full py-2.5 bg-gradient-to-r from-primary to-emerald-400 text-white rounded-xl text-xs font-bold transition-all shadow-lg shadow-teal-950/20 hover:brightness-110 disabled:opacity-60 disabled:cursor-not-allowed"
+            className="w-full py-2 bg-background-dark hover:bg-gray-700 text-white rounded-xl text-xs font-bold transition-all border border-border-dark disabled:opacity-60"
           >
             {noteSaving ? '...' : t('listeningLesson.saveNote')}
           </button>
         </div>
 
-        {/* Listening Tip */}
-        <div className="bg-gradient-to-br from-primary/5 to-emerald-500/10 rounded-2xl p-5 border border-emerald-500/20">
+        {/* Study Tip Card */}
+        <div className="bg-primary/10 border border-primary/20 rounded-2xl p-5 shadow-lg">
           <div className="flex items-center gap-2 mb-3">
-            <span className="material-symbols-outlined text-primary text-lg">psychology</span>
+            <span className="material-symbols-outlined text-primary">lightbulb</span>
             <h3 className="font-bold text-primary text-sm">{t('listeningLesson.tipTitle')}</h3>
           </div>
           <p className="text-xs leading-relaxed text-gray-400 italic">
@@ -201,7 +187,7 @@ export function ListeningLessonPage() {
       </aside>
 
       {/* Main Content */}
-      <div className="col-span-12 lg:col-span-6 flex flex-col gap-6 overflow-hidden">
+      <div className="flex-1 min-w-0 flex flex-col gap-6 overflow-hidden">
         {/* Audio Player Card */}
         <div className="bg-card-dark rounded-3xl border border-border-dark overflow-hidden shadow-2xl">
           {content?.audioUrl && <audio ref={audioRef} src={content.audioUrl} />}
@@ -536,14 +522,16 @@ export function ListeningLessonPage() {
                   >
                     {currentPage + 1}
                   </button>
-                  {currentPage < totalQuestions - 3 && <span className="text-gray-500 text-xs shrink-0">...</span>}
-                  <button
-                    type="button"
-                    onClick={() => handlePageChange(totalQuestions)}
-                    className="px-2.5 py-2 rounded-lg text-xs font-bold text-gray-400 hover:text-white hover:bg-card-dark transition-all shrink-0"
-                  >
-                    {totalQuestions}
-                  </button>
+                  {currentPage + 1 < totalQuestions - 1 && <span className="text-gray-500 text-xs shrink-0">...</span>}
+                  {currentPage + 1 < totalQuestions && (
+                    <button
+                      type="button"
+                      onClick={() => handlePageChange(totalQuestions)}
+                      className="px-2.5 py-2 rounded-lg text-xs font-bold text-gray-400 hover:text-white hover:bg-card-dark transition-all shrink-0"
+                    >
+                      {totalQuestions}
+                    </button>
+                  )}
                 </>
               )}
 
@@ -570,6 +558,14 @@ export function ListeningLessonPage() {
               >
                 {t('listeningLesson.saveDraft')}
               </button>
+              <button
+                type="button"
+                onClick={handleComplete}
+                disabled={completingLesson}
+                className="px-4 py-2 rounded-xl text-xs font-bold bg-primary/20 text-primary border border-primary/40 hover:bg-primary hover:text-white transition-all whitespace-nowrap disabled:opacity-60 disabled:cursor-not-allowed"
+              >
+                {completingLesson ? '...' : t('listeningLesson.complete')}
+              </button>
               {currentQuestion < totalQuestions - 1 ? (
                 <button
                   type="button"
@@ -591,8 +587,8 @@ export function ListeningLessonPage() {
         </div>
       </div>
 
-      {/* Right Sidebar */}
-      <aside className="col-span-12 lg:col-span-3 space-y-6 overflow-y-auto custom-scrollbar pr-2 pb-6">
+      {/* Right Sidebar - ~200px, can shrink */}
+      <aside className="w-full lg:w-[300px] lg:min-w-[240px] lg:shrink lg:basis-[300px] space-y-6 overflow-y-auto custom-scrollbar pr-2 pb-6">
         {/* Vocabulary Card */}
         {vocabularyList.length > 0 && (
         <div className="bg-card-dark rounded-2xl border border-border-dark shadow-xl overflow-hidden group">

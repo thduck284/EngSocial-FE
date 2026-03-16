@@ -71,6 +71,7 @@ export const API_ENDPOINTS = {
   // Lessons
   LESSONS: {
     LIST: '/lessons',
+    MY_PROGRESS: '/lessons/my-progress',
     DETAIL: (id) => `/lessons/${id}`,
     PROGRESS: (id) => `/lessons/${id}/progress`,
     NOTES: (id) => `/lessons/${id}/notes`,
@@ -110,10 +111,13 @@ export const API_ENDPOINTS = {
   COMMUNITY: {
     POSTS: '/community/posts',
     POST_DETAIL: (id) => `/community/posts/${id}`,
+    POST_DOCUMENT_DOWNLOAD: (postId, index) => `/community/posts/${postId}/documents/${index}/download`,
     CREATE_POST: '/community/posts',
     UPDATE_POST: (id) => `/community/posts/${id}`,
     DELETE_POST: (id) => `/community/posts/${id}`,
     LIKE_POST: (id) => `/community/posts/${id}/like`,
+    REACTION_POST: (id) => `/community/posts/${id}/reaction`,
+    POST_REACTIONS: (id) => `/community/posts/${id}/reactions`,
     COMMENT_POST: (id) => `/community/posts/${id}/comments`,
   },
 
@@ -202,11 +206,12 @@ export const API_ENDPOINTS = {
     CREATE_CONVERSATION: '/chatbot/conversations',
   },
 
-  // Leaderboard
+  // Leaderboard (backend: GET /api/leaderboard?type=weekly|monthly|all_time)
   LEADERBOARD: {
-    WEEKLY: '/leaderboard/weekly',
-    MONTHLY: '/leaderboard/monthly',
-    ALL_TIME: '/leaderboard/all-time',
+    BASE: '/leaderboard',
+    WEEKLY: '/leaderboard?type=weekly',
+    MONTHLY: '/leaderboard?type=monthly',
+    ALL_TIME: '/leaderboard?type=all_time',
   },
 }
 
@@ -230,6 +235,8 @@ export const ROUTES = {
   ENTER: '/enter',
   LESSONS: '/lessons',
   LESSON: '/lesson',
+  LESSON_HISTORY: '/lesson/history',
+  LESSON_READING_RESULT: (id) => `/lesson/reading/${id}/result`,
   PRACTICE: '/practice',
   QUESTS: '/quests',
   ACHIEVEMENTS: '/achievements',

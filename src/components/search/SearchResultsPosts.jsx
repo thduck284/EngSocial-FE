@@ -48,7 +48,7 @@ export function SearchResultsPosts({ t, posts, postsCount, query }) {
             </p>
             {post.images?.length > 0 && (
               <div className="rounded-lg overflow-hidden border border-border-dark h-48 sm:h-64">
-                <img src={post.images[0]} alt="" className="w-full h-full object-cover" />
+                <img src={post.images[0]} alt="" referrerPolicy="no-referrer" className="w-full h-full object-cover" />
               </div>
             )}
           </div>

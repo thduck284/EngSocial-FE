@@ -17,7 +17,7 @@ export function ChatbotButton() {
         onClick={() => setOpen((o) => !o)}
         onMouseEnter={() => setHover(true)}
         onMouseLeave={() => setHover(false)}
-        className="fixed bottom-8 right-8 size-14 bg-primary text-[#111e22] rounded-full shadow-2xl flex items-center justify-center hover:scale-110 transition-transform z-50 group"
+        className="fixed bottom-8 right-4 size-14 bg-primary text-[#111e22] rounded-full shadow-2xl flex items-center justify-center hover:scale-110 transition-transform z-50 group"
         aria-label="Mở trợ lý AI"
       >
         <span className={`material-symbols-outlined text-3xl ${hover ? 'hidden' : ''}`}>smart_toy</span>

@@ -46,15 +46,24 @@ export function LessonsPage() {
               <span className="material-symbols-outlined text-primary">school</span>
               {t('header.lessons')}
             </h3>
-            {canAddLesson && (
+            <div className="flex items-center gap-1 shrink-0">
               <Link
-                to={ROUTES.MANAGE_LESSONS}
-                className="shrink-0 p-2 rounded-lg bg-primary/10 text-primary hover:bg-primary hover:text-background-dark transition-all"
-                title={t('lessons.addLesson')}
+                to={ROUTES.LESSON_HISTORY}
+                className="p-2 rounded-lg text-gray-400 hover:bg-white/10 hover:text-primary transition-all"
+                title={t('lessons.viewHistory')}
               >
-                <span className="material-symbols-outlined text-lg">add_circle</span>
+                <span className="material-symbols-outlined text-lg">history</span>
               </Link>
-            )}
+              {canAddLesson && (
+                <Link
+                  to={ROUTES.MANAGE_LESSONS}
+                  className="p-2 rounded-lg bg-primary/10 text-primary hover:bg-primary hover:text-background-dark transition-all"
+                  title={t('lessons.addLesson')}
+                >
+                  <span className="material-symbols-outlined text-lg">add_circle</span>
+                </Link>
+              )}
+            </div>
           </div>
           <p className="text-xs text-gray-400 mb-4">
             {skillFilter === 'all'
@@ -148,15 +157,24 @@ export function LessonsPage() {
       <section className="col-span-12 lg:col-span-9 space-y-6">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <h1 className="text-2xl font-bold text-white">{t('header.lessons')}</h1>
-          {canAddLesson && (
+          <div className="flex items-center gap-2">
             <Link
-              to={ROUTES.MANAGE_LESSONS}
-              className="inline-flex items-center gap-2 px-4 py-2.5 bg-primary hover:bg-primary/90 text-background-dark font-bold rounded-xl text-sm transition-all shadow-lg shadow-primary/20"
+              to={ROUTES.LESSON_HISTORY}
+              className="inline-flex items-center gap-2 px-4 py-2.5 bg-card-dark hover:bg-gray-700 text-gray-300 hover:text-white font-bold rounded-xl text-sm transition-all"
             >
-              <span className="material-symbols-outlined text-lg">add_circle</span>
-              {t('lessons.addLesson')}
+              <span className="material-symbols-outlined text-lg">history</span>
+              {t('lessons.viewHistory')}
             </Link>
-          )}
+            {canAddLesson && (
+              <Link
+                to={ROUTES.MANAGE_LESSONS}
+                className="inline-flex items-center gap-2 px-4 py-2.5 bg-primary hover:bg-primary/90 text-background-dark font-bold rounded-xl text-sm transition-all shadow-lg shadow-primary/20"
+              >
+                <span className="material-symbols-outlined text-lg">add_circle</span>
+                {t('lessons.addLesson')}
+              </Link>
+            )}
+          </div>
         </div>
 
         <div className="flex flex-wrap gap-4 items-center">

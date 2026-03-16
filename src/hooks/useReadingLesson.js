@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react'
+import { useNavigate, useLocation } from 'react-router-dom'
 import { lessonsService } from '../services'
 
 /**
@@ -8,10 +9,13 @@ import { lessonsService } from '../services'
  * @returns {Object} All state and handlers for ReadingLessonPage
  */
 export function useReadingLesson(id, t) {
+  const navigate = useNavigate()
+  const location = useLocation()
   const [content, setContent] = useState(null)
   const [loading, setLoading] = useState(true)
   const [currentQuestion, setCurrentQuestion] = useState(0)
-  const [selectedAnswer, setSelectedAnswer] = useState('')
+  /** Store answer per question index: { 0: 'A', 1: 'true', ... } */
+  const [answers, setAnswers] = useState({})
   const [countdownSeconds, setCountdownSeconds] = useState(null)
   const [noteTitle, setNoteTitle] = useState('')
   const [noteContent, setNoteContent] = useState('')
@@ -59,11 +63,21 @@ export function useReadingLesson(id, t) {
             { value: 'false', text: t('readingLesson.falseLabel') },
           ]
         : []
-  const progress = totalQuestions > 0 ? ((currentQuestion + 1) / totalQuestions) * 100 : 0
+  const answeredCount = totalQuestions > 0
+    ? questions.filter((_, i) => {
+        const a = answers[i]
+        return a != null && String(a).trim() !== ''
+      }).length
+    : 0
+  const progress = totalQuestions > 0 ? (answeredCount / totalQuestions) * 100 : 0
   const currentPage = currentQuestion + 1
   const totalPages = totalQuestions
-  const showPrevPages = currentPage > 3
-  const showNextPages = currentPage < totalPages - 2
+  const showPrevPages = currentPage > 2
+  const showNextPages = currentPage < totalPages
+  /** Current question's selected value; synced with answers[currentQuestion] */
+  const selectedAnswer = answers[currentQuestion] ?? ''
+  const setSelectedAnswer = (value) =>
+    setAnswers((prev) => ({ ...prev, [currentQuestion]: value }))
 
   useEffect(() => {
     if (vocabularyList.length > 0 && vocabIndex >= vocabularyList.length) setVocabIndex(0)
@@ -97,8 +111,18 @@ export function useReadingLesson(id, t) {
 
   const handleComplete = () => {
     if (!id) return
-    setCompletingLesson(true)
     setCompleteMessage('')
+    const allAnswered =
+      totalQuestions === 0 ||
+      questions.every((_, i) => {
+        const a = answers[i]
+        return a != null && String(a).trim() !== ''
+      })
+    if (!allAnswered) {
+      setCompleteMessage(t('readingLesson.pleaseAnswerAll'))
+      return
+    }
+    setCompletingLesson(true)
     lessonsService
       .complete(id)
       .then((res) => {
@@ -106,7 +130,12 @@ export function useReadingLesson(id, t) {
         setCompleteMessage(
           xp != null ? t('readingLesson.completeSuccess', { xp }) : t('readingLesson.completeSuccessShort')
         )
-        setTimeout(() => setCompleteMessage(''), 3000)
+        const fromPractice = location.pathname.startsWith('/practice/')
+        const redirectTo = fromPractice ? '/practice' : '/lesson'
+        setTimeout(() => {
+          setCompleteMessage('')
+          navigate(redirectTo)
+        }, 3000)
       })
       .catch(() => setCompleteMessage(t('readingLesson.completeFailed')))
       .finally(() => setCompletingLesson(false))
@@ -124,17 +153,11 @@ export function useReadingLesson(id, t) {
   }
 
   const handleNext = () => {
-    if (currentQuestion < totalQuestions - 1) {
-      setCurrentQuestion((q) => q + 1)
-      setSelectedAnswer('')
-    }
+    if (currentQuestion < totalQuestions - 1) setCurrentQuestion((q) => q + 1)
   }
 
   const handlePrevious = () => {
-    if (currentQuestion > 0) {
-      setCurrentQuestion((q) => q - 1)
-      setSelectedAnswer('')
-    }
+    if (currentQuestion > 0) setCurrentQuestion((q) => q - 1)
   }
 
   const handleSubmit = () => {
@@ -145,7 +168,6 @@ export function useReadingLesson(id, t) {
     const page = parseInt(newPage, 10)
     if (!Number.isNaN(page) && page >= 1 && page <= totalQuestions) {
       setCurrentQuestion(page - 1)
-      setSelectedAnswer('')
       setEditingPage(false)
     }
   }

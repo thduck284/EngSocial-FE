@@ -50,9 +50,9 @@ export function WritingLessonPage() {
   }
 
   return (
-    <main className="max-w-[1600px] mx-auto px-6 py-6 grid grid-cols-12 gap-6 min-h-[calc(100vh-64px)]">
-      {/* Left Sidebar */}
-      <aside className="col-span-12 lg:col-span-2 space-y-6 overflow-y-auto pr-2 pb-6 custom-scrollbar" style={{ width: 'calc(16.666667% + 200px)' }}>
+    <main className="max-w-[1600px] mx-auto px-6 py-6 flex flex-col lg:flex-row gap-6 min-h-[calc(100vh-64px)]">
+      {/* Left Sidebar - ~200px, can shrink */}
+      <aside className="w-full lg:w-[300px] lg:min-w-[240px] lg:shrink lg:basis-[300px] space-y-6 overflow-y-auto pr-2 pb-6 custom-scrollbar">
         <div className="bg-card-dark rounded-2xl p-6 border border-border-dark shadow-xl">
           <div className="flex justify-between items-start mb-4">
             <span className="bg-primary/20 text-primary text-xs font-bold px-2 py-1 rounded">
@@ -137,7 +137,7 @@ export function WritingLessonPage() {
       </aside>
 
       {/* Main Content */}
-      <div className="col-span-12 lg:col-span-7 flex flex-col gap-6 overflow-hidden">
+      <div className="flex-1 min-w-0 flex flex-col gap-6 overflow-hidden">
         <div className="bg-card-dark rounded-2xl border border-border-dark overflow-hidden flex flex-col flex-1 shadow-2xl">
           <div className="p-6 border-b border-border-dark bg-background-dark/50">
             <h3 className="text-sm font-bold text-gray-400 uppercase tracking-wider mb-2">Đề bài</h3>
@@ -201,8 +201,8 @@ export function WritingLessonPage() {
         </div>
       </div>
 
-      {/* Right: placeholder or vocab */}
-      <aside className="col-span-12 lg:col-span-3 hidden xl:block">
+      {/* Right - ~200px, can shrink */}
+      <aside className="hidden xl:block xl:w-[300px] xl:min-w-[240px] xl:shrink xl:basis-[300px] space-y-6 overflow-y-auto pr-2 pb-6 custom-scrollbar">
         {content.vocabulary && content.vocabulary.length > 0 && (
           <div className="bg-card-dark rounded-2xl p-5 border border-border-dark shadow-lg sticky top-6">
             <h3 className="font-bold text-sm text-gray-400 mb-3">Từ vựng gợi ý</h3>

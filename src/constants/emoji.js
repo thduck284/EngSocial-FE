@@ -1,6 +1,22 @@
 /** Quick reaction emojis for message bubbles (👍 ❤️ 😂 😮 😢 🙏) */
 export const MESSAGE_REACTION_EMOJIS = ['👍', '❤️', '😂', '😮', '😢', '🙏']
 
+/** Post reaction types stored in API (same as backend POST_REACTION_TYPES) */
+export const POST_REACTION_TYPES = ['like', 'love', 'haha', 'wow', 'sad', 'angry']
+
+/** Map reaction type -> emoji for display. Frontend loads icon from this. */
+export const REACTION_TYPE_TO_EMOJI = {
+  like: '👍',
+  love: '❤️',
+  haha: '😂',
+  wow: '😮',
+  sad: '😢',
+  angry: '😠',
+}
+
+/** Emojis for post reaction picker (order matches POST_REACTION_TYPES) */
+export const POST_REACTION_EMOJIS = POST_REACTION_TYPES.map((t) => REACTION_TYPE_TO_EMOJI[t])
+
 /** Emoji list for message input picker – large diverse set */
 export const MESSAGE_EMOJI_LIST = [
   // Faces – happy & positive

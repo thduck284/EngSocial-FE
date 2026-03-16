@@ -37,6 +37,31 @@ function formatTarget(quest, t) {
   return `${v} ${t('quests.lessons')}`
 }
 
+/** Join URL for quest: lesson -> /lesson; practice_skill: skill "all" or empty -> reading, else specific skill. */
+function getQuestJoinTo(quest) {
+  if (!quest) return ROUTES.LESSON
+  const t = quest.targetType
+  if (t === 'lesson') return ROUTES.LESSON
+  if (t === 'practice_skill') {
+    const s = (quest.skill || 'all').toLowerCase()
+    if (s === 'all' || s === '') return ROUTES.SKILLS.READING
+    if (s === 'listening') return ROUTES.SKILLS.LISTENING
+    if (s === 'writing') return ROUTES.SKILLS.WRITING
+    return ROUTES.SKILLS.READING
+  }
+  return ROUTES.LESSON
+}
+
+/** Challenge Join always goes to practice (skills); URL depends on challenge.skill: all -> reading, else that skill. */
+function getChallengeJoinTo(challenge) {
+  if (!challenge) return ROUTES.SKILLS.READING
+  const s = (challenge.skill || 'all').toLowerCase()
+  if (s === 'all' || s === '') return ROUTES.SKILLS.READING
+  if (s === 'listening') return ROUTES.SKILLS.LISTENING
+  if (s === 'writing') return ROUTES.SKILLS.WRITING
+  return ROUTES.SKILLS.READING
+}
+
 export function QuestsPage() {
   const { t } = useTranslation()
   const { isModerator, isAdmin } = useAuth()
@@ -47,7 +72,6 @@ export function QuestsPage() {
   const [loading, setLoading] = useState(true)
   const [challengesLoading, setChallengesLoading] = useState(false)
   const [deletingId, setDeletingId] = useState(null)
-  const [joiningChallengeId, setJoiningChallengeId] = useState(null)
   const [deletingChallengeId, setDeletingChallengeId] = useState(null)
   const [filterType, setFilterType] = useState('all')
 
@@ -122,19 +146,6 @@ export function QuestsPage() {
       setDeletingId(null)
     } finally {
       setDeletingId(null)
-    }
-  }
-
-  const handleJoinChallenge = async (challenge) => {
-    if (!challenge?.id) return
-    setJoiningChallengeId(challenge.id)
-    try {
-      await challengesService.joinChallenge(challenge.id)
-      loadChallenges()
-    } catch {
-      setJoiningChallengeId(null)
-    } finally {
-      setJoiningChallengeId(null)
     }
   }
 
@@ -262,16 +273,26 @@ export function QuestsPage() {
                         <span className="material-symbols-outlined text-sm">flag</span>
                         <span>{formatTarget(quest, t)}</span>
                       </div>
-                      {canAddQuest && (
-                        <div className="flex items-center gap-1 ml-auto">
-                          <Link to={`/manage/quests/${quest.id}`} className="p-2 rounded-lg text-gray-400 hover:bg-white/10 hover:text-primary transition-colors" title={t('quests.edit')}>
-                            <span className="material-symbols-outlined text-lg">edit</span>
+                      <div className="flex items-center gap-1 ml-auto">
+                        {canAddQuest && (
+                          <>
+                            <Link to={`/manage/quests/${quest.id}`} className="p-2 rounded-lg text-gray-400 hover:bg-white/10 hover:text-primary transition-colors" title={t('quests.edit')}>
+                              <span className="material-symbols-outlined text-lg">edit</span>
+                            </Link>
+                            <button type="button" onClick={() => handleDelete(quest)} disabled={deletingId === quest.id} className="p-2 rounded-lg text-gray-400 hover:bg-red-500/10 hover:text-red-400 transition-colors disabled:opacity-50" title={t('quests.delete')}>
+                              <span className="material-symbols-outlined text-lg">delete</span>
+                            </button>
+                          </>
+                        )}
+                        {quest.targetType !== 'both' && (
+                          <Link
+                            to={getQuestJoinTo(quest)}
+                            className="px-4 py-2 rounded-lg bg-primary hover:bg-primary/90 text-background-dark text-sm font-semibold transition-colors"
+                          >
+                            {t('buttons.join')}
                           </Link>
-                          <button type="button" onClick={() => handleDelete(quest)} disabled={deletingId === quest.id} className="p-2 rounded-lg text-gray-400 hover:bg-red-500/10 hover:text-red-400 transition-colors disabled:opacity-50" title={t('quests.delete')}>
-                            <span className="material-symbols-outlined text-lg">delete</span>
-                          </button>
-                        </div>
-                      )}
+                        )}
+                      </div>
                     </div>
                   </div>
                 ))}
@@ -345,18 +366,12 @@ export function QuestsPage() {
                             </button>
                           </>
                         )}
-                        <button
-                          type="button"
-                          onClick={() => handleJoinChallenge(challenge)}
-                          disabled={!!joiningChallengeId}
-                          className="px-4 py-2 rounded-lg bg-primary hover:bg-primary/90 text-background-dark text-sm font-semibold disabled:opacity-50 transition-colors"
+                        <Link
+                          to={getChallengeJoinTo(challenge)}
+                          className="px-4 py-2 rounded-lg bg-primary hover:bg-primary/90 text-background-dark text-sm font-semibold transition-colors"
                         >
-                          {joiningChallengeId === challenge.id ? (
-                            <span className="material-symbols-outlined animate-spin text-lg align-middle">progress_activity</span>
-                          ) : (
-                            t('buttons.join')
-                          )}
-                        </button>
+                          {t('buttons.join')}
+                        </Link>
                       </div>
                     </div>
                   </div>

@@ -71,3 +71,23 @@ body {
 .notification-popover-enter {
   animation: notification-pop-in 0.2s ease-out forwards;
 }
+
+/* Create post modal: backdrop covers full viewport height (including when page scrolls) */
+.create-post-modal-backdrop {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  width: 100%;
+  min-height: 100vh;
+  min-height: 100dvh;
+  height: 100vh;
+  height: 100dvh;
+  z-index: 50;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem;
+  background-color: rgba(0, 0, 0, 0.6);
+}

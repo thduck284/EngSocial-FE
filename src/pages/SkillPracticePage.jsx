@@ -3,14 +3,29 @@ import { useTranslation } from 'react-i18next'
 import { useAuth } from '../context/AuthContext'
 import { SKILLS, SKILL_TABS } from '../raw'
 import { ROUTES } from '../constants'
+import { DEFAULT_AVATAR } from '../constants/ui'
 import { useSkillPractices } from '../hooks/useSkillPractices'
+import { useDashboardSocket } from '../hooks/useDashboardSocket'
+import { useDashboardFriends } from '../hooks/useDashboardFriends'
+
+// Stable no-op so socket effect does not re-run every render (no group conversations on skills page)
+const noopSetGroupConversations = () => {}
 
 export function SkillPracticePage() {
   const { skill = 'reading' } = useParams()
   const { t } = useTranslation()
   const navigate = useNavigate()
-  const { isModerator, isAdmin } = useAuth()
+  const { user, isModerator, isAdmin } = useAuth()
   const canAddPractice = isModerator || isAdmin
+
+  const { onlineUserIds } = useDashboardSocket(user, noopSetGroupConversations)
+  const { friendsFilterTab, setFriendsFilterTab, displayedFriendsList } = useDashboardFriends(onlineUserIds)
+
+  const onlineCount = displayedFriendsList.filter((item) => {
+    const u = item?.user || item
+    const id = u?.id ?? u?._id
+    return id != null && onlineUserIds.has(String(id))
+  }).length
 
   const {
     loading,
@@ -36,7 +51,6 @@ export function SkillPracticePage() {
   const challenge = rawData.challenge?.title ? rawData.challenge : { title: t('skills.challengeDefaultTitle'), desc: '', time: '', btn: 'buttons.join' }
   const challengeGradient = isReading ? 'from-indigo-900/40' : isListening ? 'from-orange-900/40' : 'from-emerald-900/40'
   const challengeIcon = isListening ? 'equalizer' : isWriting ? 'edit_square' : 'workspace_premium'
-  const friendsOnline = rawData.friendsOnline[skill] || rawData.friendsOnline.reading || []
   const achievements = rawData.achievementsBySkill[skill] || rawData.achievementsBySkill.reading || []
 
   const renderCards = () => {
@@ -108,7 +122,7 @@ export function SkillPracticePage() {
                   </>
                 )}
                 <button
-                  onClick={() => navigate(`/lesson/reading/${card.id}`)}
+                  onClick={() => navigate(`/practice/reading/${card.id}`)}
                   className="px-4 py-1.5 bg-primary/10 text-primary hover:bg-primary hover:text-background-dark font-bold text-xs rounded transition-all"
                 >
                   {t('buttons.start')}
@@ -269,6 +283,13 @@ export function SkillPracticePage() {
       {/* Left sidebar - Add practice + Tabs + Filters + Goals + Roadmap */}
       <aside className="col-span-12 lg:col-span-3 space-y-5 overflow-hidden">
         <div className="space-y-4">
+          <Link
+            to={ROUTES.LESSON_HISTORY}
+            className="flex items-center justify-center gap-2 w-full py-3 bg-card-dark hover:bg-gray-700 text-gray-300 hover:text-white font-medium rounded-xl text-sm transition-all"
+          >
+            <span className="material-symbols-outlined text-xl">history</span>
+            {t('lessons.viewHistory')}
+          </Link>
           {canAddPractice && (
             <Link
               to={ROUTES.MANAGE_SKILLS}
@@ -379,29 +400,6 @@ export function SkillPracticePage() {
             </div>
           </div>
         </div>
-        <div className="bg-card-dark rounded-xl border border-border-dark p-5">
-          <h3 className="font-semibold text-sm text-white mb-4">{t('skills.roadmapProgress')}</h3>
-          <div className="flex items-center gap-4 mb-4">
-            <div className="size-12 rounded-full border-4 border-primary border-t-transparent flex items-center justify-center font-bold text-primary shrink-0">
-              B2
-            </div>
-            <div className="min-w-0">
-              <p className="text-xs text-gray-400">{t('skills.currentLevel')}</p>
-              <p className="font-semibold text-white truncate">{t('skills.levelIntermediate')}</p>
-            </div>
-          </div>
-          <div className="space-y-2 mb-4">
-            <div className="flex justify-between text-[10px] text-gray-400">
-              <span>{t('skills.roadmapToLevel')}</span>
-            </div>
-            <div className="h-2 w-full bg-gray-700/80 rounded-full overflow-hidden">
-              <div className="h-full bg-emerald-500 rounded-full transition-all" style={{ width: '65%' }} />
-            </div>
-          </div>
-          <button className="w-full py-2.5 bg-white/5 hover:bg-white/10 text-gray-300 hover:text-white rounded-lg text-sm font-medium border border-border-dark transition-colors" type="button">
-            {t('skills.viewDetails')}
-          </button>
-        </div>
       </aside>
 
       {/* Center - challenge + cards */}
@@ -480,20 +478,75 @@ export function SkillPracticePage() {
           </div>
         </div>
         <div className="bg-card-dark rounded-xl p-5 border border-border-dark">
-          <h3 className="font-bold text-sm mb-4 flex items-center justify-between">
-            {t('enter.friendsOnline')}
-            <span className="size-2 bg-green-500 rounded-full animate-pulse" />
+          <h3 className="font-bold text-sm mb-1 flex items-center gap-2">
+            <span className="material-symbols-outlined text-primary text-lg">people</span>
+            {t('dashboard.friends')}
+            {onlineCount > 0 && (
+              <span className="text-[10px] font-medium text-green-400 flex items-center gap-0.5" title={t('userProfile.online')}>
+                <span className="size-1.5 rounded-full bg-green-500" />
+                {onlineCount} {t('userProfile.online')}
+              </span>
+            )}
+            <Link
+              to={ROUTES.MESSAGES}
+              className="ml-auto p-1 rounded-lg text-gray-400 hover:bg-primary/10 hover:text-primary transition-colors"
+              title={t('messages.title')}
+            >
+              <span className="material-symbols-outlined text-lg">chat_bubble</span>
+            </Link>
           </h3>
-          <div className="space-y-4">
-            {friendsOnline.map(({ name, activity }) => (
-              <div key={name} className="flex items-center gap-3">
-                <div className="size-9 rounded-full bg-slate-600 border border-primary relative" />
-                <div className="text-xs">
-                  <p className="font-bold">{name}</p>
-                  <p className="text-gray-400">{activity}</p>
-                </div>
-              </div>
-            ))}
+          <div className="flex gap-1 p-1 bg-gray-700/50 rounded-lg mb-3">
+            <button
+              type="button"
+              onClick={() => setFriendsFilterTab('all')}
+              className={`flex-1 py-1.5 rounded-md text-xs font-bold transition-colors ${friendsFilterTab === 'all' ? 'bg-white/10 text-primary' : 'text-gray-400 hover:text-white'}`}
+            >
+              {t('dashboard.all')}
+            </button>
+            <button
+              type="button"
+              onClick={() => setFriendsFilterTab('online')}
+              className={`flex-1 py-1.5 rounded-md text-xs font-bold transition-colors ${friendsFilterTab === 'online' ? 'bg-white/10 text-primary' : 'text-gray-400 hover:text-white'}`}
+            >
+              {t('userProfile.online')}
+            </button>
+          </div>
+          <div className={`space-y-3 overflow-y-auto pr-1 custom-scrollbar ${displayedFriendsList.length > 5 ? 'max-h-[200px]' : ''}`}>
+            {displayedFriendsList.length === 0 ? (
+              <p className="text-xs text-gray-400">{t('dashboard.noFriendsOnline')}</p>
+            ) : (
+              displayedFriendsList.map((item) => {
+                const u = item?.user || item
+                const id = u?.id ?? u?._id
+                const name = u?.name || 'User'
+                const avatar = u?.avatar || (name ? `https://ui-avatars.com/api/?name=${encodeURIComponent(name)}&background=13b6ec&color=fff` : DEFAULT_AVATAR)
+                const isOnline = id != null && onlineUserIds.has(String(id))
+                return (
+                  <div
+                    key={id}
+                    className="flex items-center gap-3 p-2 rounded-lg hover:bg-white/5 transition-colors group"
+                  >
+                    <Link to={id ? `/profile/${id}` : '#'} className="flex items-center gap-3 min-w-0 flex-1">
+                      <div className="relative shrink-0">
+                        <img src={avatar} alt="" className="size-9 rounded-full object-cover" />
+                        {isOnline && (
+                          <span className="absolute bottom-0 right-0 size-2.5 bg-green-500 rounded-full border-2 border-card-dark" title={t('userProfile.online')} />
+                        )}
+                      </div>
+                      <span className="text-sm font-medium truncate">{name}</span>
+                    </Link>
+                    <button
+                      type="button"
+                      onClick={() => navigate(`${ROUTES.MESSAGES}?with=${encodeURIComponent(id)}`, { state: { withUser: { id, name, avatar } } })}
+                      className="p-1.5 rounded-lg text-gray-400 hover:bg-primary/10 hover:text-primary transition-colors shrink-0"
+                      title={t('messages.title')}
+                    >
+                      <span className="material-symbols-outlined text-lg">chat_bubble</span>
+                    </button>
+                  </div>
+                )
+              })
+            )}
           </div>
         </div>
         <div className="bg-card-dark rounded-xl p-5 border border-border-dark">

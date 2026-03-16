@@ -10,10 +10,12 @@ import { EnterPage } from './pages/EnterPage'
 import { SkillPracticePage } from './pages/SkillPracticePage'
 import { ListeningLessonPage } from './pages/ListeningLessonPage'
 import { ReadingLessonPage } from './pages/ReadingLessonPage'
+import { ReadingLessonResultPage } from './pages/ReadingLessonResultPage'
 import { WritingLessonPage } from './pages/WritingLessonPage'
 import { ProfilePage } from './pages/ProfilePage'
 import { UserProfilePage } from './pages/UserProfilePage'
 import { LessonsPage } from './pages/LessonsPage'
+import { LessonHistoryPage } from './pages/LessonHistoryPage'
 import { QuestsPage } from './pages/QuestsPage'
 import { AchievementsPage } from './pages/AchievementsPage'
 import { ManageLessonsPage } from './pages/ManageLessonsPage'
@@ -47,7 +49,9 @@ function App() {
         <Route path="messages" element={<MessagesPage />} />
         <Route path="enter" element={<EnterPage />} />
         <Route path="lesson" element={<LessonsPage />} />
+        <Route path="lesson/history" element={<LessonHistoryPage />} />
         <Route path="lesson/reading/:id" element={<ReadingLessonPage />} />
+        <Route path="lesson/reading/:id/result" element={<ReadingLessonResultPage />} />
         <Route path="lesson/listening/:id" element={<ListeningLessonPage />} />
         <Route path="lesson/writing/:id" element={<WritingLessonPage />} />
         <Route path="practice" element={<Navigate to="/skills/reading" replace />} />

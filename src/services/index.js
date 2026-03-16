@@ -52,5 +52,8 @@ export { notificationsService } from './notifications.service.js'
 // Challenges
 export { challengesService } from './challenges.service.js'
 
+// Leaderboard
+export { leaderboardService } from './leaderboard.service.js'
+
 // Chatbot
 export { chatbotService } from './chatbot.service.js'

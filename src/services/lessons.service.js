@@ -6,6 +6,10 @@ export const lessonsService = {
     const params = new URLSearchParams(filters).toString()
     return apiClient.get(`${API_ENDPOINTS.LESSONS.LIST}${params ? `?${params}` : ''}`)
   },
+  getMyProgress: async (params = {}) => {
+    const q = new URLSearchParams(params).toString()
+    return apiClient.get(`${API_ENDPOINTS.LESSONS.MY_PROGRESS}${q ? `?${q}` : ''}`)
+  },
   getById: (id) => apiClient.get(API_ENDPOINTS.LESSONS.DETAIL(id)),
   create: (body) => apiClient.post(API_ENDPOINTS.LESSONS.LIST, body),
   update: (id, body) => apiClient.put(API_ENDPOINTS.LESSONS.DETAIL(id), body),

@@ -1,3 +1,4 @@
+import { useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { useReadingLesson } from '../hooks/useReadingLesson'
@@ -6,6 +7,7 @@ import { formatTime } from '../utils/dateTime'
 export function ReadingLessonPage() {
   const { t } = useTranslation()
   const { id } = useParams()
+  const [rightBarOpen, setRightBarOpen] = useState(true)
   const {
     content,
     loading,
@@ -78,9 +80,9 @@ export function ReadingLessonPage() {
   }
 
   return (
-    <main className="max-w-[1600px] mx-auto px-6 py-6 grid grid-cols-12 gap-6 min-h-[calc(100vh-64px)]">
-      {/* Left Sidebar */}
-      <aside className="col-span-12 lg:col-span-2 space-y-6 overflow-y-auto pr-2 pb-6 custom-scrollbar" style={{ width: 'calc(16.666667% + 200px)' }}>
+    <main className="max-w-[1600px] mx-auto px-6 py-6 flex flex-col lg:flex-row gap-6 min-h-[calc(100vh-64px)]">
+      {/* Left Sidebar - ~200px, can shrink */}
+      <aside className="w-full lg:w-[300px] lg:min-w-[240px] lg:shrink lg:basis-[300px] space-y-6 overflow-y-auto pr-2 pb-6 custom-scrollbar">
         {/* Lesson Info Card */}
         <div className="bg-card-dark rounded-2xl p-6 border border-border-dark shadow-xl">
           <div className="flex justify-between items-start mb-4">
@@ -123,9 +125,20 @@ export function ReadingLessonPage() {
 
         {/* Notes Card */}
         <div className="bg-card-dark rounded-2xl p-5 border border-border-dark shadow-lg">
-          <div className="flex items-center gap-2 mb-4">
-            <span className="material-symbols-outlined text-primary">note_alt</span>
-            <h3 className="font-bold text-sm">{t('readingLesson.notebook')}</h3>
+          <div className="flex flex-wrap items-center justify-between gap-2 mb-4">
+            <div className="flex items-center gap-2">
+              <span className="material-symbols-outlined text-primary">note_alt</span>
+              <h3 className="font-bold text-sm">{t('readingLesson.notebook')}</h3>
+            </div>
+            <select
+              value={noteCategory}
+              onChange={(e) => setNoteCategory(e.target.value)}
+              className="bg-background-dark border border-border-dark rounded-lg px-3 py-2 text-sm text-white min-w-[120px]"
+            >
+              <option value="grammar">{t('readingLesson.noteCategoryGrammar')}</option>
+              <option value="vocab">{t('readingLesson.noteCategoryVocab')}</option>
+              <option value="idea">{t('readingLesson.noteCategoryIdea')}</option>
+            </select>
           </div>
           <input
             type="text"
@@ -141,17 +154,6 @@ export function ReadingLessonPage() {
             placeholder={t('readingLesson.notePlaceholder')}
             rows={3}
           />
-          <div className="flex gap-2 mb-3">
-            <select
-              value={noteCategory}
-              onChange={(e) => setNoteCategory(e.target.value)}
-              className="bg-background-dark border border-border-dark rounded-lg px-3 py-2 text-sm text-white min-w-[120px]"
-            >
-              <option value="grammar">{t('readingLesson.noteCategoryGrammar')}</option>
-              <option value="vocab">{t('readingLesson.noteCategoryVocab')}</option>
-              <option value="idea">{t('readingLesson.noteCategoryIdea')}</option>
-            </select>
-          </div>
           {noteSavedMessage && <p className="text-xs text-emerald-400 mb-2">{noteSavedMessage}</p>}
           <button
             type="button"
@@ -176,7 +178,7 @@ export function ReadingLessonPage() {
       </aside>
 
       {/* Main Content Area */}
-      <div className="col-span-12 lg:col-span-7 flex flex-col gap-6 overflow-hidden">
+      <div className="flex-1 min-w-0 flex flex-col gap-6 overflow-hidden">
         <div className="bg-card-dark rounded-2xl border border-border-dark overflow-hidden flex flex-col flex-1 shadow-2xl">
           {/* Toolbar: chuyển đổi Vi/En đoạn văn + bật/tắt highlight */}
           <div className="p-4 border-b border-border-dark flex justify-between items-center bg-background-dark/50">
@@ -439,14 +441,16 @@ export function ReadingLessonPage() {
                   >
                     {currentPage + 1}
                   </button>
-                  {currentPage < totalPages - 3 && <span className="text-gray-500 text-xs">...</span>}
-                  <button
-                    type="button"
-                    onClick={() => handlePageChange(totalPages)}
-                    className="px-3 py-2 rounded-lg text-xs font-bold text-gray-400 hover:text-white hover:bg-card-dark transition-all"
-                  >
-                    {totalPages}
-                  </button>
+                  {currentPage + 1 < totalPages - 1 && <span className="text-gray-500 text-xs">...</span>}
+                  {currentPage + 1 < totalPages && (
+                    <button
+                      type="button"
+                      onClick={() => handlePageChange(totalPages)}
+                      className="px-3 py-2 rounded-lg text-xs font-bold text-gray-400 hover:text-white hover:bg-card-dark transition-all"
+                    >
+                      {totalPages}
+                    </button>
+                  )}
                 </>
               )}
 
@@ -471,6 +475,14 @@ export function ReadingLessonPage() {
               >
                 {t('readingLesson.saveDraft')}
               </button>
+              <button
+                type="button"
+                onClick={handleComplete}
+                disabled={completingLesson}
+                className="px-4 py-2 rounded-xl text-xs font-bold bg-primary/20 text-primary border border-primary/40 hover:bg-primary hover:text-white transition-all whitespace-nowrap disabled:opacity-60 disabled:cursor-not-allowed"
+              >
+                {completingLesson ? '...' : t('readingLesson.complete')}
+              </button>
               {currentQuestion < totalQuestions - 1 ? (
                 <button
                   type="button"
@@ -493,8 +505,19 @@ export function ReadingLessonPage() {
         </div>
       </div>
 
-      {/* Right Sidebar */}
-      <aside className="col-span-12 lg:col-span-3 space-y-6 overflow-y-auto custom-scrollbar pr-2 pb-6">
+      {/* Right Sidebar - ~200px, can shrink */}
+      {rightBarOpen ? (
+      <aside className="w-full lg:w-[300px] lg:min-w-[240px] lg:shrink lg:basis-[300px] space-y-6 overflow-y-auto custom-scrollbar pr-2 pb-6 relative">
+        <div className="sticky top-0 z-10 flex justify-end mb-2">
+          <button
+            type="button"
+            onClick={() => setRightBarOpen(false)}
+            className="p-2 rounded-lg bg-card-dark border border-border-dark text-gray-400 hover:text-white hover:bg-gray-700 transition-all"
+            title={t('readingLesson.closeRightBar')}
+          >
+            <span className="material-symbols-outlined">chevron_right</span>
+          </button>
+        </div>
         {/* Vocabulary Card - one word at a time with prev/next */}
         {vocabularyList.length > 0 && (
           <div className="bg-card-dark rounded-2xl border border-border-dark shadow-xl overflow-hidden">
@@ -605,6 +628,18 @@ export function ReadingLessonPage() {
           </button>
         </div>
       </aside>
+      ) : (
+        <div className="hidden lg:flex fixed right-6 top-1/2 -translate-y-1/2 z-20">
+          <button
+            type="button"
+            onClick={() => setRightBarOpen(true)}
+            className="p-2.5 rounded-l-lg bg-card-dark border border-border-dark border-r-0 text-gray-400 hover:text-primary hover:bg-gray-700 transition-all shadow-lg"
+            title={t('readingLesson.openRightBar')}
+          >
+            <span className="material-symbols-outlined">chevron_left</span>
+          </button>
+        </div>
+      )}
     </main>
   )
 }

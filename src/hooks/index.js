@@ -1,4 +1,8 @@
 export { useRegister, useLogin } from './useAuthForm'
+export { useDashboardData } from './useDashboardData'
+export { useDashboardFriends } from './useDashboardFriends'
+export { useDashboardSocket } from './useDashboardSocket'
+export { useStudyGroups } from './useStudyGroups'
 export { useSearchPage } from './useSearchPage'
 export { useLessonsList } from './useLessonsList'
 export { useReadingLesson } from './useReadingLesson'
