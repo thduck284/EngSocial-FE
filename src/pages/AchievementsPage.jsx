@@ -1,94 +1,164 @@
-import { useState, useEffect } from 'react'
 import { useTranslation } from 'react-i18next'
-import { userService } from '../services'
-
-const RARITY_CLASS = {
-  common: 'border-slate-500/50 bg-slate-500/10 text-slate-300',
-  uncommon: 'border-emerald-500/50 bg-emerald-500/10 text-emerald-300',
-  rare: 'border-blue-500/50 bg-blue-500/10 text-blue-300',
-  epic: 'border-purple-500/50 bg-purple-500/10 text-purple-300',
-  legendary: 'border-amber-500/50 bg-amber-500/10 text-amber-300',
-}
+import { CategoryDropdown } from '../components/achievements/CategoryDropdown'
+import { AchievementsList } from '../components/achievements/AchievementsList'
+import { AchievementDetails } from '../components/achievements/AchievementDetails'
+import { AchievementFormModal } from '../components/achievements/AchievementFormModal'
+import { useAchievementsCatalog } from '../hooks/useAchievementsCatalog'
 
 export function AchievementsPage() {
-  const { t, i18n } = useTranslation()
-  const [achievements, setAchievements] = useState([])
-  const [loading, setLoading] = useState(true)
+  const { t } = useTranslation()
 
-  useEffect(() => {
-    userService
-      .getAchievements()
-      .then((res) => {
-        const list = res?.data?.achievements ?? res?.data ?? []
-        setAchievements(Array.isArray(list) ? list : [])
-      })
-      .catch(() => setAchievements([]))
-      .finally(() => setLoading(false))
-  }, [])
+  const {
+    categories,
+    activeCategoryId,
+    activeCategory,
+    achievement,
+    activeAchievementId,
 
-  const isVi = i18n.language?.startsWith('vi')
-  const name = (a) => (isVi && a.nameVi ? a.nameVi : a.name) || a.key
-  const desc = (a) => (isVi && a.descriptionVi ? a.descriptionVi : a.description) || ''
+    categoryOpen,
+    setCategoryOpen,
+    categoryRef,
+    selectCategory,
+
+    setActiveAchievementId,
+
+    addOpen,
+    setAddOpen,
+    addForm,
+    setAddForm,
+    addAchievementToActiveCategory,
+
+    editOpen,
+    setEditOpen,
+    editForm,
+    setEditForm,
+    openEditForAchievement,
+    saveEditAchievement,
+
+    deleteActiveAchievement,
+    goToAchievementLink,
+  } = useAchievementsCatalog()
 
   return (
-    <main className="max-w-[1200px] mx-auto px-4 lg:px-10 py-8">
-      <h1 className="text-2xl font-bold text-white mb-2">{t('header.achievements')}</h1>
-      <p className="text-gray-400 text-sm mb-8">{t('achievementsPage.subtitle', { defaultValue: 'Unlock badges by completing lessons and challenges.' })}</p>
-
-      {loading && (
-        <div className="flex justify-center py-16">
-          <span className="material-symbols-outlined animate-spin text-4xl text-primary">progress_activity</span>
-        </div>
-      )}
-
-      {!loading && achievements.length === 0 && (
-        <div className="text-center py-16 text-gray-400">
-          <span className="material-symbols-outlined text-5xl mb-4 block opacity-50">emoji_events</span>
-          <p>{t('achievementsPage.noAchievements', { defaultValue: 'No achievements yet.' })}</p>
-        </div>
-      )}
-
-      {!loading && achievements.length > 0 && (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-          {achievements.map((a) => (
-            <div
-              key={a.id}
-              className={`rounded-xl border p-5 flex flex-col transition-all ${
-                a.unlocked ? RARITY_CLASS[a.rarity] || RARITY_CLASS.common : 'border-border-dark bg-card-dark opacity-60'
-              }`}
-            >
-              <div className="flex items-center gap-3 mb-3">
-                <div
-                  className={`size-14 rounded-full border-2 flex items-center justify-center shrink-0 ${
-                    a.unlocked ? 'border-current' : 'border-gray-600 bg-gray-800/50'
-                  }`}
-                >
-                  <span className={`material-symbols-outlined text-3xl ${a.unlocked ? 'text-current' : 'text-gray-500'}`}>
-                    {a.icon || 'emoji_events'}
-                  </span>
-                </div>
-                <div className="min-w-0 flex-1">
-                  <h3 className="font-bold text-white truncate">{name(a)}</h3>
-                  <span className="text-xs font-medium uppercase tracking-wide">
-                    {t(`achievementsPage.rarity.${a.rarity}`, { defaultValue: a.rarity })}
-                  </span>
-                </div>
-              </div>
-              {desc(a) && <p className="text-sm text-gray-400 line-clamp-2 mb-3">{desc(a)}</p>}
-              <div className="mt-auto flex items-center justify-between gap-2 text-xs">
-                {a.xpReward > 0 && (
-                  <span className="text-yellow-500 font-semibold">+{a.xpReward} XP</span>
-                )}
-                {a.unlocked ? (
-                  <span className="text-gray-500">{t('achievementsPage.unlocked', { defaultValue: 'Unlocked' })}</span>
-                ) : (
-                  <span className="text-gray-500">{t('achievementsPage.locked', { defaultValue: 'Locked' })}</span>
-                )}
-              </div>
+    <main className="max-w-[1400px] mx-auto px-4 lg:px-10 py-4 h-[calc(100vh-80px)] overflow-hidden flex flex-col">
+      <div className="mb-3 shrink-0 rounded-2xl border border-primary/25 bg-gradient-to-r from-indigo-500/20 via-sky-500/10 to-emerald-400/10 px-5 py-4 lg:px-7 lg:py-5 shadow-[0_18px_60px_rgba(15,23,42,0.65)]">
+        <div className="flex items-start gap-4">
+          <div className="hidden sm:flex size-11 rounded-2xl bg-black/40 border border-white/10 items-center justify-center shadow-lg">
+            <span className="material-symbols-outlined text-3xl text-amber-300 drop-shadow-[0_0_18px_rgba(250,204,21,0.65)]">
+              emoji_events
+            </span>
+          </div>
+          <div className="min-w-0 flex-1">
+            <div className="flex items-center gap-2 mb-1">
+              <span className="inline-flex items-center rounded-full border border-white/15 bg-black/30 px-2.5 py-0.5 text-[11px] font-medium uppercase tracking-[0.18em] text-sky-200">
+                Achievements
+              </span>
             </div>
-          ))}
+            <h1 className="text-xl lg:text-2xl font-bold text-white tracking-tight">
+              {t('header.achievements')}
+            </h1>
+            <p className="mt-1 text-[13px] lg:text-sm text-slate-200/80">
+              {t('achievementsPage.subtitle', {
+                defaultValue:
+                  'Hoàn thành bài học, thử thách để mở khóa huy hiệu và tích lũy XP.',
+              })}
+            </p>
+          </div>
+          <div className="hidden md:flex flex-col items-end gap-1 text-right text-[11px] text-slate-200/80">
+            <span className="font-semibold">
+              {(activeCategory?.items || []).length} achievements
+            </span>
+            <span className="text-slate-300/70">
+              Danh mục: {activeCategory?.title}
+            </span>
+          </div>
         </div>
-      )}
+      </div>
+
+      <div className="flex-1 min-h-0 grid grid-cols-1 lg:grid-cols-11 gap-4">
+        <section className="lg:col-span-5 bg-slate-950/80 border border-slate-800/80 rounded-2xl p-4 space-y-3 h-full min-h-0 shadow-[0_18px_40px_rgba(15,23,42,0.85)] overflow-hidden">
+          <div className="flex flex-col gap-2 mb-1">
+            <div className="flex items-center justify-between gap-2">
+              <h2 className="text-sm font-semibold text-slate-50">
+                {activeCategory?.title || 'Achievements'}
+              </h2>
+              <span className="inline-flex items-center gap-1 rounded-full border border-slate-700/90 bg-slate-900/80 px-2.5 py-0.5 text-[11px] text-slate-300">
+                <span className="material-symbols-outlined text-[15px] text-amber-300">
+                  stars
+                </span>
+                {(activeCategory?.items || []).length} mục
+              </span>
+            </div>
+
+            <CategoryDropdown
+              categories={categories}
+              activeCategoryId={activeCategoryId}
+              activeCategoryTitle={activeCategory?.title}
+              open={categoryOpen}
+              setOpen={setCategoryOpen}
+              dropdownRef={categoryRef}
+              onSelectCategory={selectCategory}
+            />
+
+            <button
+              type="button"
+              onClick={() => setAddOpen(true)}
+              className="w-full rounded-xl border border-emerald-400/30 bg-emerald-500/15 px-3 py-2.5 text-sm font-semibold text-emerald-100 hover:bg-emerald-500/20 hover:border-emerald-400/50 focus:outline-none focus:ring-2 focus:ring-emerald-400/60 transition-colors flex items-center justify-center gap-2"
+            >
+              <span className="material-symbols-outlined text-[18px]">
+                add_circle
+              </span>
+              Thêm achievement
+            </button>
+          </div>
+
+          <p className="text-[11px] text-slate-400 mb-2">
+            Chọn một achievement trong danh sách để xem chi tiết và phần thưởng.
+          </p>
+
+          <AchievementsList
+            t={t}
+            items={activeCategory?.items || []}
+            activeId={activeAchievementId}
+            onSelect={setActiveAchievementId}
+          />
+        </section>
+
+        <section className="lg:col-span-6 bg-gradient-to-br from-slate-900 via-slate-950 to-black border border-slate-800/80 rounded-2xl p-5 h-full min-h-0 shadow-[0_24px_60px_rgba(15,23,42,0.9)] overflow-hidden">
+          <AchievementDetails
+            t={t}
+            achievement={achievement}
+            onGoToLink={goToAchievementLink}
+            onEdit={openEditForAchievement}
+            onDelete={deleteActiveAchievement}
+          />
+        </section>
+      </div>
+
+      <AchievementFormModal
+        open={addOpen}
+        title="Thêm achievement mới"
+        subtitle={`Danh mục: ${activeCategory?.title || ''}`}
+        accent="emerald"
+        form={addForm}
+        setForm={setAddForm}
+        onClose={() => setAddOpen(false)}
+        onSubmit={addAchievementToActiveCategory}
+        submitText="Thêm"
+      />
+
+      <AchievementFormModal
+        open={editOpen}
+        title="Chỉnh sửa achievement"
+        subtitle={`Danh mục: ${activeCategory?.title || ''}`}
+        accent="amber"
+        form={editForm}
+        setForm={setEditForm}
+        onClose={() => setEditOpen(false)}
+        onSubmit={saveEditAchievement}
+        submitText="Lưu"
+      />
     </main>
   )
 }
+
