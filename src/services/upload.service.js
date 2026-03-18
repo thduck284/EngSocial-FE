@@ -9,10 +9,15 @@ export const uploadService = {
     return res?.data?.url
   },
 
-  uploadPostMedia: async (file) => {
+  uploadMedia: async (file) => {
     const formData = new FormData()
     formData.append('file', file)
     const res = await apiClient.upload(API_ENDPOINTS.UPLOAD.POST_MEDIA, formData)
     return res?.data
+  },
+
+  // Backward-compatible alias (old naming).
+  uploadPostMedia: async (file) => {
+    return uploadService.uploadMedia(file)
   },
 }

@@ -9,8 +9,7 @@ import { searchGiphy as giphySearch, hasGiphyKey } from '../services/giphy.servi
 import { getAuthToken } from '../utils/auth'
 import { getMessageEmojiCategories } from '../utils/emoji'
 import { formatConversationTime, mapApiMessagesToUi } from '../utils/messages'
-import { useConversationList } from './useConversationList'
-import { useConversationSocket } from './useConversationSocket'
+import { useConversationList, useConversationSocket } from './useConversations'
 import { useRightBarData } from './useRightBarData'
 
 const SETTINGS_FOREVER_MS = 10 * 365 * 24 * 60 * 60 * 1000
@@ -686,7 +685,7 @@ export function useMessagesPage() {
 
   const handleUploadGroupAvatar = useCallback((file) => {
     if (!selectedId || !selected?.isGroup || !file) return Promise.reject()
-    return uploadService.uploadPostMedia(file).then((data) => {
+    return uploadService.uploadMedia(file).then((data) => {
       const url = data?.url
       if (!url) return Promise.reject()
       return conversationService.updateGroupSettings(selectedId, { avatar: url })

@@ -70,21 +70,7 @@ export function FilterPostsSidebar({
         </div>
       </div>
 
-      <div className="space-y-2">
-        <h3 className="text-xs font-semibold uppercase tracking-wider text-gray-500">{t('search.sortLabel')}</h3>
-        <select
-          value={sort}
-          onChange={(e) => setSort(e.target.value)}
-          className="w-full bg-card-dark border border-border-dark rounded-lg text-sm p-2.5 focus:ring-primary outline-none text-white"
-        >
-          <option value="newest">{t('search.sortNewest')}</option>
-          <option value="oldest">{t('search.sortOldest')}</option>
-          <option value="relevant">{t('search.sortRelevant')}</option>
-          <option value="engagement">{t('search.sortMostEngagement')}</option>
-          <option value="comments">{t('search.sortMostComments')}</option>
-          <option value="likes">{t('search.sortMostLikes')}</option>
-        </select>
-      </div>
+      {/* Sort by section đã được ẩn theo yêu cầu, giữ logic nhưng không render UI */}
 
       <div className="space-y-3">
         <h3 className="text-xs font-semibold uppercase tracking-wider text-gray-500">{t('search.contentTypeLabel')}</h3>
@@ -138,13 +124,6 @@ export function FilterPostsSidebar({
       </div>
 
       <div className="flex flex-col gap-2 pt-4 border-t border-border-dark">
-        <button
-          type="button"
-          onClick={applyFilters}
-          className="w-full bg-primary py-2 rounded-lg font-bold text-sm shadow-lg shadow-primary/20 hover:bg-primary/90 transition-all text-white"
-        >
-          {t('search.applyFilters')}
-        </button>
         <button
           type="button"
           onClick={clearFilters}

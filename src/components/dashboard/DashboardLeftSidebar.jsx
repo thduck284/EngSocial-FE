@@ -2,6 +2,8 @@ import { Link } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { ROUTES } from '../../constants'
 import { DEFAULT_AVATAR } from '../../constants/ui'
+import { DashboardCard } from '../ui/DashboardCard'
+import { DashboardSectionHeader } from '../ui/DashboardSectionHeader'
 
 /**
  * Left sidebar: profile card, weekly stats, today goals, study groups, featured lessons, ongoing challenge.
@@ -21,7 +23,7 @@ export function DashboardLeftSidebar({
 
   return (
     <aside className="col-span-12 lg:col-span-3 space-y-6">
-      <div className="bg-white dark:bg-[#111e22] rounded-xl p-5 border border-slate-200 dark:border-[#325a67]">
+      <DashboardCard className="p-5">
         <div className="flex items-center gap-4 mb-4">
           <img src={displayAvatar} alt="" className="size-14 rounded-full object-cover" />
           <div>
@@ -48,21 +50,23 @@ export function DashboardLeftSidebar({
         >
           {t('dashboard.viewFullProfile')}
         </Link>
-      </div>
+      </DashboardCard>
 
-      <div className="bg-white dark:bg-[#111e22] rounded-xl p-5 border border-slate-200 dark:border-[#325a67]">
+      <DashboardCard className="p-5">
         <button
           type="button"
           onClick={() => setWeeklyStatsOpen((o) => !o)}
-          className="w-full flex items-center justify-between gap-2 text-left"
+          className="w-full text-left"
         >
-          <h3 className="font-bold text-sm flex items-center gap-2">
-            <span className="material-symbols-outlined text-primary text-lg">query_stats</span>
-            {t('dashboard.weeklyStats')}
-          </h3>
-          <span className="material-symbols-outlined text-slate-500 dark:text-[#92bbc9]">
-            {weeklyStatsOpen ? 'expand_less' : 'expand_more'}
-          </span>
+          <DashboardSectionHeader
+            icon="query_stats"
+            title={t('dashboard.weeklyStats')}
+            rightSlot={
+              <span className="material-symbols-outlined text-slate-500 dark:text-[#92bbc9]">
+                {weeklyStatsOpen ? 'expand_less' : 'expand_more'}
+              </span>
+            }
+          />
         </button>
         {weeklyStatsOpen && (
           <div className="grid grid-cols-1 gap-3 mt-4">
@@ -85,16 +89,19 @@ export function DashboardLeftSidebar({
             ))}
           </div>
         )}
-      </div>
+      </DashboardCard>
 
-      <div className="bg-white dark:bg-[#111e22] rounded-xl p-5 border border-slate-200 dark:border-[#325a67]">
-        <h3 className="font-bold text-sm mb-4 flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <span className="material-symbols-outlined text-primary text-lg">target</span>
-            {t('dashboard.todayGoals')}
-          </div>
-          <span className="text-[10px] text-primary">2/3 {t('dashboard.completed')}</span>
-        </h3>
+      <DashboardCard className="p-5">
+        <DashboardSectionHeader
+          icon="target"
+          title={t('dashboard.todayGoals')}
+          rightSlot={
+            <span className="text-[10px] text-primary">
+              2/3 {t('dashboard.completed')}
+            </span>
+          }
+          className="mb-4"
+        />
         <div className="space-y-1">
           {raw.goals.map(({ done, labelKey }) => (
             <label key={labelKey} className="flex items-center gap-3 py-2 cursor-pointer group">
@@ -107,15 +114,22 @@ export function DashboardLeftSidebar({
             </label>
           ))}
         </div>
-      </div>
+      </DashboardCard>
 
-      <div className="bg-white dark:bg-[#111e22] rounded-xl p-5 border border-slate-200 dark:border-[#325a67]">
-        <h3 className="font-bold text-sm mb-4 flex items-center gap-2">
-          <span className="material-symbols-outlined text-primary text-lg">groups</span>
-          <button type="button" onClick={studyGroups.openStudyGroupsModal} className="text-left hover:underline">
-            {t('dashboard.studyGroups')}
-          </button>
-        </h3>
+      <DashboardCard className="p-5">
+        <DashboardSectionHeader
+          icon="groups"
+          title={
+            <button
+              type="button"
+              onClick={studyGroups.openStudyGroupsModal}
+              className="text-left hover:underline"
+            >
+              {t('dashboard.studyGroups')}
+            </button>
+          }
+          className="mb-4"
+        />
         {studyGroups.groupConversationsLoading ? (
           <div className="py-6 flex justify-center">
             <span className="material-symbols-outlined animate-spin text-2xl text-primary">progress_activity</span>
@@ -171,13 +185,14 @@ export function DashboardLeftSidebar({
         {(studyGroups.groupConversations.length === 0 && !studyGroups.groupConversationsLoading && (!raw.suggestedGroups || raw.suggestedGroups.length === 0)) && (
           <p className="text-xs text-slate-500 dark:text-[#92bbc9] py-2 text-center">{t('dashboard.noStudyGroups')}</p>
         )}
-      </div>
+      </DashboardCard>
 
-      <div className="bg-white dark:bg-[#111e22] rounded-xl p-5 border border-slate-200 dark:border-[#325a67]">
-        <h3 className="font-bold text-sm mb-4 flex items-center gap-2">
-          <span className="material-symbols-outlined text-primary text-lg">menu_book</span>
-          {t('dashboard.featuredLessons')}
-        </h3>
+      <DashboardCard className="p-5">
+        <DashboardSectionHeader
+          icon="menu_book"
+          title={t('dashboard.featuredLessons')}
+          className="mb-4"
+        />
         <div className="space-y-4">
           {raw.featuredLessons.map(({ title, icon, skill, level, to, learners }) => (
             <Link key={title} to={to} className="block group">
@@ -199,10 +214,13 @@ export function DashboardLeftSidebar({
             </Link>
           ))}
         </div>
-        <Link to="/lesson" className="block w-full mt-4 py-2 text-xs font-bold text-primary hover:underline text-center">
+        <Link
+          to="/lesson"
+          className="block w-full mt-4 py-2 text-xs font-bold text-primary hover:underline text-center"
+        >
           {t('dashboard.viewAllLessons')}
         </Link>
-      </div>
+      </DashboardCard>
 
       <div className="bg-primary/5 dark:bg-primary/10 rounded-xl p-5 border border-primary/20">
         <h3 className="font-bold text-sm text-primary mb-3 flex items-center gap-2">

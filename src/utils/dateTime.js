@@ -26,18 +26,24 @@ function getRelativeTimeParts(dateStr) {
   }
 }
 
+function getStoredLanguage() {
+  const saved = localStorage.getItem('language') || sessionStorage.getItem('language')
+  return saved === 'vi' || saved === 'en' ? saved : 'vi'
+}
+
 /**
  * Relative time for posts (e.g. "5 phút trước")
  */
-export function formatPostTime(dateStr) {
+export function formatPostTime(dateStr, lang = getStoredLanguage()) {
   const p = getRelativeTimeParts(dateStr)
   if (!p) return ''
   const { d, diffM, diffH, diffD } = p
-  if (diffM < 1) return 'Vừa xong'
-  if (diffM < 60) return `${diffM} phút trước`
-  if (diffH < 24) return `${diffH} giờ trước`
-  if (diffD < 7) return `${diffD} ngày trước`
-  return d.toLocaleDateString()
+  const isEn = lang === 'en'
+  if (diffM < 1) return isEn ? 'Just now' : 'Vừa xong'
+  if (diffM < 60) return isEn ? `${diffM} minutes ago` : `${diffM} phút trước`
+  if (diffH < 24) return isEn ? `${diffH} hours ago` : `${diffH} giờ trước`
+  if (diffD < 7) return isEn ? `${diffD} days ago` : `${diffD} ngày trước`
+  return d.toLocaleDateString(isEn ? 'en-US' : 'vi-VN')
 }
 
 /**
@@ -47,10 +53,12 @@ export function formatConversationTime(dateStr) {
   const p = getRelativeTimeParts(dateStr)
   if (!p) return ''
   const { d, diffM, diffH, diffD } = p
-  if (diffM < 1) return 'Vừa xong'
-  if (diffM < 60) return `${diffM} ph`
-  if (diffH < 24) return d.toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' })
-  if (diffD === 1) return 'Hôm qua'
-  if (diffD < 7) return `${diffD} ngày`
-  return d.toLocaleDateString('vi-VN')
+  const lang = getStoredLanguage()
+  const isEn = lang === 'en'
+  if (diffM < 1) return isEn ? 'Just now' : 'Vừa xong'
+  if (diffM < 60) return isEn ? `${diffM} min` : `${diffM} ph`
+  if (diffH < 24) return d.toLocaleTimeString(isEn ? 'en-US' : 'vi-VN', { hour: '2-digit', minute: '2-digit' })
+  if (diffD === 1) return isEn ? 'Yesterday' : 'Hôm qua'
+  if (diffD < 7) return isEn ? `${diffD} days` : `${diffD} ngày`
+  return d.toLocaleDateString(isEn ? 'en-US' : 'vi-VN')
 }

@@ -3,6 +3,8 @@ import { useTranslation } from 'react-i18next'
 import { ROUTES } from '../../constants'
 import { DEFAULT_AVATAR } from '../../constants/ui'
 import { friendsService } from '../../services'
+import { DashboardCard } from '../ui/DashboardCard'
+import { DashboardSectionHeader } from '../ui/DashboardSectionHeader'
 
 /**
  * Right sidebar: friend suggestions (dropdown + list), friends (All/Online), weekly leaderboard.
@@ -30,9 +32,13 @@ export function DashboardRightSidebar({
 
   return (
     <aside className="col-span-12 lg:col-span-3 space-y-6">
-      <div className="bg-white dark:bg-[#111e22] rounded-xl p-5 border border-slate-200 dark:border-[#325a67]">
+      <DashboardCard className="p-5">
         <div className="flex items-center justify-between gap-2 mb-4">
-          <h3 className="font-bold text-sm shrink-0">{t('dashboard.friendSuggestions')}</h3>
+          <DashboardSectionHeader
+            icon={null}
+            title={t('dashboard.friendSuggestions')}
+            className="mb-0"
+          />
           <div className="relative min-w-0 max-w-[220px]" ref={friendSelectRef}>
             <button
               type="button"
@@ -183,23 +189,29 @@ export function DashboardRightSidebar({
             )
           )}
         </div>
-        <Link to="/friends" className="block w-full mt-4 py-2 text-xs font-bold text-primary hover:underline text-center">
+        <Link
+          to="/friends"
+          className="block w-full mt-4 py-2 text-xs font-bold text-primary hover:underline text-center"
+        >
           {t('dashboard.viewAllSuggestions')}
         </Link>
-      </div>
+      </DashboardCard>
 
-      <div className="bg-white dark:bg-[#111e22] rounded-xl p-5 border border-slate-200 dark:border-[#325a67]">
-        <h3 className="font-bold text-sm mb-3 flex items-center gap-2">
-          <span className="material-symbols-outlined text-primary text-lg">people</span>
-          {t('dashboard.friends')}
-          <Link
-            to={ROUTES.MESSAGES}
-            className="ml-auto p-1 rounded-lg text-slate-500 hover:bg-primary/10 hover:text-primary transition-colors"
-            title={t('messages.title')}
-          >
-            <span className="material-symbols-outlined text-lg">chat_bubble</span>
-          </Link>
-        </h3>
+      <DashboardCard className="p-5">
+        <DashboardSectionHeader
+          icon="people"
+          title={t('dashboard.friends')}
+          rightSlot={
+            <Link
+              to={ROUTES.MESSAGES}
+              className="p-1 rounded-lg text-slate-500 hover:bg-primary/10 hover:text-primary transition-colors"
+              title={t('messages.title')}
+            >
+              <span className="material-symbols-outlined text-lg">chat_bubble</span>
+            </Link>
+          }
+          className="mb-3"
+        />
         <div className="flex gap-1 p-1 bg-slate-100 dark:bg-[#233f48] rounded-lg mb-3">
           <button
             type="button"
@@ -216,7 +228,11 @@ export function DashboardRightSidebar({
             {t('userProfile.online')}
           </button>
         </div>
-        <div className={`space-y-3 overflow-y-auto pr-1 custom-scrollbar ${displayedFriendsList.length > 5 ? 'max-h-[200px]' : ''}`}>
+        <div
+          className={`space-y-3 overflow-y-auto pr-1 custom-scrollbar ${
+            displayedFriendsList.length > 5 ? 'max-h-[200px]' : ''
+          }`}
+        >
           {displayedFriendsList.length === 0 ? (
             <p className="text-xs text-slate-500 dark:text-[#92bbc9]">{t('dashboard.noFriendsOnline')}</p>
           ) : (
@@ -253,13 +269,19 @@ export function DashboardRightSidebar({
             })
           )}
         </div>
-      </div>
+      </DashboardCard>
 
-      <div className="bg-white dark:bg-[#111e22] rounded-xl p-5 border border-slate-200 dark:border-[#325a67]">
-        <h3 className="font-bold text-sm mb-4 flex items-center justify-between">
-          {t('dashboard.weeklyLeaderboard')}
-          <span className="material-symbols-outlined text-yellow-500 text-lg">military_tech</span>
-        </h3>
+      <DashboardCard className="p-5">
+        <DashboardSectionHeader
+          icon={null}
+          title={t('dashboard.weeklyLeaderboard')}
+          rightSlot={
+            <span className="material-symbols-outlined text-yellow-500 text-lg">
+              military_tech
+            </span>
+          }
+          className="mb-4"
+        />
         {weeklyLeaderboardLoading ? (
           <div className="flex justify-center py-6">
             <span className="material-symbols-outlined animate-spin text-2xl text-primary">progress_activity</span>
@@ -306,7 +328,7 @@ export function DashboardRightSidebar({
             )}
           </>
         )}
-      </div>
+      </DashboardCard>
     </aside>
   )
 }

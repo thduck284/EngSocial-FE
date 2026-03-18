@@ -1,456 +1,37 @@
 import { useState, useEffect, useRef } from 'react'
-import { Link } from 'react-router-dom'
-import { useTranslation } from 'react-i18next'
 import { createPortal } from 'react-dom'
+import { Link, useLocation, useNavigate } from 'react-router-dom'
+import { useTranslation } from 'react-i18next'
 import { DEFAULT_AVATAR } from '../../constants/ui'
 import { formatPostTime } from '../../utils/dateTime'
-import { parseContentSegments } from '../../utils/postContent'
 import { ROUTES, API_ENDPOINTS, buildApiUrl, POST_REACTION_TYPES, REACTION_TYPE_TO_EMOJI } from '../../constants'
-import { communityService } from '../../services'
-import { PostReactionsModal } from './PostReactionsModal'
-
-/** Hover delay in ms before showing reaction picker */
-const REACTION_PICKER_HOVER_DELAY = 1000
-/** How long the picker stays visible after showing when not hovering bubble (ms) */
-const REACTION_PICKER_VISIBLE_DURATION = 4000
-/** Delay before hiding when leaving like area or bubble (allows move to bubble/like without flicker) */
-const REACTION_PICKER_LEAVE_DELAY = 300
+import { communityService, uploadService } from '../../services'
+import { searchGiphy, hasGiphyKey } from '../../services/giphy.service'
+import { ReactionsModal } from './ReactionsModal'
+import { PostCommentsSectionBase } from './PostCommentsSectionBase'
+import { PostContentBody } from './PostContentBody'
+import { MentionedUsersModal } from './MentionedUsersModal'
+import { PostImageViewerModal } from './PostImageViewerModal'
+import { usePostReactionPicker, useDashboardPostComments } from '../../hooks/usePostInteractions'
+import { PostShareModal } from './PostShareModal'
+import { formatReactionCount, normalizeMentions } from '../../utils/post'
 
 /** Max characters to show before "See more" */
 const MAX_CONTENT_PREVIEW = 300
 
-/** Format reaction count for display (e.g. 1600 -> "1,6K", 42 -> "42") */
-function formatReactionCount(n) {
-  const num = Number(n) || 0
-  if (num >= 1000000) return `${(num / 1000000).toFixed(1).replace('.', ',')}M`
-  if (num >= 1000) return `${(num / 1000).toFixed(1).replace('.', ',')}K`
-  return String(num)
-}
-
-/**
- * Renders post content with clickable hashtags and @mentions.
- */
-function PostContentBody({ content, mentions = [] }) {
-  const segments = parseContentSegments(content || '', mentions)
-  if (segments.length === 0) return <span className="whitespace-pre-wrap">{content || ''}</span>
-  return (
-    <span className="whitespace-pre-wrap">
-      {segments.map((seg, i) => {
-        if (seg.type === 'text') return <span key={i}>{seg.value}</span>
-        if (seg.type === 'hashtag') {
-          return (
-            <Link
-              key={i}
-              to={`${ROUTES.SEARCH}?q=${encodeURIComponent(seg.value)}`}
-              className="text-primary font-medium hover:underline"
-            >
-              {seg.value}
-            </Link>
-          )
-        }
-        if (seg.type === 'mention' && seg.mention?.id) {
-          return (
-            <Link
-              key={i}
-              to={ROUTES.PROFILE_USER(seg.mention.id)}
-              className="text-primary font-medium hover:underline"
-            >
-              {seg.value}
-            </Link>
-          )
-        }
-        return <span key={i}>{seg.value}</span>
-      })}
-    </span>
-  )
-}
-
-/**
- * Normalize mentions to array of { id, name?, avatar? } (backend may return populated or raw id).
- */
-function normalizeMentions(mentions) {
-  if (!Array.isArray(mentions)) return []
-  return mentions.map((m) => {
-    if (m && typeof m === 'object' && (m.id || m._id)) return { id: String(m.id ?? m._id), name: m.name, avatar: m.avatar }
-    if (typeof m === 'string') return { id: m, name: undefined, avatar: undefined }
-    return null
-  }).filter(Boolean)
-}
-
-/**
- * Modal: list all mentioned users (avatar + name, link to profile).
- */
-function MentionedUsersModal({ open, onClose, mentions = [] }) {
-  const { t } = useTranslation()
-  if (!open) return null
-  const modalContent = (
-    <div
-      className="fixed inset-0 z-[100] flex items-center justify-center bg-black/50 p-4"
-      onClick={onClose}
-      role="presentation"
-    >
-      <div
-        className="w-full max-w-sm bg-white dark:bg-[#111e22] rounded-xl shadow-xl border border-slate-200 dark:border-[#325a67] overflow-hidden"
-        onClick={(e) => e.stopPropagation()}
-        role="dialog"
-        aria-modal="true"
-        aria-label={t('dashboard.mentionedUsers') || 'Người được nhắc đến'}
-      >
-        <div className="flex items-center justify-between px-5 py-4 border-b border-slate-200 dark:border-[#325a67]">
-          <h3 className="text-lg font-bold text-slate-900 dark:text-slate-100">
-            {t('dashboard.mentionedUsers') || 'Người được nhắc đến'}
-          </h3>
-          <button
-            type="button"
-            onClick={onClose}
-            className="p-2 rounded-full hover:bg-slate-100 dark:hover:bg-[#233f48] text-slate-500 dark:text-[#92bbc9] transition-colors"
-            aria-label={t('buttons.close') || 'Đóng'}
-          >
-            <span className="material-symbols-outlined">close</span>
-          </button>
-        </div>
-        <div className="max-h-[70vh] overflow-y-auto custom-scrollbar">
-          {mentions.length === 0 ? (
-            <p className="px-5 py-6 text-sm text-slate-500 dark:text-[#92bbc9]">{t('dashboard.noMentions') || 'Không có.'}</p>
-          ) : (
-            <ul className="py-2">
-              {mentions.map((m) => {
-                const id = m?.id ?? (typeof m === 'string' ? m : '')
-                const name = (m?.name ?? id) || '—'
-                const avatar = m?.avatar || (name !== '—' ? `https://ui-avatars.com/api/?name=${encodeURIComponent(name)}&background=13b6ec&color=fff` : DEFAULT_AVATAR)
-                return (
-                  <li key={id}>
-                    <Link
-                      to={ROUTES.PROFILE_USER(id)}
-                      onClick={onClose}
-                      className="flex items-center gap-3 px-5 py-3 hover:bg-slate-50 dark:hover:bg-[#233f48] transition-colors"
-                    >
-                      <img src={avatar} alt="" className="size-10 rounded-full object-cover shrink-0" />
-                      <span className="text-sm font-medium text-slate-900 dark:text-slate-100 truncate">{name}</span>
-                    </Link>
-                  </li>
-                )
-              })}
-            </ul>
-          )}
-        </div>
-      </div>
-    </div>
-  )
-  return createPortal(modalContent, document.body)
-}
-
-/**
- * Full-screen image viewer modal: left = image + carousel/zoom/fullscreen, right = post context + actions + comments.
- * Styled to match app theme (dark card, primary accents).
- */
-function PostImageViewerModal({ open, onClose, post, initialImageIndex = 0, onLikeClick, likeLoading = false }) {
-  const { t } = useTranslation()
-  const [currentIndex, setCurrentIndex] = useState(initialImageIndex)
-  const [zoom, setZoom] = useState(1)
-  const [fullscreen, setFullscreen] = useState(false)
-  const [contentExpanded, setContentExpanded] = useState(false)
-  const [showMentionsModal, setShowMentionsModal] = useState(false)
-  const [optionsMenuOpen, setOptionsMenuOpen] = useState(false)
-  const optionsMenuRef = useRef(null)
-
-  const imagesList = Array.isArray(post?.images) ? post.images.filter((url) => typeof url === 'string' && url.trim()) : []
-  const hasMultiple = imagesList.length > 1
-  const currentSrc = imagesList[currentIndex] || null
-  const author = post?.author ?? {}
-  const authorAvatar = author.avatar || (author.name ? `https://ui-avatars.com/api/?name=${encodeURIComponent(author.name)}&background=13b6ec&color=fff` : DEFAULT_AVATAR)
-  const mentionsList = normalizeMentions(post?.mentions)
-  const contentToShow = post?.content != null ? String(post.content) : ''
-  const isLongContent = contentToShow.length > MAX_CONTENT_PREVIEW
-  const contentPreview = isLongContent && !contentExpanded ? contentToShow.slice(0, MAX_CONTENT_PREVIEW) : contentToShow
-  const isLikedInModal = Boolean(post?.liked)
-  const likeCountInModal = Number(post?.likeCount) ?? 0
-
-  useEffect(() => {
-    if (!open) return
-    setCurrentIndex(Math.min(initialImageIndex, Math.max(0, imagesList.length - 1)))
-    setZoom(1)
-    setFullscreen(false)
-    setContentExpanded(false)
-    setShowMentionsModal(false)
-    setOptionsMenuOpen(false)
-  }, [open, initialImageIndex, imagesList.length])
-
-  useEffect(() => {
-    if (!optionsMenuOpen) return
-    const handleClickOutside = (e) => {
-      if (optionsMenuRef.current && !optionsMenuRef.current.contains(e.target)) setOptionsMenuOpen(false)
-    }
-    document.addEventListener('mousedown', handleClickOutside)
-    return () => document.removeEventListener('mousedown', handleClickOutside)
-  }, [optionsMenuOpen])
-
-  useEffect(() => {
-    if (!open) return
-    const handleKey = (e) => {
-      if (e.key === 'Escape') {
-        if (fullscreen) setFullscreen(false)
-        else onClose()
-      }
-      if (e.key === 'ArrowLeft' && hasMultiple) setCurrentIndex((i) => (i - 1 + imagesList.length) % imagesList.length)
-      if (e.key === 'ArrowRight' && hasMultiple) setCurrentIndex((i) => (i + 1) % imagesList.length)
-    }
-    document.addEventListener('keydown', handleKey)
-    document.body.style.overflow = 'hidden'
-    return () => {
-      document.removeEventListener('keydown', handleKey)
-      document.body.style.overflow = ''
-    }
-  }, [open, onClose, fullscreen, hasMultiple, imagesList.length])
-
-  const goPrev = () => setCurrentIndex((i) => (i - 1 + imagesList.length) % imagesList.length)
-  const goNext = () => setCurrentIndex((i) => (i + 1) % imagesList.length)
-  const zoomIn = () => setZoom((z) => Math.min(4, z + 0.25))
-  const zoomOut = () => setZoom((z) => Math.max(0.5, z - 0.25))
-  const toggleFullscreen = () => setFullscreen((v) => !v)
-
-  if (!open) return null
-
-  const modalContent = (
-    <div
-      className="fixed inset-0 z-[100] flex flex-col bg-background-dark text-white"
-      role="dialog"
-      aria-modal="true"
-      aria-label="Xem ảnh bài viết"
-    >
-      <div className="flex flex-1 min-h-0 w-full flex-col md:flex-row">
-        {/* Left: image viewer */}
-        <div className="flex-1 flex flex-col min-h-[50vh] md:min-h-0 min-w-0 bg-black/40 relative">
-          <div className="absolute top-0 left-0 right-0 z-10 flex items-center justify-between p-3 bg-gradient-to-b from-black/60 to-transparent">
-            <button
-              type="button"
-              onClick={onClose}
-              className="p-2 rounded-full bg-white/10 hover:bg-white/20 text-white transition-colors"
-              aria-label={t('buttons.close') || 'Đóng'}
-            >
-              <span className="material-symbols-outlined">close</span>
-            </button>
-            <div className="flex items-center gap-1">
-              <button
-                type="button"
-                onClick={zoomOut}
-                className="p-2 rounded-full bg-white/10 hover:bg-white/20 text-white transition-colors"
-                aria-label="Thu nhỏ"
-              >
-                <span className="material-symbols-outlined">zoom_out</span>
-              </button>
-              <button
-                type="button"
-                onClick={zoomIn}
-                className="p-2 rounded-full bg-white/10 hover:bg-white/20 text-white transition-colors"
-                aria-label="Phóng to"
-              >
-                <span className="material-symbols-outlined">zoom_in</span>
-              </button>
-              <button
-                type="button"
-                onClick={toggleFullscreen}
-                className="p-2 rounded-full bg-white/10 hover:bg-white/20 text-white transition-colors"
-                aria-label="Toàn màn hình"
-              >
-                <span className="material-symbols-outlined">{fullscreen ? 'fullscreen_exit' : 'fullscreen'}</span>
-              </button>
-            </div>
-          </div>
-          {hasMultiple && (
-            <>
-              <button
-                type="button"
-                onClick={goPrev}
-                className="absolute left-3 top-1/2 -translate-y-1/2 z-10 p-2 rounded-full bg-white/10 hover:bg-white/20 text-white transition-colors"
-                aria-label="Ảnh trước"
-              >
-                <span className="material-symbols-outlined">chevron_left</span>
-              </button>
-              <button
-                type="button"
-                onClick={goNext}
-                className="absolute right-3 top-1/2 -translate-y-1/2 z-10 p-2 rounded-full bg-white/10 hover:bg-white/20 text-white transition-colors"
-                aria-label="Ảnh sau"
-              >
-                <span className="material-symbols-outlined">chevron_right</span>
-              </button>
-            </>
-          )}
-          <div className="flex-1 flex items-center justify-center min-h-0 p-4 overflow-auto">
-            {currentSrc && (
-              <img
-                src={currentSrc}
-                alt=""
-                className="max-w-full max-h-full w-auto h-auto object-contain transition-transform duration-200"
-                style={{ transform: `scale(${zoom})` }}
-                onClick={(e) => e.stopPropagation()}
-                referrerPolicy="no-referrer"
-                draggable={false}
-              />
-            )}
-          </div>
-        </div>
-
-        {/* Right: post context + actions + comments (hidden in fullscreen) */}
-        {!fullscreen && (
-        <aside className="w-full md:max-w-[400px] flex-shrink-0 flex flex-col bg-[#111e22] border-t md:border-t-0 md:border-l border-[#325a67] overflow-hidden pt-4">
-          <div className="border-b border-[#325a67] px-4 py-2">
-            <div className="flex items-start justify-between gap-2">
-              <img src={authorAvatar} alt="" className="size-9 rounded-full object-cover bg-slate-600 shrink-0" />
-              <div className="min-w-0 flex-1">
-                <p className="text-sm text-slate-100">
-                  <span className="font-bold">{author.name || 'User'}</span>
-                  {mentionsList.length > 0 && (
-                    <>
-                      {' '}
-                      <span className="font-medium text-slate-400">{t('dashboard.with') || 'cùng với'}</span>{' '}
-                      {mentionsList.slice(0, 1).map((m) => {
-                        const id = m?.id ?? (typeof m === 'string' ? m : '')
-                        const name = (m?.name ?? id) || '—'
-                        return (
-                          <Link key={id} to={ROUTES.PROFILE_USER(id)} className="font-bold text-primary hover:underline">
-                            {name}
-                          </Link>
-                        )
-                      })}
-                      {mentionsList.length > 1 && (
-                        <>
-                          {' '}
-                          <span className="font-medium text-slate-400">{t('dashboard.and') || 'và'}</span>{' '}
-                          <button
-                            type="button"
-                            onClick={() => setShowMentionsModal(true)}
-                            className="font-bold text-primary hover:underline"
-                          >
-                            {t('dashboard.othersCount', { count: mentionsList.length - 1 })}
-                          </button>
-                        </>
-                      )}
-                    </>
-                  )}
-                </p>
-                <p className="text-xs text-[#92bbc9]">{formatPostTime(post?.createdAt)} · {(post?.visibility === 'public' && (t('dashboard.public') || 'Công khai')) || (post?.visibility === 'friends' && (t('dashboard.friendsOnly') || 'Bạn bè')) || (post?.visibility === 'private' && (t('dashboard.privateOnly') || 'Chỉ mình tôi')) || post?.visibility || '—'}</p>
-              </div>
-              <div className="relative shrink-0" ref={optionsMenuRef}>
-                <button
-                  type="button"
-                  onClick={() => setOptionsMenuOpen((v) => !v)}
-                  className="p-1 rounded hover:bg-[#233f48] text-[#92bbc9] hover:text-slate-300 transition-colors"
-                  aria-label="Tùy chọn"
-                  aria-expanded={optionsMenuOpen}
-                >
-                  <span className="material-symbols-outlined">more_horiz</span>
-                </button>
-                {optionsMenuOpen && (
-                  <div className="absolute right-0 top-full z-10 mt-1 min-w-[180px] rounded-xl border border-[#325a67] bg-[#111e22] py-1 shadow-xl">
-                    <button
-                      type="button"
-                      onClick={() => setOptionsMenuOpen(false)}
-                      className="flex w-full items-center gap-2 px-4 py-2 text-left text-sm text-slate-200 hover:bg-[#233f48]"
-                    >
-                      <span className="material-symbols-outlined text-lg">bookmark</span>
-                      {t('dashboard.savePost') || 'Lưu bài viết'}
-                    </button>
-                  </div>
-                )}
-              </div>
-            </div>
-          </div>
-          {(contentToShow.trim() || mentionsList.length > 0) ? (
-            <div className="border-b border-[#325a67] px-4 py-2 max-h-64 overflow-y-auto custom-scrollbar">
-              <div className="text-sm leading-relaxed text-slate-300">
-                <p className="whitespace-pre-wrap break-words">
-                  <PostContentBody content={contentPreview} mentions={mentionsList} />
-                  {isLongContent && !contentExpanded && ' ... '}
-                </p>
-                {isLongContent && (
-                  <button
-                    type="button"
-                    onClick={() => setContentExpanded((v) => !v)}
-                    className="mt-1 text-primary font-medium hover:underline"
-                  >
-                    {contentExpanded ? (t('dashboard.seeLess') || 'Thu gọn') : (t('dashboard.seeMore') || 'Xem thêm')}
-                  </button>
-                )}
-              </div>
-            </div>
-          ) : null}
-          <div className="flex w-full items-center justify-between border-b border-[#325a67] px-3 py-1.5">
-            <button
-              type="button"
-              onClick={() => typeof onLikeClick === 'function' && !likeLoading && onLikeClick()}
-              disabled={likeLoading}
-              className={`flex flex-1 items-center justify-center gap-1 py-0.5 text-xs font-medium transition-colors ${isLikedInModal ? 'text-red-400' : 'text-[#92bbc9] hover:text-red-400'} ${likeLoading ? 'opacity-70 pointer-events-none' : ''}`}
-            >
-              {likeLoading ? (
-                <span className="material-symbols-outlined text-lg animate-spin">progress_activity</span>
-              ) : (
-                <span className={`material-symbols-outlined text-lg ${isLikedInModal ? 'fill-current' : ''}`}>favorite</span>
-              )}
-              {likeCountInModal}
-            </button>
-            <button type="button" className="flex flex-1 items-center justify-center gap-1 py-0.5 text-xs font-medium text-[#92bbc9] hover:text-primary transition-colors">
-              <span className="material-symbols-outlined text-lg">chat_bubble</span>
-              {t('dashboard.comment') || 'Bình luận'}
-            </button>
-            <button type="button" className="flex flex-1 items-center justify-center gap-1 py-0.5 text-xs font-medium text-[#92bbc9] hover:text-primary transition-colors">
-              <span className="material-symbols-outlined text-lg">share</span>
-              {t('dashboard.share') || 'Chia sẻ'}
-            </button>
-          </div>
-          <div className="flex-1 flex flex-col min-h-0 overflow-hidden">
-            <div className="flex-1 flex items-center justify-center overflow-y-auto custom-scrollbar px-2 min-h-0">
-              <div className="flex flex-col items-center justify-center py-1 text-center">
-                <span className="material-symbols-outlined text-3xl text-[#325a67] mb-1">description</span>
-                <p className="text-xs font-medium text-slate-300">{t('dashboard.noCommentsYet') || 'Chưa có bình luận nào'}</p>
-                <p className="text-[11px] text-[#92bbc9] mt-0.5">{t('dashboard.beFirstToComment') || 'Hãy là người đầu tiên bình luận.'}</p>
-              </div>
-            </div>
-            <div className="px-2 py-0.5 border-t border-[#325a67] flex items-center gap-1 bg-[#0f191c] shrink-0">
-              <input
-                type="text"
-                placeholder={t('dashboard.writeComment') || 'Viết bình luận...'}
-                className="flex-1 min-w-0 px-2 py-1 rounded-full bg-[#233f48] border border-[#325a67] text-slate-100 placeholder:text-[#92bbc9] text-xs focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary"
-              />
-              <button type="button" className="p-1 rounded-full text-primary hover:bg-[#233f48] transition-colors shrink-0" aria-label="Gửi">
-                <span className="material-symbols-outlined text-sm">send</span>
-              </button>
-            </div>
-          </div>
-        </aside>
-        )}
-      </div>
-      <MentionedUsersModal
-        open={showMentionsModal}
-        onClose={() => setShowMentionsModal(false)}
-        mentions={mentionsList}
-      />
-    </div>
-  )
-  return createPortal(modalContent, document.body)
-}
-
-/**
- * Single post card in the feed (author + mentions in header, full content in body, media, actions).
- * Defensive against missing or malformed data (mention, hashtag, images, video, documents).
- * onToggleLike(postId, { liked }) is called after successful like/unlike to sync feed state.
- */
 export function DashboardPostCard({ post, onToggleLike }) {
   const { t } = useTranslation()
+  const navigate = useNavigate()
+  const location = useLocation()
   const [showMentionsModal, setShowMentionsModal] = useState(false)
+  const [showShareModal, setShowShareModal] = useState(false)
   const [contentExpanded, setContentExpanded] = useState(false)
   /** null = closed, number = open at that image index */
   const [imageViewerIndex, setImageViewerIndex] = useState(null)
+  const [imageViewerReturnPath, setImageViewerReturnPath] = useState(null)
   const [likeLoading, setLikeLoading] = useState(false)
-  const [showReactionPicker, setShowReactionPicker] = useState(false)
-  const [reactionBubbleRect, setReactionBubbleRect] = useState(null)
   const [showReactionsModal, setShowReactionsModal] = useState(false)
   const [reactionsModalInitialTab, setReactionsModalInitialTab] = useState('all')
-  const reactionHoverTimerRef = useRef(null)
-  const reactionHideTimerRef = useRef(null)
-  const reactionPendingHideRef = useRef(null)
-  const likeAreaRef = useRef(null)
   if (!post) return null
 
   const postId = post?.id ?? post?._id
@@ -458,10 +39,77 @@ export function DashboardPostCard({ post, onToggleLike }) {
   const userReaction = post?.userReaction || null
   const likeCount = Number(post?.likeCount) ?? 0
 
+  // Like button reaction picker (hover bubble)
+  const {
+    likeAreaRef: cardLikeAreaRef,
+    showReactionPicker,
+    reactionBubbleRect,
+    handleLikeAreaMouseEnter: handleCardLikeAreaMouseEnter,
+    handleLikeAreaMouseLeave: handleCardLikeAreaMouseLeave,
+    handleBubbleMouseEnter,
+    handleBubbleMouseLeave,
+    handleLikeAreaFocus: handleCardLikeAreaFocus,
+    handleLikeAreaBlur: handleCardLikeAreaBlur,
+    hideReactionPicker: hideCardReactionPicker,
+  } = usePostReactionPicker()
+
+  // Comments, uploads, GIF picker logic
+  const {
+    showCommentsPanel,
+    setShowCommentsPanel,
+    comments,
+    commentsLoading,
+    commentSending,
+    commentError,
+    commentText,
+    setCommentText,
+    commentImages,
+    commentVideo,
+    commentAudio,
+    commentDocuments,
+    commentUploading,
+    showGifPicker,
+    setShowGifPicker,
+    gifQuery,
+    setGifQuery,
+    gifResults,
+    gifLoading,
+    postCardRef,
+    commentTextareaRef,
+    commentImageInputRef,
+    commentVideoInputRef,
+    commentAudioInputRef,
+    commentDocInputRef,
+    handleCommentImageSelect,
+    handleCommentVideoSelect,
+    handleCommentAudioSelect,
+    handleCommentDocSelect,
+    handleGifSearch,
+    handleSelectGif,
+    removeCommentImage,
+    removeCommentVideo,
+    removeCommentAudio,
+    removeCommentDoc,
+    handleSendComment,
+    handleToggleCommentLike,
+    handleFeedCommentLikeMouseEnter,
+    handleFeedCommentLikeMouseLeave,
+    showCommentReactionPicker,
+    commentReactionBubbleRect,
+    hoveredCommentId,
+    replyToComment,
+    startReplyToComment,
+    cancelReplyToComment,
+    loadMoreRootComments,
+    rootHasMore,
+    threadPages,
+    loadMoreThreadComments,
+  } = useDashboardPostComments(postId, t)
+
   const handleLikeClick = () => {
     if (!postId || likeLoading || typeof onToggleLike !== 'function') return
     setLikeLoading(true)
-    setShowReactionPicker(false)
+    hideCardReactionPicker()
     const reactionToSend = isLiked ? userReaction || 'like' : 'like'
     communityService
       .setReaction(postId, reactionToSend)
@@ -480,7 +128,7 @@ export function DashboardPostCard({ post, onToggleLike }) {
   const handleReactionClick = (reactionType) => {
     if (!postId || likeLoading || typeof onToggleLike !== 'function') return
     setLikeLoading(true)
-    setShowReactionPicker(false)
+    hideCardReactionPicker()
     communityService
       .setReaction(postId, reactionType)
       .then((res) => {
@@ -494,79 +142,6 @@ export function DashboardPostCard({ post, onToggleLike }) {
       .catch(() => {})
       .finally(() => setLikeLoading(false))
   }
-
-  const clearAllReactionTimers = () => {
-    if (reactionHoverTimerRef.current) {
-      window.clearTimeout(reactionHoverTimerRef.current)
-      reactionHoverTimerRef.current = null
-    }
-    if (reactionHideTimerRef.current) {
-      window.clearTimeout(reactionHideTimerRef.current)
-      reactionHideTimerRef.current = null
-    }
-    if (reactionPendingHideRef.current) {
-      window.clearTimeout(reactionPendingHideRef.current)
-      reactionPendingHideRef.current = null
-    }
-  }
-
-  const handleLikeAreaMouseEnter = () => {
-    clearAllReactionTimers()
-    reactionHoverTimerRef.current = window.setTimeout(() => {
-      setShowReactionPicker(true)
-      reactionHoverTimerRef.current = null
-      // Auto-hide after 4s only when not hovering the bubble; bubble enter will cancel this
-      reactionHideTimerRef.current = window.setTimeout(() => {
-        setShowReactionPicker(false)
-        reactionHideTimerRef.current = null
-      }, REACTION_PICKER_VISIBLE_DURATION)
-    }, REACTION_PICKER_HOVER_DELAY)
-  }
-
-  const handleLikeAreaMouseLeave = () => {
-    if (reactionHoverTimerRef.current) {
-      window.clearTimeout(reactionHoverTimerRef.current)
-      reactionHoverTimerRef.current = null
-    }
-    // Delay hide so moving to bubble keeps it visible
-    reactionPendingHideRef.current = window.setTimeout(() => {
-      if (reactionHideTimerRef.current) {
-        window.clearTimeout(reactionHideTimerRef.current)
-        reactionHideTimerRef.current = null
-      }
-      setShowReactionPicker(false)
-      reactionPendingHideRef.current = null
-    }, REACTION_PICKER_LEAVE_DELAY)
-  }
-
-  const handleBubbleMouseEnter = () => {
-    clearAllReactionTimers()
-    setShowReactionPicker(true)
-  }
-
-  const handleBubbleMouseLeave = () => {
-    reactionPendingHideRef.current = window.setTimeout(() => {
-      setShowReactionPicker(false)
-      reactionPendingHideRef.current = null
-    }, REACTION_PICKER_LEAVE_DELAY)
-  }
-
-  // Update bubble position when picker opens so portal can place it above Like button
-  useEffect(() => {
-    if (!showReactionPicker || !likeAreaRef.current) {
-      setReactionBubbleRect(null)
-      return
-    }
-    const el = likeAreaRef.current
-    const rect = el.getBoundingClientRect()
-    setReactionBubbleRect({ top: rect.top, left: rect.left, width: rect.width, height: rect.height })
-  }, [showReactionPicker])
-
-  useEffect(() => {
-    return () => {
-      clearAllReactionTimers()
-    }
-  }, [])
 
   const author = post.author ?? {}
   const authorAvatar = author.avatar || (author.name ? `https://ui-avatars.com/api/?name=${encodeURIComponent(author.name)}&background=13b6ec&color=fff` : DEFAULT_AVATAR)
@@ -583,7 +158,7 @@ export function DashboardPostCard({ post, onToggleLike }) {
 
   return (
     <>
-      <div className="bg-white dark:bg-[#111e22] rounded-xl border border-slate-200 dark:border-[#325a67] overflow-hidden">
+      <div ref={postCardRef} className="bg-white dark:bg-[#111e22] rounded-xl border border-slate-200 dark:border-[#325a67] overflow-hidden">
         <div className="p-5">
           <div className="flex justify-between items-start mb-4">
             <div className="flex gap-3">
@@ -661,7 +236,14 @@ export function DashboardPostCard({ post, onToggleLike }) {
               <button
                 key={`img-${i}-${url.slice(0, 50)}`}
                 type="button"
-                onClick={() => setImageViewerIndex(i)}
+                onClick={() => {
+                  setImageViewerIndex(i)
+                  if (postId) {
+                    const params = new URLSearchParams()
+                    params.set('image', String(i))
+                    navigate(`/post/photo/${postId}?${params.toString()}`)
+                  }
+                }}
                 className="flex-1 min-w-0 cursor-pointer block focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 rounded overflow-hidden"
               >
                 <img
@@ -675,14 +257,18 @@ export function DashboardPostCard({ post, onToggleLike }) {
             ))}
           </div>
         )}
-        <PostImageViewerModal
-          open={imageViewerIndex !== null}
-          onClose={() => setImageViewerIndex(null)}
-          post={post}
-          initialImageIndex={imageViewerIndex ?? 0}
-          onLikeClick={typeof onToggleLike === 'function' ? handleLikeClick : undefined}
-          likeLoading={likeLoading}
-        />
+      <PostImageViewerModal
+        open={imageViewerIndex !== null}
+        onClose={() => {
+          setImageViewerIndex(null)
+          navigate(-1)
+        }}
+        post={post}
+        initialImageIndex={imageViewerIndex ?? 0}
+        onLikeClick={typeof onToggleLike === 'function' ? handleLikeClick : undefined}
+        likeLoading={likeLoading}
+        onReactionClick={typeof onToggleLike === 'function' ? handleReactionClick : undefined}
+      />
         {post.video && typeof post.video === 'string' && post.video.trim() && (
           <div className="mt-4 rounded-xl overflow-hidden border border-slate-200 dark:border-[#325a67]">
             <video src={post.video} controls className="w-full max-h-80" preload="metadata" />
@@ -751,42 +337,105 @@ export function DashboardPostCard({ post, onToggleLike }) {
             <span className="tabular-nums">{t('dashboard.sharesCount', { count: post.shareCount ?? 0 })}</span>
           </div>
         </div>
-        {/* Divider */}
-        <div className="border-t border-slate-100 dark:border-[#325a67] my-1" />
-        {/* Bottom row: Thích (hover to show bubble picker above), Bình luận, Chia sẻ */}
-        <div className="flex items-center">
+        {/* Divider between summary and actions (full-width border line) */}
+        <div className="my-1 border-t border-[#325a67]" />
+        {/* Bottom row: Thích (hover to show bubble picker above), Bình luận, Chia sẻ - fixed height */}
+        <div className="flex items-center h-12">
           <div
-            ref={likeAreaRef}
+            ref={cardLikeAreaRef}
             className="relative flex-1 flex items-center justify-center"
-            onMouseEnter={handleLikeAreaMouseEnter}
-            onMouseLeave={handleLikeAreaMouseLeave}
+            onMouseEnter={handleCardLikeAreaMouseEnter}
+            onMouseLeave={handleCardLikeAreaMouseLeave}
+            onFocus={handleCardLikeAreaFocus}
+            onBlur={handleCardLikeAreaBlur}
           >
             <button
               type="button"
               onClick={handleLikeClick}
               disabled={likeLoading}
-              className={`w-full flex items-center justify-center gap-2 py-2 text-sm font-medium transition-colors rounded-lg ${isLiked ? 'text-red-500 dark:text-red-400' : 'text-slate-500 dark:text-[#92bbc9] hover:bg-slate-50 dark:hover:bg-[#233f48]'}`}
+              className={`w-full flex items-center justify-center gap-2 py-2 text-base font-medium transition-colors rounded-lg ${isLiked ? 'text-red-500 dark:text-red-400' : 'text-slate-500 dark:text-[#92bbc9] hover:bg-slate-50 dark:hover:bg-[#233f48]'}`}
               aria-pressed={isLiked}
               aria-haspopup="true"
               aria-expanded={showReactionPicker}
             >
               {isLiked && userReaction ? (
-                <span className="text-xl" aria-hidden>{REACTION_TYPE_TO_EMOJI[userReaction] ?? userReaction}</span>
+                <span className="text-2xl" aria-hidden>{REACTION_TYPE_TO_EMOJI[userReaction] ?? userReaction}</span>
               ) : (
-                <span className={`material-symbols-outlined text-xl ${isLiked ? 'fill-current' : ''}`}>thumb_up</span>
+                <span className={`material-symbols-outlined text-2xl ${isLiked ? 'fill-current' : ''}`}>thumb_up</span>
               )}
               {isLiked && userReaction ? t(`dashboard.reaction${userReaction.charAt(0).toUpperCase() + userReaction.slice(1)}`) : t('dashboard.like')}
             </button>
           </div>
-          <button type="button" className="flex-1 flex items-center justify-center gap-2 py-2 text-sm font-medium text-slate-500 dark:text-[#92bbc9] hover:bg-slate-50 dark:hover:bg-[#233f48] rounded-lg transition-colors">
-            <span className="material-symbols-outlined text-xl">chat_bubble</span>
+          <button
+            type="button"
+            onClick={() => setShowCommentsPanel((v) => !v)}
+            className="flex-1 flex items-center justify-center gap-2 py-2 text-base font-medium text-slate-500 dark:text-[#92bbc9] hover:bg-slate-50 dark:hover:bg-[#233f48] rounded-lg transition-colors"
+          >
+            <span className="material-symbols-outlined text-2xl">chat_bubble</span>
             {t('dashboard.comment')}
           </button>
-          <button type="button" className="flex-1 flex items-center justify-center gap-2 py-2 text-sm font-medium text-slate-500 dark:text-[#92bbc9] hover:bg-slate-50 dark:hover:bg-[#233f48] rounded-lg transition-colors">
-            <span className="material-symbols-outlined text-xl">share</span>
+          <button
+            type="button"
+            onClick={() => setShowShareModal(true)}
+            className="flex-1 flex items-center justify-center gap-2 py-2 text-base font-medium text-slate-500 dark:text-[#92bbc9] hover:bg-slate-50 dark:hover:bg-[#233f48] rounded-lg transition-colors"
+          >
+            <span className="material-symbols-outlined text-2xl">share</span>
             {t('dashboard.share')}
           </button>
         </div>
+
+        {showCommentsPanel && (
+          <PostCommentsSectionBase
+            variant="feed"
+            t={t}
+            comments={comments}
+            commentsLoading={commentsLoading}
+            commentSending={commentSending}
+            commentError={commentError}
+            commentText={commentText}
+            setCommentText={setCommentText}
+            commentImages={commentImages}
+            commentVideo={commentVideo}
+            commentAudio={commentAudio}
+            commentDocuments={commentDocuments}
+            commentUploading={commentUploading}
+            showGifPicker={showGifPicker}
+            setShowGifPicker={setShowGifPicker}
+            gifQuery={gifQuery}
+            setGifQuery={setGifQuery}
+            gifResults={gifResults}
+            gifLoading={gifLoading}
+            commentTextareaRef={commentTextareaRef}
+            commentImageInputRef={commentImageInputRef}
+            commentVideoInputRef={commentVideoInputRef}
+            commentAudioInputRef={commentAudioInputRef}
+            commentDocInputRef={commentDocInputRef}
+            handleCommentImageSelect={handleCommentImageSelect}
+            handleCommentVideoSelect={handleCommentVideoSelect}
+            handleCommentAudioSelect={handleCommentAudioSelect}
+            handleCommentDocSelect={handleCommentDocSelect}
+            handleGifSearch={handleGifSearch}
+            handleSelectGif={handleSelectGif}
+            removeCommentImage={removeCommentImage}
+            removeCommentVideo={removeCommentVideo}
+            removeCommentAudio={removeCommentAudio}
+            removeCommentDoc={removeCommentDoc}
+            handleSendComment={handleSendComment}
+            handleToggleCommentLike={handleToggleCommentLike}
+            handleFeedCommentLikeMouseEnter={handleFeedCommentLikeMouseEnter}
+            handleFeedCommentLikeMouseLeave={handleFeedCommentLikeMouseLeave}
+            showCommentReactionPicker={showCommentReactionPicker}
+            commentReactionBubbleRect={commentReactionBubbleRect}
+            hoveredCommentId={hoveredCommentId}
+            replyToComment={replyToComment}
+            startReplyToComment={startReplyToComment}
+            cancelReplyToComment={cancelReplyToComment}
+            loadMoreRootComments={loadMoreRootComments}
+            rootHasMore={rootHasMore}
+            threadPages={threadPages}
+            loadMoreThreadComments={loadMoreThreadComments}
+          />
+        )}
       </div>
     </div>
 
@@ -820,10 +469,11 @@ export function DashboardPostCard({ post, onToggleLike }) {
         document.body
       )}
 
-      <PostReactionsModal
+      <ReactionsModal
         open={showReactionsModal}
         onClose={() => setShowReactionsModal(false)}
-        postId={postId}
+        mode="post"
+        entityId={postId}
         initialTab={reactionsModalInitialTab}
         likeCount={likeCount}
         reactionCounts={post.reactionCounts}
@@ -832,6 +482,13 @@ export function DashboardPostCard({ post, onToggleLike }) {
         open={showMentionsModal}
         onClose={() => setShowMentionsModal(false)}
         mentions={mentionsList}
+      />
+
+      <PostShareModal
+        open={showShareModal}
+        onClose={() => setShowShareModal(false)}
+        post={post}
+        t={t}
       />
     </>
   )

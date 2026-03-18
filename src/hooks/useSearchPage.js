@@ -1,6 +1,6 @@
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useMemo } from 'react'
 import { useSearchParams } from 'react-router-dom'
-import { friendsService } from '../services'
+import { friendsService, communityService } from '../services'
 
 /**
  * Hook for Search page: URL params (q, tab), filters, friends search API, apply/clear filters.
@@ -40,6 +40,12 @@ export function useSearchPage() {
   const [friendsError, setFriendsError] = useState(null)
   const [friendsPagination, setFriendsPagination] = useState(null)
 
+  // Posts search state
+  const [postsResult, setPostsResult] = useState([])
+  const [postsLoading, setPostsLoading] = useState(false)
+  const [postsError, setPostsError] = useState(null)
+  const [postsPagination, setPostsPagination] = useState(null)
+
   const fetchFriendsSearch = useCallback(async () => {
     if (tab !== 'friends') return
     setFriendsLoading(true)
@@ -65,6 +71,125 @@ export function useSearchPage() {
   useEffect(() => {
     fetchFriendsSearch()
   }, [fetchFriendsSearch])
+
+  const fetchPostsSearch = useCallback(async () => {
+    if (tab !== 'posts') return
+    const term = q.trim()
+    if (!term) {
+      setPostsResult([])
+      setPostsPagination(null)
+      setPostsError(null)
+      return
+    }
+    setPostsLoading(true)
+    setPostsError(null)
+    try {
+      // Gửi q + phân trang lên backend, còn lại filter xử lý phía frontend
+      const res = await communityService.getPosts({
+        q: term,
+        page: 1,
+        limit: 50,
+      })
+      const data = Array.isArray(res?.data) ? res.data : res?.data?.data ?? []
+      const list = Array.isArray(data) ? data : []
+      const pagination = res?.meta?.pagination ?? res?.pagination ?? null
+      setPostsResult(list)
+      setPostsPagination(pagination)
+    } catch (err) {
+      setPostsError(err?.message ?? 'search.loadError')
+      setPostsResult([])
+      setPostsPagination(null)
+    } finally {
+      setPostsLoading(false)
+    }
+  }, [
+    tab,
+    q,
+    timeFilter,
+    sort,
+    contentType,
+    dateFrom,
+    dateTo,
+    hasComments,
+    hasLikes,
+    savedOnly,
+  ])
+
+  useEffect(() => {
+    fetchPostsSearch()
+  }, [fetchPostsSearch])
+
+  // Apply all post filters on frontend để chắc chắn hoạt động, kể cả khi backend chưa hỗ trợ
+  const filteredPosts = useMemo(() => {
+    if (!Array.isArray(postsResult)) return []
+    return postsResult
+      .filter((post) => {
+        if (!post) return false
+        const createdAt = post.createdAt ? new Date(post.createdAt) : null
+        const now = new Date()
+
+        // timeFilter
+        if (timeFilter === 'today' && createdAt) {
+          const isToday =
+            createdAt.toDateString() === now.toDateString()
+        if (!isToday) return false
+        } else if (timeFilter === 'week' && createdAt) {
+          const diffDays =
+            (now.getTime() - createdAt.getTime()) / 86400000
+          if (diffDays > 7) return false
+        } else if (timeFilter === 'month' && createdAt) {
+          const diffDays =
+            (now.getTime() - createdAt.getTime()) / 86400000
+          if (diffDays > 31) return false
+        }
+
+        // dateFrom / dateTo
+        if (dateFrom) {
+          const from = new Date(dateFrom)
+          if (createdAt && createdAt < from) return false
+        }
+        if (dateTo) {
+          const to = new Date(dateTo)
+          // include the whole end day
+          to.setHours(23, 59, 59, 999)
+          if (createdAt && createdAt > to) return false
+        }
+
+        // contentType
+        const hasImage =
+          Array.isArray(post.images) && post.images.length > 0
+        const hasVideo =
+          typeof post.video === 'string' && post.video.trim().length > 0
+        const hasOnlyText = !hasImage && !hasVideo
+        if (contentType === 'image' && !hasImage) return false
+        if (contentType === 'video' && !hasVideo) return false
+        if (contentType === 'text' && !hasOnlyText) return false
+
+        // interactions
+        const likeCount = Number(post.likeCount || 0)
+        const commentCount = Number(post.commentCount || 0)
+        if (hasComments && commentCount <= 0) return false
+        if (hasLikes && likeCount <= 0) return false
+
+        if (savedOnly && !post.saved) return false
+
+        return true
+      })
+      .sort((a, b) => {
+        const da = a.createdAt ? new Date(a.createdAt).getTime() : 0
+        const db = b.createdAt ? new Date(b.createdAt).getTime() : 0
+        return db - da // newest first
+      })
+  }, [
+    postsResult,
+    timeFilter,
+    dateFrom,
+    dateTo,
+    contentType,
+    hasComments,
+    hasLikes,
+    savedOnly,
+  ])
 
   const handleSendFriendRequest = useCallback(async (userId) => {
     try {
@@ -221,6 +346,11 @@ export function useSearchPage() {
     friendsLoading,
     friendsError,
     friendsPagination,
+    postsResult,
+    filteredPosts,
+    postsLoading,
+    postsError,
+    postsPagination,
     handleSearchSubmit,
     setTab,
     applyFilters,

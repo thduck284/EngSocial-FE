@@ -100,7 +100,7 @@ export function CreateGroupModal({ t, open, onClose, onSuccess }) {
     try {
       if (groupAvatarFile) {
         setAvatarUploading(true)
-        const data = await uploadService.uploadPostMedia(groupAvatarFile)
+        const data = await uploadService.uploadMedia(groupAvatarFile)
         avatarUrl = data?.url ?? null
         setAvatarUploading(false)
       }

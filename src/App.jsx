@@ -1,4 +1,4 @@
-import { Routes, Route, Navigate } from 'react-router-dom'
+import { Routes, Route, Navigate, useLocation } from 'react-router-dom'
 import { AuthProvider } from './context/AuthContext'
 import { LoginPage } from './pages/LoginPage'
 import { RegisterPage } from './pages/RegisterPage'
@@ -6,6 +6,7 @@ import { ForgotPasswordPage } from './pages/ForgotPasswordPage'
 import { ResetPasswordPage } from './pages/ResetPasswordPage'
 import { TermPage } from './pages/TermPage'
 import { DashboardPage } from './pages/DashboardPage'
+import { PostPhotoPage } from './pages/PostPhotoPage'
 import { EnterPage } from './pages/EnterPage'
 import { SkillPracticePage } from './pages/SkillPracticePage'
 import { ListeningLessonPage } from './pages/ListeningLessonPage'
@@ -28,6 +29,8 @@ import { RequireModeratorOrAdmin } from './components/layout/RequireModeratorOrA
 import { GuestOnlyLayout } from './components/layout/GuestOnlyLayout'
 
 function App() {
+  const location = useLocation()
+
   return (
     <AuthProvider>
       <Routes>
@@ -44,6 +47,7 @@ function App() {
       <Route path="/" element={<DashboardLayout />}>
         <Route index element={<Navigate to="/home" replace />} />
         <Route path="home" element={<DashboardPage />} />
+        <Route path="post/photo/:postId" element={<PostPhotoPage />} />
         <Route path="search" element={<SearchPage />} />
         <Route path="messages/conversation/:conversationId" element={<MessagesPage />} />
         <Route path="messages" element={<MessagesPage />} />

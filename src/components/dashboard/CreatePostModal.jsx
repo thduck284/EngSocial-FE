@@ -1,11 +1,11 @@
 import { useState, useRef, useEffect, useMemo } from 'react'
 import { createPortal } from 'react-dom'
 import { useTranslation } from 'react-i18next'
-import { useAuth } from '../context/AuthContext'
-import { communityService, uploadService } from '../services'
-import { searchGiphy, hasGiphyKey } from '../services/giphy.service'
-import { getMessageEmojiCategories } from '../utils/emoji'
-import { extractHashtags, extractMentionNames, getMentionRanges, resolveMentionIds } from '../utils/postContent'
+import { useAuth } from '../../context/AuthContext'
+import { communityService, uploadService } from '../../services'
+import { searchGiphy, hasGiphyKey } from '../../services/giphy.service'
+import { getMessageEmojiCategories } from '../../utils/emoji'
+import { extractHashtags, extractMentionNames, getMentionRanges, resolveMentionIds } from '../../utils/postContent'
 
 const DEFAULT_AVATAR = 'https://ui-avatars.com/api/?name=User&background=13b6ec&color=fff'
 
@@ -79,7 +79,7 @@ export function CreatePostModal({ open, onClose, onSuccess, friendsList = [] }) 
       : DEFAULT_AVATAR)
 
   const uploadFile = async (file) => {
-    const res = await uploadService.uploadPostMedia(file)
+    const res = await uploadService.uploadMedia(file)
     return res || {}
   }
 

@@ -5,7 +5,7 @@ import { useAuth } from '../context/AuthContext'
 import { ROUTES } from '../constants'
 import { TOPIC_OPTIONS, SKILL_TABS_LESSONS, LEVEL_COLORS } from '../constants/lessons'
 import { getLessonLink } from '../utils/lesson'
-import { useLessonsList } from '../hooks/useLessonsList'
+import { useLessonsList } from '../hooks/useLessons'
 
 export function LessonsPage() {
   const { t } = useTranslation()

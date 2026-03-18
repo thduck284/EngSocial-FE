@@ -4,9 +4,8 @@ import { useAuth } from '../context/AuthContext'
 import { SKILLS, SKILL_TABS } from '../raw'
 import { ROUTES } from '../constants'
 import { DEFAULT_AVATAR } from '../constants/ui'
-import { useSkillPractices } from '../hooks/useSkillPractices'
-import { useDashboardSocket } from '../hooks/useDashboardSocket'
-import { useDashboardFriends } from '../hooks/useDashboardFriends'
+import { useSkillPractices } from '../hooks/useLessons'
+import { useDashboardSocket, useDashboardFriends } from '../hooks'
 
 // Stable no-op so socket effect does not re-run every render (no group conversations on skills page)
 const noopSetGroupConversations = () => {}
@@ -281,7 +280,7 @@ export function SkillPracticePage() {
   return (
     <main className="max-w-[1440px] mx-auto grid grid-cols-12 gap-6 p-6">
       {/* Left sidebar - Add practice + Tabs + Filters + Goals + Roadmap */}
-      <aside className="col-span-12 lg:col-span-3 space-y-5 overflow-hidden">
+      <aside className="col-span-12 lg:col-span-3 space-y-5 overflow-hidden lg:sticky lg:top-4 self-start max-h-[calc(100vh-64px)] overflow-y-auto">
         <div className="space-y-4">
           <Link
             to={ROUTES.LESSON_HISTORY}
@@ -453,7 +452,7 @@ export function SkillPracticePage() {
       </section>
 
       {/* Right sidebar - Skill Stats + Friends, Achievements, Hot Games */}
-      <aside className="col-span-12 lg:col-span-3 space-y-6">
+      <aside className="col-span-12 lg:col-span-3 space-y-6 lg:sticky lg:top-4 self-start max-h-[calc(100vh-64px)] overflow-y-auto">
         <div className="bg-card-dark rounded-xl p-5 border border-border-dark">
           <h3 className="font-bold text-sm mb-4 flex items-center gap-2">
             <span className="material-symbols-outlined text-primary">analytics</span>

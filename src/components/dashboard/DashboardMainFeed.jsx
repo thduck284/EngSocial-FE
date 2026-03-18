@@ -1,8 +1,9 @@
 import { useRef, useEffect } from 'react'
 import { Link } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
-import { CreatePostModal } from '../CreatePostModal'
-import { StudyGroupsModal } from './StudyGroupsModal'
+import { ROUTES } from '../../constants'
+import { DEFAULT_AVATAR } from '../../constants/ui'
+import { CreatePostModal } from './CreatePostModal'
 import { DashboardPostCard } from './DashboardPostCard'
 
 /**
@@ -83,13 +84,128 @@ export function DashboardMainFeed({
         friendsList={friendsList}
       />
 
-      <StudyGroupsModal
-        open={studyGroups.showStudyGroupsModal}
-        onClose={() => studyGroups.setShowStudyGroupsModal(false)}
-        groupConversations={studyGroups.groupConversations}
-        groupConversationsLoading={studyGroups.groupConversationsLoading}
-        suggestedGroups={suggestedGroups}
-      />
+      {studyGroups.showStudyGroupsModal && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60"
+          onClick={() => studyGroups.setShowStudyGroupsModal(false)}
+        >
+          <div
+            className="bg-white dark:bg-[#111e22] rounded-2xl border border-slate-200 dark:border-[#325a67] shadow-xl w-full max-w-md max-h-[85vh] flex flex-col"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-center justify-between p-4 border-b border-slate-200 dark:border-[#325a67] shrink-0">
+              <h2 className="font-bold text-lg flex items-center gap-2">
+                <span className="material-symbols-outlined text-primary">groups</span>
+                {t('dashboard.studyGroups')}
+              </h2>
+              <button
+                type="button"
+                onClick={() => studyGroups.setShowStudyGroupsModal(false)}
+                className="p-2 rounded-lg text-slate-500 hover:bg-slate-100 dark:hover:bg-[#233f48] dark:hover:text-white"
+              >
+                <span className="material-symbols-outlined">close</span>
+              </button>
+            </div>
+            <div className="p-4 flex flex-col min-h-[200px]">
+              {studyGroups.groupConversationsLoading ? (
+                <div className="py-8 flex justify-center">
+                  <span className="material-symbols-outlined animate-spin text-3xl text-primary">
+                    progress_activity
+                  </span>
+                </div>
+              ) : (
+                <>
+                  <div
+                    className={`space-y-3 overflow-y-auto pr-1 custom-scrollbar ${
+                      studyGroups.groupConversations.length > 5 ? 'max-h-[50vh]' : ''
+                    }`}
+                  >
+                    {studyGroups.groupConversations.map((c) => {
+                      const convId = c.id ?? c._id
+                      const name = c.name || t('dashboard.studyGroups')
+                      const avatar =
+                        c.avatar ||
+                        (name
+                          ? `https://ui-avatars.com/api/?name=${encodeURIComponent(
+                              name
+                            )}&background=13b6ec&color=fff`
+                          : DEFAULT_AVATAR)
+                      const membersLabel =
+                        c.memberCount != null ? `${c.memberCount} ${t('dashboard.members')}` : ''
+                      const isGroupOnline = c.online === true
+                      return (
+                        <Link
+                          key={convId}
+                          to={ROUTES.MESSAGES_CONVERSATION(convId)}
+                          onClick={() => studyGroups.setShowStudyGroupsModal(false)}
+                          className="flex items-center gap-3 p-3 rounded-xl border border-slate-200 dark:border-[#325a67] hover:bg-slate-50 dark:hover:bg-[#233f48] transition-colors"
+                        >
+                          <div className="relative shrink-0">
+                            <img src={avatar} alt="" className="size-10 rounded-lg object-cover" />
+                            {isGroupOnline && (
+                              <span
+                                className="absolute bottom-0 right-0 size-2.5 bg-green-500 rounded-full border-2 border-white dark:border-[#111e22]"
+                                title={t('userProfile.online')}
+                              />
+                            )}
+                          </div>
+                          <div className="min-w-0 flex-1">
+                            <p className="font-semibold text-sm truncate">{name}</p>
+                            {membersLabel && (
+                              <p className="text-xs text-slate-500 dark:text-[#92bbc9]">
+                                {membersLabel}
+                              </p>
+                            )}
+                          </div>
+                          <span
+                            className="material-symbols-outlined text-slate-400 text-lg shrink-0"
+                            aria-hidden="true"
+                          >
+                            chat_bubble
+                          </span>
+                        </Link>
+                      )
+                    })}
+                  </div>
+                  {studyGroups.groupConversations.length === 0 &&
+                    suggestedGroups?.length > 0 && (
+                      <div className="space-y-3">
+                        {suggestedGroups.slice(0, 3).map((g, idx) => (
+                          <div
+                            key={g.title || idx}
+                            className="flex items-center gap-3 p-3 rounded-xl border border-slate-200 dark:border-[#325a67] bg-slate-50/50 dark:bg-[#233f48]/30"
+                          >
+                            <div
+                              className={`size-10 rounded-lg ${
+                                g.color || 'bg-primary/20'
+                              } flex items-center justify-center shrink-0`}
+                            >
+                              <span className="material-symbols-outlined text-white text-xl">
+                                {g.icon || 'groups'}
+                              </span>
+                            </div>
+                            <div className="min-w-0 flex-1">
+                              <p className="font-semibold text-sm truncate">{g.title}</p>
+                              <p className="text-xs text-slate-500 dark:text-[#92bbc9]">
+                                {g.members}
+                              </p>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  {studyGroups.groupConversations.length === 0 &&
+                    (!suggestedGroups || suggestedGroups.length === 0) && (
+                      <p className="text-sm text-slate-500 dark:text-[#92bbc9] py-4 text-center">
+                        {t('dashboard.noStudyGroups')}
+                      </p>
+                    )}
+                </>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
 
       <div className="flex items-center gap-4 bg-white/50 dark:bg-transparent p-1 rounded-xl">
         <div className="flex gap-2 p-1 bg-slate-200/50 dark:bg-[#111e22] rounded-xl border border-slate-200 dark:border-[#325a67]">

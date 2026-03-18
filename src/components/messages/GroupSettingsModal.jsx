@@ -118,7 +118,7 @@ export function GroupSettingsModal({ t, open, onClose, selected, currentUserId, 
     try {
       if (avatarFile) {
         setAvatarUploading(true)
-        const data = await uploadService.uploadPostMedia(avatarFile)
+        const data = await uploadService.uploadMedia(avatarFile)
         avatarUrl = data?.url ?? avatarUrl
         setAvatarUploading(false)
       }

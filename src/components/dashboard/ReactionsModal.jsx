@@ -6,11 +6,15 @@ import { POST_REACTION_TYPES, REACTION_TYPE_TO_EMOJI } from '../../constants'
 import { DEFAULT_AVATAR } from '../../constants/ui'
 import { communityService } from '../../services'
 
-/**
- * Modal: list of people who reacted to a post.
- * Tabs: All + each reaction type (icon + count). Click number opens with tab All; click icon opens with that type tab.
- */
-export function PostReactionsModal({ open, onClose, postId, initialTab = 'all', likeCount = 0, reactionCounts: initialReactionCounts = {} }) {
+export function ReactionsModal({
+  open,
+  onClose,
+  mode, // 'post' | 'comment'
+  entityId,
+  initialTab = 'all',
+  likeCount = 0,
+  initialReactionCounts = {},
+}) {
   const { t } = useTranslation()
   const [reactions, setReactions] = useState([])
   const [reactionCounts, setReactionCounts] = useState(initialReactionCounts)
@@ -22,18 +26,24 @@ export function PostReactionsModal({ open, onClose, postId, initialTab = 'all', 
   }, [initialTab, open])
 
   useEffect(() => {
-    if (!open || !postId) return
+    if (!open || !entityId || (mode !== 'post' && mode !== 'comment')) return
     setLoading(true)
-    communityService
-      .getPostReactions(postId)
+    const fetcher =
+      mode === 'post'
+        ? communityService.getPostReactions
+        : communityService.getCommentReactions
+
+    fetcher(entityId)
       .then((res) => {
         const data = res?.data ?? res
         if (data?.reactions) setReactions(data.reactions)
-        if (data?.reactionCounts && typeof data.reactionCounts === 'object') setReactionCounts(data.reactionCounts)
+        if (data?.reactionCounts && typeof data.reactionCounts === 'object') {
+          setReactionCounts(data.reactionCounts)
+        }
       })
       .catch(() => {})
       .finally(() => setLoading(false))
-  }, [open, postId])
+  }, [open, entityId, mode])
 
   const totalCount = Number(likeCount) || reactions.length
   const tabTypes = ['all', ...POST_REACTION_TYPES.filter((type) => (reactionCounts[type] || 0) > 0)]
@@ -43,12 +53,16 @@ export function PostReactionsModal({ open, onClose, postId, initialTab = 'all', 
     return reactionCounts[tab] || 0
   }
 
-  const filteredReactions = activeTab === 'all' ? reactions : reactions.filter((r) => r.reaction === activeTab)
+  const filteredReactions =
+    activeTab === 'all' ? reactions : reactions.filter((r) => r.reaction === activeTab)
 
   if (!open) return null
 
   const content = (
-    <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm" onClick={onClose}>
+    <div
+      className="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm"
+      onClick={onClose}
+    >
       <div
         className="bg-white dark:bg-[#1a353d] rounded-2xl shadow-xl w-full max-w-md max-h-[85vh] flex flex-col overflow-hidden border border-slate-200 dark:border-[#325a67]"
         onClick={(e) => e.stopPropagation()}
@@ -61,7 +75,10 @@ export function PostReactionsModal({ open, onClose, postId, initialTab = 'all', 
             {tabTypes.map((tab) => {
               const count = getCountForTab(tab)
               const isSelected = activeTab === tab
-              const label = tab === 'all' ? t('dashboard.reactionsModalAll') : t(`dashboard.reaction${tab.charAt(0).toUpperCase() + tab.slice(1)}`)
+              const label =
+                tab === 'all'
+                  ? t('dashboard.reactionsModalAll')
+                  : t(`dashboard.reaction${tab.charAt(0).toUpperCase() + tab.slice(1)}`)
               const icon = tab === 'all' ? null : REACTION_TYPE_TO_EMOJI[tab]
               return (
                 <button
@@ -133,3 +150,4 @@ export function PostReactionsModal({ open, onClose, postId, initialTab = 'all', 
 
   return createPortal(content, document.body)
 }
+

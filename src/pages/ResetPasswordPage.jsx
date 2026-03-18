@@ -1,7 +1,7 @@
 import { Link, useSearchParams } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { LanguageSwitcher } from '../components/ui/LanguageSwitcher'
-import { useResetPassword } from '../hooks/useResetPassword'
+import { useResetPassword } from '../hooks'
 import { ROUTES } from '../constants'
 
 const inputBase = 'w-full bg-slate-800/50 border text-white rounded-xl pl-10 pr-4 py-3 focus:ring-0 input-glow transition-all placeholder-slate-600'

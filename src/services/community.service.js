@@ -24,7 +24,21 @@ export const communityService = {
   getPostReactions: async (id) => {
     return apiClient.get(API_ENDPOINTS.COMMUNITY.POST_REACTIONS(id))
   },
-  commentPost: async (id, comment) => {
-    return apiClient.post(API_ENDPOINTS.COMMUNITY.COMMENT_POST(id), { comment })
+  getComments: async (postId, { parentId, page, limit } = {}) => {
+    const params = new URLSearchParams()
+    if (parentId) params.set('parentId', parentId)
+    if (page != null) params.set('page', String(page))
+    if (limit != null) params.set('limit', String(limit))
+    const qs = params.toString()
+    return apiClient.get(`${API_ENDPOINTS.COMMUNITY.COMMENT_POST(postId)}${qs ? `?${qs}` : ''}`)
+  },
+  commentPost: async (postId, payload) => {
+    return apiClient.post(API_ENDPOINTS.COMMUNITY.COMMENT_POST(postId), payload)
+  },
+  setCommentReaction: async (commentId, reaction) => {
+    return apiClient.post(`/community/comments/${commentId}/reaction`, { reaction })
+  },
+  getCommentReactions: async (commentId) => {
+    return apiClient.get(`/community/comments/${commentId}/reactions`)
   },
 }

@@ -6,23 +6,9 @@ import {
   MOCK_LEADERBOARD,
 } from '../../constants/search'
 
-export function SearchRightSidebar({ t, searchInput, setSearchInput, onSearchSubmit }) {
+export function SearchRightSidebar({ t }) {
   return (
     <>
-      <div className="relative group">
-        <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 group-focus-within:text-primary">
-          search
-        </span>
-        <input
-          type="text"
-          value={searchInput}
-          onChange={(e) => setSearchInput(e.target.value)}
-          onKeyDown={(e) => e.key === 'Enter' && onSearchSubmit()}
-          className="w-full bg-card-dark border border-border-dark rounded-lg pl-10 pr-4 py-2.5 text-sm focus:ring-1 focus:ring-primary outline-none transition-all text-white placeholder-gray-500"
-          placeholder={t('dashboard.quickSearch')}
-        />
-      </div>
-
       <div className="bg-card-dark rounded-xl p-4 border border-border-dark space-y-4">
         <h3 className="font-bold text-sm text-white flex items-center justify-between">
           {t('dashboard.friendSuggestions')}

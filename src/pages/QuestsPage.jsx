@@ -180,7 +180,7 @@ export function QuestsPage() {
               className="inline-flex items-center gap-2 px-4 py-2.5 bg-primary hover:bg-primary/90 text-background-dark font-bold rounded-xl text-sm transition-all shadow-lg shadow-primary/20"
             >
               <span className="material-symbols-outlined text-lg">add_circle</span>
-              Thêm quest
+              {t('quests.addQuestBtn')}
             </Link>
           )}
           {canAddQuest && tab === TAB_CHALLENGES && (
@@ -189,7 +189,7 @@ export function QuestsPage() {
               className="inline-flex items-center gap-2 px-4 py-2.5 bg-primary hover:bg-primary/90 text-background-dark font-bold rounded-xl text-sm transition-all shadow-lg shadow-primary/20"
             >
               <span className="material-symbols-outlined text-lg">add_circle</span>
-              Thêm challenge
+              {t('quests.addChallengeBtn')}
             </Link>
           )}
         </div>
@@ -240,11 +240,11 @@ export function QuestsPage() {
               <h2 className="mb-3 text-xs font-semibold uppercase tracking-wide text-gray-400">
                 {t(TYPE_LABELS[type] || 'quests.daily')}
               </h2>
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 w-full">
+              <div className="flex gap-4 overflow-x-auto hide-scrollbar pb-1 flex-nowrap">
                 {list.map((quest) => (
                   <div
                     key={quest.id || quest.title}
-                    className="bg-card-dark rounded-xl p-5 border border-border-dark hover:border-primary/50 transition-all w-full min-w-0 min-h-[200px] flex flex-col"
+                    className="bg-card-dark rounded-xl p-5 border border-border-dark hover:border-primary/50 transition-all flex-shrink-0 flex flex-col w-[360px] max-w-[360px]"
                     style={{ boxSizing: 'border-box' }}
                   >
                     <div className="flex items-start justify-between gap-2 mb-3 min-h-[28px] shrink-0">
@@ -322,11 +322,11 @@ export function QuestsPage() {
               <h2 className="mb-3 text-xs font-semibold uppercase tracking-wide text-gray-400">
                 {t(CHALLENGE_TYPE_LABELS[type] || 'quests.weekly')}
               </h2>
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 w-full">
+              <div className="flex gap-4 overflow-x-auto hide-scrollbar pb-1 flex-nowrap">
                 {list.map((challenge) => (
                   <div
                     key={challenge.id}
-                    className="bg-card-dark rounded-xl p-5 border border-border-dark hover:border-primary/50 transition-all w-full min-w-0 min-h-[200px] flex flex-col"
+                    className="bg-card-dark rounded-xl p-5 border border-border-dark hover:border-primary/50 transition-all flex-shrink-0 flex flex-col w-[360px] max-w-[360px]"
                     style={{ boxSizing: 'border-box' }}
                   >
                     <div className="flex items-start justify-between gap-2 mb-3 min-h-[28px] shrink-0">

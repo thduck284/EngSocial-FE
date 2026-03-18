@@ -1,7 +1,6 @@
 import { Link } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { ROUTES } from '../constants'
-import { MOCK_POSTS, MOCK_POSTS_COUNT } from '../constants/search'
 import { useSearchPage } from '../hooks/useSearchPage'
 import {
   FilterPostsSidebar,
@@ -11,9 +10,13 @@ import {
   SearchResultsPosts,
   SearchRightSidebar,
 } from '../components/search'
+import { useAuth } from '../context/AuthContext'
+import { useDashboardData, useDashboardFriends, useDashboardSocket, useStudyGroups } from '../hooks'
+import { DashboardRightSidebar } from '../components/dashboard/DashboardRightSidebar'
 
 export function SearchPage() {
   const { t } = useTranslation()
+  const { user } = useAuth()
   const search = useSearchPage()
 
   const {
@@ -46,13 +49,49 @@ export function SearchPage() {
     friendsResult,
     friendsLoading,
     friendsError,
+    friendsPagination,
     handleSearchSubmit,
     setTab,
     applyFilters,
     clearFilters,
     handleSendFriendRequest,
     handleCancelFriendRequest,
+    postsResult,
+    filteredPosts,
+    postsLoading,
+    postsError,
+    postsPagination,
   } = search
+
+  const postsCount =
+    postsPagination?.total ?? filteredPosts.length ?? postsResult.length
+
+  // Reuse dashboard hooks so right sidebar (Friend suggestions, Study groups, Weekly leaderboard)
+  // looks exactly like home.
+  const studyGroups = useStudyGroups()
+  const { onlineUserIds } = useDashboardSocket(user, studyGroups.setGroupConversations)
+  const {
+    weeklyLeaderboard,
+    weeklyLeaderboardLoading,
+  } = useDashboardData()
+  const friends = useDashboardFriends(onlineUserIds)
+
+  const {
+    friendsFilterTab: dashFriendsFilterTab,
+    setFriendsFilterTab: setDashFriendsFilterTab,
+    friendTab,
+    setFriendTab,
+    suggestionsList,
+    sentRequestsList,
+    receivedRequestsList,
+    friendTabLoading,
+    loadFriendTabData,
+    displayedFriendsList,
+    friendSelectOpen,
+    setFriendSelectOpen,
+    friendSelectRef,
+  } = friends
+  const friendsCount = friendsPagination?.total ?? friendsResult.length
 
   const renderFilterSidebar = () => {
     if (tab === 'friends')
@@ -103,7 +142,7 @@ export function SearchPage() {
   return (
     <main className="max-w-[1440px] mx-auto px-4 lg:px-10 py-6">
       <div className="grid grid-cols-1 md:grid-cols-12 gap-6">
-        <aside className="hidden md:block md:col-span-3 space-y-6 overflow-y-auto max-h-[calc(100vh-120px)] pr-2">
+        <aside className="hidden md:block md:col-span-3 pr-2 md:sticky md:top-4 self-start max-h-[calc(100vh-64px)] overflow-y-auto space-y-6">
           {renderFilterSidebar()}
         </aside>
 
@@ -131,17 +170,22 @@ export function SearchPage() {
               >
                 {t('search.tabPosts')}{' '}
                 <span className="bg-primary/20 text-primary px-2 py-0.5 rounded-full text-[10px]">
-                  {MOCK_POSTS_COUNT}
+                  {postsCount}
                 </span>
               </button>
               <button
                 type="button"
                 onClick={() => setTab('friends')}
-                className={`pb-3 text-sm font-medium transition-colors whitespace-nowrap ${
-                  tab === 'friends' ? 'text-primary border-b-2 border-primary' : 'text-gray-400 hover:text-gray-200'
+                className={`pb-3 text-sm font-medium flex items-center gap-2 transition-colors whitespace-nowrap ${
+                  tab === 'friends'
+                    ? 'text-primary border-b-2 border-primary'
+                    : 'text-gray-400 hover:text-gray-200'
                 }`}
               >
                 {t('search.tabFriends')}
+                <span className="bg-primary/20 text-primary px-2 py-0.5 rounded-full text-[10px]">
+                  {friendsCount}
+                </span>
               </button>
               <button
                 type="button"
@@ -156,7 +200,14 @@ export function SearchPage() {
           </div>
 
           {tab === 'posts' && (
-            <SearchResultsPosts t={t} posts={MOCK_POSTS} postsCount={MOCK_POSTS_COUNT} query={q} />
+            <SearchResultsPosts
+              t={t}
+              posts={filteredPosts}
+              postsCount={postsCount}
+              query={q}
+              loading={postsLoading}
+              error={postsError}
+            />
           )}
 
           {tab === 'friends' && (
@@ -180,12 +231,24 @@ export function SearchPage() {
           )}
         </div>
 
-        <aside className="hidden lg:block lg:col-span-3 space-y-6">
-          <SearchRightSidebar
-            t={t}
-            searchInput={searchInput}
-            setSearchInput={setSearchInput}
-            onSearchSubmit={handleSearchSubmit}
+        <aside className="hidden lg:block lg:col-span-3 lg:sticky lg:top-4 self-start max-h-[calc(100vh-64px)] overflow-y-auto space-y-6">
+          <DashboardRightSidebar
+            friendSelectRef={friendSelectRef}
+            friendSelectOpen={friendSelectOpen}
+            setFriendSelectOpen={setFriendSelectOpen}
+            friendTab={friendTab}
+            setFriendTab={setFriendTab}
+            friendTabLoading={friendTabLoading}
+            suggestionsList={suggestionsList}
+            sentRequestsList={sentRequestsList}
+            receivedRequestsList={receivedRequestsList}
+            loadFriendTabData={loadFriendTabData}
+            friendsFilterTab={dashFriendsFilterTab}
+            setFriendsFilterTab={setDashFriendsFilterTab}
+            displayedFriendsList={displayedFriendsList}
+            onlineUserIds={onlineUserIds}
+            weeklyLeaderboard={weeklyLeaderboard}
+            weeklyLeaderboardLoading={weeklyLeaderboardLoading}
           />
         </aside>
       </div>

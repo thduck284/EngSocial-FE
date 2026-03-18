@@ -4,7 +4,7 @@ import { getStoredUser, getAuthToken, getRefreshToken, getAuthStorage } from '..
 import { authService } from '../services'
 import { ROUTES } from '../constants'
 
-const REFRESH_INTERVAL_MS = 10 * 60 * 1000 // 10 phút gia hạn một lần (token 15m)
+const REFRESH_INTERVAL_MS = 10 * 60 * 1000 
 
 const AuthContext = createContext(null)
 

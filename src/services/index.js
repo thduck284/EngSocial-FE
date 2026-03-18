@@ -1,6 +1,5 @@
 // Auth
-export { authService } from './auth.service.js'
-export { submitRegisterForm, submitLoginForm } from './authForm.service.js'
+export { authService, submitRegisterForm, submitLoginForm } from './auth.service.js'
 export {
   validateRegisterForm,
   validateLoginForm,
