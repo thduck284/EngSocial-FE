@@ -2,25 +2,30 @@ import { useState, useEffect, useRef } from 'react'
 import { createPortal } from 'react-dom'
 import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
-import { DEFAULT_AVATAR } from '../../constants/ui'
+import { useAuth } from '../../context/AuthContext'
 import { formatPostTime } from '../../utils/dateTime'
 import { ROUTES, API_ENDPOINTS, buildApiUrl, POST_REACTION_TYPES, REACTION_TYPE_TO_EMOJI } from '../../constants'
-import { communityService, uploadService } from '../../services'
+import { uploadService } from '../../services'
 import { searchGiphy, hasGiphyKey } from '../../services/giphy.service'
-import { ReactionsModal } from './ReactionsModal'
-import { PostCommentsSectionBase } from './PostCommentsSectionBase'
-import { PostContentBody } from './PostContentBody'
-import { MentionedUsersModal } from './MentionedUsersModal'
-import { PostImageViewerModal } from './PostImageViewerModal'
+import { ReactionsModal } from '../ui/post/ReactionsModal'
+import { PostCommentsSectionBase } from '../ui/post/PostCommentsSectionBase'
+import { PostContentBody } from '../ui/post/PostContentBody'
+import { PostOptionsMenu } from '../ui/post/PostOptionsMenu'
+import { MentionedUsersModal } from '../ui/post/MentionedUsersModal'
+import { PostImageViewerModal } from '../ui/post/PostImageViewerModal'
+import { SharedPostPreviewCard } from '../ui/post/SharedPostPreviewCard'
+import { EditPostModal } from '../ui/post/EditPostModal'
+import { useDashboardPostCard } from '../../hooks'
 import { usePostReactionPicker, useDashboardPostComments } from '../../hooks/usePostInteractions'
-import { PostShareModal } from './PostShareModal'
-import { formatReactionCount, normalizeMentions } from '../../utils/post'
+import { PostShareModal } from '../ui/post/PostShareModal'
+import { formatReactionCount } from '../../utils/post'
 
 /** Max characters to show before "See more" */
 const MAX_CONTENT_PREVIEW = 300
 
-export function DashboardPostCard({ post, onToggleLike }) {
+export function DashboardPostCard({ post, onToggleLike, onUpdatePost, onDeletePost }) {
   const { t } = useTranslation()
+  const { user } = useAuth()
   const navigate = useNavigate()
   const location = useLocation()
   const [showMentionsModal, setShowMentionsModal] = useState(false)
@@ -32,9 +37,24 @@ export function DashboardPostCard({ post, onToggleLike }) {
   const [likeLoading, setLikeLoading] = useState(false)
   const [showReactionsModal, setShowReactionsModal] = useState(false)
   const [reactionsModalInitialTab, setReactionsModalInitialTab] = useState('all')
+  const [modalMentions, setModalMentions] = useState([])
+  const [viewerPost, setViewerPost] = useState(post)
+  const [editingPost, setEditingPost] = useState(false)
+  const [editContent, setEditContent] = useState('')
+  const [editImages, setEditImages] = useState([])
+  const [editVideoUrl, setEditVideoUrl] = useState('')
+  const [editDocuments, setEditDocuments] = useState([])
+  const [editVisibility, setEditVisibility] = useState('public')
+  const [editError, setEditError] = useState('')
+  const [postActionLoading, setPostActionLoading] = useState(false)
+  const [editUploading, setEditUploading] = useState(false)
+  const [isSavedPost, setIsSavedPost] = useState(Boolean(post?.saved ?? post?.isSaved))
   if (!post) return null
 
   const postId = post?.id ?? post?._id
+  const currentUserId = user?.id ?? user?._id
+  const authorId = post?.author?.id ?? post?.author?._id ?? post?.authorId
+  const isOwnPost = Boolean(currentUserId && authorId && String(currentUserId) === String(authorId))
   const isLiked = Boolean(post?.liked)
   const userReaction = post?.userReaction || null
   const likeCount = Number(post?.likeCount) ?? 0
@@ -106,55 +126,117 @@ export function DashboardPostCard({ post, onToggleLike }) {
     loadMoreThreadComments,
   } = useDashboardPostComments(postId, t)
 
-  const handleLikeClick = () => {
-    if (!postId || likeLoading || typeof onToggleLike !== 'function') return
-    setLikeLoading(true)
-    hideCardReactionPicker()
-    const reactionToSend = isLiked ? userReaction || 'like' : 'like'
-    communityService
-      .setReaction(postId, reactionToSend)
-      .then((res) => {
-        const data = res?.data ?? res
-        const liked = data?.liked === true
-        const nextReaction = data?.userReaction ?? null
-        const nextCount = typeof data?.likeCount === 'number' ? data.likeCount : undefined
-        const reactionCounts = data?.reactionCounts && typeof data.reactionCounts === 'object' ? data.reactionCounts : undefined
-        onToggleLike(postId, { liked, userReaction: nextReaction, likeCount: nextCount, reactionCounts })
-      })
-      .catch(() => {})
-      .finally(() => setLikeLoading(false))
+  const {
+    author,
+    authorAvatar,
+    mentionsList,
+    hasMentions,
+    firstMention,
+    firstMentionId,
+    othersCount,
+    contentToShow,
+    isLongContent,
+    contentPreview,
+    imagesList,
+    documentsList,
+    sharedPost,
+    sharedMentions,
+    handleLikeClick,
+    handleReactionClick,
+    handleOpenEdit,
+    handleSaveEdit,
+    handleDeletePost,
+    handleReportPost,
+    handleToggleSavePost,
+  } = useDashboardPostCard({
+    post,
+    postId,
+    isLiked,
+    userReaction,
+    onToggleLike,
+    likeLoading,
+    setLikeLoading,
+    hideCardReactionPicker,
+    contentExpanded,
+    maxContentPreview: MAX_CONTENT_PREVIEW,
+    setModalMentions,
+    setViewerPost,
+    setIsSavedPost,
+    isOwnPost,
+    postActionLoading,
+    setEditContent,
+    setEditImages,
+    setEditVideoUrl,
+    setEditDocuments,
+    setEditVisibility,
+    setEditingPost,
+    editContent,
+    editImages,
+    editVideoUrl,
+    editDocuments,
+    editVisibility,
+    setEditError,
+    setPostActionLoading,
+    onUpdatePost,
+    onDeletePost,
+    isSavedPost,
+    t,
+  })
+  const canSubmitEdit =
+    editContent.trim().length > 0 ||
+    editImages.length > 0 ||
+    Boolean(editVideoUrl) ||
+    editDocuments.length > 0
+
+  const handleEditImageSelect = async (e) => {
+    const files = Array.from(e.target.files || [])
+    if (!files.length) return
+    setEditUploading(true)
+    try {
+      const res = await uploadService.uploadMany(files, 'posts/images')
+      const urls = Array.isArray(res?.urls) ? res.urls : []
+      setEditImages((prev) => [...prev, ...urls])
+    } catch {
+      setEditError(t('profile.saveFailed'))
+    } finally {
+      setEditUploading(false)
+      e.target.value = ''
+    }
   }
 
-  const handleReactionClick = (reactionType) => {
-    if (!postId || likeLoading || typeof onToggleLike !== 'function') return
-    setLikeLoading(true)
-    hideCardReactionPicker()
-    communityService
-      .setReaction(postId, reactionType)
-      .then((res) => {
-        const data = res?.data ?? res
-        const liked = data?.liked === true
-        const nextReaction = data?.userReaction ?? null
-        const nextCount = typeof data?.likeCount === 'number' ? data.likeCount : undefined
-        const reactionCounts = data?.reactionCounts && typeof data.reactionCounts === 'object' ? data.reactionCounts : undefined
-        onToggleLike(postId, { liked, userReaction: nextReaction, likeCount: nextCount, reactionCounts })
-      })
-      .catch(() => {})
-      .finally(() => setLikeLoading(false))
+  const handleEditVideoSelect = async (e) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+    setEditUploading(true)
+    try {
+      const res = await uploadService.uploadVideo(file, 'posts/videos')
+      const url = typeof res?.url === 'string' ? res.url : ''
+      if (url) setEditVideoUrl(url)
+    } catch {
+      setEditError(t('profile.saveFailed'))
+    } finally {
+      setEditUploading(false)
+      e.target.value = ''
+    }
   }
 
-  const author = post.author ?? {}
-  const authorAvatar = author.avatar || (author.name ? `https://ui-avatars.com/api/?name=${encodeURIComponent(author.name)}&background=13b6ec&color=fff` : DEFAULT_AVATAR)
-  const mentionsList = normalizeMentions(post.mentions)
-  const hasMentions = mentionsList.length > 0
-  const firstMention = hasMentions ? mentionsList[0] : null
-  const firstMentionId = firstMention && (firstMention.id ?? (typeof firstMention === 'string' ? firstMention : null))
-  const othersCount = hasMentions ? mentionsList.length - 1 : 0
-  const contentToShow = post.content != null ? String(post.content) : ''
-  const isLongContent = contentToShow.length > MAX_CONTENT_PREVIEW
-  const contentPreview = isLongContent && !contentExpanded ? contentToShow.slice(0, MAX_CONTENT_PREVIEW) : contentToShow
-  const imagesList = Array.isArray(post.images) ? post.images.filter((url) => typeof url === 'string' && url.trim()) : []
-  const documentsList = Array.isArray(post.documents) ? post.documents : []
+  const handleEditDocSelect = async (e) => {
+    const files = Array.from(e.target.files || [])
+    if (!files.length) return
+    setEditUploading(true)
+    try {
+      const res = await uploadService.uploadMany(files, 'posts/documents')
+      const urls = Array.isArray(res?.urls) ? res.urls : []
+      const names = Array.isArray(res?.fileNames) ? res.fileNames : []
+      const docs = urls.map((url, i) => ({ url, name: names[i] || '' }))
+      setEditDocuments((prev) => [...prev, ...docs])
+    } catch {
+      setEditError(t('profile.saveFailed'))
+    } finally {
+      setEditUploading(false)
+      e.target.value = ''
+    }
+  }
 
   return (
     <>
@@ -173,24 +255,27 @@ export function DashboardPostCard({ post, onToggleLike }) {
                   {firstMention && firstMentionId && (
                     <>
                       {' '}
-                      <span className="font-medium text-slate-600 dark:text-slate-300">
+                      <span className="text-sm font-medium text-slate-600 dark:text-slate-300">
                         {t('dashboard.with')}
                       </span>{' '}
                       <Link
                         to={ROUTES.PROFILE_USER(firstMentionId)}
-                        className="font-bold text-primary hover:underline"
+                        className="text-sm font-bold text-primary hover:underline"
                       >
                         {firstMention.name || firstMentionId}
                       </Link>
                       {othersCount > 0 && (
                         <>
-                          <span className="font-medium text-slate-600 dark:text-slate-300">
+                          <span className="text-sm font-medium text-slate-600 dark:text-slate-300">
                             {t('dashboard.and')}
                           </span>
                           <button
                             type="button"
-                            onClick={() => setShowMentionsModal(true)}
-                            className="font-bold text-primary hover:underline ml-0.5"
+                            onClick={() => {
+                              setModalMentions(mentionsList)
+                              setShowMentionsModal(true)
+                            }}
+                            className="text-sm font-bold text-primary hover:underline ml-0.5"
                           >
                             {t('dashboard.othersCount', { count: othersCount })}
                           </button>
@@ -202,9 +287,15 @@ export function DashboardPostCard({ post, onToggleLike }) {
               <p className="text-xs text-slate-400 dark:text-[#92bbc9]">{formatPostTime(post.createdAt)} • {post.visibility === 'public' ? (t('dashboard.public') || 'Công khai') : post.visibility}</p>
             </div>
           </div>
-          <button type="button" className="text-slate-400 dark:text-[#92bbc9] hover:bg-slate-100 dark:hover:bg-[#233f48] rounded p-1">
-            <span className="material-symbols-outlined">more_horiz</span>
-          </button>
+          <PostOptionsMenu
+            isOwnPost={isOwnPost}
+            isSavedPost={isSavedPost}
+            disabled={postActionLoading}
+            onToggleSave={handleToggleSavePost}
+            onEdit={handleOpenEdit}
+            onDelete={handleDeletePost}
+            onReport={handleReportPost}
+          />
         </div>
         {/* Content: post body (hashtags, @mentions); long content truncated with "See more" */}
         {(contentToShow || imagesList.length > 0 || post.video || documentsList.length > 0) ? (
@@ -230,6 +321,30 @@ export function DashboardPostCard({ post, onToggleLike }) {
             )}
           </div>
         ) : null}
+
+        {sharedPost && (
+          <SharedPostPreviewCard
+            sharedPost={sharedPost}
+            sharedMentions={sharedMentions}
+            contentExpanded={contentExpanded}
+            onToggleContentExpanded={() => setContentExpanded((v) => !v)}
+            onOpenMentions={() => {
+              setModalMentions(sharedMentions)
+              setShowMentionsModal(true)
+            }}
+            onOpenImageViewer={(index) => {
+              setViewerPost(sharedPost)
+              setImageViewerIndex(index)
+              const spId = sharedPost?.id ?? sharedPost?._id
+              if (spId) {
+                const params = new URLSearchParams()
+                params.set('image', String(index))
+                navigate(`/post/photo/${spId}?${params.toString()}`)
+              }
+            }}
+          />
+        )}
+
         {imagesList.length > 0 && (
           <div className="mt-4 rounded-xl overflow-hidden border border-slate-200 dark:border-[#325a67] flex flex-wrap gap-1">
             {imagesList.map((url, i) => (
@@ -263,7 +378,7 @@ export function DashboardPostCard({ post, onToggleLike }) {
           setImageViewerIndex(null)
           navigate(-1)
         }}
-        post={post}
+        post={viewerPost}
         initialImageIndex={imageViewerIndex ?? 0}
         onLikeClick={typeof onToggleLike === 'function' ? handleLikeClick : undefined}
         likeLoading={likeLoading}
@@ -481,7 +596,7 @@ export function DashboardPostCard({ post, onToggleLike }) {
       <MentionedUsersModal
         open={showMentionsModal}
         onClose={() => setShowMentionsModal(false)}
-        mentions={mentionsList}
+        mentions={modalMentions.length ? modalMentions : mentionsList}
       />
 
       <PostShareModal
@@ -489,6 +604,41 @@ export function DashboardPostCard({ post, onToggleLike }) {
         onClose={() => setShowShareModal(false)}
         post={post}
         t={t}
+      />
+      <EditPostModal
+        open={editingPost}
+        t={t}
+        authorName={author.name}
+        authorAvatar={authorAvatar}
+        content={editContent}
+        setContent={(v) => {
+          setEditContent(v)
+          if (editError) setEditError('')
+        }}
+        visibility={editVisibility}
+        setVisibility={setEditVisibility}
+        images={editImages}
+        videoUrl={editVideoUrl}
+        documents={editDocuments}
+        onImageSelect={handleEditImageSelect}
+        onVideoSelect={handleEditVideoSelect}
+        onDocSelect={handleEditDocSelect}
+        onAddGif={(url) => {
+          if (!url) return
+          setEditImages((prev) => [...prev, url])
+        }}
+        removeImage={(idx) => setEditImages((prev) => prev.filter((_, i) => i !== idx))}
+        removeVideo={() => setEditVideoUrl('')}
+        removeDoc={(idx) => setEditDocuments((prev) => prev.filter((_, i) => i !== idx))}
+        onClose={() => {
+          setEditingPost(false)
+          if (editError) setEditError('')
+        }}
+        onSave={handleSaveEdit}
+        loading={postActionLoading}
+        uploading={editUploading}
+        error={editError}
+        canSubmit={canSubmitEdit}
       />
     </>
   )

@@ -2,14 +2,14 @@ import { useState, useEffect } from 'react'
 import { createPortal } from 'react-dom'
 import { Link } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
-import { POST_REACTION_TYPES, REACTION_TYPE_TO_EMOJI } from '../../constants'
-import { DEFAULT_AVATAR } from '../../constants/ui'
-import { communityService } from '../../services'
+import { POST_REACTION_TYPES, REACTION_TYPE_TO_EMOJI } from '../../../constants'
+import { DEFAULT_AVATAR } from '../../../constants/ui'
+import { communityService } from '../../../services'
 
 export function ReactionsModal({
   open,
   onClose,
-  mode, // 'post' | 'comment'
+  mode,
   entityId,
   initialTab = 'all',
   likeCount = 0,
@@ -29,9 +29,7 @@ export function ReactionsModal({
     if (!open || !entityId || (mode !== 'post' && mode !== 'comment')) return
     setLoading(true)
     const fetcher =
-      mode === 'post'
-        ? communityService.getPostReactions
-        : communityService.getCommentReactions
+      mode === 'post' ? communityService.getPostReactions : communityService.getCommentReactions
 
     fetcher(entityId)
       .then((res) => {
@@ -53,16 +51,12 @@ export function ReactionsModal({
     return reactionCounts[tab] || 0
   }
 
-  const filteredReactions =
-    activeTab === 'all' ? reactions : reactions.filter((r) => r.reaction === activeTab)
+  const filteredReactions = activeTab === 'all' ? reactions : reactions.filter((r) => r.reaction === activeTab)
 
   if (!open) return null
 
   const content = (
-    <div
-      className="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm"
-      onClick={onClose}
-    >
+    <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm" onClick={onClose}>
       <div
         className="bg-white dark:bg-[#1a353d] rounded-2xl shadow-xl w-full max-w-md max-h-[85vh] flex flex-col overflow-hidden border border-slate-200 dark:border-[#325a67]"
         onClick={(e) => e.stopPropagation()}
@@ -116,11 +110,7 @@ export function ReactionsModal({
                     onClick={onClose}
                     className="flex items-center gap-3 py-2.5 px-3 rounded-xl hover:bg-slate-50 dark:hover:bg-[#233f48] transition-colors"
                   >
-                    <img
-                      src={r.avatar || DEFAULT_AVATAR}
-                      alt=""
-                      className="w-10 h-10 rounded-full object-cover shrink-0 ring-2 ring-slate-200 dark:ring-[#325a67]"
-                    />
+                    <img src={r.avatar || DEFAULT_AVATAR} alt="" className="w-10 h-10 rounded-full object-cover shrink-0 ring-2 ring-slate-200 dark:ring-[#325a67]" />
                     <span className="flex-1 text-sm font-medium text-slate-800 dark:text-slate-200 truncate">
                       {r.name || '—'}
                     </span>
@@ -150,4 +140,3 @@ export function ReactionsModal({
 
   return createPortal(content, document.body)
 }
-

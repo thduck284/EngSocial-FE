@@ -25,6 +25,14 @@ export const userService = {
     return apiClient.get(API_ENDPOINTS.USER.STATS)
   },
 
+  getSkillsProfile: async () => {
+    return apiClient.get(API_ENDPOINTS.USER.SKILLS_PROFILE)
+  },
+
+  updateSkillsProfile: async (payload) => {
+    return apiClient.patch(API_ENDPOINTS.USER.SKILLS_PROFILE, payload)
+  },
+
   getGoals: async () => {
     return apiClient.get(API_ENDPOINTS.USER.GOALS)
   },

@@ -1,3 +1,7 @@
+import { useMemo } from 'react'
+import { useTranslation } from 'react-i18next'
+import { MATERIAL_ICON_SUGGESTIONS } from '../../constants/materialIcons'
+
 function FieldLabel({ children }) {
   return <div className="text-xs font-semibold text-slate-300">{children}</div>
 }
@@ -13,7 +17,7 @@ export function AchievementFormModal({
   onSubmit,
   submitText,
 }) {
-  if (!open) return null
+  const { t } = useTranslation()
 
   const ring =
     accent === 'amber'
@@ -32,6 +36,16 @@ export function AchievementFormModal({
     extraInvalid = !(form.badgeName || '').trim()
   }
   const disabled = baseInvalid || extraInvalid
+
+  const iconQuery = (form.icon || '').trim().toLowerCase()
+  const iconCandidates = useMemo(() => {
+    if (!iconQuery) return MATERIAL_ICON_SUGGESTIONS.slice(0, 6)
+    return MATERIAL_ICON_SUGGESTIONS.filter((name) =>
+      name.toLowerCase().includes(iconQuery)
+    ).slice(0, 8)
+  }, [iconQuery])
+
+  if (!open) return null
 
   return (
     <div
@@ -61,31 +75,64 @@ export function AchievementFormModal({
         <div className="px-5 py-4 space-y-3">
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <label className="space-y-1">
-              <FieldLabel>Tên achievement *</FieldLabel>
+              <FieldLabel>
+                {t('achievementsPage.fieldName', {
+                  defaultValue: 'Tên achievement',
+                })}{' '}
+                *
+              </FieldLabel>
               <input
                 value={form.name}
                 onChange={(e) =>
                   setForm((p) => ({ ...p, name: e.target.value }))
                 }
                 className={baseInput}
-                placeholder="Ví dụ: Chuỗi 14 ngày"
+                placeholder={t('achievementsPage.placeholderName', {
+                  defaultValue: 'Ví dụ: Chuỗi 14 ngày',
+                })}
               />
             </label>
             <label className="space-y-1">
-              <FieldLabel>Icon (Material)</FieldLabel>
-              <input
-                value={form.icon}
-                onChange={(e) =>
-                  setForm((p) => ({ ...p, icon: e.target.value }))
-                }
-                className={baseInput}
-                placeholder="emoji_events"
-              />
+              <FieldLabel>
+                {t('achievementsPage.fieldIcon', {
+                  defaultValue: 'Icon (Material)',
+                })}
+              </FieldLabel>
+              <div className="space-y-1">
+                <input
+                  value={form.icon}
+                  onChange={(e) =>
+                    setForm((p) => ({ ...p, icon: e.target.value }))
+                  }
+                  className={baseInput}
+                  placeholder="emoji_events"
+                />
+                <div className="flex flex-wrap gap-1.5">
+                  {iconCandidates.map((name) => (
+                    <button
+                      key={name}
+                      type="button"
+                      onClick={() => setForm((p) => ({ ...p, icon: name }))}
+                      className="flex items-center gap-1 rounded-full border border-slate-700/80 bg-slate-900/70 px-2 py-0.5 text-[10px] text-slate-200 hover:border-sky-500/70 hover:bg-slate-800"
+                    >
+                      <span className="material-symbols-outlined text-[14px]">
+                        {name}
+                      </span>
+                      <span className="truncate max-w-[90px]">{name}</span>
+                    </button>
+                  ))}
+                </div>
+              </div>
             </label>
           </div>
 
           <label className="space-y-1 block">
-            <FieldLabel>Cách hoàn thành *</FieldLabel>
+            <FieldLabel>
+              {t('achievementsPage.fieldHowTo', {
+                defaultValue: 'Cách hoàn thành',
+              })}{' '}
+              *
+            </FieldLabel>
             <textarea
               value={form.howTo}
               onChange={(e) =>
@@ -93,13 +140,19 @@ export function AchievementFormModal({
               }
               rows={3}
               className={baseInput}
-              placeholder="Mô tả điều kiện hoàn thành..."
+              placeholder={t('achievementsPage.placeholderHowTo', {
+                defaultValue: 'Mô tả điều kiện hoàn thành...',
+              })}
             />
           </label>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <label className="space-y-1">
-              <FieldLabel>Độ hiếm</FieldLabel>
+              <FieldLabel>
+                {t('achievementsPage.fieldRarity', {
+                  defaultValue: 'Độ hiếm',
+                })}
+              </FieldLabel>
               <div className="relative">
                 <select
                   value={form.rarity}
@@ -108,11 +161,31 @@ export function AchievementFormModal({
                   }
                   className={`${baseInput} appearance-none`}
                 >
-                  <option value="common">common</option>
-                  <option value="uncommon">uncommon</option>
-                  <option value="rare">rare</option>
-                  <option value="epic">epic</option>
-                  <option value="legendary">legendary</option>
+                  <option value="common">
+                    {t('achievementsPage.rarity.common', {
+                      defaultValue: 'Thường',
+                    })}
+                  </option>
+                  <option value="uncommon">
+                    {t('achievementsPage.rarity.uncommon', {
+                      defaultValue: 'Không thường',
+                    })}
+                  </option>
+                  <option value="rare">
+                    {t('achievementsPage.rarity.rare', {
+                      defaultValue: 'Hiếm',
+                    })}
+                  </option>
+                  <option value="epic">
+                    {t('achievementsPage.rarity.epic', {
+                      defaultValue: 'Sử thi',
+                    })}
+                  </option>
+                  <option value="legendary">
+                    {t('achievementsPage.rarity.legendary', {
+                      defaultValue: 'Huyền thoại',
+                    })}
+                  </option>
                 </select>
                 <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 material-symbols-outlined text-[20px] text-slate-300">
                   expand_more
@@ -120,12 +193,31 @@ export function AchievementFormModal({
               </div>
             </label>
             <label className="space-y-1">
-              <FieldLabel>Loại phần thưởng</FieldLabel>
+              <FieldLabel>
+                {t('achievementsPage.fieldRewardType', {
+                  defaultValue: 'Loại phần thưởng',
+                })}
+              </FieldLabel>
               <div className="grid grid-cols-3 gap-2">
                 {[
-                  { id: 'both', label: 'Both' },
-                  { id: 'exp', label: 'EXP' },
-                  { id: 'badge', label: 'Badge' },
+                  {
+                    id: 'both',
+                    label: t('achievementsPage.rewardTypeBoth', {
+                      defaultValue: 'Both',
+                    }),
+                  },
+                  {
+                    id: 'exp',
+                    label: t('achievementsPage.rewardTypeExp', {
+                      defaultValue: 'EXP',
+                    }),
+                  },
+                  {
+                    id: 'badge',
+                    label: t('achievementsPage.rewardTypeBadge', {
+                      defaultValue: 'Badge',
+                    }),
+                  },
                 ].map((opt) => (
                   <button
                     key={opt.id}
@@ -144,9 +236,14 @@ export function AchievementFormModal({
                 ))}
               </div>
             </label>
-            {(form.rewardType || 'both') === 'exp' && (
+            {(form.rewardType || 'both') === 'exp' ||
+            (form.rewardType || 'both') === 'both' ? (
               <label className="space-y-1">
-                <FieldLabel>Số EXP</FieldLabel>
+                <FieldLabel>
+                  {t('achievementsPage.fieldExp', {
+                    defaultValue: 'Số EXP',
+                  })}
+                </FieldLabel>
                 <input
                   type="number"
                   min="0"
@@ -155,73 +252,90 @@ export function AchievementFormModal({
                     setForm((p) => ({ ...p, expAmount: e.target.value }))
                   }
                   className={baseInput}
-                  placeholder="Ví dụ: 200"
+                  placeholder={t('achievementsPage.placeholderExp', {
+                    defaultValue: 'Ví dụ: 200',
+                  })}
                 />
               </label>
-            )}
-            {(form.rewardType || 'both') === 'badge' && (
+            ) : null}
+            {(form.rewardType || 'both') === 'badge' ||
+            (form.rewardType || 'both') === 'both' ? (
               <>
                 <label className="space-y-1">
-                  <FieldLabel>Tên huy hiệu</FieldLabel>
+                  <FieldLabel>
+                    {t('achievementsPage.fieldBadgeName', {
+                      defaultValue: 'Tên huy hiệu',
+                    })}
+                  </FieldLabel>
                   <input
                     value={form.badgeName}
                     onChange={(e) =>
                       setForm((p) => ({ ...p, badgeName: e.target.value }))
                     }
                     className={baseInput}
-                    placeholder="Ví dụ: Chăm chỉ 7 ngày"
+                    placeholder={t('achievementsPage.placeholderBadgeName', {
+                      defaultValue: 'Ví dụ: Chăm chỉ 7 ngày',
+                    })}
                   />
                 </label>
                 <label className="space-y-1">
-                  <FieldLabel>Ảnh huy hiệu (URL)</FieldLabel>
+                  <FieldLabel>
+                    {t('achievementsPage.fieldBadgeImage', {
+                      defaultValue: 'Upload ảnh huy hiệu',
+                    })}
+                  </FieldLabel>
                   <input
-                    value={form.badgeImage}
-                    onChange={(e) =>
-                      setForm((p) => ({ ...p, badgeImage: e.target.value }))
-                    }
-                    className={baseInput}
-                    placeholder="https://... hoặc để trống"
+                    type="file"
+                    accept="image/*"
+                    onChange={(e) => {
+                      const file = e.target.files?.[0]
+                      if (!file) {
+                        setForm((p) => ({ ...p, badgeImage: '' }))
+                        return
+                      }
+                      const url = URL.createObjectURL(file)
+                      setForm((p) => ({ ...p, badgeImage: url }))
+                    }}
+                    className="w-full text-xs text-slate-200 file:mr-3 file:rounded-lg file:border-0 file:bg-slate-800 file:px-3 file:py-1.5 file:text-xs file:font-semibold file:text-slate-100 hover:file:bg-slate-700"
                   />
                 </label>
               </>
-            )}
-            {(form.rewardType || 'both') === 'both' && (
-              <label className="space-y-1">
-                <FieldLabel>Phần thưởng (mỗi dòng 1 mục)</FieldLabel>
-                <textarea
-                  value={form.rewards}
-                  onChange={(e) =>
-                    setForm((p) => ({ ...p, rewards: e.target.value }))
-                  }
-                  rows={3}
-                  className={baseInput}
-                  placeholder="+200 XP&#10;Huy hiệu “...”"
-                />
-              </label>
-            )}
+            ) : null}
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <label className="space-y-1">
-              <FieldLabel>Link label (optional)</FieldLabel>
+              <FieldLabel>
+                {t('achievementsPage.fieldLinkLabel', {
+                  defaultValue: 'Link label (hướng dẫn)',
+                })}
+              </FieldLabel>
               <input
                 value={form.linkLabel}
                 onChange={(e) =>
                   setForm((p) => ({ ...p, linkLabel: e.target.value }))
                 }
                 className={baseInput}
-                placeholder="Đi tới luyện tập"
+                placeholder={t('achievementsPage.placeholderLinkLabel', {
+                  defaultValue: 'Đi tới luyện tập',
+                })}
               />
             </label>
             <label className="space-y-1">
-              <FieldLabel>Link to (optional)</FieldLabel>
+              <FieldLabel>
+                {t('achievementsPage.fieldLinkTo', {
+                  defaultValue: 'Link điều hướng',
+                })}
+              </FieldLabel>
               <input
                 value={form.linkTo}
                 onChange={(e) =>
                   setForm((p) => ({ ...p, linkTo: e.target.value }))
                 }
                 className={baseInput}
-                placeholder="/skills/reading hoặc https://..."
+                placeholder={t('achievementsPage.placeholderLinkTo', {
+                  defaultValue: '/skills/reading hoặc https://...',
+                })}
               />
             </label>
           </div>
@@ -233,7 +347,7 @@ export function AchievementFormModal({
             onClick={onClose}
             className="rounded-xl border border-slate-700/80 bg-slate-900/70 px-4 py-2 text-sm font-semibold text-slate-200 hover:bg-slate-900"
           >
-            Hủy
+            {t('buttons.cancel')}
           </button>
           <button
             type="button"

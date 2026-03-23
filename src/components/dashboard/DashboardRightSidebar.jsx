@@ -3,8 +3,8 @@ import { useTranslation } from 'react-i18next'
 import { ROUTES } from '../../constants'
 import { DEFAULT_AVATAR } from '../../constants/ui'
 import { friendsService } from '../../services'
-import { DashboardCard } from '../ui/DashboardCard'
-import { DashboardSectionHeader } from '../ui/DashboardSectionHeader'
+import { DashboardCard } from './DashboardCard'
+import { DashboardSectionHeader } from './DashboardSectionHeader'
 
 /**
  * Right sidebar: friend suggestions (dropdown + list), friends (All/Online), weekly leaderboard.

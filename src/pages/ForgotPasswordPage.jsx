@@ -1,6 +1,6 @@
 import { Link } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
-import { LanguageSwitcher } from '../components/ui/LanguageSwitcher'
+import { LanguageSwitcher } from '../components/ui/common/LanguageSwitcher'
 import { useForgotPassword } from '../hooks'
 import { ROUTES } from '../constants'
 

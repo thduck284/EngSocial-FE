@@ -1,6 +1,6 @@
 import { useRef, useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { rawService } from '../../services'
+import { rawService } from '../../../services'
 
 export function ChatbotPanel({ open, onClose, onMinimize }) {
   const messagesEndRef = useRef(null)

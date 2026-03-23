@@ -4,11 +4,12 @@ export function AchievementDetails({
   onGoToLink,
   onEdit,
   onDelete,
+  canManage = false,
 }) {
   if (!achievement) {
     return (
       <div className="text-slate-400 text-sm">
-        Chọn một achievement để xem chi tiết.
+        {t?.('achievementsPage.noAchievementSelected')}
       </div>
     )
   }
@@ -26,15 +27,13 @@ export function AchievementDetails({
             {achievement.name}
           </h3>
           <div className="mt-1 text-sm text-slate-300/90 flex flex-wrap items-center gap-2">
-            Độ hiếm:{' '}
+            {t?.('achievementsPage.rarityLabel', { defaultValue: 'Độ hiếm' }) ||
+              'Độ hiếm'}
+            :{' '}
             <span className="inline-flex items-center rounded-full bg-black/40 border border-white/10 px-2 py-0.5 text-[11px] font-semibold">
               {t?.(`achievementsPage.rarity.${achievement.rarity}`, {
                 defaultValue: achievement.rarity,
               })}
-            </span>
-            <span className="h-1 w-1 rounded-full bg-slate-500/60" />
-            <span className="text-[11px] text-slate-400">
-              ID: {achievement.id}
             </span>
           </div>
         </div>
@@ -50,39 +49,43 @@ export function AchievementDetails({
             <span className="material-symbols-outlined text-[18px]">
               arrow_forward
             </span>
-            {achievement.link?.label || 'Đi tới'}
+            {achievement.link?.label || t?.('buttons.next', { defaultValue: 'Đi tới' }) || 'Đi tới'}
           </button>
         ) : (
           <div className="w-full rounded-2xl border border-slate-800/80 bg-slate-950/70 px-4 py-3 text-sm text-slate-400 flex items-center justify-center">
-            Không có link điều hướng
+            {t?.('achievementsPage.noGuide', {
+              defaultValue: 'Chưa có hướng dẫn',
+            })}
           </div>
         )}
 
-        <div className="grid grid-cols-2 gap-2">
-          <button
-            type="button"
-            onClick={() => onEdit?.(achievement)}
-            className="w-full rounded-2xl border border-amber-400/25 bg-amber-500/10 px-4 py-3 text-sm font-bold text-amber-100 hover:bg-amber-500/15 hover:border-amber-400/40 focus:outline-none focus:ring-2 focus:ring-amber-400/40 transition-colors flex items-center justify-center gap-2"
-          >
-            <span className="material-symbols-outlined text-[18px]">edit</span>
-            Sửa
-          </button>
-          <button
-            type="button"
-            onClick={onDelete}
-            className="w-full rounded-2xl border border-rose-400/25 bg-rose-500/10 px-4 py-3 text-sm font-bold text-rose-100 hover:bg-rose-500/15 hover:border-rose-400/40 focus:outline-none focus:ring-2 focus:ring-rose-400/40 transition-colors flex items-center justify-center gap-2"
-          >
-            <span className="material-symbols-outlined text-[18px]">
-              delete
-            </span>
-            Xóa
-          </button>
-        </div>
+        {canManage ? (
+          <div className="grid grid-cols-2 gap-2">
+            <button
+              type="button"
+              onClick={() => onEdit?.(achievement)}
+              className="w-full rounded-2xl border border-amber-400/25 bg-amber-500/10 px-4 py-3 text-sm font-bold text-amber-100 hover:bg-amber-500/15 hover:border-amber-400/40 focus:outline-none focus:ring-2 focus:ring-amber-400/40 transition-colors flex items-center justify-center gap-2"
+            >
+              <span className="material-symbols-outlined text-[18px]">edit</span>
+              {t?.('achievementsPage.edit', { defaultValue: 'Sửa' })}
+            </button>
+            <button
+              type="button"
+              onClick={onDelete}
+              className="w-full rounded-2xl border border-rose-400/25 bg-rose-500/10 px-4 py-3 text-sm font-bold text-rose-100 hover:bg-rose-500/15 hover:border-rose-400/40 focus:outline-none focus:ring-2 focus:ring-rose-400/40 transition-colors flex items-center justify-center gap-2"
+            >
+              <span className="material-symbols-outlined text-[18px]">
+                delete
+              </span>
+              {t?.('achievementsPage.delete', { defaultValue: 'Xóa' })}
+            </button>
+          </div>
+        ) : null}
       </div>
 
       <div className="rounded-2xl border border-slate-800/80 bg-slate-950/80 p-4">
         <h4 className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-400 mb-2">
-          Cách hoàn thành
+          {t?.('achievementsPage.howTo', { defaultValue: 'Cách hoàn thành' })}
         </h4>
         <p className="text-base text-slate-100 leading-relaxed line-clamp-5">
           {achievement.howTo}
@@ -91,24 +94,38 @@ export function AchievementDetails({
 
       <div className="rounded-2xl border border-slate-800/80 bg-slate-950/80 p-4">
         <h4 className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-400 mb-2">
-          Nhận được gì
+          {t?.('achievementsPage.rewardsTitle', {
+            defaultValue: 'Nhận được gì',
+          })}
         </h4>
         <div className="flex items-center justify-between gap-3 mb-2">
           <p className="text-[11px] text-slate-400">
-            Loại phần thưởng:{' '}
+            {t?.('achievementsPage.rewardTypeLabel', {
+              defaultValue: 'Loại phần thưởng',
+            }) || 'Loại phần thưởng'}
+            :{' '}
             <span className="font-semibold text-slate-200">
               {achievement.rewardType === 'exp'
-                ? 'EXP'
+                ? t?.('achievementsPage.rewardTypeExp', { defaultValue: 'EXP' }) ||
+                  'EXP'
                 : achievement.rewardType === 'badge'
-                  ? 'Badge'
-                  : 'Both'}
+                  ? t?.('achievementsPage.rewardTypeBadge', {
+                      defaultValue: 'Badge',
+                    }) || 'Badge'
+                  : t?.('achievementsPage.rewardTypeBoth', {
+                      defaultValue: 'Both',
+                    }) || 'Both'}
             </span>
           </p>
           {achievement.badgeImage &&
           (achievement.rewardType === 'badge' ||
             achievement.rewardType === 'both') ? (
             <div className="flex items-center gap-2">
-              <span className="text-[11px] text-slate-400">Badge:</span>
+              <span className="text-[11px] text-slate-400">
+                {t?.('achievementsPage.badgePreviewLabel', {
+                  defaultValue: 'Badge:',
+                })}
+              </span>
               <img
                 src={
                   typeof achievement.badgeImage === 'string'
@@ -132,7 +149,10 @@ export function AchievementDetails({
           ))}
           {(achievement.rewards || []).length > 5 ? (
             <li className="text-[12px] text-slate-400">
-              +{(achievement.rewards || []).length - 5} phần thưởng khác
+              {t?.('achievementsPage.moreRewards', {
+                count: (achievement.rewards || []).length - 5,
+                defaultValue: `+${(achievement.rewards || []).length - 5} phần thưởng khác`,
+              })}
             </li>
           ) : null}
         </ul>

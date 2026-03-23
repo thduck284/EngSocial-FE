@@ -43,6 +43,7 @@ export function ManageLessonsPage() {
   const [loadingLesson, setLoadingLesson] = useState(isEdit)
   const [uploading, setUploading] = useState(false)
   const [vocabQuickText, setVocabQuickText] = useState('')
+  const [questionsQuickText, setQuestionsQuickText] = useState('')
   const [showScriptModal, setShowScriptModal] = useState(false)
   const [scriptModalValue, setScriptModalValue] = useState('')
 
@@ -151,6 +152,113 @@ export function ManageLessonsPage() {
       points: 10,
     }))
     setForm((f) => (f ? { ...f, questions: [...(f.questions || []), ...newQs] } : f))
+  }
+
+  const addQuestionsQuickText = () => {
+    const lines = questionsQuickText
+      .split(/\n/)
+      .map((s) => s.trim())
+      .filter(Boolean)
+
+    if (lines.length === 0) return
+
+    const base = (form.questions || []).length
+    const newQs = lines
+      .map((line, i) => {
+        // Full format:
+        // question | type | correctAnswer | options(A:text;B:text;...) | explanation | points
+        if (line.includes('|')) {
+          const parts = line.split('|').map((p) => p.trim())
+          const question = parts[0] || ''
+          const rawType = (parts[1] || 'multiple_choice').toLowerCase()
+          const type =
+            rawType === 'true_false' || rawType === 'fill_blank' ? rawType : 'multiple_choice'
+          const correctAnswer = parts[2] || ''
+          const optionsRaw = parts[3] || ''
+          const explanation = parts[4] || ''
+          const pointsParsed = Number(parts[5])
+          const points = Number.isFinite(pointsParsed) && pointsParsed > 0 ? pointsParsed : 10
+
+          if (!question) return null
+
+          let options = []
+          if (type === 'multiple_choice') {
+            options = optionsRaw
+              .split(';')
+              .map((o) => o.trim())
+              .filter(Boolean)
+              .map((o, oi) => {
+                const cidx = o.indexOf(':')
+                if (cidx >= 0) {
+                  const value = o.slice(0, cidx).trim() || String.fromCharCode(65 + oi)
+                  const text = o.slice(cidx + 1).trim()
+                  return { value, text }
+                }
+                return { value: String.fromCharCode(65 + oi), text: o }
+              })
+
+            if (options.length === 0) {
+              options = [{ value: 'A', text: '' }, { value: 'B', text: '' }]
+            }
+          }
+
+          return {
+            id: `q-${base + i}`,
+            question,
+            type,
+            options,
+            correctAnswer,
+            explanation,
+            points,
+          }
+        }
+
+        const sep = line.includes(' - ') ? ' - ' : line.includes('\t') ? '\t' : ','
+        const idx = line.indexOf(sep)
+        const question = idx >= 0 ? line.slice(0, idx).trim() : line
+        const answer = idx >= 0 ? line.slice(idx + sep.length).trim() : ''
+        if (!question || !answer) return null
+
+        const answerNorm = answer.trim().toLowerCase()
+        // If answer is explicitly true/false => use true/false question
+        if (answerNorm === 'true' || answerNorm === 'false') {
+          return {
+            id: `q-${base + i}`,
+            question,
+            type: 'true_false',
+            correctAnswer: answerNorm,
+            explanation: '',
+            points: 10,
+          }
+        }
+
+        // Default: multiple choice; put correct answer into option A
+        return {
+          id: `q-${base + i}`,
+          question,
+          type: 'multiple_choice',
+          options: [
+            { value: 'A', text: answer },
+            { value: 'B', text: '' },
+          ],
+          correctAnswer: 'A',
+          explanation: '',
+          points: 10,
+        }
+      })
+      .filter(Boolean)
+
+    if (newQs.length === 0) return
+
+    setForm((f) =>
+      f
+        ? {
+            ...f,
+            questions: [...(f.questions || []), ...newQs],
+          }
+        : f,
+    )
+    setQuestionsQuickText('')
   }
 
   const setQuestion = (index, key, value) => {
@@ -491,6 +599,22 @@ export function ManageLessonsPage() {
                 </button>
                 <button type="button" onClick={() => addQuestionsBulk(5)} className="px-3 py-1.5 bg-primary/20 text-primary text-xs font-medium rounded-lg hover:bg-primary/30">
                   {t('manageLessons.add5Questions')}
+                </button>
+                <span className="text-gray-500 text-xs">|</span>
+                <span className="text-xs text-gray-500">{t('manageLessons.questionsQuickAdd')}:</span>
+                <textarea
+                  value={questionsQuickText}
+                  onChange={(e) => setQuestionsQuickText(e.target.value)}
+                  placeholder={t('manageLessons.questionsQuickAddPlaceholder')}
+                  className="flex-1 min-w-[200px] h-20 bg-background-dark border border-border-dark rounded-lg px-3 py-2 text-xs text-white placeholder-gray-500 resize-none"
+                />
+                <button
+                  type="button"
+                  onClick={addQuestionsQuickText}
+                  disabled={!questionsQuickText.trim()}
+                  className="px-3 py-1.5 bg-primary/20 text-primary text-xs font-medium rounded-lg hover:bg-primary/30 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {t('manageLessons.questionsQuickAddBtn')}
                 </button>
               </div>
               {(form.questions || []).map((q, qi) => (

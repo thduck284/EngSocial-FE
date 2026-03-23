@@ -1,5 +1,5 @@
 import { useCallback } from 'react'
-import { conversationService } from '../../services'
+import { conversationService } from '../services'
 
 /**
  * Logic helper for PostShareModal:

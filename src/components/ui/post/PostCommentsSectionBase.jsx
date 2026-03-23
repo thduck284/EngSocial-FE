@@ -1,11 +1,11 @@
 import { createPortal } from 'react-dom'
 import { useEffect, useRef } from 'react'
-import { DEFAULT_AVATAR } from '../../constants/ui'
-import { POST_REACTION_TYPES, REACTION_TYPE_TO_EMOJI } from '../../constants'
-import { formatPostTime } from '../../utils/dateTime'
-import { formatReactionCount } from '../../utils/post'
+import { DEFAULT_AVATAR } from '../../../constants/ui'
+import { POST_REACTION_TYPES, REACTION_TYPE_TO_EMOJI } from '../../../constants'
+import { formatPostTime } from '../../../utils/dateTime'
+import { formatReactionCount } from '../../../utils/post'
 import { PostCommentsThread } from './PostCommentsThread'
-import { hasGiphyKey } from '../../services/giphy.service'
+import { hasGiphyKey } from '../../../services/giphy.service'
 
 export function PostCommentsSectionBase({
   variant = 'feed', // 'feed' | 'modal'

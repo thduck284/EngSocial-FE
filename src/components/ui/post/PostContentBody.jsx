@@ -1,6 +1,6 @@
 import { Link } from 'react-router-dom'
-import { ROUTES } from '../../constants'
-import { parseContentSegments } from '../../utils/postContent'
+import { ROUTES } from '../../../constants'
+import { parseContentSegments } from '../../../utils/postContent'
 
 /**
  * Renders post content with clickable hashtags and @mentions.
@@ -24,13 +24,16 @@ export function PostContentBody({ content, mentions = [] }) {
           )
         }
         if (seg.type === 'mention' && seg.mention?.id) {
+          const label = seg.mention?.name
+            ? `@${seg.mention.name}`
+            : seg.value
           return (
             <Link
               key={i}
               to={ROUTES.PROFILE_USER(seg.mention.id)}
               className="text-primary font-medium hover:underline"
             >
-              {seg.value}
+              {label}
             </Link>
           )
         }

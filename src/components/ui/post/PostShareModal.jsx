@@ -1,9 +1,9 @@
 import { createPortal } from 'react-dom'
 import { useEffect, useState } from 'react'
-import { communityService } from '../../services/community.service'
-import { friendsService, conversationService } from '../../services'
-import { DEFAULT_AVATAR } from '../../constants/ui'
-import { useSharePostActions } from './useSharePostActions'
+import { communityService } from '../../../services/community.service'
+import { friendsService, conversationService } from '../../../services'
+import { DEFAULT_AVATAR } from '../../../constants/ui'
+import { useSharePostActions } from '../../../hooks/useSharePostActions'
 
 export function PostShareModal({ open, onClose, post, t }) {
   const [activeTab, setActiveTab] = useState('repost') // 'repost' | 'external' | 'inapp'
@@ -96,21 +96,11 @@ export function PostShareModal({ open, onClose, post, t }) {
     setSubmitting(true)
     setError('')
     try {
-      const baseContent =
-        repostText.trim().length > 0
-          ? repostText.trim()
-          : `${t('dashboard.sharedAPost') || 'Đã chia sẻ một bài viết'}`
-      const content =
-        baseContent +
-        '\n\n' +
-        (t('dashboard.originalPostBy') || 'Bài gốc của') +
-        ` ${post.author?.name || ''}:\n` +
-        String(post.content || '')
+      const content = repostText.trim()
 
       await communityService.createPost({
         content,
-        images: post.images || [],
-        documents: post.documents || [],
+        sharedPostId: post.id || post._id,
       })
       onClose?.()
     } catch (e) {

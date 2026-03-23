@@ -1,4 +1,4 @@
-export const ACHIEVEMENT_CATEGORIES_VI = [
+export const ACHIEVEMENT_CATEGORIES = [
   {
     id: 'learning',
     title: 'Học tập',

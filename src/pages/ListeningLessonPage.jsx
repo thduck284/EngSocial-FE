@@ -1,10 +1,18 @@
 import { Link, useParams } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { useListeningLesson } from '../hooks/useListeningLesson'
+import { useEffect, useState } from 'react'
 
 export function ListeningLessonPage() {
   const { t } = useTranslation()
   const { id } = useParams()
+
+  const [rightBarOpen, setRightBarOpen] = useState(false)
+  useEffect(() => {
+    // Default: keep right panel closed when entering/reloading a lesson.
+    setRightBarOpen(false)
+  }, [id])
+
   const {
     audioRef,
     content,
@@ -587,8 +595,19 @@ export function ListeningLessonPage() {
         </div>
       </div>
 
-      {/* Right Sidebar - ~200px, can shrink */}
-      <aside className="w-full lg:w-[300px] lg:min-w-[240px] lg:shrink lg:basis-[300px] space-y-6 overflow-y-auto custom-scrollbar pr-2 pb-6">
+      {/* Right Sidebar - Vocabulary + leaderboard */}
+      {rightBarOpen ? (
+      <aside className="w-full lg:w-[300px] lg:min-w-[240px] lg:shrink lg:basis-[300px] space-y-6 overflow-y-auto custom-scrollbar pr-2 pb-6 relative">
+        <div className="sticky top-0 z-10 flex justify-end mb-2">
+          <button
+            type="button"
+            onClick={() => setRightBarOpen(false)}
+            className="p-2 rounded-lg bg-card-dark border border-border-dark text-gray-400 hover:text-white hover:bg-gray-700 transition-all"
+            title={t('listeningLesson.closeRightBar') || 'Close right panel'}
+          >
+            <span className="material-symbols-outlined">chevron_right</span>
+          </button>
+        </div>
         {/* Vocabulary Card */}
         {vocabularyList.length > 0 && (
         <div className="bg-card-dark rounded-2xl border border-border-dark shadow-xl overflow-hidden group">
@@ -710,6 +729,18 @@ export function ListeningLessonPage() {
           </button>
         </div>
       </aside>
+      ) : (
+        <div className="hidden lg:flex fixed right-6 top-1/2 -translate-y-1/2 z-20">
+          <button
+            type="button"
+            onClick={() => setRightBarOpen(true)}
+            className="p-2.5 rounded-l-lg bg-card-dark border border-border-dark border-r-0 text-gray-400 hover:text-primary hover:bg-gray-700 transition-all shadow-lg"
+            title={t('listeningLesson.openRightBar') || 'Open right panel'}
+          >
+            <span className="material-symbols-outlined">chevron_left</span>
+          </button>
+        </div>
+      )}
     </main>
   )
 }

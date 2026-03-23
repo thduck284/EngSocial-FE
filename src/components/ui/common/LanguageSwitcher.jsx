@@ -1,5 +1,5 @@
 import { useTranslation } from 'react-i18next'
-import { authService } from '../../services'
+import { authService } from '../../../services'
 
 export function LanguageSwitcher() {
   const { i18n } = useTranslation()

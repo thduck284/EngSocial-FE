@@ -12,6 +12,12 @@ export const communityService = {
   createPost: async (postData) => {
     return apiClient.post(API_ENDPOINTS.COMMUNITY.CREATE_POST, postData)
   },
+  updatePost: async (id, payload) => {
+    return apiClient.patch(API_ENDPOINTS.COMMUNITY.UPDATE_POST(id), payload)
+  },
+  deletePost: async (id) => {
+    return apiClient.delete(API_ENDPOINTS.COMMUNITY.DELETE_POST(id))
+  },
   /** Toggle like on a post. Returns { data: { liked: boolean, userReaction?: string } }. */
   toggleLike: async (id) => {
     return apiClient.post(API_ENDPOINTS.COMMUNITY.LIKE_POST(id))

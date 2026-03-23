@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { ROUTES } from '../../constants'
 import { DEFAULT_AVATAR } from '../../constants/ui'
-import { CreatePostModal } from './CreatePostModal'
+import { CreatePostModal } from '../ui/post/CreatePostModal'
 import { DashboardPostCard } from './DashboardPostCard'
 
 /**
@@ -15,6 +15,8 @@ export function DashboardMainFeed({
   setShowCreateModal,
   handlePostFromModal,
   onPostReactionUpdate,
+  onPostUpdate,
+  onPostDelete,
   studyGroups,
   suggestedGroups,
   postsLoading,
@@ -241,6 +243,8 @@ export function DashboardMainFeed({
               key={post?.id ?? post?._id ?? `post-${index}`}
               post={post}
               onToggleLike={onPostReactionUpdate}
+              onUpdatePost={onPostUpdate}
+              onDeletePost={onPostDelete}
             />
           ))}
           {hasMorePosts && <div ref={loadMoreRef} className="h-4 min-h-[1rem]" aria-hidden />}

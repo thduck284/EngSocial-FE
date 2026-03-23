@@ -1,5 +1,5 @@
 import { useTranslation } from 'react-i18next'
-import { LanguageSwitcher } from '../ui/LanguageSwitcher'
+import { LanguageSwitcher } from '../ui/common/LanguageSwitcher'
 
 export function AuthLayout({ children, leftContent }) {
   return (

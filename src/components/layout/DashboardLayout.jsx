@@ -2,7 +2,7 @@ import { Outlet, Navigate, useLocation } from 'react-router-dom'
 import { useAuth } from '../../context/AuthContext'
 import { ROUTES } from '../../constants'
 import { AppHeader } from './AppHeader'
-import { ChatbotButton } from '../ui/ChatbotButton'
+import { ChatbotButton } from '../ui/chatbot/ChatbotButton'
 
 // Hide chatbot button on lesson/practice doing pages (reading/listening/writing by id), show on result and others
 const isLessonDoingPage = (pathname) =>

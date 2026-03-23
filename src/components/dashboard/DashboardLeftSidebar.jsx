@@ -2,8 +2,8 @@ import { Link } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { ROUTES } from '../../constants'
 import { DEFAULT_AVATAR } from '../../constants/ui'
-import { DashboardCard } from '../ui/DashboardCard'
-import { DashboardSectionHeader } from '../ui/DashboardSectionHeader'
+import { DashboardCard } from './DashboardCard'
+import { DashboardSectionHeader } from './DashboardSectionHeader'
 
 /**
  * Left sidebar: profile card, weekly stats, today goals, study groups, featured lessons, ongoing challenge.

@@ -1,9 +1,9 @@
 import { useEffect, useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
-import { notificationsService } from '../../services'
-import { formatPostTime } from '../../utils/dateTime'
-import { ROUTES } from '../../constants'
+import { notificationsService } from '../../../services'
+import { formatPostTime } from '../../../utils/dateTime'
+import { ROUTES } from '../../../constants'
 
 function renderNotificationContent(n, t) {
   if (n.type === 'friend_request') {

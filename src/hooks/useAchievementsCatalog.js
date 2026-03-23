@@ -1,13 +1,14 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { ACHIEVEMENT_CATEGORIES_VI } from '../constants/achievementsCatalog.vi'
+import { ACHIEVEMENT_CATEGORIES } from '../constants/achievementsCatalog.vi'
+import { userService } from '../services'
 
 export function useAchievementsCatalog() {
   const navigate = useNavigate()
 
-  const [categories, setCategories] = useState(ACHIEVEMENT_CATEGORIES_VI)
+  const [categories, setCategories] = useState(ACHIEVEMENT_CATEGORIES)
   const [activeCategoryId, setActiveCategoryId] = useState(
-    ACHIEVEMENT_CATEGORIES_VI[0]?.id || 'learning'
+    ACHIEVEMENT_CATEGORIES[0]?.id || 'learning'
   )
 
   const [categoryOpen, setCategoryOpen] = useState(false)
@@ -47,6 +48,71 @@ export function useAchievementsCatalog() {
 
   const [addForm, setAddForm] = useState({ ...emptyForm })
   const [editForm, setEditForm] = useState({ ...emptyForm })
+
+  // Load achievements from backend, fallback to mock categories if fail.
+  useEffect(() => {
+    let cancelled = false
+    ;(async () => {
+      try {
+        const res = await userService.getAchievements()
+        const list =
+          res?.data?.data?.achievements ??
+          res?.data?.achievements ??
+          res?.achievements ??
+          []
+        if (!Array.isArray(list) || cancelled) return
+
+        // Group BE achievements into the existing FE categories by simple rules (type/skill/key prefix).
+        const byKey = new Map()
+        list.forEach((a) => {
+          if (!a?.key) return
+          byKey.set(a.key, a)
+        })
+
+        const mappedCategories = ACHIEVEMENT_CATEGORIES.map((cat, catIdx) => {
+          const items = (cat.items || []).map((mock, idx) => {
+            const be = byKey.get(mock.id) || byKey.get(mock.key)
+            const base = be || {}
+            return {
+              id: be?.id || mock.id,
+              key: be?.key || mock.id,
+              name: base.name || mock.name || base.key || mock.id,
+              icon: base.icon || mock.icon || 'emoji_events',
+              rarity: base.rarity || mock.rarity || 'common',
+              howTo: base.description || mock.howTo || '',
+              rewards:
+                base.xpReward && !mock.rewards?.length
+                  ? [`Nhận ${base.xpReward} EXP`]
+                  : mock.rewards || [],
+              rewardType: base.rewardType || 'both',
+              expAmount: base.xpReward || 0,
+              badgeName: base.badgeName,
+              badgeImage: base.badgeImage,
+              link: mock.link,
+              order: base.order ?? idx,
+              categoryId: cat.id,
+            }
+          })
+          return {
+            id: cat.id,
+            title: cat.title,
+            description: cat.description,
+            order: catIdx,
+            items,
+          }
+        })
+
+        if (!cancelled) {
+          setCategories(mappedCategories)
+        }
+      } catch {
+        // ignore, keep mock
+      }
+    })()
+    return () => {
+      cancelled = true
+    }
+  }, [])
 
   useEffect(() => {
     function onDown(e) {

@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { useReadingLesson } from '../hooks/useReadingLesson'
@@ -7,7 +7,12 @@ import { formatTime } from '../utils/dateTime'
 export function ReadingLessonPage() {
   const { t } = useTranslation()
   const { id } = useParams()
-  const [rightBarOpen, setRightBarOpen] = useState(true)
+  const [rightBarOpen, setRightBarOpen] = useState(false)
+
+  // Default: keep right panel closed when entering/reloading a lesson.
+  useEffect(() => {
+    setRightBarOpen(false)
+  }, [id])
   const {
     content,
     loading,

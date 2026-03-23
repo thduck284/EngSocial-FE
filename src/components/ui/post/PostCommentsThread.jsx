@@ -1,9 +1,9 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { DEFAULT_AVATAR } from '../../constants/ui'
-import { POST_REACTION_TYPES, REACTION_TYPE_TO_EMOJI } from '../../constants'
-import { formatPostTime } from '../../utils/dateTime'
-import { formatReactionCount } from '../../utils/post'
+import { DEFAULT_AVATAR } from '../../../constants/ui'
+import { POST_REACTION_TYPES, REACTION_TYPE_TO_EMOJI } from '../../../constants'
+import { formatPostTime } from '../../../utils/dateTime'
+import { formatReactionCount } from '../../../utils/post'
 
 export function PostCommentsThread({
   isModal,

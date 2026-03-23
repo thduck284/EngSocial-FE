@@ -1,4 +1,5 @@
 import { useTranslation } from 'react-i18next'
+import { useAuth } from '../context/AuthContext.jsx'
 import { CategoryDropdown } from '../components/achievements/CategoryDropdown'
 import { AchievementsList } from '../components/achievements/AchievementsList'
 import { AchievementDetails } from '../components/achievements/AchievementDetails'
@@ -7,6 +8,8 @@ import { useAchievementsCatalog } from '../hooks/useAchievementsCatalog'
 
 export function AchievementsPage() {
   const { t } = useTranslation()
+  const { isModerator, isAdmin } = useAuth()
+  const canManage = isModerator || isAdmin
 
   const {
     categories,
@@ -51,25 +54,28 @@ export function AchievementsPage() {
           <div className="min-w-0 flex-1">
             <div className="flex items-center gap-2 mb-1">
               <span className="inline-flex items-center rounded-full border border-white/15 bg-black/30 px-2.5 py-0.5 text-[11px] font-medium uppercase tracking-[0.18em] text-sky-200">
-                Achievements
+                {t('achievementsPage.badgeLabel', { defaultValue: 'Achievements' })}
               </span>
             </div>
             <h1 className="text-xl lg:text-2xl font-bold text-white tracking-tight">
               {t('header.achievements')}
             </h1>
             <p className="mt-1 text-[13px] lg:text-sm text-slate-200/80">
-              {t('achievementsPage.subtitle', {
-                defaultValue:
-                  'Hoàn thành bài học, thử thách để mở khóa huy hiệu và tích lũy XP.',
-              })}
+              {t('achievementsPage.subtitle')}
             </p>
           </div>
           <div className="hidden md:flex flex-col items-end gap-1 text-right text-[11px] text-slate-200/80">
             <span className="font-semibold">
-              {(activeCategory?.items || []).length} achievements
+              {t('achievementsPage.categoryCount', {
+                count: (activeCategory?.items || []).length,
+                defaultValue: `${(activeCategory?.items || []).length} thành tựu`,
+              })}
             </span>
             <span className="text-slate-300/70">
-              Danh mục: {activeCategory?.title}
+              {t('achievementsPage.currentCategory', {
+                title: activeCategory?.title || '',
+                defaultValue: `Danh mục: ${activeCategory?.title || ''}`,
+              })}
             </span>
           </div>
         </div>
@@ -80,13 +86,17 @@ export function AchievementsPage() {
           <div className="flex flex-col gap-2 mb-1">
             <div className="flex items-center justify-between gap-2">
               <h2 className="text-sm font-semibold text-slate-50">
-                {activeCategory?.title || 'Achievements'}
+                {activeCategory?.title ||
+                  t('achievementsPage.listTitle', { defaultValue: 'Achievements' })}
               </h2>
               <span className="inline-flex items-center gap-1 rounded-full border border-slate-700/90 bg-slate-900/80 px-2.5 py-0.5 text-[11px] text-slate-300">
                 <span className="material-symbols-outlined text-[15px] text-amber-300">
                   stars
                 </span>
-                {(activeCategory?.items || []).length} mục
+                {t('achievementsPage.categoryCount', {
+                  count: (activeCategory?.items || []).length,
+                  defaultValue: `${(activeCategory?.items || []).length} thành tựu`,
+                })}
               </span>
             </div>
 
@@ -100,20 +110,27 @@ export function AchievementsPage() {
               onSelectCategory={selectCategory}
             />
 
-            <button
-              type="button"
-              onClick={() => setAddOpen(true)}
-              className="w-full rounded-xl border border-emerald-400/30 bg-emerald-500/15 px-3 py-2.5 text-sm font-semibold text-emerald-100 hover:bg-emerald-500/20 hover:border-emerald-400/50 focus:outline-none focus:ring-2 focus:ring-emerald-400/60 transition-colors flex items-center justify-center gap-2"
-            >
-              <span className="material-symbols-outlined text-[18px]">
-                add_circle
-              </span>
-              Thêm achievement
-            </button>
+            {canManage ? (
+              <button
+                type="button"
+                onClick={() => setAddOpen(true)}
+                className="w-full rounded-xl border border-emerald-400/30 bg-emerald-500/15 px-3 py-2.5 text-sm font-semibold text-emerald-100 hover:bg-emerald-500/20 hover:border-emerald-400/50 focus:outline-none focus:ring-2 focus:ring-emerald-400/60 transition-colors flex items-center justify-center gap-2"
+              >
+                <span className="material-symbols-outlined text-[18px]">
+                  add_circle
+                </span>
+                {t('achievementsPage.addAchievement', {
+                  defaultValue: 'Thêm achievement',
+                })}
+              </button>
+            ) : null}
           </div>
 
           <p className="text-[11px] text-slate-400 mb-2">
-            Chọn một achievement trong danh sách để xem chi tiết và phần thưởng.
+            {t('achievementsPage.listHint', {
+              defaultValue:
+                'Chọn một achievement trong danh sách để xem chi tiết và phần thưởng.',
+            })}
           </p>
 
           <AchievementsList
@@ -129,35 +146,44 @@ export function AchievementsPage() {
             t={t}
             achievement={achievement}
             onGoToLink={goToAchievementLink}
-            onEdit={openEditForAchievement}
-            onDelete={deleteActiveAchievement}
+            onEdit={canManage ? openEditForAchievement : undefined}
+            onDelete={canManage ? deleteActiveAchievement : undefined}
+            canManage={canManage}
           />
         </section>
       </div>
 
-      <AchievementFormModal
-        open={addOpen}
-        title="Thêm achievement mới"
-        subtitle={`Danh mục: ${activeCategory?.title || ''}`}
-        accent="emerald"
-        form={addForm}
-        setForm={setAddForm}
-        onClose={() => setAddOpen(false)}
-        onSubmit={addAchievementToActiveCategory}
-        submitText="Thêm"
-      />
+      {canManage && (
+        <>
+          <AchievementFormModal
+            open={addOpen}
+            title={t('achievementsPage.addAchievement', {
+              defaultValue: 'Thêm achievement',
+            })}
+            subtitle={`Danh mục: ${activeCategory?.title || ''}`}
+            accent="emerald"
+            form={addForm}
+            setForm={setAddForm}
+            onClose={() => setAddOpen(false)}
+            onSubmit={addAchievementToActiveCategory}
+            submitText="Thêm"
+          />
 
-      <AchievementFormModal
-        open={editOpen}
-        title="Chỉnh sửa achievement"
-        subtitle={`Danh mục: ${activeCategory?.title || ''}`}
-        accent="amber"
-        form={editForm}
-        setForm={setEditForm}
-        onClose={() => setEditOpen(false)}
-        onSubmit={saveEditAchievement}
-        submitText="Lưu"
-      />
+          <AchievementFormModal
+            open={editOpen}
+            title={t('achievementsPage.editAchievement', {
+              defaultValue: 'Chỉnh sửa achievement',
+            })}
+            subtitle={`Danh mục: ${activeCategory?.title || ''}`}
+            accent="amber"
+            form={editForm}
+            setForm={setEditForm}
+            onClose={() => setEditOpen(false)}
+            onSubmit={saveEditAchievement}
+            submitText="Lưu"
+          />
+        </>
+      )}
     </main>
   )
 }

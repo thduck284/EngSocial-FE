@@ -170,6 +170,22 @@ export function useDashboardData() {
     )
   }
 
+  const updatePostInFeed = (postId, updated = {}) => {
+    if (!postId) return
+    setPosts((prev) =>
+      prev.map((p) => {
+        const id = p?.id ?? p?._id
+        if (String(id) !== String(postId)) return p
+        return { ...p, ...(updated || {}) }
+      }),
+    )
+  }
+
+  const removePostFromFeed = (postId) => {
+    if (!postId) return
+    setPosts((prev) => prev.filter((p) => String(p?.id ?? p?._id) !== String(postId)))
+  }
+
   return {
     raw,
     posts,
@@ -182,6 +198,8 @@ export function useDashboardData() {
     profileProgress,
     handlePostFromModal,
     updatePostReaction,
+    updatePostInFeed,
+    removePostFromFeed,
     weeklyLeaderboard,
     weeklyLeaderboardLoading,
   }

@@ -40,6 +40,7 @@ export const API_ENDPOINTS = {
     UPLOAD_AVATAR: '/user/avatar',
     CHANGE_PASSWORD: '/user/change-password',
     STATS: '/user/stats',
+    SKILLS_PROFILE: '/user/skills-profile',
     GOALS: '/user/goals',
     ACHIEVEMENTS: '/user/achievements',
     BLOCK: (userId) => `/user/block/${userId}`,
@@ -169,6 +170,7 @@ export const API_ENDPOINTS = {
     JOIN: (id) => `/groups/${id}/join`,
     LEAVE: (id) => `/groups/${id}/leave`,
     MEMBERS: (id) => `/groups/${id}/members`,
+    ADD_MEMBERS: (id) => `/groups/${id}/members`,
   },
 
   // Notifications
@@ -245,7 +247,7 @@ export const ROUTES = {
     READING: (id) => `/lesson/reading/${id}`,
     WRITING: (id) => `/lesson/writing/${id}`,
   },
-  COMMUNITY: '/community',
+  COMMUNITY: '/community/my-groups',
   GROUPS: '/groups',
   PROFILE: '/profile',
   PROFILE_USER: (userId) => `/profile/${userId}`,

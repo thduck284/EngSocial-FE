@@ -1,11 +1,16 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
-import { Link, useParams, useNavigate } from 'react-router-dom'
+import { Link, useParams, useNavigate, useLocation } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { useAuth } from '../context/AuthContext'
 import { useDashboardSocket } from '../hooks'
 import { ROUTES } from '../constants'
 import { DEFAULT_AVATAR } from '../constants/ui'
 import { userService, friendsService } from '../services'
+import { useProfilePosts, useProfilePhotos, useProfileVideos } from '../hooks/useProfile'
+import { ProfilePostsList } from '../components/profile/ProfilePostsList'
+import { ProfilePhotosGrid } from '../components/profile/ProfilePhotosGrid'
+import { ProfileVideosGrid } from '../components/profile/ProfileVideosGrid'
+import { ProfileSkillsTab } from '../components/profile/ProfileSkillsTab'
 
 function formatJoinedAt(createdAt) {
   if (!createdAt) return ''
@@ -36,6 +41,7 @@ function mapApiProfileToState(data) {
     pendingSentByMe: data.pendingSentByMe,
     blockedByMe: data.blockedByMe ?? false,
     joinedAt: formatJoinedAt(data.createdAt),
+    profileSkills: data.profileSkills || { skills: {}, goals: [], activeView: 'bars', updatedAt: null },
     skills: Array.isArray(data.skills) ? data.skills : [],
     achievements: [],
     friends: Array.isArray(data.friends) ? data.friends : [],
@@ -46,6 +52,7 @@ export function UserProfilePage() {
   const { t } = useTranslation()
   const { userId } = useParams()
   const navigate = useNavigate()
+  const location = useLocation()
   const { user: currentUser } = useAuth()
   const { onlineUserIds } = useDashboardSocket(currentUser, () => {})
 
@@ -56,6 +63,27 @@ export function UserProfilePage() {
   const [blockActionLoading, setBlockActionLoading] = useState(false)
   const [friendsMenuOpen, setFriendsMenuOpen] = useState(false)
   const friendsMenuRef = useRef(null)
+
+  const {
+    posts: userPosts,
+    loading: userPostsLoading,
+    error: userPostsError,
+  } = useProfilePosts(userId, { enabled: activeTab === 'posts', pageSize: 20 })
+
+  const {
+    photos: userPhotos,
+    loading: userPhotosLoading,
+    error: userPhotosError,
+    hasMore: userPhotosHasMore,
+    loadMore: loadMoreUserPhotos,
+  } = useProfilePhotos(userId, { pageSize: 5 })
+  const {
+    videos: userVideos,
+    loading: userVideosLoading,
+    error: userVideosError,
+    hasMore: userVideosHasMore,
+    loadMore: loadMoreUserVideos,
+  } = useProfileVideos(userId, { pageSize: 5 })
 
   const refetchProfile = useCallback(() => {
     if (!userId) return
@@ -143,6 +171,31 @@ export function UserProfilePage() {
       state: { withUser: { id: userId, name: profile.name, avatar: profile.avatar } },
     })
   }, [navigate, userId, profile])
+
+  // Đồng bộ URL -> activeTab cho user profile
+  useEffect(() => {
+    const path = location.pathname || ''
+    if (path.endsWith('/posts') && activeTab !== 'posts') {
+      setActiveTab('posts')
+    } else if (path.endsWith('/photos') && activeTab !== 'photos') {
+      setActiveTab('photos')
+    } else if (path.endsWith('/video') && activeTab !== 'video') {
+      setActiveTab('video')
+    } else if (path.endsWith('/skills') && activeTab !== 'skills') {
+      setActiveTab('skills')
+    } else if (path.endsWith('/personalInfo') && activeTab !== 'personalInfo') {
+      setActiveTab('personalInfo')
+    } else if (
+      !path.includes('/posts') &&
+      !path.includes('/photos') &&
+      !path.includes('/video') &&
+      !path.endsWith('/personalInfo') &&
+      !path.endsWith('/skills') &&
+      activeTab !== 'about'
+    ) {
+      setActiveTab('about')
+    }
+  }, [location.pathname, activeTab])
 
   useEffect(() => {
     if (!friendsMenuOpen) return
@@ -387,20 +440,30 @@ export function UserProfilePage() {
         </div>
 
         {/* Right: Tabs & Content - giống profile cá nhân: tab 201px, card min-w bọc hết */}
-        <div className="lg:col-span-8 lg:flex-[1_1_0%] lg:min-w-[755px] w-full bg-white dark:bg-card-dark rounded-2xl border border-slate-200 dark:border-border-dark overflow-hidden">
+        <div className="lg:col-span-8 lg:flex-[1_1_0%] lg:min-w-[780px] w-full bg-white dark:bg-card-dark rounded-2xl border border-slate-200 dark:border-border-dark overflow-hidden">
           <nav className="flex pt-2 border-b border-slate-200 dark:border-border-dark">
             {[
               { key: 'about', label: 'userProfile.tabAbout' },
               { key: 'personalInfo', label: 'userProfile.tabPersonalInfo' },
+              { key: 'skills', label: 'userProfile.mySkills' },
               { key: 'posts', label: 'userProfile.tabPosts' },
               { key: 'photos', label: 'userProfile.tabPhotos' },
               { key: 'video', label: 'userProfile.tabVideo' },
             ].map(({ key, label }) => (
-              <button
-                key={key}
-                type="button"
-                onClick={() => setActiveTab(key)}
-                className={`shrink-0 w-[151px] py-5 text-base font-medium border-b-2 transition-colors text-center ${
+            <button
+              key={key}
+              type="button"
+              onClick={() => {
+                if (!userId) return
+                if (key === 'about') {
+                  setActiveTab('about')
+                  navigate(`/profile/${userId}/about`)
+                } else {
+                  setActiveTab(key)
+                  navigate(`/profile/${userId}/${key}`)
+                }
+              }}
+                className={`shrink-0 w-[130px] py-5 text-base font-medium border-b-2 transition-colors text-center ${
                   activeTab === key
                     ? 'text-primary border-primary'
                     : 'text-slate-500 dark:text-slate-400 border-transparent hover:text-slate-700 dark:hover:text-slate-200'
@@ -425,28 +488,6 @@ export function UserProfilePage() {
                   <div className="flex items-center gap-2 text-sm text-gray-400">
                     <span className="material-symbols-outlined text-sm">calendar_month</span>
                     {t('userProfile.joinedSince', { date: profile.joinedAt })}
-                  </div>
-                </div>
-
-                <div className="bg-card-dark border border-border-dark rounded-xl p-6">
-                  <h3 className="text-lg font-bold text-white mb-6 flex items-center gap-2">
-                    <span className="material-symbols-outlined text-primary">trending_up</span>
-                    {t('userProfile.mySkills')}
-                  </h3>
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                    {profile.skills.length === 0 ? (
-                      <p className="text-gray-400 col-span-full">{t('userProfile.noSkillStats')}</p>
-                    ) : (
-                      profile.skills.map((skill) => (
-                        <div key={skill.key} className="p-4 bg-background-dark/50 rounded-xl border border-border-dark">
-                          <div className="text-xs text-gray-500 uppercase font-bold mb-1">{t(skill.labelKey)}</div>
-                          <div className="text-2xl font-black text-primary mb-2">{t('userProfile.levelLabel', { level: skill.level })}</div>
-                          <div className="h-1 w-full bg-border-dark rounded-full overflow-hidden">
-                            <div className="h-full bg-primary transition-all" style={{ width: `${skill.percent}%` }} />
-                          </div>
-                        </div>
-                      ))
-                    )}
                   </div>
                 </div>
 
@@ -535,25 +576,34 @@ export function UserProfilePage() {
               </div>
             )}
 
+            {activeTab === 'skills' && <ProfileSkillsTab readOnly initialData={profile?.profileSkills} />}
+
             {activeTab === 'posts' && (
-              <div className="bg-card-dark border border-border-dark rounded-xl p-8 text-center">
-                <span className="material-symbols-outlined text-4xl text-gray-500">article</span>
-                <p className="text-gray-400 mt-2">{t('userProfile.noPosts')}</p>
-              </div>
+              <ProfilePostsList
+                posts={userPosts}
+                loading={userPostsLoading}
+                error={userPostsError}
+              />
             )}
 
             {activeTab === 'photos' && (
-              <div className="bg-card-dark border border-border-dark rounded-xl p-8 text-center">
-                <span className="material-symbols-outlined text-4xl text-gray-500">photo_library</span>
-                <p className="text-gray-400 mt-2">{t('userProfile.noPhotos')}</p>
-              </div>
+              <ProfilePhotosGrid
+                photos={userPhotos}
+                loading={userPhotosLoading}
+                error={userPhotosError}
+                hasMore={userPhotosHasMore}
+                loadMore={loadMoreUserPhotos}
+              />
             )}
 
             {activeTab === 'video' && (
-              <div className="bg-card-dark border border-border-dark rounded-xl p-8 text-center">
-                <span className="material-symbols-outlined text-4xl text-gray-500">videocam</span>
-                <p className="text-gray-400 mt-2">{t('userProfile.noVideos')}</p>
-              </div>
+              <ProfileVideosGrid
+                videos={userVideos}
+                loading={userVideosLoading}
+                error={userVideosError}
+                hasMore={userVideosHasMore}
+                loadMore={loadMoreUserVideos}
+              />
             )}
           </div>
         </div>

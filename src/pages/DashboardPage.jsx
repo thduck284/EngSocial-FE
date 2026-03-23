@@ -22,6 +22,8 @@ export function DashboardPage() {
     profileProgress,
     handlePostFromModal,
     updatePostReaction,
+    updatePostInFeed,
+    removePostFromFeed,
     weeklyLeaderboard,
     weeklyLeaderboardLoading,
   } = useDashboardData()
@@ -69,6 +71,8 @@ export function DashboardPage() {
           setShowCreateModal={setShowCreateModal}
           handlePostFromModal={handlePostFromModal}
           onPostReactionUpdate={updatePostReaction}
+          onPostUpdate={updatePostInFeed}
+          onPostDelete={removePostFromFeed}
           studyGroups={studyGroups}
           suggestedGroups={raw.suggestedGroups}
           postsLoading={postsLoading}

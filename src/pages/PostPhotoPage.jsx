@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { useParams, useSearchParams, useNavigate, useLocation } from 'react-router-dom'
 import { communityService } from '../services'
-import { PostImageViewerModal } from '../components/dashboard/PostImageViewerModal'
+import { PostImageViewerModal } from '../components/ui/post/PostImageViewerModal'
 
 export function PostPhotoPage() {
   const { postId } = useParams()
