@@ -1,0 +1,11 @@
+{
+  "compilerOptions": {
+    "baseUrl": ".",
+    "paths": {
+      "@/*": ["src/*"],
+      "@vocabulary": ["src/data/vocabulary/index.js"],
+      "@vocabulary/*": ["src/data/vocabulary/*"]
+    }
+  },
+  "include": ["src"]
+}
