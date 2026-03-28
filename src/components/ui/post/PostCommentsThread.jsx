@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { DEFAULT_AVATAR } from '../../../constants/ui'
 import { POST_REACTION_TYPES, REACTION_TYPE_TO_EMOJI } from '../../../constants'
@@ -20,6 +20,8 @@ export function PostCommentsThread({
   startReplyToComment,
   threadPages = {},
   loadMoreThreadComments,
+  expandAfterReply = null,
+  onExpandAfterReplyConsumed,
 }) {
   const [expandedIds, setExpandedIds] = useState([])
   const [expandedReplyIds, setExpandedReplyIds] = useState([])
@@ -31,6 +33,14 @@ export function PostCommentsThread({
     setExpandedIds((prev) => (prev.includes(id) ? prev : [...prev, id]))
   const expandNestedReplies = (id) =>
     setExpandedReplyIds((prev) => (prev.includes(id) ? prev : [...prev, id]))
+
+  useEffect(() => {
+    if (expandAfterReply?.token == null) return
+    const { rootId, nestedAnchorId } = expandAfterReply
+    if (rootId) expandReplies(rootId)
+    if (nestedAnchorId) expandNestedReplies(nestedAnchorId)
+    onExpandAfterReplyConsumed?.()
+  }, [expandAfterReply?.token])
 
   const byId = new Map()
   const childrenMap = new Map()
@@ -430,6 +440,12 @@ export function PostCommentsThread({
     const meta =
       threadPages?.[key] || { page: 1, hasMore: totalCount > nested.length }
 
+    /** Đã bung và đủ reply trong state + không còn trang BE → không cần nút */
+    const allNestedVisible =
+      expanded && !meta.hasMore && nested.length >= totalCount
+    const showReplyToggleButton =
+      totalCount > 0 && !allNestedVisible
+
     const getReplyButtonLabel = () => {
       if (totalCount <= 5) {
         // ≤ 5 phản hồi → luôn "Xem tất cả xx phản hồi"
@@ -463,7 +479,7 @@ export function PostCommentsThread({
                   renderNestedReply(child, idx === nested.length - 1)
                 )}
 
-              {totalCount > 0 && (
+              {showReplyToggleButton && (
                 <button
                   type="button"
                   onClick={() => {

@@ -43,16 +43,12 @@ export function ListeningLessonPage() {
     setNoteTitle,
     noteContent,
     setNoteContent,
-    noteCategory,
-    setNoteCategory,
     noteSaving,
     noteSavedMessage,
     handleSaveNote,
     completingLesson,
     completeMessage,
     handleComplete,
-    saveDraftMessage,
-    handleSaveDraft,
     showHint,
     setShowHint,
     editingPage,
@@ -142,20 +138,9 @@ export function ListeningLessonPage() {
 
         {/* Notes Card */}
         <div className="bg-card-dark rounded-2xl p-5 border border-border-dark shadow-lg">
-          <div className="flex flex-wrap items-center justify-between gap-2 mb-4">
-            <div className="flex items-center gap-2">
-              <span className="material-symbols-outlined text-primary">note_alt</span>
-              <h3 className="font-bold text-sm">{t('listeningLesson.notebook')}</h3>
-            </div>
-            <select
-              value={noteCategory}
-              onChange={(e) => setNoteCategory(e.target.value)}
-              className="bg-background-dark border border-border-dark rounded-lg px-3 py-2 text-sm text-white min-w-[120px]"
-            >
-              <option value="grammar">{t('listeningLesson.noteCategoryGrammar')}</option>
-              <option value="vocab">{t('listeningLesson.noteCategoryVocab')}</option>
-              <option value="idea">{t('listeningLesson.noteCategoryIdea')}</option>
-            </select>
+          <div className="flex items-center gap-2 mb-4">
+            <span className="material-symbols-outlined text-primary">note_alt</span>
+            <h3 className="font-bold text-sm">{t('listeningLesson.notebook')}</h3>
           </div>
           <input
             type="text"
@@ -380,12 +365,12 @@ export function ListeningLessonPage() {
                 type="button"
                 onClick={() => setShowHint((v) => !v)}
                 title={t('listeningLesson.hint')}
-                className={`p-1.5 rounded-lg border transition-all ${showHint ? 'bg-amber-500/20 text-amber-400 border-amber-500/40' : 'border-border-dark text-gray-500 hover:text-amber-400 hover:border-amber-500/30'}`}
+                className={`h-9 w-9 inline-flex items-center justify-center rounded-lg border transition-all ${showHint ? 'bg-amber-500/20 text-amber-400 border-amber-500/40' : 'border-border-dark text-gray-500 hover:text-amber-400 hover:border-amber-500/30'}`}
               >
                 <span className="material-symbols-outlined text-lg">lightbulb</span>
               </button>
-              <div className={`flex items-center gap-2 px-3 py-1.5 rounded-lg border font-mono font-bold text-sm ${(countdownSeconds ?? 1) <= 0 ? 'bg-red-500/20 text-red-400 border-red-500/30' : 'bg-red-500/10 text-red-400 border-red-500/20'}`}>
-                <span className="material-symbols-outlined text-lg">timer</span>
+              <div className={`h-9 inline-flex items-center gap-2 px-3 rounded-lg border font-mono font-bold text-sm ${(countdownSeconds ?? 1) <= 0 ? 'bg-red-500/20 text-red-400 border-red-500/30' : 'bg-red-500/10 text-red-400 border-red-500/20'}`}>
+                <span className="material-symbols-outlined text-base">timer</span>
                 <span>{countdownSeconds != null ? formatTime(Math.max(0, countdownSeconds)) : '--:--'}</span>
                 {(countdownSeconds ?? 1) <= 0 && <span className="text-[10px] ml-1">{t('listeningLesson.timeUp')}</span>}
               </div>
@@ -393,7 +378,7 @@ export function ListeningLessonPage() {
                 type="button"
                 onClick={handleComplete}
                 disabled={completingLesson}
-                className="px-3 py-1.5 rounded-lg text-xs font-bold bg-primary/20 text-primary border border-primary/30 hover:bg-primary/30 transition-all disabled:opacity-60 disabled:cursor-not-allowed"
+                className="h-9 px-4 inline-flex items-center justify-center rounded-lg text-sm font-semibold bg-primary/20 text-primary border border-primary/30 hover:bg-primary/30 transition-all disabled:opacity-60 disabled:cursor-not-allowed"
               >
                 {completingLesson ? '...' : t('listeningLesson.complete')}
               </button>
@@ -556,24 +541,16 @@ export function ListeningLessonPage() {
             </div>
 
             <div className="flex gap-2 shrink-0 items-center flex-wrap">
-              {saveDraftMessage && (
-                <span className="text-xs text-emerald-400">{saveDraftMessage}</span>
+              {currentQuestion < totalQuestions - 1 && (
+                <button
+                  type="button"
+                  onClick={handleComplete}
+                  disabled={completingLesson}
+                  className="px-4 py-2 rounded-xl text-xs font-bold bg-primary/20 text-primary border border-primary/40 hover:bg-primary hover:text-white transition-all whitespace-nowrap disabled:opacity-60 disabled:cursor-not-allowed"
+                >
+                  {completingLesson ? '...' : t('listeningLesson.complete')}
+                </button>
               )}
-              <button
-                type="button"
-                onClick={handleSaveDraft}
-                className="px-4 py-2 rounded-xl text-xs font-bold border border-border-dark text-gray-400 hover:bg-card-dark hover:text-white transition-all whitespace-nowrap"
-              >
-                {t('listeningLesson.saveDraft')}
-              </button>
-              <button
-                type="button"
-                onClick={handleComplete}
-                disabled={completingLesson}
-                className="px-4 py-2 rounded-xl text-xs font-bold bg-primary/20 text-primary border border-primary/40 hover:bg-primary hover:text-white transition-all whitespace-nowrap disabled:opacity-60 disabled:cursor-not-allowed"
-              >
-                {completingLesson ? '...' : t('listeningLesson.complete')}
-              </button>
               {currentQuestion < totalQuestions - 1 ? (
                 <button
                   type="button"
@@ -585,6 +562,7 @@ export function ListeningLessonPage() {
               ) : (
                 <button
                   type="button"
+                  onClick={handleComplete}
                   className="px-5 py-2 rounded-xl text-xs font-bold bg-primary text-white hover:brightness-110 shadow-lg shadow-primary/20 transition-all whitespace-nowrap"
                 >
                   {t('listeningLesson.submit')}

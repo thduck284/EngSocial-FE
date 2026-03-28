@@ -1,6 +1,14 @@
 import { useTranslation } from 'react-i18next'
+import { CommunityGroupAboutSettings } from './CommunityGroupAboutSettings'
 
-export function CommunityRightSidebar({ activeGroup }) {
+export function CommunityRightSidebar({
+  activeGroup,
+  myGroupMembership,
+  isMemberOfActiveGroup = false,
+  onOpenInvite,
+  onOpenGroupMembersModal,
+  onRefreshGroup,
+}) {
   const { t } = useTranslation()
 
   return (
@@ -57,6 +65,15 @@ export function CommunityRightSidebar({ activeGroup }) {
             </div>
           </div>
         </div>
+
+        <CommunityGroupAboutSettings
+          activeGroup={activeGroup}
+          myGroupMembership={myGroupMembership}
+          isMemberOfActiveGroup={isMemberOfActiveGroup}
+          onOpenInvite={onOpenInvite}
+          onOpenGroupMembersModal={onOpenGroupMembersModal}
+          onRefreshGroup={onRefreshGroup}
+        />
       </div>
     </aside>
   )

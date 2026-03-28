@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback, useMemo } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import { friendsService, communityService } from '../services'
+import { groupService } from '../services/group.service'
 
 /**
  * Hook for Search page: URL params (q, tab), filters, friends search API, apply/clear filters.
@@ -45,6 +46,11 @@ export function useSearchPage() {
   const [postsLoading, setPostsLoading] = useState(false)
   const [postsError, setPostsError] = useState(null)
   const [postsPagination, setPostsPagination] = useState(null)
+
+  const [communityResults, setCommunityResults] = useState([])
+  const [communityLoading, setCommunityLoading] = useState(false)
+  const [communityError, setCommunityError] = useState(null)
+  const [communityPagination, setCommunityPagination] = useState(null)
 
   const fetchFriendsSearch = useCallback(async () => {
     if (tab !== 'friends') return
@@ -118,6 +124,75 @@ export function useSearchPage() {
   useEffect(() => {
     fetchPostsSearch()
   }, [fetchPostsSearch])
+
+  const fetchGroupsSearch = useCallback(async () => {
+    if (tab !== 'community') return
+    const term = q.trim()
+    if (!term) {
+      setCommunityResults([])
+      setCommunityPagination(null)
+      setCommunityError(null)
+      setCommunityLoading(false)
+      return
+    }
+
+    setCommunityLoading(true)
+    setCommunityError(null)
+
+    let joinedSet = new Set()
+    if (communityFilter === 'joined' || communityFilter === 'notJoined') {
+      try {
+        const mineRes = await groupService.listMine({ limit: 200 })
+        const raw = mineRes?.data ?? mineRes
+        const mineList = Array.isArray(raw) ? raw : raw?.data ?? []
+        if (Array.isArray(mineList)) {
+          mineList.forEach((g) => {
+            const gid = g?.id ?? g?._id
+            if (gid != null) joinedSet.add(String(gid))
+          })
+        }
+      } catch {
+        joinedSet = new Set()
+      }
+    }
+
+    try {
+      const res = await groupService.list({ search: term, page: 1, limit: 40 })
+      const payload = res?.data ?? res
+      let list = Array.isArray(payload) ? payload : payload?.data ?? []
+      list = Array.isArray(list) ? list : []
+
+      if (communityFilter === 'joined') {
+        list = list.filter((g) => joinedSet.has(String(g?.id ?? g?._id)))
+      } else if (communityFilter === 'notJoined') {
+        list = list.filter((g) => !joinedSet.has(String(g?.id ?? g?._id)))
+      }
+
+      setCommunityResults(list)
+      const meta = res?.meta?.pagination ?? payload?.meta?.pagination ?? null
+      if (communityFilter === 'all') {
+        setCommunityPagination(
+          meta ?? { total: list.length, page: 1, limit: 40, totalPages: 1 }
+        )
+      } else {
+        setCommunityPagination({
+          ...(meta && typeof meta === 'object' ? meta : {}),
+          total: list.length,
+          page: 1,
+        })
+      }
+    } catch (err) {
+      setCommunityError(err?.message ?? 'search.groupsSearchError')
+      setCommunityResults([])
+      setCommunityPagination(null)
+    } finally {
+      setCommunityLoading(false)
+    }
+  }, [tab, q, communityFilter])
+
+  useEffect(() => {
+    fetchGroupsSearch()
+  }, [fetchGroupsSearch])
 
   // Apply all post filters on frontend để chắc chắn hoạt động, kể cả khi backend chưa hỗ trợ
   const filteredPosts = useMemo(() => {
@@ -357,5 +432,9 @@ export function useSearchPage() {
     clearFilters,
     handleSendFriendRequest,
     handleCancelFriendRequest,
+    communityResults,
+    communityLoading,
+    communityError,
+    communityPagination,
   }
 }

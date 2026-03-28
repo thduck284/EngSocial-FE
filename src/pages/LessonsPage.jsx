@@ -27,6 +27,7 @@ export function LessonsPage() {
     setLevel,
     handleDeleteLesson,
     deletingId,
+    completedLessonIds,
   } = useLessonsList()
 
   const [noteTitle, setNoteTitle] = useState('')
@@ -248,6 +249,12 @@ export function LessonsPage() {
                       <h5 className="font-bold text-sm group-hover:text-primary transition-colors">
                         {lesson.title}
                       </h5>
+                      {completedLessonIds.has(String(lesson.id)) && (
+                        <span className="inline-flex items-center gap-1 px-1.5 py-0.5 bg-emerald-500/15 text-emerald-400 text-[9px] font-bold rounded border border-emerald-500/30">
+                          <span className="material-symbols-outlined text-[11px]">check_circle</span>
+                          Done
+                        </span>
+                      )}
                       <span
                         className={`px-1.5 py-0.5 ${LEVEL_COLORS[lesson.level] || 'bg-gray-600 text-gray-300'} text-[9px] font-bold rounded`}
                       >

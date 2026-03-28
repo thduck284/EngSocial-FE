@@ -242,6 +242,7 @@ export function DashboardMainFeed({
             <DashboardPostCard
               key={post?.id ?? post?._id ?? `post-${index}`}
               post={post}
+              useHomeCommunityStyle
               onToggleLike={onPostReactionUpdate}
               onUpdatePost={onPostUpdate}
               onDeletePost={onPostDelete}

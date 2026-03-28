@@ -1,7 +1,7 @@
 import { Link, useParams, useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { useAuth } from '../context/AuthContext'
-import { SKILLS, SKILL_TABS } from '../raw'
+import { SKILLS, SKILL_TABS } from '../constants'
 import { ROUTES } from '../constants'
 import { DEFAULT_AVATAR } from '../constants/ui'
 import { useSkillPractices } from '../hooks/useLessons'
@@ -84,7 +84,14 @@ export function SkillPracticePage() {
           <div className="p-4 space-y-3">
             <div className="flex justify-between items-start">
               <h5 className="font-bold text-sm leading-snug group-hover:text-primary transition-colors">{card.title}</h5>
-              <span className={`px-1.5 py-0.5 ${card.levelColor} text-[9px] font-bold rounded`}>{card.level}</span>
+              <div className="flex items-center gap-1">
+                {card.isCompleted && (
+                  <span className="inline-flex items-center justify-center size-5 rounded-full bg-emerald-500/15 text-emerald-400 border border-emerald-500/30">
+                    <span className="material-symbols-outlined text-xs">check</span>
+                  </span>
+                )}
+                <span className={`px-1.5 py-0.5 ${card.levelColor} text-[9px] font-bold rounded`}>{card.level}</span>
+              </div>
             </div>
             <p className="text-xs text-gray-400 line-clamp-2">{card.desc}</p>
             <div className="flex flex-wrap gap-2 py-2">
@@ -150,7 +157,14 @@ export function SkillPracticePage() {
           <div className="p-4 space-y-3">
             <div className="flex justify-between items-start">
               <h5 className="font-bold text-sm leading-snug group-hover:text-primary transition-colors">{card.title}</h5>
-              <span className={`px-1.5 py-0.5 ${card.levelColor} text-[9px] font-bold rounded`}>{card.level}</span>
+              <div className="flex items-center gap-1">
+                {card.isCompleted && (
+                  <span className="inline-flex items-center justify-center size-5 rounded-full bg-emerald-500/15 text-emerald-400 border border-emerald-500/30">
+                    <span className="material-symbols-outlined text-xs">check</span>
+                  </span>
+                )}
+                <span className={`px-1.5 py-0.5 ${card.levelColor} text-[9px] font-bold rounded`}>{card.level}</span>
+              </div>
             </div>
             {card.accent && (
               <div className="flex items-center gap-2">
@@ -221,7 +235,14 @@ export function SkillPracticePage() {
           <div className="p-4 space-y-3">
             <div className="flex justify-between items-start">
               <h5 className="font-bold text-sm leading-snug group-hover:text-primary transition-colors">{card.title}</h5>
-              <span className={`px-1.5 py-0.5 ${card.levelColor} text-[9px] font-bold rounded`}>{card.level}</span>
+              <div className="flex items-center gap-1">
+                {card.isCompleted && (
+                  <span className="inline-flex items-center justify-center size-5 rounded-full bg-emerald-500/15 text-emerald-400 border border-emerald-500/30">
+                    <span className="material-symbols-outlined text-xs">check</span>
+                  </span>
+                )}
+                <span className={`px-1.5 py-0.5 ${card.levelColor} text-[9px] font-bold rounded`}>{card.level}</span>
+              </div>
             </div>
             {card.type && (
               <div className="flex items-center gap-2">

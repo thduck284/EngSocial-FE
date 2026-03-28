@@ -128,9 +128,9 @@ export function CreatePostModal({
             value={content}
             onChange={handleContentChange}
             onKeyDown={handleContentKeyDown}
-            className="w-full min-h-[120px] bg-transparent border-none focus:ring-0 text-lg text-slate-900 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 resize-none p-0"
+            className="w-full min-h-[170px] bg-transparent border-none focus:ring-0 text-lg text-slate-900 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 resize-none p-0"
             placeholder={t('dashboard.postPlaceholder')}
-            rows={3}
+            rows={6}
           />
           {showMentionDropdown && (
             <div className="absolute left-6 right-6 top-full mt-0.5 pt-1.5 pb-2 bg-white dark:bg-card-dark rounded-xl shadow-xl border border-slate-200 dark:border-border-dark z-50 max-h-48 overflow-y-auto custom-scrollbar">

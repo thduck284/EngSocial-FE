@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useRef } from 'react'
+import { useState, useEffect, useCallback, useRef, useMemo } from 'react'
 import { Link, useParams, useNavigate, useLocation } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { useAuth } from '../context/AuthContext'
@@ -11,6 +11,8 @@ import { ProfilePostsList } from '../components/profile/ProfilePostsList'
 import { ProfilePhotosGrid } from '../components/profile/ProfilePhotosGrid'
 import { ProfileVideosGrid } from '../components/profile/ProfileVideosGrid'
 import { ProfileSkillsTab } from '../components/profile/ProfileSkillsTab'
+import { ProfileFriendsListModal } from '../components/profile/ProfileFriendsListModal'
+import { normalizeFriendsFromResponse, sortFriendsByOnlineAndLastActive } from '../utils/profile'
 
 function formatJoinedAt(createdAt) {
   if (!createdAt) return ''
@@ -62,7 +64,13 @@ export function UserProfilePage() {
   const [friendActionLoading, setFriendActionLoading] = useState(false)
   const [blockActionLoading, setBlockActionLoading] = useState(false)
   const [friendsMenuOpen, setFriendsMenuOpen] = useState(false)
+  const [friendsModalOpen, setFriendsModalOpen] = useState(false)
+  /** null = đang tải; Set rỗng = đã tải xong (dùng trong modal bạn bè để biết ai đã là bạn / đã gửi lời mời) */
+  const [myConnectedFriendIds, setMyConnectedFriendIds] = useState(null)
+  const [myPendingSentUserIds, setMyPendingSentUserIds] = useState(null)
   const friendsMenuRef = useRef(null)
+
+  const viewerId = currentUser?.id || currentUser?._id
 
   const {
     posts: userPosts,
@@ -89,6 +97,57 @@ export function UserProfilePage() {
     if (!userId) return
     userService.getUserProfile(userId).then((res) => setProfile(mapApiProfileToState(res?.data))).catch(() => setProfile(null))
   }, [userId])
+
+  useEffect(() => {
+    if (!viewerId || !userId) {
+      setMyConnectedFriendIds(null)
+      setMyPendingSentUserIds(null)
+      return
+    }
+    if (String(viewerId) === String(userId)) return
+    let cancelled = false
+    setMyConnectedFriendIds(null)
+    setMyPendingSentUserIds(null)
+    Promise.all([
+      friendsService.getList({ limit: 200 }),
+      friendsService.getSentRequests({ limit: 100 }),
+    ])
+      .then(([listRes, sentRes]) => {
+        if (cancelled) return
+        const friends = normalizeFriendsFromResponse(listRes)
+        const connected = new Set(friends.map((f) => String(f.id)))
+        const rawSent = sentRes?.data?.data ?? sentRes?.data ?? []
+        const sentList = Array.isArray(rawSent) ? rawSent : []
+        const pendingSent = new Set(
+          sentList
+            .map((r) => {
+              const to = r?.to || {}
+              return String(to?.id ?? to?._id ?? '')
+            })
+            .filter(Boolean)
+        )
+        setMyConnectedFriendIds(connected)
+        setMyPendingSentUserIds(pendingSent)
+      })
+      .catch(() => {
+        if (!cancelled) {
+          setMyConnectedFriendIds(new Set())
+          setMyPendingSentUserIds(new Set())
+        }
+      })
+    return () => {
+      cancelled = true
+    }
+  }, [viewerId, userId])
+
+  const handleSendFriendRequestFromModal = useCallback(async (targetUserId) => {
+    await friendsService.sendRequest(targetUserId)
+    setMyPendingSentUserIds((prev) => {
+      const next = new Set(prev ?? [])
+      next.add(String(targetUserId))
+      return next
+    })
+  }, [])
 
   const handleAddFriend = useCallback(() => {
     if (!userId || friendActionLoading) return
@@ -223,6 +282,20 @@ export function UserProfilePage() {
       .catch(() => setProfile(null))
       .finally(() => setLoading(false))
   }, [userId, currentUser?.id, currentUser?._id, navigate])
+
+  const friendsForModal = useMemo(() => {
+    const raw = profile?.friends || []
+    return sortFriendsByOnlineAndLastActive(
+      raw.map((f) => ({
+        id: f.id ?? f._id,
+        name: f.name ?? 'User',
+        avatar: f.avatar || DEFAULT_AVATAR,
+        level: f.level ?? 1,
+        lastActiveAt: f.lastActiveAt ?? f.lastSeen ?? f.lastActiveDate ?? null,
+      })),
+      onlineUserIds
+    )
+  }, [profile?.friends, onlineUserIds])
 
   if (loading) {
     return (
@@ -416,11 +489,29 @@ export function UserProfilePage() {
           </div>
 
           <div className="bg-card-dark border border-border-dark rounded-xl p-5">
+            <ProfileFriendsListModal
+              t={t}
+              show={friendsModalOpen}
+              onClose={() => setFriendsModalOpen(false)}
+              friends={friendsForModal}
+              loading={false}
+              onlineUserIds={onlineUserIds}
+              navigate={navigate}
+              showStrangerAddFriend={Boolean(viewerId && userId && String(viewerId) !== String(userId))}
+              viewerUserId={viewerId}
+              myConnectedFriendIds={myConnectedFriendIds}
+              myPendingSentUserIds={myPendingSentUserIds}
+              onSendFriendRequest={handleSendFriendRequestFromModal}
+            />
             <div className="flex justify-between items-center mb-4">
               <h3 className="font-bold text-white">{t('userProfile.friendsCount', { count: profile.friendsCount })}</h3>
-              <Link to={userId ? `${ROUTES.PROFILE_USER(userId)}/friends` : '#'} className="text-xs text-primary font-medium hover:underline">
+              <button
+                type="button"
+                onClick={() => setFriendsModalOpen(true)}
+                className="text-xs text-primary font-medium hover:underline"
+              >
                 {t('userProfile.viewAllFriends')}
-              </Link>
+              </button>
             </div>
             <div className="grid grid-cols-3 gap-4">
               {profile.friends.slice(0, 6).map((friend) => (

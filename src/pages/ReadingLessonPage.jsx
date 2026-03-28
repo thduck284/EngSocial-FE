@@ -3,6 +3,7 @@ import { Link, useParams } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { useReadingLesson } from '../hooks/useReadingLesson'
 import { formatTime } from '../utils/dateTime'
+import { AlertModal } from '../components/ui/common/AlertModal'
 
 export function ReadingLessonPage() {
   const { t } = useTranslation()
@@ -32,8 +33,6 @@ export function ReadingLessonPage() {
     setNoteTitle,
     noteContent,
     setNoteContent,
-    noteCategory,
-    setNoteCategory,
     noteSaving,
     noteSavedMessage,
     handleSaveNote,
@@ -42,11 +41,11 @@ export function ReadingLessonPage() {
     setPageInput,
     showHint,
     setShowHint,
+    showIncompleteModal,
+    closeIncompleteModal,
     completingLesson,
     completeMessage,
     handleComplete,
-    saveDraftMessage,
-    handleSaveDraft,
     vocabIndex,
     setVocabIndex,
     showVocabTable,
@@ -85,7 +84,8 @@ export function ReadingLessonPage() {
   }
 
   return (
-    <main className="max-w-[1600px] mx-auto px-6 py-6 flex flex-col lg:flex-row gap-6 min-h-[calc(100vh-64px)]">
+    <>
+      <main className="max-w-[1600px] mx-auto px-6 py-6 flex flex-col lg:flex-row gap-6 min-h-[calc(100vh-64px)]">
       {/* Left Sidebar - ~200px, can shrink */}
       <aside className="w-full lg:w-[300px] lg:min-w-[240px] lg:shrink lg:basis-[300px] space-y-6 overflow-y-auto pr-2 pb-6 custom-scrollbar">
         {/* Lesson Info Card */}
@@ -130,20 +130,9 @@ export function ReadingLessonPage() {
 
         {/* Notes Card */}
         <div className="bg-card-dark rounded-2xl p-5 border border-border-dark shadow-lg">
-          <div className="flex flex-wrap items-center justify-between gap-2 mb-4">
-            <div className="flex items-center gap-2">
-              <span className="material-symbols-outlined text-primary">note_alt</span>
-              <h3 className="font-bold text-sm">{t('readingLesson.notebook')}</h3>
-            </div>
-            <select
-              value={noteCategory}
-              onChange={(e) => setNoteCategory(e.target.value)}
-              className="bg-background-dark border border-border-dark rounded-lg px-3 py-2 text-sm text-white min-w-[120px]"
-            >
-              <option value="grammar">{t('readingLesson.noteCategoryGrammar')}</option>
-              <option value="vocab">{t('readingLesson.noteCategoryVocab')}</option>
-              <option value="idea">{t('readingLesson.noteCategoryIdea')}</option>
-            </select>
+          <div className="flex items-center gap-2 mb-4">
+            <span className="material-symbols-outlined text-primary">note_alt</span>
+            <h3 className="font-bold text-sm">{t('readingLesson.notebook')}</h3>
           </div>
           <input
             type="text"
@@ -315,12 +304,12 @@ export function ReadingLessonPage() {
                     type="button"
                     onClick={() => setShowHint((v) => !v)}
                     title={t('readingLesson.hint')}
-                    className={`p-1.5 rounded-lg border transition-all ${showHint ? 'bg-amber-500/20 text-amber-400 border-amber-500/40' : 'border-border-dark text-gray-500 hover:text-amber-400 hover:border-amber-500/30'}`}
+                    className={`h-9 w-9 inline-flex items-center justify-center rounded-lg border transition-all ${showHint ? 'bg-amber-500/20 text-amber-400 border-amber-500/40' : 'border-border-dark text-gray-500 hover:text-amber-400 hover:border-amber-500/30'}`}
                   >
                     <span className="material-symbols-outlined text-lg">lightbulb</span>
                   </button>
-                  <div className={`flex items-center gap-2 px-3 py-1.5 rounded-lg border font-mono font-bold text-sm ${(countdownSeconds ?? 1) <= 0 ? 'bg-red-500/20 text-red-400 border-red-500/30' : 'bg-red-500/10 text-red-400 border-red-500/20'}`}>
-                    <span className="material-symbols-outlined text-lg">timer</span>
+                  <div className={`h-9 inline-flex items-center gap-2 px-3 rounded-lg border font-mono font-bold text-sm ${(countdownSeconds ?? 1) <= 0 ? 'bg-red-500/20 text-red-400 border-red-500/30' : 'bg-red-500/10 text-red-400 border-red-500/20'}`}>
+                    <span className="material-symbols-outlined text-base">timer</span>
                     <span>{countdownSeconds != null ? formatTime(Math.max(0, countdownSeconds)) : '--:--'}</span>
                     {(countdownSeconds ?? 1) <= 0 && <span className="text-[10px] ml-1">{t('readingLesson.timeUp')}</span>}
                   </div>
@@ -328,7 +317,7 @@ export function ReadingLessonPage() {
                     type="button"
                     onClick={handleComplete}
                     disabled={completingLesson}
-                    className="px-3 py-1.5 rounded-lg text-xs font-bold bg-primary/20 text-primary border border-primary/30 hover:bg-primary/30 disabled:opacity-60 disabled:cursor-not-allowed"
+                    className="h-9 px-4 inline-flex items-center justify-center rounded-lg text-sm font-semibold bg-primary/20 text-primary border border-primary/30 hover:bg-primary/30 disabled:opacity-60 disabled:cursor-not-allowed"
                   >
                     {completingLesson ? '...' : t('readingLesson.complete')}
                   </button>
@@ -472,22 +461,16 @@ export function ReadingLessonPage() {
             </div>
 
             <div className="flex gap-2 shrink-0 items-center flex-wrap">
-              {saveDraftMessage && <span className="text-xs text-emerald-400">{saveDraftMessage}</span>}
-              <button
-                type="button"
-                onClick={handleSaveDraft}
-                className="px-4 py-2 rounded-xl text-xs font-bold border border-border-dark text-gray-400 hover:bg-card-dark hover:text-white transition-all whitespace-nowrap"
-              >
-                {t('readingLesson.saveDraft')}
-              </button>
-              <button
-                type="button"
-                onClick={handleComplete}
-                disabled={completingLesson}
-                className="px-4 py-2 rounded-xl text-xs font-bold bg-primary/20 text-primary border border-primary/40 hover:bg-primary hover:text-white transition-all whitespace-nowrap disabled:opacity-60 disabled:cursor-not-allowed"
-              >
-                {completingLesson ? '...' : t('readingLesson.complete')}
-              </button>
+              {currentQuestion < totalQuestions - 1 && (
+                <button
+                  type="button"
+                  onClick={handleComplete}
+                  disabled={completingLesson}
+                  className="px-4 py-2 rounded-xl text-xs font-bold bg-primary/20 text-primary border border-primary/40 hover:bg-primary hover:text-white transition-all whitespace-nowrap disabled:opacity-60 disabled:cursor-not-allowed"
+                >
+                  {completingLesson ? '...' : t('readingLesson.complete')}
+                </button>
+              )}
               {currentQuestion < totalQuestions - 1 ? (
                 <button
                   type="button"
@@ -645,6 +628,14 @@ export function ReadingLessonPage() {
           </button>
         </div>
       )}
-    </main>
+      </main>
+      <AlertModal
+        open={showIncompleteModal}
+        title=""
+        message={t('readingLesson.pleaseAnswerAll')}
+        confirmText="OK"
+        onClose={closeIncompleteModal}
+      />
+    </>
   )
 }

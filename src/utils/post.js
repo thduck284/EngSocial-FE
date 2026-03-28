@@ -1,5 +1,32 @@
 // Post-related utility helpers (formatting, mapping, etc.)
 
+/**
+ * Total reactions for post summary: uses likeCount when valid, and falls back to
+ * summing reactionCounts so UI stays correct if Post.likeCount is out of sync or missing.
+ */
+export function getPostReactionTotal(post) {
+  const raw = Number(post?.likeCount)
+  const fromField = Number.isFinite(raw) && raw >= 0 ? raw : 0
+  const rc = post?.reactionCounts
+  if (rc && typeof rc === 'object' && !Array.isArray(rc)) {
+    const sum = Object.values(rc).reduce((acc, v) => acc + (Number(v) || 0), 0)
+    return Math.max(fromField, sum)
+  }
+  return fromField
+}
+
+/** Label for post visibility in feed headers (API uses lowercase e.g. "group"). */
+export function getPostVisibilityLabel(visibility, t) {
+  if (visibility == null || visibility === '') return '—'
+  const v = String(visibility).toLowerCase()
+  if (v === 'public') return t('dashboard.public') || 'Public'
+  if (v === 'friends') return t('dashboard.friendsOnly') || 'Friends only'
+  if (v === 'private' || v === 'onlyme') return t('dashboard.privateOnly') || 'Only me'
+  if (v === 'group') return t('dashboard.visibilityGroup') || 'Group'
+  const s = String(visibility)
+  return s.charAt(0).toUpperCase() + s.slice(1).toLowerCase()
+}
+
 /** Format reaction count for display (e.g. 1600 -> "1,6K", 42 -> "42") */
 export function formatReactionCount(n) {
   const num = Number(n) || 0

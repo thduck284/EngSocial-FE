@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { communityService, userService, rawService, friendsService } from '../services'
@@ -12,6 +12,19 @@ import {
 } from '../utils/profile'
 import { getDefaultSkillStats, normalizeSkillStatsFromStats } from '../utils/dashboard'
 import { DEFAULT_AVATAR } from '../constants/ui'
+
+function mergeMediaByPostAndUrl(prev, incoming) {
+  const seen = new Set(prev.map((p) => `${String(p.postId ?? '')}::${p.url}`))
+  const out = [...prev]
+  for (const p of incoming) {
+    const k = `${String(p.postId ?? '')}::${p.url}`
+    if (!seen.has(k)) {
+      seen.add(k)
+      out.push(p)
+    }
+  }
+  return out
+}
 
 /**
  * Load posts for a given user (profile page).
@@ -70,14 +83,19 @@ export function useProfilePhotos(userId, { pageSize = 5 } = {}) {
   const [hasMorePosts, setHasMorePosts] = useState(true)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
+  const postsPageRef = useRef(1)
+  const fetchInFlightRef = useRef(false)
 
   useEffect(() => {
     // reset when user changes
     setAllPhotos([])
     setVisibleCount(pageSize)
     setPostsPage(1)
+    postsPageRef.current = 1
+    fetchInFlightRef.current = false
     setHasMorePosts(true)
     setError('')
+    setLoading(false)
   }, [userId, pageSize])
 
   // Load first page automatically when userId is available
@@ -92,7 +110,9 @@ export function useProfilePhotos(userId, { pageSize = 5 } = {}) {
 
   const fetchNextPostsPage = async () => {
     if (!userId || !hasMorePosts) return []
-    const currentPage = postsPage
+    if (fetchInFlightRef.current) return []
+    fetchInFlightRef.current = true
+    const currentPage = postsPageRef.current
     setLoading(true)
     setError('')
     try {
@@ -124,16 +144,18 @@ export function useProfilePhotos(userId, { pageSize = 5 } = {}) {
           .map((url) => ({ url, postId }))
       })
 
-      setPostsPage((prev) => prev + 1)
+      postsPageRef.current = currentPage + 1
+      setPostsPage(postsPageRef.current)
       setHasMorePosts(list.length === 10)
       if (photosFromPosts.length) {
-        setAllPhotos((prev) => [...prev, ...photosFromPosts])
+        setAllPhotos((prev) => mergeMediaByPostAndUrl(prev, photosFromPosts))
       }
       return photosFromPosts
     } catch (err) {
       setError(err?.message || 'Failed to load photos')
       return []
     } finally {
+      fetchInFlightRef.current = false
       setLoading(false)
     }
   }
@@ -179,13 +201,18 @@ export function useProfileVideos(userId, { pageSize = 5 } = {}) {
   const [hasMorePosts, setHasMorePosts] = useState(true)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
+  const postsPageRef = useRef(1)
+  const fetchInFlightRef = useRef(false)
 
   useEffect(() => {
     setAllVideos([])
     setVisibleCount(pageSize)
     setPostsPage(1)
+    postsPageRef.current = 1
+    fetchInFlightRef.current = false
     setHasMorePosts(true)
     setError('')
+    setLoading(false)
   }, [userId, pageSize])
 
   useEffect(() => {
@@ -197,7 +224,9 @@ export function useProfileVideos(userId, { pageSize = 5 } = {}) {
 
   const fetchNextPostsPage = async () => {
     if (!userId || !hasMorePosts) return []
-    const currentPage = postsPage
+    if (fetchInFlightRef.current) return []
+    fetchInFlightRef.current = true
+    const currentPage = postsPageRef.current
     setLoading(true)
     setError('')
     try {
@@ -225,16 +254,18 @@ export function useProfileVideos(userId, { pageSize = 5 } = {}) {
         return video ? [{ url: video, postId }] : []
       })
 
-      setPostsPage((prev) => prev + 1)
+      postsPageRef.current = currentPage + 1
+      setPostsPage(postsPageRef.current)
       setHasMorePosts(list.length === 10)
       if (videosFromPosts.length) {
-        setAllVideos((prev) => [...prev, ...videosFromPosts])
+        setAllVideos((prev) => mergeMediaByPostAndUrl(prev, videosFromPosts))
       }
       return videosFromPosts
     } catch (err) {
       setError(err?.message || 'Failed to load videos')
       return []
     } finally {
+      fetchInFlightRef.current = false
       setLoading(false)
     }
   }
@@ -479,6 +510,11 @@ export function useProfilePage() {
     }
   }
 
+  const sortedProfileFriends = useMemo(
+    () => sortFriendsByOnlineAndLastActive(profileFriends, onlineUserIds),
+    [profileFriends, onlineUserIds]
+  )
+
   const filteredFriends = sortFriendsByOnlineAndLastActive(
     profileFriends.filter(
       (f) =>
@@ -498,6 +534,7 @@ export function useProfilePage() {
     raw,
     profileSkillStats,
     profileFriends,
+    sortedProfileFriends,
     profileFriendsLoading,
     onlineUserIds,
     displayName,

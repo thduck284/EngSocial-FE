@@ -1,11 +1,15 @@
-import React, { useState, useEffect } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
-import { vocabularyData } from '../data/vocabularyData';
+import React, { useState, useEffect, useMemo } from 'react';
+import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
+import { getVocabularyTopic, CUSTOM_TOPIC_ID } from '../utils/getVocabularyTopic';
+import { vocabTopicDetailPath } from '../utils/vocabularyCustomRoutes';
+import { recordVocabTopicActivity } from '../utils/vocabularyRecentTopics';
 
 const LearnPage = () => {
     const { topicId } = useParams();
     const navigate = useNavigate();
-    const topic = vocabularyData?.[topicId];
+    const [searchParams] = useSearchParams();
+    const deckParam = searchParams.get('deck');
+    const topic = useMemo(() => getVocabularyTopic(topicId, deckParam), [topicId, deckParam]);
 
     const [questions, setQuestions] = useState([]);
     const [currentQuestion, setCurrentQuestion] = useState(null);
@@ -28,6 +32,11 @@ const LearnPage = () => {
             setTotalWords(0);
         }
     }, [topic]);
+
+    useEffect(() => {
+        if (!topic) return;
+        recordVocabTopicActivity(topicId, 'learn', topicId === CUSTOM_TOPIC_ID ? deckParam : null);
+    }, [topic, topicId, deckParam]);
 
     useEffect(() => {
         if (questions.length > 0) {
@@ -112,7 +121,7 @@ const LearnPage = () => {
             <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex items-center justify-center flex-col">
                 <p className="text-green-600 text-2xl mb-6">🎉 Chúc mừng! Bạn đã học xong tất cả từ vựng trong chủ đề này.</p>
                 <button
-                    onClick={() => navigate(`/topic/${topicId}`)}
+                    onClick={() => navigate(vocabTopicDetailPath(topicId, deckParam))}
                     className="px-8 py-4 bg-blue-500 text-white text-lg rounded-xl hover:bg-blue-600"
                 >
                     Quay lại
@@ -138,7 +147,7 @@ const LearnPage = () => {
                 <div className="max-w-5xl mx-auto px-6 py-4">
                     <div className="flex justify-between items-center mb-3">
                         <button
-                            onClick={() => navigate(`/topic/${topicId}`)}
+                            onClick={() => navigate(vocabTopicDetailPath(topicId, deckParam))}
                             className="text-gray-600 dark:text-gray-300 hover:text-blue-600 text-lg"
                         >
                             ← Quay lại

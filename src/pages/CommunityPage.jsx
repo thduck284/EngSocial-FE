@@ -1,13 +1,15 @@
-import { useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useLocation, useNavigate, useParams } from 'react-router-dom'
 import { useCommunityGroups } from '../hooks/useCommunityGroups'
 import { CommunityInviteFriendsModal } from '../components/community/CommunityInviteFriendsModal'
+import { CommunityGroupMembersModal } from '../components/community/CommunityGroupMembersModal'
 import { CommunityLeftSidebar } from '../components/community/CommunityLeftSidebar'
 import { CommunityHeader } from '../components/community/CommunityHeader'
 import { CommunityMain } from '../components/community/CommunityMain'
 import { CommunityRightSidebar } from '../components/community/CommunityRightSidebar'
 import { CreatePostModal } from '../components/ui/post/CreatePostModal'
+import { showEngSuccessToast } from '../utils/showEngToast'
 
 export function CommunityPage() {
   const { t } = useTranslation()
@@ -26,22 +28,59 @@ export function CommunityPage() {
     postsHasMore,
     loadMorePosts,
     handlePostReactionUpdate,
+    handlePostUpdate,
+    handlePostDelete,
     handlePostFromModal,
     feedPosts,
     feedLoading,
     feedHasMore,
     loadFeedPosts,
     loadMoreFeedPosts,
+    leaveCommunityGroup,
+    joinCommunityGroup,
+    handleMemberRemovedFromGroup,
+    handleJoinRequestApproved,
+    myGroupMembership,
+    acceptGroupInvite,
+    declineGroupInvite,
+    withdrawPendingJoinRequest,
   } = useCommunityGroups()
   const [inviteOpen, setInviteOpen] = useState(false)
+  const [joinRequestsRefreshKey, setJoinRequestsRefreshKey] = useState(0)
   const [createPostOpen, setCreatePostOpen] = useState(false)
+  const [groupMembersModalOpen, setGroupMembersModalOpen] = useState(false)
   const lastLoadedGroupIdRef = useRef(null)
+  const groupFeedHeaderRef = useRef(null)
   const normalizeTab = (raw) => {
     const v = (raw || '').toLowerCase()
     return ['about', 'posts', 'people', 'media', 'files'].includes(v) ? v : 'about'
   }
 
   const [groupTab, setGroupTab] = useState(normalizeTab(tab)) // 'about' | 'posts' | ...
+  const handleLeaveGroup = useCallback(
+    async (gid) => {
+      await leaveCommunityGroup(gid)
+      lastLoadedGroupIdRef.current = null
+      navigate('/community/group-feed')
+    },
+    [leaveCommunityGroup, navigate]
+  )
+
+  const activeGid = activeGroup?.id ?? activeGroup?._id
+  const membershipReady = !loadingGroups
+  const isMemberOfActiveGroup = Boolean(
+    membershipReady &&
+      activeGid &&
+      groups.some((g) => String(g.id ?? g._id) === String(activeGid))
+  )
+
+  const handleJoinGroup = useCallback(
+    async (gid) => {
+      await joinCommunityGroup(gid)
+      showEngSuccessToast(t('groups.header.joinPendingNotice'))
+    },
+    [joinCommunityGroup, t]
+  )
   const [viewMode, setViewMode] = useState(
     location.pathname.endsWith('/my-groups')
       ? 'list'
@@ -112,7 +151,16 @@ export function CommunityPage() {
                 activeGroup={activeGroup}
                 activeMembers={activeMembers}
                 loadingActive={loadingActive}
+                loadingMembership={loadingGroups}
+                isMemberOfActiveGroup={isMemberOfActiveGroup}
+                myGroupMembership={myGroupMembership}
+                onAcceptGroupInvite={acceptGroupInvite}
+                onDeclineGroupInvite={declineGroupInvite}
+                onWithdrawPendingJoinRequest={withdrawPendingJoinRequest}
                 onOpenInvite={() => setInviteOpen(true)}
+                onOpenGroupMembersModal={() => setGroupMembersModalOpen(true)}
+                onLeaveGroup={handleLeaveGroup}
+                onJoinGroup={handleJoinGroup}
                 activeTab={groupTab}
                 onTabChange={(next) => {
                   const normalized = normalizeTab(next)
@@ -130,13 +178,37 @@ export function CommunityPage() {
                 postsHasMore={postsHasMore}
                 loadMorePosts={loadMorePosts}
                 onPostReactionUpdate={handlePostReactionUpdate}
+                onPostUpdate={handlePostUpdate}
+                onPostDelete={handlePostDelete}
                 activeTab={groupTab}
                 activeGroup={activeGroup}
                 activeMembers={activeMembers}
+                isMemberOfActiveGroup={isMemberOfActiveGroup}
+                onOpenGroupMembersModal={() => setGroupMembersModalOpen(true)}
+                onMemberRemovedFromGroup={handleMemberRemovedFromGroup}
+                onJoinRequestApproved={handleJoinRequestApproved}
+                joinRequestsRefreshKey={joinRequestsRefreshKey}
+                hidePostGroupLabel
+                myGroupMembership={myGroupMembership}
+                onOpenInvite={() => setInviteOpen(true)}
+                onRefreshGroup={async () => {
+                  const id = activeGroup?.id || activeGroup?._id || groupId
+                  if (id) await loadGroupDetail(id)
+                }}
               />
             </div>
 
-            <CommunityRightSidebar activeGroup={activeGroup} />
+            <CommunityRightSidebar
+              activeGroup={activeGroup}
+              myGroupMembership={myGroupMembership}
+              isMemberOfActiveGroup={isMemberOfActiveGroup}
+              onOpenInvite={() => setInviteOpen(true)}
+              onOpenGroupMembersModal={() => setGroupMembersModalOpen(true)}
+              onRefreshGroup={async () => {
+                const id = activeGroup?.id || activeGroup?._id || groupId
+                if (id) await loadGroupDetail(id)
+              }}
+            />
           </>
         ) : viewMode === 'list' ? (
           <div className="md:col-span-9 lg:col-span-9 space-y-4">
@@ -196,6 +268,29 @@ export function CommunityPage() {
         ) : (
           // Feed: all groups' posts (Your group feed)
           <div className="md:col-span-9 lg:col-span-6 space-y-6">
+            <header
+              ref={groupFeedHeaderRef}
+              tabIndex={-1}
+              className="bg-slate-900/80 border border-slate-800 rounded-xl p-5 md:p-6 outline-none focus-visible:ring-2 focus-visible:ring-primary/60 focus-visible:ring-offset-2 focus-visible:ring-offset-[#0a0f12]"
+            >
+              <div className="flex items-center gap-3">
+                <div className="flex size-12 shrink-0 items-center justify-center rounded-xl bg-primary/15 border border-primary/30">
+                  <span className="material-symbols-outlined text-2xl text-primary" aria-hidden>
+                    dynamic_feed
+                  </span>
+                </div>
+                <div className="min-w-0">
+                  <h1 className="text-lg md:text-xl font-bold text-slate-100 tracking-tight">
+                    {t('groups.sidebar.myFeed')}
+                  </h1>
+                  <p className="text-sm text-slate-400 mt-0.5">
+                    {t('groups.sidebar.feedSubtitle', {
+                      defaultValue: 'Posts from all groups you have joined',
+                    })}
+                  </p>
+                </div>
+              </div>
+            </header>
             <CommunityMain
               onOpenCreatePost={() => setCreatePostOpen(true)}
               posts={feedPosts}
@@ -203,16 +298,26 @@ export function CommunityPage() {
               postsHasMore={feedHasMore}
               loadMorePosts={loadMoreFeedPosts}
               onPostReactionUpdate={handlePostReactionUpdate}
+              onPostUpdate={handlePostUpdate}
+              onPostDelete={handlePostDelete}
+              useHomeCommunityStyle
               hideComposer
             />
           </div>
         )}
       </div>
 
+      <CommunityGroupMembersModal
+        open={groupMembersModalOpen && viewMode === 'group'}
+        onClose={() => setGroupMembersModalOpen(false)}
+        groupId={viewMode === 'group' ? activeGid || null : null}
+        onMemberRemovedFromGroup={handleMemberRemovedFromGroup}
+      />
       <CommunityInviteFriendsModal
         open={inviteOpen}
         onClose={() => setInviteOpen(false)}
         groupId={activeGroup?.id || activeGroup?._id || null}
+        onInviteSent={() => setJoinRequestsRefreshKey((k) => k + 1)}
       />
       <CreatePostModal
         open={createPostOpen}

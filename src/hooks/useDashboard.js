@@ -175,8 +175,24 @@ export function useDashboardData() {
     setPosts((prev) =>
       prev.map((p) => {
         const id = p?.id ?? p?._id
-        if (String(id) !== String(postId)) return p
-        return { ...p, ...(updated || {}) }
+        const sharedId = p?.sharedPost?.id ?? p?.sharedPost?._id
+
+        if (String(id) === String(postId)) {
+          return { ...p, ...(updated || {}) }
+        }
+
+        // Keep shared-post previews in sync immediately after editing original post.
+        if (sharedId && String(sharedId) === String(postId)) {
+          return {
+            ...p,
+            sharedPost: {
+              ...(p.sharedPost || {}),
+              ...(updated || {}),
+            },
+          }
+        }
+
+        return p
       }),
     )
   }

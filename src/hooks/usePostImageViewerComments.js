@@ -1,6 +1,7 @@
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useRef, useState, useCallback } from 'react'
 import { communityService, uploadService } from '../services'
 import { searchGiphy, hasGiphyKey } from '../services/giphy.service'
+import { getExpandTargetsAfterReply } from '../utils/commentThread'
 import {
   REACTION_PICKER_HOVER_DELAY,
   REACTION_PICKER_VISIBLE_DURATION,
@@ -32,7 +33,22 @@ export function usePostImageViewerComments(postId, t, open) {
   })
   const commentReactionHoverTimerRef = useRef(null)
   const commentReactionHideTimerRef = useRef(null)
+  const commentReactionPendingHideRef = useRef(null)
   const [replyToComment, setReplyToComment] = useState(null)
+  const [expandAfterReply, setExpandAfterReply] = useState(null)
+  const pendingExpandParentIdRef = useRef(null)
+
+  const onExpandAfterReplyConsumed = useCallback(() => {
+    setExpandAfterReply(null)
+  }, [])
+
+  useEffect(() => {
+    const pid = pendingExpandParentIdRef.current
+    if (!pid) return
+    pendingExpandParentIdRef.current = null
+    const targets = getExpandTargetsAfterReply(pid, comments)
+    setExpandAfterReply({ ...targets, token: Date.now() })
+  }, [comments])
 
   const commentTextareaRef = useRef(null)
   const commentImageInputRef = useRef(null)
@@ -215,6 +231,10 @@ export function usePostImageViewerComments(postId, t, open) {
       window.clearTimeout(commentReactionHideTimerRef.current)
       commentReactionHideTimerRef.current = null
     }
+    if (commentReactionPendingHideRef.current) {
+      window.clearTimeout(commentReactionPendingHideRef.current)
+      commentReactionPendingHideRef.current = null
+    }
   }
 
   const openCommentReactionPicker = (commentId, rect) => {
@@ -251,20 +271,27 @@ export function usePostImageViewerComments(postId, t, open) {
       window.clearTimeout(commentReactionHoverTimerRef.current)
       commentReactionHoverTimerRef.current = null
     }
-    commentReactionHideTimerRef.current = window.setTimeout(() => {
+    commentReactionPendingHideRef.current = window.setTimeout(() => {
+      if (commentReactionHideTimerRef.current) {
+        window.clearTimeout(commentReactionHideTimerRef.current)
+        commentReactionHideTimerRef.current = null
+      }
       closeCommentReactionPicker()
-      commentReactionHideTimerRef.current = null
+      commentReactionPendingHideRef.current = null
     }, REACTION_PICKER_LEAVE_DELAY)
   }
 
   const handleCommentReactionBubbleEnter = () => {
     clearCommentReactionTimers()
+    setCommentReactionPicker((prev) =>
+      prev.commentId ? { ...prev, open: true } : prev
+    )
   }
 
   const handleCommentReactionBubbleLeave = () => {
-    commentReactionHideTimerRef.current = window.setTimeout(() => {
+    commentReactionPendingHideRef.current = window.setTimeout(() => {
       closeCommentReactionPicker()
-      commentReactionHideTimerRef.current = null
+      commentReactionPendingHideRef.current = null
     }, REACTION_PICKER_LEAVE_DELAY)
   }
 
@@ -284,12 +311,16 @@ export function usePostImageViewerComments(postId, t, open) {
           ? commentDocuments.map((d) => ({ url: d.url, name: d.name || '' }))
           : undefined,
       }
-      if (replyToComment?.commentId) {
-        payload.parentId = replyToComment.commentId
+      const parentIdForExpand = replyToComment?.commentId
+      if (parentIdForExpand) {
+        payload.parentId = parentIdForExpand
       }
       const res = await communityService.commentPost(postId, payload)
       const newComment = res?.data?.comment ?? res?.data
-      if (newComment) setComments((prev) => [...prev, newComment])
+      if (newComment) {
+        if (parentIdForExpand) pendingExpandParentIdRef.current = String(parentIdForExpand)
+        setComments((prev) => [...prev, newComment])
+      }
       setCommentText('')
       setCommentImages([])
       setCommentVideo('')
@@ -390,5 +421,7 @@ export function usePostImageViewerComments(postId, t, open) {
     replyToComment,
     startReplyToComment,
     cancelReplyToComment,
+    expandAfterReply,
+    onExpandAfterReplyConsumed,
   }
 }

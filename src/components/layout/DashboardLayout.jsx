@@ -20,7 +20,7 @@ export function DashboardLayout() {
   return (
     <div className="bg-background-dark text-white h-screen flex flex-col w-full min-w-0 overflow-hidden">
       <AppHeader />
-      <div className="flex-1 min-h-0 overflow-y-auto overflow-x-hidden">
+      <div className="flex-1 min-h-0 overflow-y-auto overflow-x-clip">
         <Outlet />
       </div>
       {!hideChatbot && <ChatbotButton />}

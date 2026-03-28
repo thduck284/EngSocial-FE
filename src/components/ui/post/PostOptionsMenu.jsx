@@ -6,6 +6,7 @@ export function PostOptionsMenu({
   isSavedPost,
   disabled = false,
   onToggleSave,
+  onShare,
   onEdit,
   onDelete,
   onReport,
@@ -51,6 +52,14 @@ export function PostOptionsMenu({
               {isSavedPost ? 'bookmark_remove' : 'bookmark'}
             </span>
             {isSavedPost ? t('dashboard.unsavePost') : t('dashboard.savePost')}
+          </button>
+          <button
+            type="button"
+            onClick={() => wrapAction(onShare)}
+            className="w-full text-left px-3 py-2 rounded-lg text-sm hover:bg-slate-100 dark:hover:bg-[#233f48] inline-flex items-center gap-2"
+          >
+            <span className="material-symbols-outlined text-[18px]">share</span>
+            {t('dashboard.share')}
           </button>
           {isOwnPost ? (
             <>

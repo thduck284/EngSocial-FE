@@ -14,10 +14,16 @@ export function ReactionsModal({
   initialTab = 'all',
   likeCount = 0,
   initialReactionCounts = {},
+  /** Seed tabs from post/comment (call sites used this name; was previously ignored) */
+  reactionCounts: reactionCountsProp,
 }) {
   const { t } = useTranslation()
+  const seedCounts =
+    reactionCountsProp && typeof reactionCountsProp === 'object' && !Array.isArray(reactionCountsProp)
+      ? reactionCountsProp
+      : initialReactionCounts
   const [reactions, setReactions] = useState([])
-  const [reactionCounts, setReactionCounts] = useState(initialReactionCounts)
+  const [reactionCounts, setReactionCounts] = useState(seedCounts)
   const [loading, setLoading] = useState(false)
   const [activeTab, setActiveTab] = useState(initialTab)
 
@@ -27,6 +33,12 @@ export function ReactionsModal({
 
   useEffect(() => {
     if (!open || !entityId || (mode !== 'post' && mode !== 'comment')) return
+    setReactionCounts(
+      reactionCountsProp && typeof reactionCountsProp === 'object' && !Array.isArray(reactionCountsProp)
+        ? { ...reactionCountsProp }
+        : { ...initialReactionCounts }
+    )
+    setReactions([])
     setLoading(true)
     const fetcher =
       mode === 'post' ? communityService.getPostReactions : communityService.getCommentReactions
@@ -43,7 +55,8 @@ export function ReactionsModal({
       .finally(() => setLoading(false))
   }, [open, entityId, mode])
 
-  const totalCount = Number(likeCount) || reactions.length
+  const sumFromTabs = Object.values(reactionCounts).reduce((acc, v) => acc + (Number(v) || 0), 0)
+  const totalCount = Math.max(Number(likeCount) || 0, sumFromTabs) || reactions.length
   const tabTypes = ['all', ...POST_REACTION_TYPES.filter((type) => (reactionCounts[type] || 0) > 0)]
 
   const getCountForTab = (tab) => {

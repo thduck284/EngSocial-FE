@@ -1,7 +1,8 @@
 import { useState, useCallback } from 'react'
 import { useNavigate, useLocation } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
-import { submitRegisterForm, submitLoginForm, authService } from '../services'
+import { submitRegisterForm, submitLoginForm, submitSocialLogin, authService } from '../services'
+import { getGoogleIdToken, getFacebookAccessToken } from '../utils/socialAuth'
 import { validateEmail, validateResetPasswordForm } from '../validators'
 import { useAuth } from '../context/AuthContext'
 import { ROUTES } from '../constants'
@@ -9,8 +10,9 @@ import { ROUTES } from '../constants'
 // ─── useRegister ─────────────────────────────────────────────────────────────
 
 export function useRegister() {
-  const { t } = useTranslation()
+  const { t, i18n } = useTranslation()
   const navigate = useNavigate()
+  const { setAuth } = useAuth()
 
   const [fullName, setFullName] = useState('')
   const [email, setEmail] = useState('')
@@ -19,6 +21,7 @@ export function useRegister() {
   const [gender, setGender] = useState('')
   const [dateOfBirth, setDateOfBirth] = useState('')
   const [showPassword, setShowPassword] = useState(false)
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false)
   const [agreeTerms, setAgreeTerms] = useState(false)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState(null)
@@ -77,6 +80,41 @@ export function useRegister() {
   }, [fullName, email, password, confirmPassword, gender, dateOfBirth, agreeTerms, t, navigate])
 
   const toggleShowPassword = useCallback(() => setShowPassword((v) => !v), [])
+  const toggleShowConfirmPassword = useCallback(() => setShowConfirmPassword((v) => !v), [])
+
+  const startSocialRegister = useCallback(
+    async (provider) => {
+      setError(null)
+      setFieldErrors({})
+      setLoading(true)
+      try {
+        const token = provider === 'google' ? await getGoogleIdToken() : await getFacebookAccessToken()
+        const result = await submitSocialLogin(
+          { provider, token, remember: true },
+          { t, changeLanguage: i18n.changeLanguage.bind(i18n) }
+        )
+        if (result.success) {
+          setAuth()
+          const lang = localStorage.getItem('language')
+          if (lang === 'vi' || lang === 'en') {
+            authService.updatePreferences({ language: lang }).catch(() => {})
+          }
+          navigate(ROUTES.HOME, { replace: true })
+          return
+        }
+        if (result.error) setError(result.error)
+      } catch (err) {
+        const msg =
+          (typeof err?.message === 'string' && err.message) ||
+          (typeof err?.data?.message === 'string' && err.data.message) ||
+          t('auth.registerFailed')
+        setError(msg)
+      } finally {
+        setLoading(false)
+      }
+    },
+    [t, i18n, setAuth, navigate]
+  )
 
   return {
     fullName,
@@ -86,13 +124,16 @@ export function useRegister() {
     gender,
     dateOfBirth,
     showPassword,
+    showConfirmPassword,
     agreeTerms,
     loading,
     error,
     fieldErrors,
     updateField,
     handleSubmit,
+    startSocialRegister,
     toggleShowPassword,
+    toggleShowConfirmPassword,
   }
 }
 
@@ -104,10 +145,14 @@ export function useLogin() {
   const location = useLocation()
   const { setAuth } = useAuth()
 
-  const [email, setEmail] = useState('')
-  const [password, setPassword] = useState('')
+  const [email, setEmail] = useState(() => localStorage.getItem('rememberedEmail') || '')
+  const [password, setPassword] = useState(() => localStorage.getItem('rememberedPassword') || '')
   const [showPassword, setShowPassword] = useState(false)
-  const [remember, setRemember] = useState(false)
+  const [remember, setRemember] = useState(() => {
+    const rememberedEmail = localStorage.getItem('rememberedEmail')
+    const rememberedPassword = localStorage.getItem('rememberedPassword')
+    return !!(rememberedEmail && rememberedPassword)
+  })
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState(null)
   const [fieldErrors, setFieldErrors] = useState({})
@@ -144,6 +189,13 @@ export function useLogin() {
 
       if (result.success) {
         if (result.navigate) {
+          if (remember) {
+            localStorage.setItem('rememberedEmail', email)
+            localStorage.setItem('rememberedPassword', password)
+          } else {
+            localStorage.removeItem('rememberedEmail')
+            localStorage.removeItem('rememberedPassword')
+          }
           setAuth()
           const from = location.state?.from?.pathname || ROUTES.HOME
           navigate(from, { replace: true })
@@ -158,6 +210,39 @@ export function useLogin() {
     }
   }, [email, password, remember, t, i18n, navigate, location, setAuth])
 
+  const startSocialLogin = useCallback(
+    async (provider) => {
+      setError(null)
+      setFieldErrors({})
+      setLoading(true)
+      try {
+        const token = provider === 'google' ? await getGoogleIdToken() : await getFacebookAccessToken()
+        const result = await submitSocialLogin(
+          { provider, token, remember },
+          { t, changeLanguage: i18n.changeLanguage.bind(i18n) }
+        )
+
+        if (result.success) {
+          setAuth()
+          const from = location.state?.from?.pathname || ROUTES.HOME
+          navigate(from, { replace: true })
+          return
+        }
+
+        if (result.error) setError(result.error)
+      } catch (err) {
+        const msg =
+          (typeof err?.message === 'string' && err.message) ||
+          (typeof err?.data?.message === 'string' && err.data.message) ||
+          t('auth.loginFailed')
+        setError(msg)
+      } finally {
+        setLoading(false)
+      }
+    },
+    [remember, t, i18n, setAuth, location, navigate]
+  )
+
   const toggleShowPassword = useCallback(() => setShowPassword((v) => !v), [])
 
   return {
@@ -170,6 +255,7 @@ export function useLogin() {
     fieldErrors,
     updateField,
     handleSubmit,
+    startSocialLogin,
     toggleShowPassword,
   }
 }
@@ -229,7 +315,8 @@ export function useForgotPassword(t) {
 export function useResetPassword(token, t) {
   const [newPassword, setNewPassword] = useState('')
   const [confirmPassword, setConfirmPassword] = useState('')
-  const [showPassword, setShowPassword] = useState(false)
+  const [showNewPassword, setShowNewPassword] = useState(false)
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
   const [success, setSuccess] = useState(false)
@@ -268,8 +355,10 @@ export function useResetPassword(token, t) {
     setNewPassword,
     confirmPassword,
     setConfirmPassword,
-    showPassword,
-    setShowPassword,
+    showNewPassword,
+    setShowNewPassword,
+    showConfirmPassword,
+    setShowConfirmPassword,
     loading,
     error,
     success,

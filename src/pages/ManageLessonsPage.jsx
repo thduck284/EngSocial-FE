@@ -12,7 +12,6 @@ const defaultForm = (category = 'lesson') => ({
   topic: '',
   description: '',
   thumbnail: '',
-  status: 'draft',
   category,
   estimatedTime: 15,
   xpReward: 50,
@@ -69,7 +68,6 @@ export function ManageLessonsPage() {
           topic: d.topic ?? '',
           description: d.description ?? '',
           thumbnail: d.thumbnail ?? '',
-          status: d.status || 'draft',
           category: d.category || category,
           estimatedTime: d.estimatedTime ?? 15,
           xpReward: d.xpReward ?? 50,
@@ -296,12 +294,12 @@ export function ManageLessonsPage() {
     setForm((f) => (f ? { ...f, questions: q } : f))
   }
 
-  const save = async (statusOverride) => {
+  const save = async () => {
     if (!form?.title) return
     setError('')
     setSuccessMessage('')
     setLoading(true)
-    const payload = statusOverride ? { ...form, status: statusOverride } : { ...form }
+    const payload = { ...form }
     if (payload.estimatedTime != null) payload.time = `${payload.estimatedTime}m`
     if (Array.isArray(payload.questions)) payload.totalQuestions = payload.questions.length
     try {
@@ -367,11 +365,8 @@ export function ManageLessonsPage() {
           <h1 className="text-2xl md:text-3xl font-bold text-white">{pageTitle}</h1>
         </div>
         <div className="flex items-center gap-3">
-          <button type="button" onClick={() => save('draft')} disabled={loading} className="px-5 py-2.5 rounded-xl border border-border-dark font-medium hover:bg-white/5 transition-all text-gray-400 disabled:opacity-50">
-            {t('manageLessons.saveDraft')}
-          </button>
-          <button type="button" onClick={() => save('published')} disabled={loading} className="px-6 py-2.5 rounded-xl bg-primary text-background-dark font-bold hover:opacity-90 transition-all disabled:opacity-50">
-            {isPractice ? t('manageLessons.publishPractice') : t('manageLessons.publishLesson')}
+          <button type="button" onClick={save} disabled={loading} className="px-6 py-2.5 rounded-xl bg-primary text-background-dark font-bold hover:opacity-90 transition-all disabled:opacity-50">
+            {t('manageLessons.save')}
           </button>
         </div>
       </div>
@@ -748,7 +743,7 @@ export function ManageLessonsPage() {
         <Link to={backLink} className="px-6 py-3 rounded-xl border border-border-dark font-medium hover:bg-white/5 text-gray-400 transition-all">
           {t('manageLessons.cancel')}
         </Link>
-        <button type="button" onClick={() => save(form.status)} disabled={loading} className="px-8 py-3 rounded-xl bg-primary text-background-dark font-bold hover:opacity-90 disabled:opacity-50 transition-all">
+        <button type="button" onClick={save} disabled={loading} className="px-8 py-3 rounded-xl bg-primary text-background-dark font-bold hover:opacity-90 disabled:opacity-50 transition-all">
           {t('manageLessons.save')}
         </button>
       </div>

@@ -44,6 +44,8 @@ export function PostImageViewerCommentsSection({
   replyToComment,
   startReplyToComment,
   cancelReplyToComment,
+  expandAfterReply,
+  onExpandAfterReplyConsumed,
 }) {
   return (
     <PostCommentsSectionBase
@@ -91,6 +93,8 @@ export function PostImageViewerCommentsSection({
       replyToComment={replyToComment}
       startReplyToComment={startReplyToComment}
       cancelReplyToComment={cancelReplyToComment}
+      expandAfterReply={expandAfterReply}
+      onExpandAfterReplyConsumed={onExpandAfterReplyConsumed}
     />
   )
 }

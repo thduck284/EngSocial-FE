@@ -1,29 +1,48 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { friendsService } from '../../services/friends.service'
 import { groupService } from '../../services/group.service'
+import { DEFAULT_AVATAR } from '../../constants/ui'
 
-export function CommunityInviteFriendsModal({ open, onClose, groupId }) {
+function normalizeSearchUser(item) {
+  if (!item) return null
+  const id = item.id || item.userId || item._id
+  if (!id) return null
+  return {
+    id,
+    name: item.name || item.fullName || '',
+    avatar: item.avatar || null,
+    email: item.email || '',
+    friendStatus: item.friendStatus || 'none',
+  }
+}
+
+export function CommunityInviteFriendsModal({ open, onClose, groupId, onInviteSent }) {
   const { t } = useTranslation()
   const [query, setQuery] = useState('')
   const [friends, setFriends] = useState([])
   const [selectedIds, setSelectedIds] = useState([])
-  const [loading, setLoading] = useState(false)
+  const [loadingFriends, setLoadingFriends] = useState(false)
+  const [searchResults, setSearchResults] = useState([])
+  const [searchLoading, setSearchLoading] = useState(false)
   const [groupMemberIds, setGroupMemberIds] = useState([])
   const [loadingGroupMembers, setLoadingGroupMembers] = useState(false)
   const [submitting, setSubmitting] = useState(false)
 
   useEffect(() => {
-    if (!open) return
+    if (!open) {
+      setQuery('')
+      setSelectedIds([])
+      setSearchResults([])
+      return
+    }
     let cancelled = false
     ;(async () => {
-      setLoading(true)
+      setLoadingFriends(true)
       try {
         const res = await friendsService.getList({ page: 1, limit: 100 })
         const list = res?.data?.data || res?.data?.friends || res?.data || []
 
-        // Backend: GET /friends returns friendships, each has { user: { id, name, avatar, ... } }
-        // Normalize to { id, name, avatar, email? }.
         const normalized = Array.isArray(list)
           ? list.map((f) => {
               const u = f?.user || f
@@ -40,7 +59,7 @@ export function CommunityInviteFriendsModal({ open, onClose, groupId }) {
       } catch {
         if (!cancelled) setFriends([])
       } finally {
-        if (!cancelled) setLoading(false)
+        if (!cancelled) setLoadingFriends(false)
       }
     })()
     return () => {
@@ -62,7 +81,7 @@ export function CommunityInviteFriendsModal({ open, onClose, groupId }) {
         const limit = 50
         let page = 1
         let total = null
-        const maxPages = 40 // cap: 40*50=2000
+        const maxPages = 40
 
         // eslint-disable-next-line no-constant-condition
         while (true) {
@@ -86,6 +105,33 @@ export function CommunityInviteFriendsModal({ open, onClose, groupId }) {
           page += 1
         }
 
+        try {
+          const jr = await groupService.joinRequests(groupId)
+          const jrPayload = jr?.data ?? jr
+          const reqList = jrPayload?.requests ?? jrPayload?.data?.requests ?? []
+          if (Array.isArray(reqList)) {
+            for (const m of reqList) {
+              const uid = m?.user?.id || m?.user?._id || m?.userId
+              const sid =
+                uid && typeof uid === 'object'
+                  ? String(uid._id || uid.id || '')
+                  : uid != null
+                    ? String(uid)
+                    : ''
+              if (sid) existing.add(sid)
+            }
+          }
+          const invitedIds =
+            jrPayload?.invitedPendingUserIds ?? jrPayload?.data?.invitedPendingUserIds ?? []
+          if (Array.isArray(invitedIds)) {
+            invitedIds.forEach((id) => {
+              if (id != null && id !== '') existing.add(String(id))
+            })
+          }
+        } catch {
+          // Không có quyền xem join-requests: bỏ qua (vd. thành viên không phải admin)
+        }
+
         if (!cancelled) setGroupMemberIds(Array.from(existing))
       } catch {
         if (!cancelled) setGroupMemberIds([])
@@ -99,7 +145,72 @@ export function CommunityInviteFriendsModal({ open, onClose, groupId }) {
     }
   }, [open, groupId])
 
-  if (!open) return null
+  const qTrim = query.trim()
+  const searching = qTrim.length > 0
+
+  useEffect(() => {
+    if (!open || !searching) {
+      setSearchResults([])
+      setSearchLoading(false)
+      return
+    }
+
+    let cancelled = false
+    const handle = setTimeout(() => {
+      ;(async () => {
+        setSearchLoading(true)
+        try {
+          const res = await friendsService.search({
+            q: qTrim,
+            limit: 30,
+            page: 1,
+            friendFilter: 'all',
+          })
+          const list =
+            res?.data?.data?.items ??
+            res?.data?.data ??
+            res?.data?.friends ??
+            res?.data ??
+            []
+          const normalized = Array.isArray(list)
+            ? list.map(normalizeSearchUser).filter(Boolean)
+            : []
+          if (!cancelled) setSearchResults(normalized)
+        } catch {
+          if (!cancelled) setSearchResults([])
+        } finally {
+          if (!cancelled) setSearchLoading(false)
+        }
+      })()
+    }, 320)
+
+    return () => {
+      cancelled = true
+      clearTimeout(handle)
+    }
+  }, [open, searching, qTrim])
+
+  const groupMemberSet = useMemo(
+    () => new Set(groupMemberIds.map((id) => String(id))),
+    [groupMemberIds]
+  )
+
+  const friendSuggestions = useMemo(
+    () =>
+      friends.filter((f) => {
+        const uid = String(f.id || f._id || f.userId || '')
+        return uid && !groupMemberSet.has(uid)
+      }),
+    [friends, groupMemberSet]
+  )
+
+  const searchList = useMemo(
+    () => searchResults.filter((u) => u.id && !groupMemberSet.has(String(u.id))),
+    [searchResults, groupMemberSet]
+  )
+
+  const displayPeople = searching ? searchList : friendSuggestions
+  const listLoading = searching ? searchLoading : loadingFriends || loadingGroupMembers
 
   const toggleSelect = (userId) => {
     setSelectedIds((prev) =>
@@ -107,18 +218,27 @@ export function CommunityInviteFriendsModal({ open, onClose, groupId }) {
     )
   }
 
-  const groupMemberSet = new Set(groupMemberIds.map((id) => String(id)))
+  const statusBadge = (friendStatus) => {
+    if (friendStatus === 'connected')
+      return (
+        <span className="text-[10px] px-1.5 py-0.5 rounded bg-emerald-500/20 text-emerald-300 shrink-0">
+          {t('groups.inviteModal.badgeFriend')}
+        </span>
+      )
+    if (friendStatus === 'pending')
+      return (
+        <span className="text-[10px] px-1.5 py-0.5 rounded bg-amber-500/20 text-amber-200 shrink-0">
+          {t('groups.inviteModal.badgePending')}
+        </span>
+      )
+    return (
+      <span className="text-[10px] px-1.5 py-0.5 rounded bg-slate-600/40 text-slate-300 shrink-0">
+        {t('groups.inviteModal.badgeOther')}
+      </span>
+    )
+  }
 
-  const filteredFriends = friends.filter((f) => {
-    const uid = String(f.id || f._id || f.userId || '')
-    const alreadyInGroup = uid ? groupMemberSet.has(uid) : false
-    if (!query.trim()) return !alreadyInGroup
-    const q = query.toLowerCase()
-    const name = (f.name || f.fullName || '').toLowerCase()
-    const email = (f.email || '').toLowerCase()
-    const matchesQuery = name.includes(q) || email.includes(q)
-    return matchesQuery && !alreadyInGroup
-  })
+  if (!open) return null
 
   return (
     <div className="fixed inset-0 z-40 flex items-center justify-center bg-black/60 backdrop-blur-sm">
@@ -130,7 +250,7 @@ export function CommunityInviteFriendsModal({ open, onClose, groupId }) {
             </p>
             <p className="text-xs text-slate-500 mt-0.5">
               {t('groups.inviteModal.subtitle', {
-                defaultValue: 'Chọn nhiều bạn bè để thêm vào nhóm này.',
+                defaultValue: 'Gợi ý bên dưới là danh sách bạn bè (chưa có trong nhóm).',
               })}
             </p>
           </div>
@@ -143,7 +263,7 @@ export function CommunityInviteFriendsModal({ open, onClose, groupId }) {
           </button>
         </div>
 
-        <div className="px-5 py-3 border-b border-slate-800">
+        <div className="px-5 py-3 border-b border-slate-800 space-y-2">
           <div className="relative">
             <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-slate-500 text-sm">
               search
@@ -154,27 +274,39 @@ export function CommunityInviteFriendsModal({ open, onClose, groupId }) {
               onChange={(e) => setQuery(e.target.value)}
               className="w-full bg-slate-900 border border-slate-800 rounded-lg py-2.5 pl-9 pr-3 text-sm text-slate-100 placeholder:text-slate-500 focus:ring-1 focus:ring-primary focus:border-primary"
               placeholder={t('groups.inviteModal.searchPlaceholder', {
-                defaultValue: 'Tìm kiếm theo tên hoặc email...',
+                defaultValue: 'Tìm theo tên (mọi người dùng)...',
               })}
             />
           </div>
+          <p className="text-[11px] text-slate-500 leading-snug">
+            {t('groups.inviteModal.searchHint', {
+              defaultValue:
+                'Gõ tên trong ô tìm để tìm thêm người trên EngSocial — kể cả chưa là bạn bè.',
+            })}
+          </p>
         </div>
 
         <div className="flex-1 overflow-y-auto px-5 py-3 space-y-2 custom-scrollbar">
-          {loading ? (
+          {listLoading ? (
             <p className="text-xs text-slate-500">
-              {t('groups.inviteModal.loading', {
-                defaultValue: 'Đang tải danh sách bạn bè...',
-              })}
+              {searching
+                ? t('groups.inviteModal.searching', { defaultValue: 'Đang tìm...' })
+                : t('groups.inviteModal.loading', {
+                    defaultValue: 'Đang tải danh sách bạn bè...',
+                  })}
             </p>
-          ) : filteredFriends.length === 0 ? (
+          ) : displayPeople.length === 0 ? (
             <p className="text-xs text-slate-500">
-              {t('groups.inviteModal.noResults', {
-                defaultValue: 'Không tìm thấy bạn bè phù hợp.',
-              })}
+              {searching
+                ? t('groups.inviteModal.noSearchResults', {
+                    defaultValue: 'Không tìm thấy ai với từ khóa này.',
+                  })
+                : t('groups.inviteModal.noResults', {
+                    defaultValue: 'Không còn bạn bè nào để mời (hoặc đã ở trong nhóm).',
+                  })}
             </p>
           ) : (
-            filteredFriends.map((f) => {
+            displayPeople.map((f) => {
               const id = f.id || f._id || f.userId
               const selected = selectedIds.includes(id)
               return (
@@ -182,33 +314,32 @@ export function CommunityInviteFriendsModal({ open, onClose, groupId }) {
                   key={id}
                   type="button"
                   onClick={() => toggleSelect(id)}
-                  className={`w-full flex items-center justify-between px-2 py-2 rounded-lg text-left ${
+                  className={`w-full flex items-center justify-between px-2 py-2 rounded-lg text-left gap-2 ${
                     selected ? 'bg-primary/10 border border-primary/60' : 'hover:bg-slate-900'
                   }`}
                 >
-                  <div className="flex items-center gap-3">
-                    <div className="size-8 rounded-full overflow-hidden bg-slate-800 flex items-center justify-center text-xs text-slate-400">
-                      {f.avatar ? (
-                        <img
-                          src={f.avatar}
-                          alt={f.name || f.fullName}
-                          className="w-full h-full object-cover"
-                        />
-                      ) : (
-                        <span className="material-symbols-outlined text-sm">account_circle</span>
-                      )}
+                  <div className="flex items-center gap-3 min-w-0 flex-1">
+                    <div className="size-8 rounded-full overflow-hidden bg-slate-800 flex items-center justify-center text-xs text-slate-400 shrink-0">
+                      <img
+                        src={f.avatar || DEFAULT_AVATAR}
+                        alt=""
+                        className="w-full h-full object-cover"
+                      />
                     </div>
-                    <div className="flex flex-col">
-                      <span className="text-xs font-medium text-slate-100">
-                        {f.name || f.fullName}
-                      </span>
-                      {f.email && (
+                    <div className="flex flex-col min-w-0 flex-1">
+                      <div className="flex items-center gap-2 min-w-0">
+                        <span className="text-xs font-medium text-slate-100 truncate">
+                          {f.name || f.fullName}
+                        </span>
+                        {searching ? statusBadge(f.friendStatus || 'none') : null}
+                      </div>
+                      {f.email ? (
                         <span className="text-[11px] text-slate-500 truncate">{f.email}</span>
-                      )}
+                      ) : null}
                     </div>
                   </div>
                   <div
-                    className={`size-4 rounded-full border flex items-center justify-center ${
+                    className={`size-4 rounded-full border flex items-center justify-center shrink-0 ${
                       selected ? 'border-primary bg-primary' : 'border-slate-600 bg-transparent'
                     }`}
                   >
@@ -227,7 +358,7 @@ export function CommunityInviteFriendsModal({ open, onClose, groupId }) {
         <div className="px-5 py-3 border-t border-slate-800 flex items-center justify-between">
           <p className="text-[11px] text-slate-400">
             {t('groups.inviteModal.selected', {
-              defaultValue: 'Đã chọn {{count}} bạn bè.',
+              defaultValue: 'Đã chọn {{count}} người.',
               count: selectedIds.length,
             })}
           </p>
@@ -258,7 +389,7 @@ export function CommunityInviteFriendsModal({ open, onClose, groupId }) {
             >
               {submitting
                 ? t('common.loading', { defaultValue: 'Đang xử lý...' })
-                : t('groups.inviteModal.add', { defaultValue: 'Thêm vào nhóm' })}
+                : t('groups.inviteModal.add', { defaultValue: 'Gửi lời mời (chờ duyệt)' })}
             </button>
           </div>
         </div>
@@ -266,4 +397,3 @@ export function CommunityInviteFriendsModal({ open, onClose, groupId }) {
     </div>
   )
 }
-

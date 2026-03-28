@@ -18,12 +18,22 @@ import { EditPostModal } from '../ui/post/EditPostModal'
 import { useDashboardPostCard } from '../../hooks'
 import { usePostReactionPicker, useDashboardPostComments } from '../../hooks/usePostInteractions'
 import { PostShareModal } from '../ui/post/PostShareModal'
-import { formatReactionCount } from '../../utils/post'
+import { formatReactionCount, getPostReactionTotal } from '../../utils/post'
+import { AlertModal } from '../ui/common/AlertModal'
+import { getPostVisibilityLabel, normalizeMentions } from '../../utils/post'
 
 /** Max characters to show before "See more" */
 const MAX_CONTENT_PREVIEW = 300
 
-export function DashboardPostCard({ post, onToggleLike, onUpdatePost, onDeletePost }) {
+export function DashboardPostCard({
+  post,
+  onToggleLike,
+  onUpdatePost,
+  onDeletePost,
+  useHomeCommunityStyle = false,
+  /** Ẩn tên/link nhóm trong header (vd. đang ở trang bài viết của nhóm đó) */
+  hidePostGroupLabel = false,
+}) {
   const { t } = useTranslation()
   const { user } = useAuth()
   const navigate = useNavigate()
@@ -46,9 +56,11 @@ export function DashboardPostCard({ post, onToggleLike, onUpdatePost, onDeletePo
   const [editDocuments, setEditDocuments] = useState([])
   const [editVisibility, setEditVisibility] = useState('public')
   const [editError, setEditError] = useState('')
+  const [editMentionIds, setEditMentionIds] = useState([])
   const [postActionLoading, setPostActionLoading] = useState(false)
   const [editUploading, setEditUploading] = useState(false)
   const [isSavedPost, setIsSavedPost] = useState(Boolean(post?.saved ?? post?.isSaved))
+  const [showDeleteConfirmModal, setShowDeleteConfirmModal] = useState(false)
   if (!post) return null
 
   const postId = post?.id ?? post?._id
@@ -57,7 +69,7 @@ export function DashboardPostCard({ post, onToggleLike, onUpdatePost, onDeletePo
   const isOwnPost = Boolean(currentUserId && authorId && String(currentUserId) === String(authorId))
   const isLiked = Boolean(post?.liked)
   const userReaction = post?.userReaction || null
-  const likeCount = Number(post?.likeCount) ?? 0
+  const reactionTotal = getPostReactionTotal(post)
 
   // Like button reaction picker (hover bubble)
   const {
@@ -114,6 +126,10 @@ export function DashboardPostCard({ post, onToggleLike, onUpdatePost, onDeletePo
     handleToggleCommentLike,
     handleFeedCommentLikeMouseEnter,
     handleFeedCommentLikeMouseLeave,
+    handleFeedCommentLikeFocus,
+    handleFeedCommentLikeBlur,
+    handleCommentReactionBubbleEnter,
+    handleCommentReactionBubbleLeave,
     showCommentReactionPicker,
     commentReactionBubbleRect,
     hoveredCommentId,
@@ -124,6 +140,8 @@ export function DashboardPostCard({ post, onToggleLike, onUpdatePost, onDeletePo
     rootHasMore,
     threadPages,
     loadMoreThreadComments,
+    expandAfterReply,
+    onExpandAfterReplyConsumed,
   } = useDashboardPostComments(postId, t)
 
   const {
@@ -175,6 +193,7 @@ export function DashboardPostCard({ post, onToggleLike, onUpdatePost, onDeletePo
     editVideoUrl,
     editDocuments,
     editVisibility,
+    editMentionIds,
     setEditError,
     setPostActionLoading,
     onUpdatePost,
@@ -244,47 +263,133 @@ export function DashboardPostCard({ post, onToggleLike, onUpdatePost, onDeletePo
         <div className="p-5">
           <div className="flex justify-between items-start mb-4">
             <div className="flex gap-3">
-              <img
-                src={authorAvatar}
-                alt=""
-                className="size-11 rounded-full object-cover bg-slate-300"
-              />
+              {post?.group?.id && useHomeCommunityStyle && !hidePostGroupLabel ? (
+                <Link
+                  to={`/community/group/${post.group.id}/about`}
+                  className="relative size-11 shrink-0 block"
+                  title={post.group.name || 'Community Group'}
+                >
+                  <img
+                    src={
+                      post.group.icon ||
+                      (post.group.name
+                        ? `https://ui-avatars.com/api/?name=${encodeURIComponent(post.group.name)}&background=334155&color=fff`
+                        : authorAvatar)
+                    }
+                    alt={post.group.name || 'Group avatar'}
+                    className="size-11 rounded-full object-cover bg-slate-300"
+                  />
+                  <img
+                    src={authorAvatar}
+                    alt={author.name || 'User avatar'}
+                    className="absolute -bottom-0.5 -right-0.5 size-6 rounded-full object-cover border-2 border-white dark:border-[#111e22] bg-slate-300"
+                  />
+                </Link>
+              ) : (
+                <img
+                  src={authorAvatar}
+                  alt=""
+                  className="size-11 rounded-full object-cover bg-slate-300"
+                />
+              )}
               <div>
-                <h4 className="text-sm font-bold text-slate-900 dark:text-slate-100">
-                  {author.name || 'User'}
-                  {firstMention && firstMentionId && (
-                    <>
-                      {' '}
-                      <span className="text-sm font-medium text-slate-600 dark:text-slate-300">
-                        {t('dashboard.with')}
-                      </span>{' '}
-                      <Link
-                        to={ROUTES.PROFILE_USER(firstMentionId)}
-                        className="text-sm font-bold text-primary hover:underline"
-                      >
-                        {firstMention.name || firstMentionId}
-                      </Link>
-                      {othersCount > 0 && (
+                {post?.group?.id && !hidePostGroupLabel && (
+                  <Link
+                    to={`/community/group/${post.group.id}/about`}
+                    className="inline-flex items-center gap-1.5 text-base text-slate-600 dark:text-[#b7d0d9] hover:text-primary dark:hover:text-primary transition-colors mb-0.5"
+                  >
+                    <span className="material-symbols-outlined text-[18px]">groups</span>
+                    <span className="font-bold truncate max-w-[320px]">
+                      {post.group.name || 'Community Group'}
+                    </span>
+                  </Link>
+                )}
+                {post?.group?.id && useHomeCommunityStyle && !hidePostGroupLabel ? (
+                  <div className="flex items-center gap-1.5 flex-wrap text-[12px]">
+                    <h4 className="text-[12px] font-semibold text-slate-900 dark:text-slate-100">
+                      {author.name || 'User'}
+                      {firstMention && firstMentionId && (
                         <>
-                          <span className="text-sm font-medium text-slate-600 dark:text-slate-300">
-                            {t('dashboard.and')}
-                          </span>
-                          <button
-                            type="button"
-                            onClick={() => {
-                              setModalMentions(mentionsList)
-                              setShowMentionsModal(true)
-                            }}
-                            className="text-sm font-bold text-primary hover:underline ml-0.5"
+                          {' '}
+                          <span className="text-[12px] font-medium text-slate-600 dark:text-slate-300">
+                            {t('dashboard.with')}
+                          </span>{' '}
+                          <Link
+                            to={ROUTES.PROFILE_USER(firstMentionId)}
+                            className="text-[12px] font-bold text-primary hover:underline"
                           >
-                            {t('dashboard.othersCount', { count: othersCount })}
-                          </button>
+                            {firstMention.name || firstMentionId}
+                          </Link>
+                          {othersCount > 0 && (
+                            <>
+                              <span className="text-[12px] font-medium text-slate-600 dark:text-slate-300">
+                                {t('dashboard.and')}
+                              </span>
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  setModalMentions(mentionsList)
+                                  setShowMentionsModal(true)
+                                }}
+                                className="text-[12px] font-bold text-primary hover:underline ml-0.5"
+                              >
+                                {t('dashboard.othersCount', { count: othersCount })}
+                              </button>
+                            </>
+                          )}
                         </>
                       )}
-                    </>
-                  )}
-                </h4>
-              <p className="text-xs text-slate-400 dark:text-[#92bbc9]">{formatPostTime(post.createdAt)} • {post.visibility === 'public' ? (t('dashboard.public') || 'Công khai') : post.visibility}</p>
+                    </h4>
+                    <span className="text-[12px] text-slate-400 dark:text-[#92bbc9]">•</span>
+                    <span className="text-[12px] text-slate-400 dark:text-[#92bbc9]">
+                      {formatPostTime(post.createdAt)}
+                    </span>
+                    <span className="text-[12px] text-slate-400 dark:text-[#92bbc9]">•</span>
+                    <span className="text-[12px] text-slate-400 dark:text-[#92bbc9]">
+                      {getPostVisibilityLabel(post.visibility, t)}
+                    </span>
+                  </div>
+                ) : (
+                  <>
+                    <h4 className="text-[13px] font-semibold text-slate-900 dark:text-slate-100">
+                      {author.name || 'User'}
+                      {firstMention && firstMentionId && (
+                        <>
+                          {' '}
+                          <span className="text-sm font-medium text-slate-600 dark:text-slate-300">
+                            {t('dashboard.with')}
+                          </span>{' '}
+                          <Link
+                            to={ROUTES.PROFILE_USER(firstMentionId)}
+                            className="text-sm font-bold text-primary hover:underline"
+                          >
+                            {firstMention.name || firstMentionId}
+                          </Link>
+                          {othersCount > 0 && (
+                            <>
+                              <span className="text-sm font-medium text-slate-600 dark:text-slate-300">
+                                {t('dashboard.and')}
+                              </span>
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  setModalMentions(mentionsList)
+                                  setShowMentionsModal(true)
+                                }}
+                                className="text-sm font-bold text-primary hover:underline ml-0.5"
+                              >
+                                {t('dashboard.othersCount', { count: othersCount })}
+                              </button>
+                            </>
+                          )}
+                        </>
+                      )}
+                    </h4>
+                    <p className="text-[11px] text-slate-400 dark:text-[#92bbc9]">
+                      {formatPostTime(post.createdAt)} • {getPostVisibilityLabel(post.visibility, t)}
+                    </p>
+                  </>
+                )}
             </div>
           </div>
           <PostOptionsMenu
@@ -292,8 +397,9 @@ export function DashboardPostCard({ post, onToggleLike, onUpdatePost, onDeletePo
             isSavedPost={isSavedPost}
             disabled={postActionLoading}
             onToggleSave={handleToggleSavePost}
+            onShare={() => setShowShareModal(true)}
             onEdit={handleOpenEdit}
-            onDelete={handleDeletePost}
+            onDelete={() => setShowDeleteConfirmModal(true)}
             onReport={handleReportPost}
           />
         </div>
@@ -412,7 +518,7 @@ export function DashboardPostCard({ post, onToggleLike, onUpdatePost, onDeletePo
         {/* Top row: reaction icons + total count (left) | comments count, shares count (right) */}
         <div className="flex items-center justify-between py-1.5 text-sm text-slate-500 dark:text-[#92bbc9]">
           <div className="flex items-center gap-0.5 min-w-0">
-            {likeCount > 0 && (
+            {reactionTotal > 0 && (
               <>
                 <span className="flex items-center -space-x-3 shrink-0" aria-hidden>
                   {POST_REACTION_TYPES.filter((type) => (post.reactionCounts && post.reactionCounts[type] > 0)).map((reactionType) => (
@@ -442,7 +548,7 @@ export function DashboardPostCard({ post, onToggleLike, onUpdatePost, onDeletePo
                   }}
                   className="font-medium tabular-nums hover:underline cursor-pointer text-left"
                 >
-                  {formatReactionCount(likeCount)}
+                  {formatReactionCount(reactionTotal)}
                 </button>
               </>
             )}
@@ -539,6 +645,10 @@ export function DashboardPostCard({ post, onToggleLike, onUpdatePost, onDeletePo
             handleToggleCommentLike={handleToggleCommentLike}
             handleFeedCommentLikeMouseEnter={handleFeedCommentLikeMouseEnter}
             handleFeedCommentLikeMouseLeave={handleFeedCommentLikeMouseLeave}
+            handleFeedCommentLikeFocus={handleFeedCommentLikeFocus}
+            handleFeedCommentLikeBlur={handleFeedCommentLikeBlur}
+            handleCommentReactionBubbleEnter={handleCommentReactionBubbleEnter}
+            handleCommentReactionBubbleLeave={handleCommentReactionBubbleLeave}
             showCommentReactionPicker={showCommentReactionPicker}
             commentReactionBubbleRect={commentReactionBubbleRect}
             hoveredCommentId={hoveredCommentId}
@@ -549,6 +659,8 @@ export function DashboardPostCard({ post, onToggleLike, onUpdatePost, onDeletePo
             rootHasMore={rootHasMore}
             threadPages={threadPages}
             loadMoreThreadComments={loadMoreThreadComments}
+            expandAfterReply={expandAfterReply}
+            onExpandAfterReplyConsumed={onExpandAfterReplyConsumed}
           />
         )}
       </div>
@@ -590,7 +702,7 @@ export function DashboardPostCard({ post, onToggleLike, onUpdatePost, onDeletePo
         mode="post"
         entityId={postId}
         initialTab={reactionsModalInitialTab}
-        likeCount={likeCount}
+        likeCount={reactionTotal}
         reactionCounts={post.reactionCounts}
       />
       <MentionedUsersModal
@@ -604,6 +716,12 @@ export function DashboardPostCard({ post, onToggleLike, onUpdatePost, onDeletePo
         onClose={() => setShowShareModal(false)}
         post={post}
         t={t}
+        onRepostSuccess={(sharedPostId) => {
+          if (!sharedPostId || typeof onUpdatePost !== 'function') return
+          const cur = Number(post?.shareCount)
+          const base = Number.isFinite(cur) ? cur : 0
+          onUpdatePost(sharedPostId, { shareCount: base + 1 })
+        }}
       />
       <EditPostModal
         open={editingPost}
@@ -615,6 +733,9 @@ export function DashboardPostCard({ post, onToggleLike, onUpdatePost, onDeletePo
           setEditContent(v)
           if (editError) setEditError('')
         }}
+        initialMentions={normalizeMentions(post?.mentions)}
+        initialMentionIds={normalizeMentions(post?.mentions).map((m) => String(m?.id ?? m?._id ?? m)).filter(Boolean)}
+        onMentionIdsChange={setEditMentionIds}
         visibility={editVisibility}
         setVisibility={setEditVisibility}
         images={editImages}
@@ -639,6 +760,18 @@ export function DashboardPostCard({ post, onToggleLike, onUpdatePost, onDeletePo
         uploading={editUploading}
         error={editError}
         canSubmit={canSubmitEdit}
+      />
+      <AlertModal
+        open={showDeleteConfirmModal}
+        title={t('common.notification')}
+        message={t('dashboard.deletePostConfirm') || 'Delete this post?'}
+        confirmText={t('dashboard.deletePost') || 'Delete'}
+        cancelText={t('buttons.cancel') || 'Cancel'}
+        onClose={() => setShowDeleteConfirmModal(false)}
+        onConfirm={() => {
+          setShowDeleteConfirmModal(false)
+          handleDeletePost()
+        }}
       />
     </>
   )

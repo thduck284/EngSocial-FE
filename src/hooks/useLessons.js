@@ -22,6 +22,7 @@ export function useLessonsList() {
     totalPages: 0,
   })
   const [deletingId, setDeletingId] = useState(null)
+  const [completedLessonIds, setCompletedLessonIds] = useState(new Set())
 
   useEffect(() => {
     const filters = { status: 'published', page, limit: 10, category: 'lesson' }
@@ -53,6 +54,32 @@ export function useLessonsList() {
       })
       .finally(() => setLoading(false))
   }, [skillFilter, topicFilter, levelFilter, page])
+
+  useEffect(() => {
+    const params = { status: 'completed', category: 'lesson', page: 1, limit: 200 }
+    if (skillFilter && skillFilter !== 'all') params.skill = skillFilter
+    lessonsService
+      .getMyProgress(params)
+      .then((res) => {
+        const list = res?.data?.data ?? res?.data ?? []
+        const isPerfectResult = (item) => {
+          const progress = Number(item?.progress)
+          if (Number.isFinite(progress)) return progress >= 100
+          const score = Number(item?.score)
+          const maxScore = Number(item?.maxScore)
+          return Number.isFinite(score) && Number.isFinite(maxScore) && maxScore > 0 && score >= maxScore
+        }
+        const ids = new Set(
+          (Array.isArray(list) ? list : [])
+            .filter((item) => isPerfectResult(item))
+            .map((item) => item?.lesson?.id || item?.lessonId)
+            .filter(Boolean)
+            .map(String)
+        )
+        setCompletedLessonIds(ids)
+      })
+      .catch(() => setCompletedLessonIds(new Set()))
+  }, [skillFilter])
 
   const setSkill = (key) => {
     setPage(1)
@@ -112,6 +139,7 @@ export function useLessonsList() {
     setLessons,
     handleDeleteLesson,
     deletingId,
+    completedLessonIds,
   }
 }
 
@@ -139,6 +167,7 @@ export function useSkillPractices(skill, t) {
   const [filterTopic, setFilterTopic] = useState('')
   const [appliedLevel, setAppliedLevel] = useState('')
   const [appliedTopic, setAppliedTopic] = useState('')
+  const [completedPracticeIds, setCompletedPracticeIds] = useState(new Set())
 
   useEffect(() => {
     practicesService
@@ -173,6 +202,31 @@ export function useSkillPractices(skill, t) {
         setRawData((prev) => ({ ...prev, hotGames: d.hotGames || [] }))
       })
       .catch(() => {})
+  }, [skill])
+
+  useEffect(() => {
+    const params = { status: 'completed', category: 'practice', skill, page: 1, limit: 200 }
+    lessonsService
+      .getMyProgress(params)
+      .then((res) => {
+        const list = res?.data?.data ?? res?.data ?? []
+        const isPerfectResult = (item) => {
+          const progress = Number(item?.progress)
+          if (Number.isFinite(progress)) return progress >= 100
+          const score = Number(item?.score)
+          const maxScore = Number(item?.maxScore)
+          return Number.isFinite(score) && Number.isFinite(maxScore) && maxScore > 0 && score >= maxScore
+        }
+        const ids = new Set(
+          (Array.isArray(list) ? list : [])
+            .filter((item) => isPerfectResult(item))
+            .map((item) => item?.lesson?.id || item?.lessonId)
+            .filter(Boolean)
+            .map(String)
+        )
+        setCompletedPracticeIds(ids)
+      })
+      .catch(() => setCompletedPracticeIds(new Set()))
   }, [skill])
 
   useEffect(() => {
@@ -241,7 +295,12 @@ export function useSkillPractices(skill, t) {
 
   const fallbackCards = rawData.cards
   const cards =
-    practices.length > 0 ? practices.map((p) => practiceToCard(p, skill)) : fallbackCards
+    practices.length > 0
+      ? practices.map((p) => {
+          const card = practiceToCard(p, skill)
+          return { ...card, isCompleted: completedPracticeIds.has(String(card.id)) }
+        })
+      : fallbackCards
 
   return {
     practices,
@@ -262,5 +321,6 @@ export function useSkillPractices(skill, t) {
     deletingId,
     rawData,
     cards,
+    completedPracticeIds,
   }
 }

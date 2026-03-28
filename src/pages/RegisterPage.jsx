@@ -1,11 +1,39 @@
 import { Link } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
-import { AuthLayout } from '../components/layout/AuthLayout'
+import { AuthLayout, SocialButtons } from '../components/layout/AuthLayout'
+import { isFacebookSdkBlockedOnHttp } from '../utils/socialAuth'
 import { useRegister } from '../hooks'
+import { getPasswordStrengthMeta } from '../utils/passwordStrength'
+import { getDobMaxIsoDateLocal, getDobMinIsoDateLocal } from '../utils/dobBounds'
 
-const inputBase = 'w-full bg-slate-800/50 border text-white rounded-xl pl-10 pr-4 py-2.5 focus:ring-0 input-glow transition-all placeholder-slate-600'
+const inputBase =
+  'w-full bg-slate-800/50 border text-white rounded-xl pl-10 pr-4 py-2.5 focus:ring-0 input-glow transition-all placeholder-slate-600'
 const inputError = 'border-red-500/50'
 const inputNormal = 'border-slate-700 focus:border-primary'
+
+function PasswordStrengthMeter({ value, fieldError, t }) {
+  const { bars, hintKey } = getPasswordStrengthMeta(value)
+  return (
+    <>
+      <div className="mt-2 flex gap-1">
+        {[1, 2, 3, 4].map((i) => (
+          <div
+            key={i}
+            className={`h-1 flex-1 rounded transition-all ${i <= bars ? 'bg-primary' : 'bg-slate-700'}`}
+          />
+        ))}
+      </div>
+      {fieldError ? (
+        <p className="mt-1 text-xs text-red-400">{fieldError}</p>
+      ) : (
+        <div className="mt-1">
+          <p className="text-[10px] text-slate-500 uppercase tracking-wider font-semibold">{t('auth.passwordStrength')}</p>
+          {hintKey ? <p className="text-xs text-slate-400 mt-0.5">{t(hintKey)}</p> : null}
+        </div>
+      )}
+    </>
+  )
+}
 
 const REGISTER_LEFT_ITEMS = [
   { icon: 'map', titleKey: 'auth.registerLeft.roadmap', descKey: 'auth.registerLeft.roadmapDesc' },
@@ -24,13 +52,16 @@ export function RegisterPage() {
     gender,
     dateOfBirth,
     showPassword,
+    showConfirmPassword,
     agreeTerms,
     loading,
     error,
     fieldErrors,
     updateField,
     handleSubmit,
+    startSocialRegister,
     toggleShowPassword,
+    toggleShowConfirmPassword,
   } = useRegister()
 
   const field = (name) => (fieldErrors[name] ? inputError : inputNormal)
@@ -56,35 +87,29 @@ export function RegisterPage() {
 
   return (
     <AuthLayout leftContent={registerLeftContent}>
-      <div className="mb-8 text-center md:text-left max-h-[90vh] overflow-y-auto">
+      <div className="w-full max-w-md sm:max-w-lg mx-auto">
+      <div className="mb-8 text-center md:text-left">
         <h2 className="text-2xl font-bold mb-2">{t('auth.createAccount')}</h2>
         <p className="text-slate-400 text-sm">{t('auth.startJourney')}</p>
       </div>
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-6">
-        <button type="button" className="flex items-center justify-center gap-3 w-full py-2.5 px-4 bg-white hover:bg-slate-100 text-slate-900 font-semibold rounded-xl transition-colors text-sm">
-          <img alt="Google" className="w-5 h-5" src="https://www.google.com/favicon.ico" />
-          {t('auth.continueWithGoogle')}
-        </button>
-        <button type="button" className="flex items-center justify-center gap-3 w-full py-2.5 px-4 bg-[#1877F2] hover:bg-[#166fe5] text-white font-semibold rounded-xl transition-colors text-sm">
-          <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
-            <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z" />
-          </svg>
-          {t('auth.continueWithFacebook')}
-        </button>
-      </div>
+      <SocialButtons
+        showEmailDivider={false}
+        onGoogle={() => startSocialRegister('google')}
+        onFacebook={() => startSocialRegister('facebook')}
+        facebookDisabled={isFacebookSdkBlockedOnHttp()}
+      />
+      {error && (
+        <div className="mt-4 mb-4 p-3 rounded-xl bg-red-500/10 border border-red-500/30 text-red-400 text-sm flex items-start gap-2">
+          <span className="material-symbols-outlined text-lg shrink-0">error</span>
+          <span>{error}</span>
+        </div>
+      )}
       <div className="relative mb-6">
         <div className="absolute inset-0 flex items-center"><div className="w-full border-t border-slate-700" /></div>
         <div className="relative flex justify-center text-xs uppercase">
           <span className="bg-card-dark px-3 text-slate-500">{t('auth.orRegisterWithEmail')}</span>
         </div>
       </div>
-
-      {error && (
-        <div className="mb-4 p-3 rounded-xl bg-red-500/10 border border-red-500/30 text-red-400 text-sm flex items-start gap-2">
-          <span className="material-symbols-outlined text-lg shrink-0">error</span>
-          <span>{error}</span>
-        </div>
-      )}
 
       <form className="space-y-4" onSubmit={handleSubmit}>
         <div>
@@ -103,12 +128,17 @@ export function RegisterPage() {
           </div>
           {fieldErrors.email && <p className="mt-1 text-xs text-red-400">{fieldErrors.email}</p>}
         </div>
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
           <div>
             <label className="block text-sm font-medium text-slate-400 mb-1.5" htmlFor="gender">{t('auth.gender')}</label>
             <div className="relative group">
-              <span className="material-symbols-outlined absolute left-3 top-2.5 text-slate-500 group-focus-within:text-primary transition-colors text-xl">person</span>
-              <select id="gender" value={gender} onChange={(e) => updateField('gender', e.target.value)} className={`${inputBase} ${field('gender')} appearance-none pr-10`}>
+              <span className="material-symbols-outlined absolute left-3 top-2.5 text-slate-500 group-focus-within:text-primary transition-colors text-xl pointer-events-none">person</span>
+              <select
+                id="gender"
+                value={gender}
+                onChange={(e) => updateField('gender', e.target.value)}
+                className={`${inputBase} ${field('gender')} appearance-none pr-10`}
+              >
                 <option value="">{t('auth.genderPlaceholder')}</option>
                 <option value="male">{t('auth.genderMale')}</option>
                 <option value="female">{t('auth.genderFemale')}</option>
@@ -120,8 +150,15 @@ export function RegisterPage() {
           <div>
             <label className="block text-sm font-medium text-slate-400 mb-1.5" htmlFor="dateOfBirth">{t('auth.dateOfBirth')}</label>
             <div className="relative group">
-              <span className="material-symbols-outlined absolute left-3 top-2.5 text-slate-500 group-focus-within:text-primary transition-colors text-xl">calendar_today</span>
-              <input id="dateOfBirth" type="date" value={dateOfBirth} onChange={(e) => updateField('dateOfBirth', e.target.value)} className={`${inputBase} ${field('dateOfBirth')}`} />
+              <input
+                id="dateOfBirth"
+                type="date"
+                min={getDobMinIsoDateLocal()}
+                max={getDobMaxIsoDateLocal()}
+                value={dateOfBirth}
+                onChange={(e) => updateField('dateOfBirth', e.target.value)}
+                className={`register-dob-input ${inputBase} ${field('dateOfBirth')} !pl-4 [color-scheme:dark]`}
+              />
             </div>
             {fieldErrors.dateOfBirth && <p className="mt-1 text-xs text-red-400">{fieldErrors.dateOfBirth}</p>}
           </div>
@@ -132,21 +169,24 @@ export function RegisterPage() {
             <span className="material-symbols-outlined absolute left-3 top-2.5 text-slate-500 group-focus-within:text-primary transition-colors text-xl">lock</span>
             <input id="password" type={showPassword ? 'text' : 'password'} placeholder="••••••••" value={password} onChange={(e) => updateField('password', e.target.value)} className={`${inputBase} pr-10 ${field('password')}`} />
             <button type="button" onClick={toggleShowPassword} className="absolute right-3 top-2.5 text-slate-500 hover:text-slate-300">
-              <span className="material-symbols-outlined text-xl">visibility</span>
+              <span className="material-symbols-outlined text-xl">{showPassword ? 'visibility_off' : 'visibility'}</span>
             </button>
           </div>
-          <div className="mt-2 flex gap-1">
-            {[1, 2, 3, 4].map((i) => <div key={i} className={`h-1 w-1/4 rounded transition-all ${i <= 2 ? 'bg-primary' : 'bg-slate-700'}`} />)}
-          </div>
-          {fieldErrors.password ? <p className="mt-1 text-xs text-red-400">{fieldErrors.password}</p> : <p className="text-[10px] text-slate-500 mt-1 uppercase tracking-wider font-semibold">{t('auth.passwordStrength')}</p>}
+          <PasswordStrengthMeter value={password} fieldError={fieldErrors.password} t={t} />
         </div>
         <div>
           <label className="block text-sm font-medium text-slate-400 mb-1.5" htmlFor="confirm-password">{t('auth.confirmPassword')}</label>
           <div className="relative group">
             <span className="material-symbols-outlined absolute left-3 top-2.5 text-slate-500 group-focus-within:text-primary transition-colors text-xl">shield_lock</span>
-            <input id="confirm-password" type="password" placeholder="••••••••" value={confirmPassword} onChange={(e) => updateField('confirmPassword', e.target.value)} className={`${inputBase} ${field('confirmPassword')}`} />
+            <input id="confirm-password" type={showConfirmPassword ? 'text' : 'password'} placeholder="••••••••" value={confirmPassword} onChange={(e) => updateField('confirmPassword', e.target.value)} className={`${inputBase} pr-10 ${field('confirmPassword')}`} />
+            <button type="button" onClick={toggleShowConfirmPassword} className="absolute right-3 top-2.5 text-slate-500 hover:text-slate-300">
+              <span className="material-symbols-outlined text-xl">{showConfirmPassword ? 'visibility_off' : 'visibility'}</span>
+            </button>
           </div>
-          {fieldErrors.confirmPassword && <p className="mt-1 text-xs text-red-400">{fieldErrors.confirmPassword}</p>}
+          <PasswordStrengthMeter value={confirmPassword} fieldError={fieldErrors.confirmPassword} t={t} />
+          {!fieldErrors.confirmPassword && password && confirmPassword && password === confirmPassword && (
+            <p className="text-xs text-emerald-500/90 mt-1 font-medium">{t('auth.passwordsMatch')}</p>
+          )}
         </div>
         <div className="flex items-start gap-2 py-2">
           <input id="terms" type="checkbox" checked={agreeTerms} onChange={(e) => updateField('agreeTerms', e.target.checked)} className={`mt-0.5 rounded border-slate-700 bg-slate-800 text-primary focus:ring-primary/20 ${fieldErrors.agreeTerms ? 'ring-1 ring-red-500/50' : ''}`} />
@@ -155,7 +195,11 @@ export function RegisterPage() {
           </label>
           {fieldErrors.agreeTerms && <p className="mt-1 text-xs text-red-400 block">{fieldErrors.agreeTerms}</p>}
         </div>
-        <button type="submit" disabled={loading} className="w-full py-3.5 bg-primary hover:brightness-110 disabled:opacity-60 disabled:cursor-not-allowed text-slate-950 font-bold rounded-xl transition-all shadow-lg shadow-primary/20 text-base">
+        <button
+          type="submit"
+          disabled={loading}
+          className="w-full py-3 bg-primary hover:brightness-110 disabled:opacity-60 disabled:cursor-not-allowed text-slate-950 font-bold rounded-xl transition-all shadow-lg shadow-primary/20"
+        >
           {loading ? <span className="flex items-center justify-center gap-2"><span className="material-symbols-outlined animate-spin text-xl">progress_activity</span>{t('auth.processing')}</span> : t('auth.registerNow')}
         </button>
       </form>
@@ -164,6 +208,7 @@ export function RegisterPage() {
         <p className="text-sm text-slate-400">
           {t('auth.haveAccount')} <Link to="/login" className="text-primary font-bold hover:underline">{t('auth.loginNow')}</Link>
         </p>
+      </div>
       </div>
     </AuthLayout>
   )

@@ -7,11 +7,17 @@ const defaultForm = () => ({
   title: '',
   description: '',
   type: 'daily',
-  targetType: 'lesson',
-  targetValue: 1,
+  condition: {
+    target: 1,
+    filters: {
+      skill: 'all',
+      category: 'all',
+      minProgress: 100,
+      minScorePercent: 0,
+    },
+  },
   xpReward: 50,
   icon: 'flag',
-  skill: 'all',
   status: 'active',
   order: 0,
 })
@@ -38,15 +44,22 @@ export function useManageQuestForm(id, t) {
       .then((res) => {
         const data = res?.data
         if (data) {
+          const condition = data.condition || {}
           setForm({
             title: data.title ?? '',
             description: data.description ?? '',
             type: data.type ?? 'daily',
-            targetType: data.targetType ?? 'lesson',
-            targetValue: data.targetValue ?? 1,
+            condition: {
+              target: condition.target ?? data.targetValue ?? 1,
+              filters: {
+                skill: condition.filters?.skill ?? data.skill ?? 'all',
+                category: condition.filters?.category ?? 'all',
+                minProgress: condition.filters?.minProgress ?? 100,
+                minScorePercent: condition.filters?.minScorePercent ?? 0,
+              },
+            },
             xpReward: data.xpReward ?? 50,
             icon: data.icon ?? 'flag',
-            skill: data.skill ?? 'all',
             status: data.status ?? 'active',
             order: data.order ?? 0,
           })

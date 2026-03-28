@@ -25,6 +25,8 @@ export const API_ENDPOINTS = {
     REGISTER: '/auth/register',
     LOGOUT: '/auth/logout',
     REFRESH_TOKEN: '/auth/refresh',
+    SOCIAL_GOOGLE: '/auth/social/google',
+    SOCIAL_FACEBOOK: '/auth/social/facebook',
     ME: '/auth/me',
     PREFERENCES: '/auth/preferences',
     FORGOT_PASSWORD: '/auth/forgot-password',
@@ -76,6 +78,8 @@ export const API_ENDPOINTS = {
     DETAIL: (id) => `/lessons/${id}`,
     PROGRESS: (id) => `/lessons/${id}/progress`,
     NOTES: (id) => `/lessons/${id}/notes`,
+    SUBMIT: (id) => `/lessons/${id}/submit`,
+    SUBMIT_WRITING: (id) => `/lessons/${id}/submit-writing`,
     COMPLETE: (id) => `/lessons/${id}/complete`,
     READING_CONTENT: (id) => `/lessons/reading/${id}/content`,
     LISTENING_CONTENT: (id) => `/lessons/listening/${id}/content`,
@@ -91,6 +95,12 @@ export const API_ENDPOINTS = {
   PRACTICES: {
     LIST: '/practices',
     FALLBACK: '/practices/fallback',
+  },
+
+  /** Từ vựng: lịch sử truy cập / hình thức luyện (MongoDB, cần đăng nhập) */
+  VOCABULARY: {
+    RECENT: '/vocabulary/recent',
+    RECORD_RECENT: '/vocabulary/recent',
   },
 
   // Quests
@@ -165,12 +175,20 @@ export const API_ENDPOINTS = {
   // Groups
   GROUPS: {
     LIST: '/groups',
+    MY_GROUPS: '/groups/me',
     DETAIL: (id) => `/groups/${id}`,
     CREATE: '/groups',
     JOIN: (id) => `/groups/${id}/join`,
     LEAVE: (id) => `/groups/${id}/leave`,
     MEMBERS: (id) => `/groups/${id}/members`,
     ADD_MEMBERS: (id) => `/groups/${id}/members`,
+    REMOVE_MEMBER: (groupId, userId) => `/groups/${groupId}/members/${userId}`,
+    JOIN_REQUESTS: (id) => `/groups/${id}/join-requests`,
+    APPROVE_JOIN_REQUEST: (groupId, userId) => `/groups/${groupId}/join-requests/${userId}/approve`,
+    REJECT_JOIN_REQUEST: (groupId, userId) => `/groups/${groupId}/join-requests/${userId}/reject`,
+    MY_MEMBERSHIP: (id) => `/groups/${id}/my-membership`,
+    INVITE_ACCEPT: (id) => `/groups/${id}/invite/accept`,
+    INVITE_DECLINE: (id) => `/groups/${id}/invite/decline`,
   },
 
   // Notifications
@@ -248,6 +266,10 @@ export const ROUTES = {
     WRITING: (id) => `/lesson/writing/${id}`,
   },
   COMMUNITY: '/community/my-groups',
+  /** Trang « Từ & ghi chú » / Words & notes */
+  WORDS_NOTES: '/words-notes',
+  /** @deprecated Dùng WORDS_NOTES; giữ alias để code cũ */
+  FLASH_CARD: '/words-notes',
   GROUPS: '/groups',
   PROFILE: '/profile',
   PROFILE_USER: (userId) => `/profile/${userId}`,
@@ -267,6 +289,7 @@ export const NAV_ITEMS = [
   { to: ROUTES.HOME, label: 'header.home' },
   { to: ROUTES.LESSON, label: 'header.lesson' },
   { to: ROUTES.PRACTICE, label: 'header.practice' },
+  { to: ROUTES.WORDS_NOTES, label: 'header.flashCard' },
   { to: ROUTES.QUESTS, label: 'header.quests' },
   { to: ROUTES.ACHIEVEMENTS, label: 'header.achievements' },
   { to: ROUTES.COMMUNITY, label: 'header.community' },

@@ -1,5 +1,6 @@
 import { useCallback } from 'react'
 import { conversationService } from '../services'
+import { showEngSuccessToast } from '../utils/showEngToast'
 
 /**
  * Logic helper for PostShareModal:
@@ -7,38 +8,17 @@ import { conversationService } from '../services'
  * - Send link to selected friends / groups via Messenger
  */
 export function useSharePostActions({ t, postUrl, onClose }) {
-  const showToast = useCallback(
-    (message) => {
-      try {
-        const existing = document.getElementById('eng-copy-toast')
-        if (existing) existing.remove()
-        const el = document.createElement('div')
-        el.id = 'eng-copy-toast'
-        el.className =
-          'fixed bottom-8 left-1/2 -translate-x-1/2 z-[9999] px-5 py-3 rounded-full bg-[#1f2933] text-white text-sm shadow-xl flex items-center gap-2'
-        el.innerHTML = `<span class="material-symbols-outlined" style="font-size:18px;color:#22c55e">check_circle</span><span style="font-weight:600">${message}</span>`
-        document.body.appendChild(el)
-        setTimeout(() => {
-          el.remove()
-        }, 2000)
-      } catch {
-        // ignore toast errors
-      }
-    },
-    []
-  )
-
   const showCopyToast = useCallback(() => {
     const msg =
       t('dashboard.linkCopied') || 'Đã copy link bài viết.'
-    showToast(msg)
-  }, [showToast, t])
+    showEngSuccessToast(msg)
+  }, [t])
 
   const showShareSuccessToast = useCallback(() => {
     const msg =
       t('dashboard.shareSuccess') || 'Chia sẻ bài viết thành công.'
-    showToast(msg)
-  }, [showToast, t])
+    showEngSuccessToast(msg)
+  }, [t])
 
   const handleCopyLink = useCallback(
     async (closeAfter = false) => {

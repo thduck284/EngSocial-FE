@@ -5,7 +5,12 @@ import { useTranslation } from 'react-i18next'
 import { DEFAULT_AVATAR } from '../../../constants/ui'
 import { ROUTES, POST_REACTION_TYPES, REACTION_TYPE_TO_EMOJI } from '../../../constants'
 import { formatPostTime } from '../../../utils/dateTime'
-import { formatReactionCount, normalizeMentions } from '../../../utils/post'
+import {
+  formatReactionCount,
+  getPostReactionTotal,
+  getPostVisibilityLabel,
+  normalizeMentions,
+} from '../../../utils/post'
 import { usePostReactionPicker, usePostImageViewer } from '../../../hooks/usePostInteractions'
 import { usePostImageViewerComments } from '../../../hooks/usePostImageViewerComments'
 import { PostImageViewerLeft } from './PostImageViewerLeft'
@@ -47,7 +52,7 @@ export function PostImageViewerModal({ open, onClose, post, initialImageIndex = 
   const mentionsList = normalizeMentions(post?.mentions)
   const contentToShow = post?.content != null ? String(post.content) : ''
   const isLikedInModal = Boolean(post?.liked)
-  const likeCountInModal = Number(post?.likeCount) ?? 0
+  const reactionTotalInModal = post ? getPostReactionTotal(post) : 0
   const userReactionInModal = post?.userReaction || null
 
   // Hook điều khiển viewer ảnh (index, zoom, fullscreen, expand)
@@ -115,6 +120,8 @@ export function PostImageViewerModal({ open, onClose, post, initialImageIndex = 
     replyToComment,
     startReplyToComment,
     cancelReplyToComment,
+    expandAfterReply,
+    onExpandAfterReplyConsumed,
   } = usePostImageViewerComments(postId, t, open)
 
   useEffect(() => {
@@ -166,7 +173,7 @@ export function PostImageViewerModal({ open, onClose, post, initialImageIndex = 
 
         {/* Right: post context + actions + comments (hidden in fullscreen) */}
         {!fullscreen && (
-        <aside className="w-full md:max-w-[400px] flex-1 flex flex-col bg-[#111e22] border-t md:border-t-0 md:border-l border-[#325a67] overflow-y-auto pt-4">
+        <aside className="w-full md:max-w-[520px] lg:max-w-[580px] flex-1 flex flex-col bg-[#111e22] border-t md:border-t-0 md:border-l border-[#325a67] overflow-y-auto pt-4">
           <div className="border-b border-[#325a67] px-4 py-2">
             <div className="flex items-start justify-between gap-2">
               <img src={authorAvatar} alt="" className="size-9 rounded-full object-cover bg-slate-600 shrink-0" />
@@ -203,12 +210,7 @@ export function PostImageViewerModal({ open, onClose, post, initialImageIndex = 
                   )}
                 </p>
                 <p className="text-xs text-[#92bbc9]">
-                  {formatPostTime(post?.createdAt)} ·
-                  {(post?.visibility === 'public' && (t('dashboard.public') || 'Công khai')) ||
-                    (post?.visibility === 'friends' && (t('dashboard.friendsOnly') || 'Bạn bè')) ||
-                    (post?.visibility === 'private' && (t('dashboard.privateOnly') || 'Chỉ mình tôi')) ||
-                    post?.visibility ||
-                    '—'}
+                  {formatPostTime(post?.createdAt)} · {getPostVisibilityLabel(post?.visibility, t)}
                 </p>
               </div>
               <div className="relative shrink-0" ref={optionsMenuRef}>
@@ -258,7 +260,7 @@ export function PostImageViewerModal({ open, onClose, post, initialImageIndex = 
           {/* Reaction summary row inside image modal (same layout as feed footer) */}
           <div className="flex items-center justify-between px-4 pt-1 pb-0.5 text-sm text-slate-500 dark:text-[#92bbc9]">
             <div className="flex items-center gap-0.5 min-w-0">
-              {likeCountInModal > 0 && (
+              {reactionTotalInModal > 0 && (
                 <>
                   <span className="flex items-center -space-x-3 shrink-0" aria-hidden>
                     {POST_REACTION_TYPES.filter((type) => (post.reactionCounts && post.reactionCounts[type] > 0)).map(
@@ -290,7 +292,7 @@ export function PostImageViewerModal({ open, onClose, post, initialImageIndex = 
                     }}
                     className="font-medium tabular-nums hover:underline cursor-pointer text-left"
                   >
-                    {formatReactionCount(likeCountInModal)}
+                    {formatReactionCount(reactionTotalInModal)}
                   </button>
                 </>
               )}
@@ -395,6 +397,8 @@ export function PostImageViewerModal({ open, onClose, post, initialImageIndex = 
             replyToComment={replyToComment}
             startReplyToComment={startReplyToComment}
             cancelReplyToComment={cancelReplyToComment}
+            expandAfterReply={expandAfterReply}
+            onExpandAfterReplyConsumed={onExpandAfterReplyConsumed}
           />
         </aside>
         )}
@@ -466,7 +470,7 @@ export function PostImageViewerModal({ open, onClose, post, initialImageIndex = 
         mode="post"
         entityId={post?.id ?? post?._id}
         initialTab={reactionsModalInitialTab}
-        likeCount={likeCountInModal}
+        likeCount={reactionTotalInModal}
         reactionCounts={post?.reactionCounts}
       />
       <MentionedUsersModal

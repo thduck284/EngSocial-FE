@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { useNavigate, useLocation } from 'react-router-dom'
+import { useNavigate } from 'react-router-dom'
 import { lessonsService } from '../services'
 
 /**
@@ -10,7 +10,6 @@ import { lessonsService } from '../services'
  */
 export function useReadingLesson(id, t) {
   const navigate = useNavigate()
-  const location = useLocation()
   const [content, setContent] = useState(null)
   const [loading, setLoading] = useState(true)
   const [currentQuestion, setCurrentQuestion] = useState(0)
@@ -19,15 +18,14 @@ export function useReadingLesson(id, t) {
   const [countdownSeconds, setCountdownSeconds] = useState(null)
   const [noteTitle, setNoteTitle] = useState('')
   const [noteContent, setNoteContent] = useState('')
-  const [noteCategory, setNoteCategory] = useState('grammar')
   const [noteSaving, setNoteSaving] = useState(false)
   const [noteSavedMessage, setNoteSavedMessage] = useState('')
   const [editingPage, setEditingPage] = useState(false)
   const [pageInput, setPageInput] = useState('')
   const [showHint, setShowHint] = useState(false)
+  const [showIncompleteModal, setShowIncompleteModal] = useState(false)
   const [completingLesson, setCompletingLesson] = useState(false)
   const [completeMessage, setCompleteMessage] = useState('')
-  const [saveDraftMessage, setSaveDraftMessage] = useState('')
   const [vocabIndex, setVocabIndex] = useState(0)
   const [showVocabTable, setShowVocabTable] = useState(false)
   const [passageLang, setPassageLang] = useState('en')
@@ -98,7 +96,7 @@ export function useReadingLesson(id, t) {
     setNoteSaving(true)
     setNoteSavedMessage('')
     lessonsService
-      .addNote(id, { title: noteTitle, content: noteContent, category: noteCategory })
+      .addNote(id, { title: noteTitle, content: noteContent })
       .then(() => {
         setNoteSavedMessage(t('readingLesson.noteSaved'))
         setNoteTitle('')
@@ -119,19 +117,23 @@ export function useReadingLesson(id, t) {
         return a != null && String(a).trim() !== ''
       })
     if (!allAnswered) {
-      setCompleteMessage(t('readingLesson.pleaseAnswerAll'))
+      setShowIncompleteModal(true)
       return
     }
     setCompletingLesson(true)
+    const answersPayload = questions.map((q, i) => ({
+      questionId: String(q?.id ?? i + 1),
+      questionIndex: i,
+      answer: answers[i],
+    }))
     lessonsService
-      .complete(id)
+      .submit(id, { answers: answersPayload, timeSpent: 0 })
       .then((res) => {
-        const xp = res?.data?.xpEarned
+        const xp = res?.data?.xpEarnedThisAttempt ?? 0
         setCompleteMessage(
-          xp != null ? t('readingLesson.completeSuccess', { xp }) : t('readingLesson.completeSuccessShort')
+          xp > 0 ? t('readingLesson.completeSuccess', { xp }) : t('readingLesson.completeSuccessShort')
         )
-        const fromPractice = location.pathname.startsWith('/practice/')
-        const redirectTo = fromPractice ? '/practice' : '/lesson'
+        const redirectTo = `/lesson/reading/${id}/result`
         setTimeout(() => {
           setCompleteMessage('')
           navigate(redirectTo)
@@ -139,17 +141,6 @@ export function useReadingLesson(id, t) {
       })
       .catch(() => setCompleteMessage(t('readingLesson.completeFailed')))
       .finally(() => setCompletingLesson(false))
-  }
-
-  const handleSaveDraft = () => {
-    if (!id) return
-    lessonsService
-      .updateProgress(id, { status: 'in_progress' })
-      .then(() => {
-        setSaveDraftMessage(t('readingLesson.saveDraftSuccess'))
-        setTimeout(() => setSaveDraftMessage(''), 2500)
-      })
-      .catch(() => {})
   }
 
   const handleNext = () => {
@@ -161,7 +152,7 @@ export function useReadingLesson(id, t) {
   }
 
   const handleSubmit = () => {
-    // TODO: Submit answers
+    handleComplete()
   }
 
   const handlePageChange = (newPage) => {
@@ -186,6 +177,10 @@ export function useReadingLesson(id, t) {
     setEditingPage(true)
   }
 
+  const closeIncompleteModal = () => {
+    setShowIncompleteModal(false)
+  }
+
   return {
     content,
     loading,
@@ -206,8 +201,6 @@ export function useReadingLesson(id, t) {
     setNoteTitle,
     noteContent,
     setNoteContent,
-    noteCategory,
-    setNoteCategory,
     noteSaving,
     noteSavedMessage,
     handleSaveNote,
@@ -217,11 +210,11 @@ export function useReadingLesson(id, t) {
     setPageInput,
     showHint,
     setShowHint,
+    showIncompleteModal,
+    closeIncompleteModal,
     completingLesson,
     completeMessage,
     handleComplete,
-    saveDraftMessage,
-    handleSaveDraft,
     vocabIndex,
     setVocabIndex,
     showVocabTable,

@@ -47,12 +47,19 @@ function renderNotificationContent(n, t) {
       </>
     )
   }
+  if (n.type === 'group_invite') {
+    return n.message || n.title || t('notifications.groupInviteFallback', { defaultValue: 'You were invited to a group.' })
+  }
   return n.message || n.title || null
 }
 
 function getNotificationLink(n) {
   if ((n.type === 'friend_request' || n.type === 'friend_request_accepted') && n.fromUserId) {
     return ROUTES.PROFILE_USER(n.fromUserId)
+  }
+  if (n.type === 'group_invite') {
+    const gid = n.data?.groupId || n.relatedId
+    if (gid) return `/community/group/${gid}/about`
   }
   if (n.relatedType === 'post' && n.relatedId) return `${ROUTES.COMMUNITY}/posts/${n.relatedId}`
   return null
@@ -149,9 +156,11 @@ export function NotificationPopover({ open, onClose, anchorRef, unreadCount, onM
             const link = getNotificationLink(n)
             const content = (
               <div className="flex gap-3">
-                {n.type === 'friend_request' ? (
+                {n.type === 'friend_request' || n.type === 'group_invite' ? (
                   <div className="w-11 h-11 rounded-full bg-primary/20 flex items-center justify-center shrink-0">
-                    <span className="material-symbols-outlined text-primary">person_add</span>
+                    <span className="material-symbols-outlined text-primary">
+                      {n.type === 'group_invite' ? 'group_add' : 'person_add'}
+                    </span>
                   </div>
                 ) : (
                   <div className="w-11 h-11 rounded-full bg-gray-600/50 flex items-center justify-center shrink-0">

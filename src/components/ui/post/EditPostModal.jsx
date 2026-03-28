@@ -1,5 +1,8 @@
 import { createPortal } from 'react-dom'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { usePostComposerAddons } from '../../../hooks/usePostComposerAddons'
+import { friendsService } from '../../../services'
+import { extractMentionNames, getMentionRanges, resolveMentionIds } from '../../../utils/postContent'
 import { PostComposerAddToPostRow } from './PostComposerAddToPostRow'
 
 export function EditPostModal({
@@ -9,6 +12,9 @@ export function EditPostModal({
   authorAvatar,
   content,
   setContent,
+  initialMentions = [],
+  initialMentionIds = [],
+  onMentionIdsChange,
   visibility,
   setVisibility,
   images,
@@ -28,11 +34,170 @@ export function EditPostModal({
   error,
   canSubmit,
 }) {
+  const [showMentionDropdown, setShowMentionDropdown] = useState(false)
+  const [mentionQuery, setMentionQuery] = useState('')
+  const [friendsForMention, setFriendsForMention] = useState([])
+  const contentTextareaRef = useRef(null)
+  const contentBlockRef = useRef(null)
+
   const addons = usePostComposerAddons({
     open,
-    onInsertEmoji: (emoji) => setContent((prev) => `${prev || ''}${emoji}`),
+    onInsertEmoji: (emoji) => {
+      const ta = contentTextareaRef.current
+      if (!ta) {
+        setContent((prev) => `${prev || ''}${emoji}`)
+        return
+      }
+      const start = ta.selectionStart
+      const end = ta.selectionEnd
+      const current = content || ''
+      const next = `${current.slice(0, start)}${emoji}${current.slice(end)}`
+      setContent(next)
+      setTimeout(() => {
+        ta.focus()
+        const pos = start + emoji.length
+        ta.setSelectionRange(pos, pos)
+      }, 0)
+    },
     onSelectGif: onAddGif,
   })
+
+  const mentionCandidates = useMemo(() => {
+    const mentionPoolMap = new Map()
+    ;[...friendsForMention, ...(Array.isArray(initialMentions) ? initialMentions : [])].forEach((m) => {
+      const id = String(m?.id ?? m?._id ?? '')
+      const name = String(m?.name ?? '').trim()
+      if (!id || !name) return
+      if (!mentionPoolMap.has(id)) {
+        mentionPoolMap.set(id, { id, name, avatar: m?.avatar || '' })
+      }
+    })
+    const mentionPool = Array.from(mentionPoolMap.values())
+    const names = extractMentionNames(content || '')
+    const alreadyMentioned = new Set(names.map((n) => n.trim().toLowerCase()))
+    if (names.length && names[names.length - 1].trim().toLowerCase() === mentionQuery.trim().toLowerCase()) {
+      alreadyMentioned.delete(mentionQuery.trim().toLowerCase())
+    }
+    const filteredPool = mentionPool.filter((m) => !alreadyMentioned.has(m.name.trim().toLowerCase()))
+    if (!mentionQuery.trim()) return filteredPool.slice(0, 8)
+    const q = mentionQuery.trim().toLowerCase()
+    return filteredPool.filter((f) => f.name.toLowerCase().includes(q)).slice(0, 8)
+  }, [friendsForMention, initialMentions, mentionQuery])
+
+  useEffect(() => {
+    if (!open) return
+    onMentionIdsChange?.(Array.isArray(initialMentionIds) ? initialMentionIds : [])
+    setShowMentionDropdown(false)
+    setMentionQuery('')
+    friendsService
+      .getList({ limit: 100, page: 1 })
+      .then((res) => {
+        const raw = res?.data?.data ?? res?.data ?? []
+        const list = (Array.isArray(raw) ? raw : [])
+          .map((item) => {
+            const u = item?.user || item
+            const id = u?.id ?? u?._id
+            const name = u?.name
+            const avatar = u?.avatar
+            return id && name ? { id: String(id), name: String(name), avatar: avatar || '' } : null
+          })
+          .filter(Boolean)
+        setFriendsForMention(list)
+      })
+      .catch(() => setFriendsForMention([]))
+  }, [open])
+
+  useEffect(() => {
+    if (!open) return
+    const mentionPoolMap = new Map()
+    ;[...friendsForMention, ...(Array.isArray(initialMentions) ? initialMentions : [])].forEach((m) => {
+      const id = String(m?.id ?? m?._id ?? '')
+      const name = String(m?.name ?? '').trim()
+      if (!id || !name) return
+      if (!mentionPoolMap.has(id)) {
+        mentionPoolMap.set(id, { id, name, avatar: m?.avatar || '' })
+      }
+    })
+    const mentionPool = Array.from(mentionPoolMap.values())
+    const resolved = resolveMentionIds(content || '', mentionPool)
+    onMentionIdsChange?.(resolved)
+  }, [content, friendsForMention, initialMentions, onMentionIdsChange, open, initialMentionIds])
+
+  const handleContentChange = (e) => {
+    const value = e.target.value
+    setContent(value)
+    const cursor = e.target.selectionStart
+    const textBefore = value.slice(0, cursor)
+    const match = textBefore.match(/@([^\s@#]*)$/)
+    if (match) {
+      setShowMentionDropdown(true)
+      setMentionQuery(match[1] || '')
+      addons.setShowEmojiPicker(false)
+      addons.setShowGifPicker(false)
+    } else {
+      setShowMentionDropdown(false)
+      setMentionQuery('')
+    }
+  }
+
+  const handleContentKeyDown = (e) => {
+    const ta = contentTextareaRef.current
+    if (!ta) return
+    const start = ta.selectionStart
+    const end = ta.selectionEnd
+    const hasSelection = start !== end
+    const ranges = getMentionRanges(content || '')
+
+    if (e.key === 'Backspace' && !hasSelection) {
+      const at = start
+      const range = ranges.find((r) => at > r.start && at <= r.end)
+      if (range) {
+        e.preventDefault()
+        const current = content || ''
+        const next = current.slice(0, range.start) + current.slice(range.end)
+        setContent(next)
+        setTimeout(() => {
+          ta.focus()
+          ta.setSelectionRange(range.start, range.start)
+        }, 0)
+      }
+      return
+    }
+    if (e.key === 'Delete' && !hasSelection) {
+      const at = start
+      const range = ranges.find((r) => at >= r.start && at < r.end)
+      if (range) {
+        e.preventDefault()
+        const current = content || ''
+        const next = current.slice(0, range.start) + current.slice(range.end)
+        setContent(next)
+        setTimeout(() => {
+          ta.focus()
+          ta.setSelectionRange(range.start, range.start)
+        }, 0)
+      }
+      return
+    }
+  }
+
+  const insertMention = (friend) => {
+    const ta = contentTextareaRef.current
+    if (!ta) return
+    const cursor = ta.selectionStart
+    const current = content || ''
+    const textBefore = current.slice(0, cursor)
+    const start = textBefore.lastIndexOf('@')
+    if (start === -1) return
+    const next = `${current.slice(0, start)}@${friend.name} ${current.slice(cursor)}`
+    setContent(next)
+    setShowMentionDropdown(false)
+    setMentionQuery('')
+    setTimeout(() => {
+      ta.focus()
+      const pos = start + friend.name.length + 2
+      ta.setSelectionRange(pos, pos)
+    }, 0)
+  }
 
   if (!open) return null
 
@@ -83,14 +248,48 @@ export function EditPostModal({
           </div>
         </div>
 
-        <div className="px-6 pb-2 shrink-0">
+        <div ref={contentBlockRef} className="px-6 pb-2 shrink-0 relative">
           <textarea
+            ref={contentTextareaRef}
             value={content}
-            onChange={(e) => setContent(e.target.value)}
-            className="w-full min-h-[120px] bg-transparent border-none focus:ring-0 text-lg text-slate-900 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 resize-none p-0"
+            onChange={handleContentChange}
+            onKeyDown={handleContentKeyDown}
+            className="w-full min-h-[170px] bg-transparent border-none focus:ring-0 text-lg text-slate-900 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 resize-none p-0"
             placeholder={t('dashboard.postPlaceholder')}
-            rows={3}
+            rows={6}
           />
+          {showMentionDropdown && (
+            <div className="absolute left-6 right-6 top-full mt-0.5 pt-1.5 pb-2 bg-white dark:bg-card-dark rounded-xl shadow-xl border border-slate-200 dark:border-border-dark z-50 max-h-48 overflow-y-auto custom-scrollbar">
+              {mentionCandidates.length === 0 ? (
+                <p className="px-3 py-3 text-sm text-slate-500 dark:text-slate-400">
+                  {t('dashboard.noFriendMatch') || 'Khong co ban be phu hop.'}
+                </p>
+              ) : (
+                mentionCandidates.map((friend) => (
+                  <button
+                    key={friend.id}
+                    type="button"
+                    onMouseDown={(e) => e.preventDefault()}
+                    onClick={() => insertMention(friend)}
+                    className="w-full flex items-center gap-3 px-3 py-2 text-left hover:bg-slate-100 dark:hover:bg-white/10 transition-colors"
+                  >
+                    {friend.avatar ? (
+                      <span className="size-8 rounded-full overflow-hidden border border-primary/40 shrink-0">
+                        <img src={friend.avatar} alt="" className="w-full h-full object-cover" />
+                      </span>
+                    ) : (
+                      <span className="size-8 rounded-full bg-primary/20 flex items-center justify-center text-sm font-bold text-primary shrink-0">
+                        {(friend.name || '?').charAt(0).toUpperCase()}
+                      </span>
+                    )}
+                    <span className="text-sm font-medium text-slate-900 dark:text-slate-100 truncate">
+                      {friend.name}
+                    </span>
+                  </button>
+                ))
+              )}
+            </div>
+          )}
         </div>
 
         <div className="px-6 py-4 space-y-3 overflow-y-auto flex-1 min-h-0">

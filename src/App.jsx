@@ -29,7 +29,10 @@ import { GroupCreatePage } from './pages/GroupCreatePage'
 import { DashboardLayout } from './components/layout/DashboardLayout'
 import { RequireModeratorOrAdmin } from './components/layout/RequireModeratorOrAdmin'
 import { GuestOnlyLayout } from './components/layout/GuestOnlyLayout'
-import VocabularyHomePage from './pages/VocabularyHomePage'
+import { WordsNotesLayout } from './components/vocabulary/WordsNotesLayout'
+import VocabularyTopicsTab from './pages/VocabularyTopicsTab'
+import VocabularyNotesPanel from './components/vocabulary/VocabularyNotesPanel'
+import VocabularyMyWordsPanel from './components/vocabulary/VocabularyMyWordsPanel'
 import TopicDetailPage from './pages/TopicDetailPage'
 import FlashCardPage from './pages/FlashCardPage'
 import VocabularyDataPage from './pages/VocabularyDataPage'
@@ -108,7 +111,13 @@ function App() {
           <Route path="profile/:userId/photos" element={<UserProfilePage />} />
           <Route path="profile/:userId/video" element={<UserProfilePage />} />
 
-          <Route path="vocabularyhome" element={<VocabularyHomePage />} />
+          <Route path="words-notes" element={<WordsNotesLayout />}>
+            <Route index element={<Navigate to="topics" replace />} />
+            <Route path="topics" element={<VocabularyTopicsTab />} />
+            <Route path="notes" element={<VocabularyNotesPanel />} />
+            <Route path="my-words" element={<VocabularyMyWordsPanel />} />
+          </Route>
+          <Route path="vocabularyhome" element={<Navigate to="/words-notes/topics" replace />} />
           <Route path="topic/:topicId" element={<TopicDetailPage />} />
           <Route path="topic/:topicId/flashcard" element={<FlashCardPage />} />
           <Route path="topic/:topicId/data" element={<VocabularyDataPage />} />

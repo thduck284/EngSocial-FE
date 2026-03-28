@@ -20,7 +20,20 @@ export function extractMentionNames(content) {
   if (!content || typeof content !== 'string') return []
   const matches = content.match(/@([^\s@#]+(?:\s+[^\s@#]+)*)/g)
   if (!matches) return []
-  return matches.map((m) => m.slice(1).trim()).filter(Boolean)
+  return matches
+    .map((m) => sanitizeMentionName(m.slice(1)))
+    .filter(Boolean)
+}
+
+function sanitizeMentionName(name) {
+  if (!name || typeof name !== 'string') return ''
+  // Remove common punctuation around mention token, keep inner punctuation/spaces.
+  return name
+    .trim()
+    .replace(/^[`"'([{<]+/, '')
+    .replace(/[`"'.,!?;:)\]}>]+$/, '')
+    .replace(/\s+/g, ' ')
+    .trim()
 }
 
 /**
@@ -65,17 +78,38 @@ export function getContentWithoutMentions(content) {
  * @returns {string[]} array of user ids in order of @ appearance
  */
 export function resolveMentionIds(content, friendsList) {
-  const names = extractMentionNames(content)
-  if (!names.length || !Array.isArray(friendsList)) return []
-  const byName = new Map()
-  friendsList.forEach((f) => {
-    if (f?.name && f?.id) byName.set(f.name.trim().toLowerCase(), f.id)
-  })
+  if (!content || typeof content !== 'string' || !Array.isArray(friendsList)) return []
+  const candidates = friendsList
+    .map((f) => {
+      const id = f?.id
+      const name = sanitizeMentionName(f?.name || '')
+      if (!id || !name) return null
+      return { id, name, lower: name.toLowerCase() }
+    })
+    .filter(Boolean)
+    .sort((a, b) => b.lower.length - a.lower.length)
+  if (!candidates.length) return []
+
   const ids = []
-  names.forEach((name) => {
-    const id = byName.get(name.toLowerCase())
-    if (id) ids.push(id)
-  })
+  const seen = new Set()
+  const lowerContent = content.toLowerCase()
+  for (let i = 0; i < lowerContent.length; i += 1) {
+    if (lowerContent[i] !== '@') continue
+    const after = lowerContent.slice(i + 1)
+    const matched = candidates.find((c) => {
+      if (!after.startsWith(c.lower)) return false
+      const nextChar = after[c.lower.length] || ''
+      // valid end: whitespace/punctuation/end
+      return !nextChar || /[\s.,!?;:)\]}>]/.test(nextChar)
+    })
+    if (matched) {
+      if (!seen.has(matched.id)) {
+        seen.add(matched.id)
+        ids.push(matched.id)
+      }
+      i += matched.lower.length
+    }
+  }
   return ids
 }
 

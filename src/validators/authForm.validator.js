@@ -3,6 +3,8 @@
  * Validators return null (valid) or { key, params? } for i18n t(key, params).
  */
 
+import { getDobMaxIsoDateLocal, getDobMinIsoDateLocal } from '../utils/dobBounds.js'
+
 export const REGISTER_VALIDATION = {
   fullName: { min: 2, max: 100 },
   email: { max: 255 },
@@ -65,12 +67,20 @@ export function validateGender(value) {
   return null
 }
 
-/** Ngày sinh: optional; nếu có thì không được ở tương lai */
+/** Ngày sinh: optional; format YYYY-MM-DD, ngày lịch hợp lệ, trong [min, max] (không tương lai) */
 export function validateDateOfBirth(value) {
   if (!value) return null
-  const d = new Date(value)
-  if (Number.isNaN(d.getTime())) return { key: 'auth.validation.dateOfBirthInvalid' }
-  if (d > new Date()) return { key: 'auth.validation.dateOfBirthFuture' }
+  const v = String(value).trim()
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(v)) return { key: 'auth.validation.dateOfBirthInvalid' }
+  const [ys, ms, ds] = v.split('-').map(Number)
+  const cal = new Date(Date.UTC(ys, ms - 1, ds))
+  if (cal.getUTCFullYear() !== ys || cal.getUTCMonth() !== ms - 1 || cal.getUTCDate() !== ds) {
+    return { key: 'auth.validation.dateOfBirthInvalid' }
+  }
+  const max = getDobMaxIsoDateLocal()
+  const min = getDobMinIsoDateLocal()
+  if (v > max) return { key: 'auth.validation.dateOfBirthFuture' }
+  if (v < min) return { key: 'auth.validation.dateOfBirthTooOld' }
   return null
 }
 

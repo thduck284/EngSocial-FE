@@ -1,29 +1,45 @@
+import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { DEFAULT_AVATAR } from '../../constants/ui'
 import { ROUTES } from '../../constants'
 import { getFriendActivityLabel } from '../../utils/profile'
+import { ProfileFriendsListModal } from './ProfileFriendsListModal'
 
 export function ProfileFriendsCard({
   t,
   friends,
+  allFriends,
   loading,
   friendSearch,
   setFriendSearch,
   onlineUserIds,
   navigate,
 }) {
+  const [friendsModalOpen, setFriendsModalOpen] = useState(false)
+  const listForModal = allFriends ?? friends
+
   return (
     <div className="bg-white dark:bg-card-dark rounded-2xl p-6 border border-slate-200 dark:border-border-dark">
+      <ProfileFriendsListModal
+        t={t}
+        show={friendsModalOpen}
+        onClose={() => setFriendsModalOpen(false)}
+        friends={listForModal}
+        loading={loading}
+        onlineUserIds={onlineUserIds}
+        navigate={navigate}
+      />
       <div className="flex items-center justify-between mb-4">
         <h3 className="font-bold dark:text-white">
-          {t('profile.friends', { count: friends.length })}
+          {t('profile.friends', { count: listForModal.length })}
         </h3>
-        <Link
-          to={ROUTES.FRIENDS}
+        <button
+          type="button"
+          onClick={() => setFriendsModalOpen(true)}
           className="text-xs font-semibold text-primary hover:underline"
         >
           {t('buttons.viewAll')}
-        </Link>
+        </button>
       </div>
       <div className="relative mb-5">
         <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-lg">

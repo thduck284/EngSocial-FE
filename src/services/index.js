@@ -1,5 +1,5 @@
 // Auth
-export { authService, submitRegisterForm, submitLoginForm } from './auth.service.js'
+export { authService, submitRegisterForm, submitLoginForm, submitSocialLogin } from './auth.service.js'
 export {
   validateRegisterForm,
   validateLoginForm,
@@ -35,6 +35,9 @@ export { questsService } from './quests.service.js'
 
 // Lessons
 export { lessonsService } from './lessons.service.js'
+
+// Vocabulary (recent visits — server)
+export { vocabularyService } from './vocabulary.service.js'
 
 // Upload
 export { uploadService } from './upload.service.js'

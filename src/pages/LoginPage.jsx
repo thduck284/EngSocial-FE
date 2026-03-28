@@ -2,6 +2,7 @@ import { Link } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { AuthLayout, SocialButtons } from '../components/layout/AuthLayout'
 import { useLogin } from '../hooks'
+import { isFacebookSdkBlockedOnHttp } from '../utils/socialAuth'
 
 const inputBase = 'w-full bg-slate-800/50 border text-white rounded-xl pl-10 pr-4 py-2.5 focus:ring-0 input-glow transition-all placeholder-slate-600'
 const inputError = 'border-red-500/50'
@@ -19,6 +20,7 @@ export function LoginPage() {
     fieldErrors,
     updateField,
     handleSubmit,
+    startSocialLogin,
     toggleShowPassword,
   } = useLogin()
 
@@ -55,7 +57,11 @@ export function LoginPage() {
         <h2 className="text-2xl font-bold mb-2">{t('auth.welcomeBack')}</h2>
         <p className="text-slate-400 text-sm">{t('auth.pleaseLogin')}</p>
       </div>
-      <SocialButtons onGoogle={() => {}} onFacebook={() => {}} />
+      <SocialButtons
+        onGoogle={() => startSocialLogin('google')}
+        onFacebook={() => startSocialLogin('facebook')}
+        facebookDisabled={isFacebookSdkBlockedOnHttp()}
+      />
       {error && (
         <div className="mt-4 p-3 rounded-xl bg-red-500/10 border border-red-500/30 text-red-400 text-sm flex items-start gap-2">
           <span className="material-symbols-outlined text-lg shrink-0">error</span>

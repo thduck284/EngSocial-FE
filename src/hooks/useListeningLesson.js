@@ -22,15 +22,13 @@ export function useListeningLesson(id, t) {
   const [playbackSpeed, setPlaybackSpeed] = useState(1)
   const [showTranscript, setShowTranscript] = useState(false)
   const [currentQuestion, setCurrentQuestion] = useState(0)
-  const [selectedAnswer, setSelectedAnswer] = useState('')
+  const [answers, setAnswers] = useState({})
   const [noteTitle, setNoteTitle] = useState('')
   const [noteContent, setNoteContent] = useState('')
-  const [noteCategory, setNoteCategory] = useState('grammar')
   const [noteSaving, setNoteSaving] = useState(false)
   const [noteSavedMessage, setNoteSavedMessage] = useState('')
   const [completingLesson, setCompletingLesson] = useState(false)
   const [completeMessage, setCompleteMessage] = useState('')
-  const [saveDraftMessage, setSaveDraftMessage] = useState('')
   const [showHint, setShowHint] = useState(false)
   const [editingPage, setEditingPage] = useState(false)
   const [pageInput, setPageInput] = useState('')
@@ -62,6 +60,10 @@ export function useListeningLesson(id, t) {
   const questions = content?.questions || []
   const totalQuestions = Math.max(1, content?.totalQuestions || questions.length)
   const currentQ = questions[currentQuestion]
+  const selectedAnswer = answers[currentQuestion] ?? ''
+  const setSelectedAnswer = (value) => {
+    setAnswers((prev) => ({ ...prev, [currentQuestion]: value }))
+  }
   const questionOptions =
     currentQ?.options?.length > 0
       ? currentQ.options
@@ -129,7 +131,7 @@ export function useListeningLesson(id, t) {
     setNoteSaving(true)
     setNoteSavedMessage('')
     lessonsService
-      .addNote(id, { title: noteTitle, content: noteContent, category: noteCategory })
+      .addNote(id, { title: noteTitle, content: noteContent })
       .then(() => {
         setNoteSavedMessage(t('listeningLesson.noteSaved'))
         setNoteTitle('')
@@ -142,14 +144,29 @@ export function useListeningLesson(id, t) {
 
   const handleComplete = () => {
     if (!id) return
+    const allAnswered =
+      questions.length === 0 ||
+      questions.every((_, i) => {
+        const a = answers[i]
+        return a != null && String(a).trim() !== ''
+      })
+    if (!allAnswered) {
+      setCompleteMessage(t('readingLesson.pleaseAnswerAll'))
+      return
+    }
     setCompletingLesson(true)
     setCompleteMessage('')
+    const answersPayload = questions.map((q, i) => ({
+      questionId: String(q?.id ?? i + 1),
+      questionIndex: i,
+      answer: answers[i],
+    }))
     lessonsService
-      .complete(id)
+      .submit(id, { answers: answersPayload, timeSpent: currentTime || 0 })
       .then((res) => {
-        const xp = res?.data?.xpEarned
+        const xp = res?.data?.xpEarnedThisAttempt ?? 0
         setCompleteMessage(
-          xp != null ? t('listeningLesson.completeSuccess', { xp }) : t('listeningLesson.completeSuccessShort')
+          xp > 0 ? t('listeningLesson.completeSuccess', { xp }) : t('listeningLesson.completeSuccessShort')
         )
         const fromPractice = location.pathname.startsWith('/practice/')
         const redirectTo = fromPractice ? '/practice' : '/lesson'
@@ -160,17 +177,6 @@ export function useListeningLesson(id, t) {
       })
       .catch(() => setCompleteMessage(t('listeningLesson.completeFailed')))
       .finally(() => setCompletingLesson(false))
-  }
-
-  const handleSaveDraft = () => {
-    if (!id) return
-    lessonsService
-      .updateProgress(id, { status: 'in_progress' })
-      .then(() => {
-        setSaveDraftMessage(t('listeningLesson.saveDraftSuccess'))
-        setTimeout(() => setSaveDraftMessage(''), 2500)
-      })
-      .catch(() => {})
   }
 
   const cycleSpeed = () => {
@@ -218,14 +224,12 @@ export function useListeningLesson(id, t) {
   const handlePrevious = () => {
     if (currentQuestion > 0) {
       setCurrentQuestion((q) => q - 1)
-      setSelectedAnswer('')
     }
   }
 
   const handleNext = () => {
     if (currentQuestion < totalQuestions - 1) {
       setCurrentQuestion((q) => q + 1)
-      setSelectedAnswer('')
     }
   }
 
@@ -233,7 +237,6 @@ export function useListeningLesson(id, t) {
     const page = parseInt(newPage, 10)
     if (!Number.isNaN(page) && page >= 1 && page <= totalQuestions) {
       setCurrentQuestion(page - 1)
-      setSelectedAnswer('')
       setEditingPage(false)
     }
   }
@@ -283,16 +286,12 @@ export function useListeningLesson(id, t) {
     setNoteTitle,
     noteContent,
     setNoteContent,
-    noteCategory,
-    setNoteCategory,
     noteSaving,
     noteSavedMessage,
     handleSaveNote,
     completingLesson,
     completeMessage,
     handleComplete,
-    saveDraftMessage,
-    handleSaveDraft,
     showHint,
     setShowHint,
     editingPage,

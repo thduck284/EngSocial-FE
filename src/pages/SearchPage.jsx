@@ -8,6 +8,7 @@ import {
   FilterCommunitySidebar,
   SearchResultsFriends,
   SearchResultsPosts,
+  SearchResultsCommunity,
   SearchRightSidebar,
 } from '../components/search'
 import { useAuth } from '../context/AuthContext'
@@ -61,6 +62,10 @@ export function SearchPage() {
     postsLoading,
     postsError,
     postsPagination,
+    communityResults,
+    communityLoading,
+    communityError,
+    communityPagination,
   } = search
 
   const postsCount =
@@ -92,6 +97,7 @@ export function SearchPage() {
     friendSelectRef,
   } = friends
   const friendsCount = friendsPagination?.total ?? friendsResult.length
+  const communityCount = communityPagination?.total ?? communityResults.length
 
   const renderFilterSidebar = () => {
     if (tab === 'friends')
@@ -190,11 +196,14 @@ export function SearchPage() {
               <button
                 type="button"
                 onClick={() => setTab('community')}
-                className={`pb-3 text-sm font-medium transition-colors whitespace-nowrap ${
+                className={`pb-3 text-sm font-medium flex items-center gap-2 transition-colors whitespace-nowrap ${
                   tab === 'community' ? 'text-primary border-b-2 border-primary' : 'text-gray-400 hover:text-gray-200'
                 }`}
               >
                 {t('search.tabCommunity')}
+                <span className="bg-primary/20 text-primary px-2 py-0.5 rounded-full text-[10px]">
+                  {communityCount}
+                </span>
               </button>
             </div>
           </div>
@@ -224,10 +233,13 @@ export function SearchPage() {
           )}
 
           {tab === 'community' && (
-            <div className="bg-card-dark rounded-xl p-8 text-center">
-              <span className="material-symbols-outlined text-4xl text-gray-500">groups</span>
-              <p className="text-sm text-gray-400 mt-2">{t('search.noCommunities')}</p>
-            </div>
+            <SearchResultsCommunity
+              t={t}
+              loading={communityLoading}
+              error={communityError}
+              groups={communityResults}
+              query={q}
+            />
           )}
         </div>
 

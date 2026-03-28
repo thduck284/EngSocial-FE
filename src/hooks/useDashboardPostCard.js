@@ -1,6 +1,7 @@
 import { useEffect } from 'react'
 import { DEFAULT_AVATAR } from '../constants/ui'
 import { communityService } from '../services'
+import { getContentWithoutMentions } from '../utils/postContent'
 import { normalizeMentions } from '../utils/post'
 
 export function useDashboardPostCard({
@@ -30,6 +31,7 @@ export function useDashboardPostCard({
   editVideoUrl,
   editDocuments,
   editVisibility,
+  editMentionIds,
   setEditError,
   setPostActionLoading,
   onUpdatePost,
@@ -68,10 +70,9 @@ export function useDashboardPostCard({
   const sharedMentions = sharedPost ? normalizeMentions(sharedPost.mentions) : []
 
   useEffect(() => {
-    setModalMentions(mentionsList)
     setViewerPost(post)
     setIsSavedPost(Boolean(post?.saved ?? post?.isSaved))
-  }, [postId, post, mentionsList, setModalMentions, setViewerPost, setIsSavedPost])
+  }, [postId, post, setViewerPost, setIsSavedPost])
 
   const handleLikeClick = () => {
     if (!postId || likeLoading || typeof onToggleLike !== 'function') return
@@ -141,7 +142,8 @@ export function useDashboardPostCard({
 
   const handleSaveEdit = () => {
     if (!postId || !isOwnPost || postActionLoading) return
-    const nextContent = editContent.trim()
+    const nextContentRaw = editContent.trim()
+    const nextContent = getContentWithoutMentions(nextContentRaw).trim()
     const hasMedia =
       (Array.isArray(editImages) && editImages.length > 0) ||
       (typeof editVideoUrl === 'string' && editVideoUrl.trim()) ||
@@ -153,20 +155,30 @@ export function useDashboardPostCard({
       return
     }
 
-    const originalContent = post?.content != null ? String(post.content).trim() : ''
+    const originalContentRaw = post?.content != null ? String(post.content).trim() : ''
+    const originalContent = getContentWithoutMentions(originalContentRaw).trim()
     const originalImages = Array.isArray(post?.images) ? post.images : []
     const originalVideo = typeof post?.video === 'string' ? post.video : ''
     const originalDocuments = normalizeDocs(post?.documents)
     const nextDocuments = normalizeDocs(editDocuments)
     const originalVisibility =
       post?.visibility === 'friends' || post?.visibility === 'private' ? post.visibility : 'public'
+    const originalMentionIds = normalizeMentions(post?.mentions)
+      .map((m) => String(m?.id ?? m?._id ?? m))
+      .filter(Boolean)
+      .sort()
+    const nextMentionIds = (Array.isArray(editMentionIds) ? editMentionIds : [])
+      .map((id) => String(id))
+      .filter(Boolean)
+      .sort()
 
     const isUnchanged =
       nextContent === originalContent &&
       JSON.stringify(editImages) === JSON.stringify(originalImages) &&
       (editVideoUrl || '') === originalVideo &&
       JSON.stringify(nextDocuments) === JSON.stringify(originalDocuments) &&
-      editVisibility === originalVisibility
+      editVisibility === originalVisibility &&
+      JSON.stringify(nextMentionIds) === JSON.stringify(originalMentionIds)
 
     if (isUnchanged) {
       setEditingPost(false)
@@ -175,16 +187,44 @@ export function useDashboardPostCard({
 
     setPostActionLoading(true)
     if (typeof setEditError === 'function') setEditError('')
-    communityService
-      .updatePost(postId, {
-        content: nextContent,
-        images: editImages,
-        video: editVideoUrl || '',
-        documents: editDocuments,
-        visibility: editVisibility,
+    const sanitizedDocuments = (Array.isArray(editDocuments) ? editDocuments : [])
+      .map((d) => {
+        if (typeof d === 'string') return d
+        if (d && typeof d === 'object' && typeof d.url === 'string') {
+          return { url: d.url, name: typeof d.name === 'string' ? d.name : '' }
+        }
+        return null
       })
+      .filter(Boolean)
+
+    const payload = {
+      images: Array.isArray(editImages) ? editImages.filter((u) => typeof u === 'string') : [],
+      documents: sanitizedDocuments,
+      visibility: editVisibility,
+      mentions: nextMentionIds,
+    }
+
+    // Post schema on BE may reject empty content; only send content when it has value.
+    if (nextContent.length > 0) {
+      payload.content = nextContent
+    }
+    if (typeof editVideoUrl === 'string' && editVideoUrl.trim().length > 0) {
+      payload.video = editVideoUrl.trim()
+    } else if (typeof originalVideo === 'string' && originalVideo.trim().length > 0) {
+      // Explicitly clear existing video on backend when user removed it in edit modal.
+      payload.video = ''
+    }
+
+    communityService
+      .updatePost(postId, payload)
       .then((res) => {
-        const updated = res?.data?.data ?? res?.data ?? res ?? {}
+        const updated =
+          res?.data?.post ??
+          res?.data?.data?.post ??
+          res?.data?.data ??
+          res?.data ??
+          res ??
+          {}
         if (typeof onUpdatePost === 'function') {
           onUpdatePost(postId, {
             ...updated,
@@ -193,6 +233,7 @@ export function useDashboardPostCard({
             video: updated?.video ?? editVideoUrl,
             documents: updated?.documents ?? editDocuments,
             visibility: updated?.visibility ?? editVisibility,
+            mentions: updated?.mentions ?? nextMentionIds,
           })
         }
         setEditingPost(false)
@@ -212,8 +253,6 @@ export function useDashboardPostCard({
 
   const handleDeletePost = () => {
     if (!postId || !isOwnPost || postActionLoading) return
-    const ok = window.confirm(t('dashboard.deletePostConfirm') || 'Delete this post?')
-    if (!ok) return
     setPostActionLoading(true)
     communityService
       .deletePost(postId)

@@ -1,6 +1,113 @@
 import { useTranslation } from 'react-i18next'
+import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../../context/AuthContext'
+import { DEFAULT_AVATAR } from '../../constants/ui'
 import { DashboardPostCard } from '../dashboard/DashboardPostCard'
+import { CommunityGroupMembersList } from './CommunityGroupMembersList'
+import { CommunityGroupJoinRequestsCard } from './CommunityGroupJoinRequestsCard'
+import {
+  CommunityGroupAboutSettings,
+  shouldShowGroupAboutSettings,
+} from './CommunityGroupAboutSettings'
+
+function getGroupMembersGridPreview(activeGroup, activeMembers, myId, isMemberOfActiveGroup) {
+  const totalMembers = activeGroup?.memberCount ?? activeMembers.length ?? 0
+  const membersExclSelf =
+    myId != null && myId !== ''
+      ? activeMembers.filter((m) => String(m.id) !== String(myId))
+      : activeMembers
+  const imInFetched =
+    myId != null &&
+    myId !== '' &&
+    activeMembers.some((m) => String(m.id) === String(myId))
+  const othersTotal =
+    imInFetched || isMemberOfActiveGroup
+      ? Math.max(0, totalMembers - 1)
+      : totalMembers
+  const maxSlots = 8
+  const gridMembers = membersExclSelf.slice(0, maxSlots)
+  const remainingExtras = othersTotal > maxSlots ? othersTotal - maxSlots : 0
+  return { gridMembers, remainingExtras, totalMembers }
+}
+
+function GroupMembersPreviewCard({
+  activeGroup,
+  activeMembers,
+  myId,
+  isMemberOfActiveGroup,
+  onOpenGroupMembersModal,
+  navigate,
+  t,
+}) {
+  const { gridMembers, remainingExtras, totalMembers } = getGroupMembersGridPreview(
+    activeGroup,
+    activeMembers,
+    myId,
+    isMemberOfActiveGroup
+  )
+  const membersWord = t('groups.header.members', { defaultValue: 'thành viên' })
+
+  return (
+    <div className="bg-slate-900/80 border border-slate-800 rounded-xl p-6 space-y-4">
+      <div className="flex items-center justify-between">
+        <h2 className="text-base font-bold">
+          {t('groups.main.membersTitle', { defaultValue: 'Thành viên' })}{' '}
+          <span className="text-slate-400">
+            · {totalMembers} {membersWord}
+          </span>
+        </h2>
+      </div>
+
+      <div className="h-px bg-slate-800" />
+
+      <div className="grid grid-cols-4 gap-2 sm:gap-3">
+        {gridMembers.map((m) => (
+          <button
+            key={m.id}
+            type="button"
+            onClick={() => navigate(`/profile/${m.id}`)}
+            className="flex flex-col items-center gap-2 p-2 rounded-xl hover:bg-slate-800/70 border border-transparent hover:border-slate-700 transition-colors text-center min-w-0"
+          >
+            <div className="size-14 sm:size-16 rounded-full border-2 border-slate-800 bg-slate-700 overflow-hidden flex items-center justify-center shrink-0">
+              <img
+                src={m.avatar || DEFAULT_AVATAR}
+                alt=""
+                className="w-full h-full object-cover"
+              />
+            </div>
+            <span className="text-[11px] sm:text-xs font-medium text-slate-100 line-clamp-2 w-full leading-tight">
+              {m.name || t('groups.membersModal.unnamed', { defaultValue: 'Thành viên' })}
+            </span>
+          </button>
+        ))}
+      </div>
+
+      {remainingExtras > 0 ? (
+        <div className="flex justify-center pt-1">
+          <button
+            type="button"
+            onClick={() => onOpenGroupMembersModal?.()}
+            className="inline-flex items-center gap-2 rounded-full pl-1 pr-4 py-1 bg-slate-800/90 border border-slate-700 hover:bg-slate-700 hover:border-slate-600 transition-colors"
+            title={t('groups.header.viewAllMembers', { defaultValue: 'Xem tất cả thành viên' })}
+          >
+            <span className="size-10 rounded-full border-2 border-slate-900 bg-slate-800 flex items-center justify-center text-xs font-bold text-slate-100 shrink-0">
+              +{remainingExtras}
+            </span>
+            <span className="text-sm font-medium text-slate-200">{membersWord}</span>
+          </button>
+        </div>
+      ) : null}
+
+      <button
+        type="button"
+        onClick={() => onOpenGroupMembersModal?.()}
+        className="w-full mt-1 py-2.5 rounded-xl bg-slate-800/80 hover:bg-slate-700 text-sm font-semibold text-slate-100 text-center border border-slate-700/80"
+      >
+        {t('groups.main.viewAllMembers', { defaultValue: 'Xem tất cả' })}
+      </button>
+    </div>
+  )
+}
 
 export function CommunityMain({
   onOpenCreatePost,
@@ -9,13 +116,28 @@ export function CommunityMain({
   postsHasMore,
   loadMorePosts,
   onPostReactionUpdate,
+  onPostUpdate,
+  onPostDelete,
+  useHomeCommunityStyle = false,
+  /** Trong trang nhóm: header card giống home, không lặp tên nhóm */
+  hidePostGroupLabel = false,
   hideComposer = false,
   activeTab = 'posts',
   activeGroup = null,
   activeMembers = [],
+  isMemberOfActiveGroup = false,
+  onOpenGroupMembersModal,
+  onMemberRemovedFromGroup,
+  onJoinRequestApproved,
+  joinRequestsRefreshKey = 0,
+  myGroupMembership = null,
+  onOpenInvite,
+  onRefreshGroup,
 }) {
   const { t } = useTranslation()
+  const navigate = useNavigate()
   const { user } = useAuth()
+  const myId = user?.id ?? user?._id
 
   const displayAvatar =
     user?.avatar ||
@@ -25,9 +147,6 @@ export function CommunityMain({
 
   // About tab: show group intro instead of posts
   if (activeTab === 'about') {
-    const totalMembers = activeGroup?.memberCount ?? activeMembers.length ?? 0
-    const visibleMembers = activeMembers.slice(0, 10)
-
     return (
       <section className="md:col-span-9 lg:col-span-6 space-y-6">
         {/* Card: mô tả dài về nhóm */}
@@ -101,53 +220,34 @@ export function CommunityMain({
           </div>
         </div>
 
-        {/* Card: Thành viên nhóm (preview) */}
-        <div className="bg-slate-900/80 border border-slate-800 rounded-xl p-6 space-y-4">
-          <div className="flex items-center justify-between">
-            <h2 className="text-base font-bold">
-              {t('groups.main.membersTitle', { defaultValue: 'Thành viên' })}{' '}
-              <span className="text-slate-400">
-                · {totalMembers}{' '}
-                {t('groups.header.members', { defaultValue: 'thành viên' })}
-              </span>
-            </h2>
+        {shouldShowGroupAboutSettings({
+          myGroupMembership,
+          isMemberOfActiveGroup,
+          onOpenInvite,
+          onOpenGroupMembersModal,
+        }) ? (
+          <div className="lg:hidden bg-slate-900/80 border border-slate-800 rounded-xl p-6">
+            <CommunityGroupAboutSettings
+              noTopBorder
+              activeGroup={activeGroup}
+              myGroupMembership={myGroupMembership}
+              isMemberOfActiveGroup={isMemberOfActiveGroup}
+              onOpenInvite={onOpenInvite}
+              onOpenGroupMembersModal={onOpenGroupMembersModal}
+              onRefreshGroup={onRefreshGroup}
+            />
           </div>
+        ) : null}
 
-          <div className="h-px bg-slate-800" />
-
-          <div className="flex flex-wrap gap-2">
-            {visibleMembers.map((m) => (
-              <div
-                key={m.id}
-                className="flex items-center gap-2 px-2 py-1 rounded-full bg-slate-800/80 border border-slate-700"
-              >
-                <span className="size-8 rounded-full overflow-hidden bg-slate-700">
-                  {m.avatar ? (
-                    <img
-                      src={m.avatar}
-                      alt={m.name}
-                      className="w-full h-full object-cover"
-                    />
-                  ) : (
-                    <span className="material-symbols-outlined text-slate-300 text-sm">
-                      account_circle
-                    </span>
-                  )}
-                </span>
-                <span className="text-xs font-medium text-slate-100">
-                  {m.name || 'Member'}
-                </span>
-              </div>
-            ))}
-          </div>
-
-          <button
-            type="button"
-            className="w-full mt-3 py-2.5 rounded-xl bg-slate-800/80 hover:bg-slate-700 text-sm font-semibold text-slate-100 text-center"
-          >
-            {t('groups.main.viewAllMembers', { defaultValue: 'Xem tất cả' })}
-          </button>
-        </div>
+        <GroupMembersPreviewCard
+          activeGroup={activeGroup}
+          activeMembers={activeMembers}
+          myId={myId}
+          isMemberOfActiveGroup={isMemberOfActiveGroup}
+          onOpenGroupMembersModal={onOpenGroupMembersModal}
+          navigate={navigate}
+          t={t}
+        />
 
         {/* Card: Hoạt động (mock đơn giản theo memberCount) */}
         <div className="bg-slate-900/80 border border-slate-800 rounded-xl p-6 grid grid-cols-2 md:grid-cols-4 gap-4 text-xs text-slate-300">
@@ -197,60 +297,24 @@ export function CommunityMain({
     )
   }
 
-  // People tab: members preview card
+  // People tab: full member list (same rows as modal), inline on page
   if (activeTab === 'people') {
-    const totalMembers = activeGroup?.memberCount ?? activeMembers.length ?? 0
-    const visible = activeMembers.slice(0, 10)
-
+    const gid = activeGroup?.id || activeGroup?._id || null
     return (
       <section className="md:col-span-9 lg:col-span-6 space-y-6">
-        <div className="bg-slate-900/80 border border-slate-800 rounded-xl p-6 space-y-4">
-          <div className="flex items-center justify-between">
-            <h2 className="text-base font-bold">
-              {t('groups.main.membersTitle', { defaultValue: 'Thành viên' })}{' '}
-              <span className="text-slate-400">
-                · {totalMembers}{' '}
-                {t('groups.header.members', { defaultValue: 'thành viên' })}
-              </span>
-            </h2>
-          </div>
-
-          <div className="h-px bg-slate-800" />
-
-          <div className="flex flex-wrap gap-2">
-            {visible.map((m) => (
-              <button
-                key={m.id}
-                type="button"
-                className="flex items-center gap-2 px-2 py-1 rounded-full bg-slate-800/80 border border-slate-700 hover:bg-slate-700 transition-colors"
-              >
-                <span className="size-8 rounded-full overflow-hidden bg-slate-700">
-                  {m.avatar ? (
-                    <img
-                      src={m.avatar}
-                      alt={m.name}
-                      className="w-full h-full object-cover"
-                    />
-                  ) : (
-                    <span className="material-symbols-outlined text-slate-300 text-sm">
-                      account_circle
-                    </span>
-                  )}
-                </span>
-                <span className="text-xs font-medium text-slate-100">
-                  {m.name || 'Member'}
-                </span>
-              </button>
-            ))}
-          </div>
-
-          <button
-            type="button"
-            className="w-full mt-4 py-2.5 rounded-xl bg-slate-800/80 hover:bg-slate-700 text-sm font-semibold text-slate-100 text-center"
-          >
-            {t('groups.main.viewAllMembers', { defaultValue: 'Xem tất cả' })}
-          </button>
-        </div>
+        <CommunityGroupJoinRequestsCard
+          groupId={gid}
+          enabled={!!gid}
+          groupType={activeGroup?.type}
+          onJoinRequestApproved={onJoinRequestApproved}
+          refreshToken={joinRequestsRefreshKey}
+        />
+        <CommunityGroupMembersList
+          groupId={gid}
+          enabled={!!gid}
+          variant="embedded"
+          onMemberRemovedFromGroup={onMemberRemovedFromGroup}
+        />
       </section>
     )
   }
@@ -336,7 +400,11 @@ export function CommunityMain({
             <DashboardPostCard
               key={post?.id ?? post?._id}
               post={post}
+              useHomeCommunityStyle={useHomeCommunityStyle}
+              hidePostGroupLabel={hidePostGroupLabel}
               onToggleLike={onPostReactionUpdate}
+              onUpdatePost={onPostUpdate}
+              onDeletePost={onPostDelete}
             />
           ))}
           {postsHasMore && (

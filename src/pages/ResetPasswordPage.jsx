@@ -17,8 +17,10 @@ export function ResetPasswordPage() {
     setNewPassword,
     confirmPassword,
     setConfirmPassword,
-    showPassword,
-    setShowPassword,
+    showNewPassword,
+    setShowNewPassword,
+    showConfirmPassword,
+    setShowConfirmPassword,
     loading,
     error,
     success,
@@ -100,19 +102,20 @@ export function ResetPasswordPage() {
               </span>
               <input
                 id="newPassword"
-                type={showPassword ? 'text' : 'password'}
+                type={showNewPassword ? 'text' : 'password'}
                 value={newPassword}
                 onChange={(e) => setNewPassword(e.target.value)}
                 disabled={loading}
-                className={`${inputBase} ${newPwdErr ? inputError : inputNormal}`}
+                className={`${inputBase} pr-10 ${newPwdErr ? inputError : inputNormal}`}
               />
               <button
                 type="button"
-                onClick={() => setShowPassword(!showPassword)}
+                onClick={() => setShowNewPassword((v) => !v)}
                 className="absolute right-3 top-3 text-slate-500 hover:text-primary"
+                aria-label={showNewPassword ? t('resetPassword.hidePassword') : t('resetPassword.showPassword')}
               >
                 <span className="material-symbols-outlined text-xl">
-                  {showPassword ? 'visibility_off' : 'visibility'}
+                  {showNewPassword ? 'visibility_off' : 'visibility'}
                 </span>
               </button>
             </div>
@@ -130,12 +133,22 @@ export function ResetPasswordPage() {
               </span>
               <input
                 id="confirmPassword"
-                type={showPassword ? 'text' : 'password'}
+                type={showConfirmPassword ? 'text' : 'password'}
                 value={confirmPassword}
                 onChange={(e) => setConfirmPassword(e.target.value)}
                 disabled={loading}
-                className={`${inputBase} ${confirmErr ? inputError : inputNormal}`}
+                className={`${inputBase} pr-10 ${confirmErr ? inputError : inputNormal}`}
               />
+              <button
+                type="button"
+                onClick={() => setShowConfirmPassword((v) => !v)}
+                className="absolute right-3 top-3 text-slate-500 hover:text-primary"
+                aria-label={showConfirmPassword ? t('resetPassword.hidePassword') : t('resetPassword.showPassword')}
+              >
+                <span className="material-symbols-outlined text-xl">
+                  {showConfirmPassword ? 'visibility_off' : 'visibility'}
+                </span>
+              </button>
             </div>
             {fieldErrors.confirmPassword && (
               <p className="mt-1.5 text-sm text-red-400">{fieldErrors.confirmPassword}</p>

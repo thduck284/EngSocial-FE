@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import { Link } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
-import { SKILL_TABS, SKILL_STATS_CONFIG } from '../raw'
+import { SKILL_TABS, SKILL_STATS_CONFIG } from '../constants'
 import { rawService } from '../services'
 
 export function EnterPage() {

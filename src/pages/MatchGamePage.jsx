@@ -1,12 +1,16 @@
 
-import React, { useState, useEffect } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
-import { vocabularyData } from '../data/vocabularyData';
+import React, { useState, useEffect, useMemo } from 'react';
+import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
+import { getVocabularyTopic, CUSTOM_TOPIC_ID } from '../utils/getVocabularyTopic';
+import { vocabTopicDetailPath } from '../utils/vocabularyCustomRoutes';
+import { recordVocabTopicActivity } from '../utils/vocabularyRecentTopics';
 
 const MatchGamePage = () => {
     const { topicId } = useParams();
     const navigate = useNavigate();
-    const topic = vocabularyData?.[topicId];
+    const [searchParams] = useSearchParams();
+    const deckParam = searchParams.get('deck');
+    const topic = useMemo(() => getVocabularyTopic(topicId, deckParam), [topicId, deckParam]);
 
     const [cards, setCards] = useState([]);
     const [selectedCard, setSelectedCard] = useState(null);
@@ -49,6 +53,11 @@ const MatchGamePage = () => {
             setCards([]);
         }
     }, [topic]);
+
+    useEffect(() => {
+        if (!topic) return;
+        recordVocabTopicActivity(topicId, 'match', topicId === CUSTOM_TOPIC_ID ? deckParam : null);
+    }, [topic, topicId, deckParam]);
 
     useEffect(() => {
         let timer;
@@ -165,7 +174,7 @@ const MatchGamePage = () => {
             <div className="sticky top-0 z-10 bg-white/90 dark:bg-gray-800/90 backdrop-blur-sm border-b border-gray-200 dark:border-gray-700">
                 <div className="max-w-4xl mx-auto px-4 py-3 flex justify-between items-center">
                     <button
-                        onClick={() => navigate(`/topic/${topicId}`)}
+                        onClick={() => navigate(vocabTopicDetailPath(topicId, deckParam))}
                         className="text-gray-600 dark:text-gray-300 hover:text-blue-600"
                     >
                         ← Quay lại

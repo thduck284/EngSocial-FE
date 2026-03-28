@@ -68,19 +68,21 @@ export function ManageQuestsPage() {
                   <option value="weekly">{t('manageQuests.typeWeekly')}</option>
                 </select>
               </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-400 mb-2">{t('manageQuests.targetType')}</label>
-                <select value={form.targetType} onChange={(e) => setForm({ ...form, targetType: e.target.value })} className="w-full bg-background-dark border border-border-dark rounded-xl px-4 py-2.5 text-white outline-none focus:ring-2 focus:ring-primary">
-                  <option value="lesson">{t('manageQuests.targetLesson')}</option>
-                  <option value="practice_skill">{t('manageQuests.targetPractice')}</option>
-                  <option value="both">{t('manageQuests.targetBoth')}</option>
-                </select>
-              </div>
             </div>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
-                <label className="block text-sm font-medium text-gray-400 mb-2">{t('manageQuests.targetValue')}</label>
-                <input type="number" min={1} value={form.targetValue} onChange={(e) => setForm({ ...form, targetValue: +e.target.value || 1 })} className="w-full bg-background-dark border border-border-dark rounded-xl px-4 py-2.5 text-white outline-none focus:ring-2 focus:ring-primary" placeholder="3" />
+                <label className="block text-sm font-medium text-gray-400 mb-2">Target</label>
+                <input
+                  type="number"
+                  min={1}
+                  value={form.condition?.target ?? 1}
+                  onChange={(e) => setForm({
+                    ...form,
+                    condition: { ...form.condition, target: +e.target.value || 1 },
+                  })}
+                  className="w-full bg-background-dark border border-border-dark rounded-xl px-4 py-2.5 text-white outline-none focus:ring-2 focus:ring-primary"
+                  placeholder="5"
+                />
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-400 mb-2">{t('manageQuests.xpReward')}</label>
@@ -93,13 +95,77 @@ export function ManageQuestsPage() {
                 <input value={form.icon || 'flag'} onChange={(e) => setForm({ ...form, icon: e.target.value })} className="w-full bg-background-dark border border-border-dark rounded-xl px-4 py-2.5 text-white outline-none focus:ring-2 focus:ring-primary" placeholder={t('manageQuests.iconPlaceholder')} />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-400 mb-2">{t('manageQuests.skill')}</label>
-                <select value={form.skill} onChange={(e) => setForm({ ...form, skill: e.target.value })} className="w-full bg-background-dark border border-border-dark rounded-xl px-4 py-2.5 text-white outline-none focus:ring-2 focus:ring-primary">
-                  <option value="all">{t('manageQuests.skillAll')}</option>
+                <label className="block text-sm font-medium text-gray-400 mb-2">Skill</label>
+                <select
+                  value={form.condition?.filters?.skill || 'all'}
+                  onChange={(e) => setForm({
+                    ...form,
+                    condition: {
+                      ...form.condition,
+                      filters: { ...(form.condition?.filters || {}), skill: e.target.value },
+                    },
+                  })}
+                  className="w-full bg-background-dark border border-border-dark rounded-xl px-4 py-2.5 text-white outline-none focus:ring-2 focus:ring-primary"
+                >
+                  <option value="all">all</option>
                   <option value="reading">Reading</option>
                   <option value="listening">Listening</option>
                   <option value="writing">Writing</option>
                 </select>
+              </div>
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-400 mb-2">Category</label>
+                <select
+                  value={form.condition?.filters?.category || 'all'}
+                  onChange={(e) => setForm({
+                    ...form,
+                    condition: {
+                      ...form.condition,
+                      filters: { ...(form.condition?.filters || {}), category: e.target.value },
+                    },
+                  })}
+                  className="w-full bg-background-dark border border-border-dark rounded-xl px-4 py-2.5 text-white outline-none focus:ring-2 focus:ring-primary"
+                >
+                  <option value="all">all</option>
+                  <option value="lesson">lesson</option>
+                  <option value="practice">practice</option>
+                </select>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-400 mb-2">Min progress</label>
+                <input
+                  type="number"
+                  min={0}
+                  max={100}
+                  value={form.condition?.filters?.minProgress ?? 100}
+                  onChange={(e) => setForm({
+                    ...form,
+                    condition: {
+                      ...form.condition,
+                      filters: { ...(form.condition?.filters || {}), minProgress: +e.target.value || 0 },
+                    },
+                  })}
+                  className="w-full bg-background-dark border border-border-dark rounded-xl px-4 py-2.5 text-white outline-none focus:ring-2 focus:ring-primary"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-400 mb-2">Min score percent</label>
+                <input
+                  type="number"
+                  min={0}
+                  max={100}
+                  value={form.condition?.filters?.minScorePercent ?? 0}
+                  onChange={(e) => setForm({
+                    ...form,
+                    condition: {
+                      ...form.condition,
+                      filters: { ...(form.condition?.filters || {}), minScorePercent: +e.target.value || 0 },
+                    },
+                  })}
+                  className="w-full bg-background-dark border border-border-dark rounded-xl px-4 py-2.5 text-white outline-none focus:ring-2 focus:ring-primary"
+                />
               </div>
             </div>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">

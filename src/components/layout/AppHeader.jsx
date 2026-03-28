@@ -159,7 +159,10 @@ export function AppHeader() {
                 className={`font-medium text-sm transition-colors whitespace-nowrap ${
                   location.pathname === to ||
                   (to === ROUTES.LESSON && (location.pathname === '/lesson' || location.pathname.startsWith('/lesson/') || location.pathname === '/lessons')) ||
-                  (to === ROUTES.PRACTICE && (location.pathname === '/practice' || location.pathname.startsWith('/practice/') || location.pathname.startsWith('/skills')))
+                  (to === ROUTES.PRACTICE && (location.pathname === '/practice' || location.pathname.startsWith('/practice/') || location.pathname.startsWith('/skills'))) ||
+                  (to === ROUTES.WORDS_NOTES && (location.pathname.startsWith('/words-notes') || location.pathname.startsWith('/topic/'))) ||
+                  (to === ROUTES.QUESTS && (location.pathname === '/quests' || location.pathname.startsWith('/manage/quests'))) ||
+                  (to === ROUTES.COMMUNITY && (location.pathname === '/community' || location.pathname === '/community/'))
                     ? 'text-primary font-semibold border-b-2 border-primary pb-1'
                     : 'text-gray-400 hover:text-primary'
                 }`}

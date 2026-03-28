@@ -48,6 +48,8 @@ export function PostCommentsSectionBase({
   handleFeedCommentLikeMouseLeave,
   handleFeedCommentLikeFocus,
   handleFeedCommentLikeBlur,
+  handleCommentReactionBubbleEnter = () => {},
+  handleCommentReactionBubbleLeave = () => {},
   showCommentReactionPicker,
   commentReactionBubbleRect,
   hoveredCommentId,
@@ -61,6 +63,8 @@ export function PostCommentsSectionBase({
   rootHasMore,
   threadPages,
   loadMoreThreadComments,
+  expandAfterReply,
+  onExpandAfterReplyConsumed,
 }) {
   const isModal = variant === 'modal'
   const rootSentinelRef = useRef(null)
@@ -150,6 +154,8 @@ export function PostCommentsSectionBase({
               startReplyToComment={startReplyToComment}
               threadPages={threadPages}
               loadMoreThreadComments={loadMoreThreadComments}
+              expandAfterReply={expandAfterReply}
+              onExpandAfterReplyConsumed={onExpandAfterReplyConsumed}
             />
             {!isModal && (
               <div ref={rootSentinelRef} className="h-1" />
@@ -169,6 +175,8 @@ export function PostCommentsSectionBase({
             }}
             role="menu"
             aria-label={t('dashboard.reactionPicker') || 'Chọn reaction'}
+            onMouseEnter={handleCommentReactionBubbleEnter}
+            onMouseLeave={handleCommentReactionBubbleLeave}
           >
             {POST_REACTION_TYPES.map((reactionType) => (
               <button

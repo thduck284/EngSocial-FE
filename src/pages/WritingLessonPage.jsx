@@ -11,6 +11,8 @@ export function WritingLessonPage() {
   const [showSample, setShowSample] = useState(false)
   const [noteTitle, setNoteTitle] = useState('')
   const [noteContent, setNoteContent] = useState('')
+  const [submitting, setSubmitting] = useState(false)
+  const [submitMessage, setSubmitMessage] = useState('')
 
   useEffect(() => {
     lessonsService
@@ -26,8 +28,17 @@ export function WritingLessonPage() {
   const inRange = wordCount >= (wordLimit.min || 0) && wordCount <= (wordLimit.max || 999)
 
   const handleSubmit = () => {
-    // TODO: gửi bài lên API khi có endpoint submit writing
-    console.log('Submit writing:', { lessonId: id, text: userText, wordCount })
+    if (!id || !inRange || !userText.trim()) return
+    setSubmitting(true)
+    setSubmitMessage('')
+    lessonsService
+      .submitWriting(id, { content: userText, wordCount })
+      .then(() => {
+        setSubmitMessage('Nop bai thanh cong')
+        setTimeout(() => navigate('/lesson/history'), 1200)
+      })
+      .catch(() => setSubmitMessage('Nop bai that bai'))
+      .finally(() => setSubmitting(false))
   }
 
   if (loading) {
@@ -191,12 +202,13 @@ export function WritingLessonPage() {
               <button
                 type="button"
                 onClick={handleSubmit}
-                disabled={!inRange}
+                disabled={!inRange || submitting}
                 className="px-6 py-2.5 bg-primary hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed text-black font-bold rounded-xl text-sm transition-all"
               >
-                Nộp bài
+                {submitting ? 'Dang nop...' : 'Nop bai'}
               </button>
             </div>
+            {submitMessage && <p className="mt-3 text-sm text-gray-300">{submitMessage}</p>}
           </div>
         </div>
       </div>

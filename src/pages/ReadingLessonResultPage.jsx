@@ -56,8 +56,13 @@ export function ReadingLessonResultPage() {
           else if (typeof progressPercent === 'number') setScore(Math.round((progressPercent / 100) * (qList.length || 10)))
           if (savedMax != null) setMaxScore(savedMax)
           setAnswers(savedAnswers)
+        } else {
+          setScore(0)
+          setAnswers([])
         }
-        const xp = progressData?.xpEarned ?? lessonContent?.xpReward ?? content?.xpReward
+        const attempts = Array.isArray(progressData?.attemptHistory) ? progressData.attemptHistory : []
+        const latestAttempt = attempts.length > 0 ? attempts[attempts.length - 1] : null
+        const xp = latestAttempt?.xpEarned ?? progressData?.xpEarnedThisAttempt ?? 0
         if (xp != null) setXpEarned(xp)
         setQuestions(
           qList.map((q, i) => ({
@@ -74,7 +79,7 @@ export function ReadingLessonResultPage() {
   }, [id])
 
   const progressPercent = maxScore > 0 ? Math.round((score / maxScore) * 100) : 0
-  const displayXp = xpEarned || 50
+  const displayXp = progressPercent >= 80 ? (xpEarned || 0) : 0
   const getAnswerForQuestion = (index) => answers.find((a) => a.questionIndex === index || a.questionId === questions[index]?.id) || answers[index]
 
   if (loading) {
@@ -138,10 +143,12 @@ export function ReadingLessonResultPage() {
           <p className="text-gray-400 text-sm font-semibold uppercase tracking-wider">{t('lessonResult.xpEarned')}</p>
           <div className="flex items-baseline gap-2">
             <p className="text-white text-3xl md:text-4xl font-black">+{displayXp} XP</p>
-            <span className="text-green-500 text-sm font-bold flex items-center gap-1">
-              <span className="material-symbols-outlined text-xs">bolt</span>
-              {t('lessonResult.bonus')}
-            </span>
+            {displayXp > 0 && (
+              <span className="text-green-500 text-sm font-bold flex items-center gap-1">
+                <span className="material-symbols-outlined text-xs">bolt</span>
+                {t('lessonResult.bonus')}
+              </span>
+            )}
           </div>
           <div className="flex gap-1 mt-2">
             <span className="size-2 rounded-full bg-green-500 animate-pulse" />

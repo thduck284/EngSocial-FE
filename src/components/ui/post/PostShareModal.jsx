@@ -1,11 +1,16 @@
 import { createPortal } from 'react-dom'
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { communityService } from '../../../services/community.service'
 import { friendsService, conversationService } from '../../../services'
+import { uploadService } from '../../../services/upload.service'
 import { DEFAULT_AVATAR } from '../../../constants/ui'
 import { useSharePostActions } from '../../../hooks/useSharePostActions'
+import { usePostComposerAddons } from '../../../hooks/usePostComposerAddons'
+import { getContentWithoutMentions, getMentionRanges, resolveMentionIds } from '../../../utils/postContent'
+import { PostShareComposerSection } from './PostShareComposerSection'
+import { PostShareMessengerGroupModal } from './PostShareMessengerGroupModal'
 
-export function PostShareModal({ open, onClose, post, t }) {
+export function PostShareModal({ open, onClose, post, t, onRepostSuccess }) {
   const [activeTab, setActiveTab] = useState('repost') // 'repost' | 'external' | 'inapp'
   const [repostText, setRepostText] = useState('')
   const [submitting, setSubmitting] = useState(false)
@@ -23,6 +28,14 @@ export function PostShareModal({ open, onClose, post, t }) {
   const [messengerModalMode, setMessengerModalMode] = useState('both') // 'both' | 'groupsOnly'
   const [selectedFriendIds, setSelectedFriendIds] = useState(new Set())
   const [selectedGroupIds, setSelectedGroupIds] = useState(new Set())
+  const [showMentionDropdown, setShowMentionDropdown] = useState(false)
+  const [mentionQuery, setMentionQuery] = useState('')
+  const [images, setImages] = useState([])
+  const [videoUrl, setVideoUrl] = useState('')
+  const [documents, setDocuments] = useState([])
+  const [uploading, setUploading] = useState(false)
+  const repostTextareaRef = useRef(null)
+  const repostBlockRef = useRef(null)
 
   const origin =
     typeof window !== 'undefined' && window.location
@@ -35,6 +48,57 @@ export function PostShareModal({ open, onClose, post, t }) {
     postUrl,
     onClose,
   })
+
+  const insertEmojiToRepost = (emoji) => {
+    const ta = repostTextareaRef.current
+    if (!ta) {
+      setRepostText((prev) => `${prev || ''}${emoji}`)
+      return
+    }
+    const start = ta.selectionStart
+    const end = ta.selectionEnd
+    const before = repostText.slice(0, start)
+    const after = repostText.slice(end)
+    const next = `${before}${emoji}${after}`
+    setRepostText(next)
+    setTimeout(() => {
+      ta.focus()
+      const pos = start + emoji.length
+      ta.setSelectionRange(pos, pos)
+    }, 0)
+  }
+
+  const handleSelectGif = (gifUrl) => {
+    if (!gifUrl || images.length >= 10) return
+    setImages((prev) => [...prev, gifUrl].slice(0, 10))
+  }
+
+  const addons = usePostComposerAddons({
+    open,
+    onInsertEmoji: insertEmojiToRepost,
+    onSelectGif: handleSelectGif,
+  })
+
+  const friendsForMention = useMemo(() => {
+    if (!Array.isArray(friendsForShare)) return []
+    return friendsForShare
+      .map((item) => {
+        const u = item?.user || item
+        const id = u?.id ?? u?._id
+        const name = u?.name
+        const avatar = u?.avatar
+        return id && name ? { id: String(id), name: String(name), avatar: avatar || '' } : null
+      })
+      .filter(Boolean)
+  }, [friendsForShare])
+
+  const mentionCandidates = useMemo(() => {
+    if (!mentionQuery.trim()) return friendsForMention.slice(0, 8)
+    const q = mentionQuery.trim().toLowerCase()
+    return friendsForMention
+      .filter((f) => f.name.toLowerCase().includes(q))
+      .slice(0, 8)
+  }, [friendsForMention, mentionQuery])
 
   const loadFriendsForShare = (page = 1, append = false) => {
     if (friendsForShareLoading) return
@@ -66,6 +130,25 @@ export function PostShareModal({ open, onClose, post, t }) {
     loadFriendsForShare(1, false)
     setSelectedFriendIds(new Set())
     setSelectedGroupIds(new Set())
+    setShowMentionDropdown(false)
+    setMentionQuery('')
+    setImages([])
+    setVideoUrl('')
+    setDocuments([])
+    setUploading(false)
+    addons.setShowEmojiPicker(false)
+    addons.setShowGifPicker(false)
+  }, [open])
+
+  useEffect(() => {
+    if (!open) return
+    const onMouseDown = (e) => {
+      if (repostBlockRef.current && !repostBlockRef.current.contains(e.target)) {
+        setShowMentionDropdown(false)
+      }
+    }
+    document.addEventListener('mousedown', onMouseDown)
+    return () => document.removeEventListener('mousedown', onMouseDown)
   }, [open])
 
   useEffect(() => {
@@ -92,16 +175,28 @@ export function PostShareModal({ open, onClose, post, t }) {
   if (!open || !post) return null
 
   const handleRepost = async () => {
-    if (submitting) return
+    if (submitting || uploading) return
     setSubmitting(true)
     setError('')
     try {
-      const content = repostText.trim()
+      const contentRaw = repostText.trim()
+      const content = getContentWithoutMentions(contentRaw).trim()
+      const mentions = resolveMentionIds(repostText, friendsForMention)
 
       await communityService.createPost({
-        content,
+        content: content || ' ',
         sharedPostId: post.id || post._id,
+        images: images.length ? images : undefined,
+        video: videoUrl || undefined,
+        documents: documents.length
+          ? documents.map((d) =>
+              typeof d === 'string' ? { url: d, name: '' } : { url: d.url, name: d.name || '' }
+            )
+          : undefined,
+        mentions: mentions.length ? mentions : undefined,
       })
+      const sharedSourceId = post.id || post._id
+      if (sharedSourceId) onRepostSuccess?.(sharedSourceId)
       onClose?.()
     } catch (e) {
       setError(
@@ -111,6 +206,62 @@ export function PostShareModal({ open, onClose, post, t }) {
       )
     } finally {
       setSubmitting(false)
+    }
+  }
+
+  const handleImageSelect = async (e) => {
+    const files = e.target.files ? Array.from(e.target.files) : []
+    if (files.length === 0) return
+    setUploading(true)
+    setError('')
+    try {
+      const next = []
+      for (const file of files.slice(0, 10 - images.length)) {
+        const data = await uploadService.uploadMedia(file)
+        if (data?.url) next.push(data.url)
+      }
+      setImages((prev) => [...prev, ...next].slice(0, 10))
+    } catch {
+      setError(t('dashboard.uploadError') || 'Upload that bai.')
+    } finally {
+      setUploading(false)
+      e.target.value = ''
+    }
+  }
+
+  const handleVideoSelect = async (e) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+    setUploading(true)
+    setError('')
+    try {
+      const data = await uploadService.uploadMedia(file)
+      if (data?.url) setVideoUrl(data.url)
+    } catch {
+      setError(t('dashboard.uploadError') || 'Upload that bai.')
+    } finally {
+      setUploading(false)
+      e.target.value = ''
+    }
+  }
+
+  const handleDocSelect = async (e) => {
+    const files = e.target.files ? Array.from(e.target.files) : []
+    if (files.length === 0) return
+    setUploading(true)
+    setError('')
+    try {
+      const next = []
+      for (const file of files.slice(0, 5 - documents.length)) {
+        const data = await uploadService.uploadMedia(file)
+        if (data?.url) next.push({ url: data.url, name: data.name || file.name || '' })
+      }
+      setDocuments((prev) => [...prev, ...next].slice(0, 5))
+    } catch {
+      setError(t('dashboard.uploadError') || 'Upload that bai.')
+    } finally {
+      setUploading(false)
+      e.target.value = ''
     }
   }
 
@@ -136,20 +287,93 @@ export function PostShareModal({ open, onClose, post, t }) {
     )
   }
 
+  const handleRepostTextChange = (e) => {
+    const v = e.target.value
+    setRepostText(v)
+    const cursor = e.target.selectionStart
+    const textBefore = v.slice(0, cursor)
+    const match = textBefore.match(/@([^\s@#]*)$/)
+    if (match) {
+      setShowMentionDropdown(true)
+      setMentionQuery(match[1] || '')
+    } else {
+      setShowMentionDropdown(false)
+      setMentionQuery('')
+    }
+  }
+
+  const handleRepostTextKeyDown = (e) => {
+    const ta = repostTextareaRef.current
+    if (!ta) return
+    const start = ta.selectionStart
+    const end = ta.selectionEnd
+    const hasSelection = start !== end
+    const ranges = getMentionRanges(repostText || '')
+
+    if (e.key === 'Backspace' && !hasSelection) {
+      const at = start
+      const range = ranges.find((r) => at > r.start && at <= r.end)
+      if (range) {
+        e.preventDefault()
+        const next = repostText.slice(0, range.start) + repostText.slice(range.end)
+        setRepostText(next)
+        setTimeout(() => {
+          ta.focus()
+          ta.setSelectionRange(range.start, range.start)
+        }, 0)
+      }
+      return
+    }
+
+    if (e.key === 'Delete' && !hasSelection) {
+      const at = start
+      const range = ranges.find((r) => at >= r.start && at < r.end)
+      if (range) {
+        e.preventDefault()
+        const next = repostText.slice(0, range.start) + repostText.slice(range.end)
+        setRepostText(next)
+        setTimeout(() => {
+          ta.focus()
+          ta.setSelectionRange(range.start, range.start)
+        }, 0)
+      }
+    }
+  }
+
+  const insertMention = (friend) => {
+    const ta = repostTextareaRef.current
+    if (!ta) return
+    const cursor = ta.selectionStart
+    const textBefore = repostText.slice(0, cursor)
+    const start = textBefore.lastIndexOf('@')
+    if (start === -1) return
+    const before = repostText.slice(0, start)
+    const after = repostText.slice(cursor)
+    const newValue = `${before}@${friend.name} ${after}`
+    setRepostText(newValue)
+    setShowMentionDropdown(false)
+    setMentionQuery('')
+    setTimeout(() => {
+      ta.focus()
+      const pos = start + friend.name.length + 2
+      ta.setSelectionRange(pos, pos)
+    }, 0)
+  }
+
   const body = (
     <div
-      className="fixed inset-0 z-[120] flex items-center justify-center bg-black/40"
+      className="fixed inset-0 z-[120] flex items-center justify-center bg-black/55 backdrop-blur-sm"
       role="dialog"
       aria-modal="true"
       aria-label={t('dashboard.share') || 'Chia sẻ bài viết'}
       onClick={onClose}
     >
       <div
-        className="w-full max-w-[550px] rounded-2xl bg-[#242526] text-white border border-[#3e4042] shadow-xl overflow-hidden"
+        className="w-full max-w-[760px] rounded-2xl bg-card-dark text-slate-100 border border-border-dark shadow-2xl overflow-hidden"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header với tiêu đề + nút X */}
-        <div className="relative px-4 py-4 border-b border-[#3e4042] flex justify-center items-center">
+        <div className="relative px-4 py-4 border-b border-border-dark flex justify-center items-center">
           <h2 className="text-xl font-bold">
             {(() => {
               const raw = t('dashboard.sharePostTitle')
@@ -161,7 +385,7 @@ export function PostShareModal({ open, onClose, post, t }) {
           <button
             type="button"
             onClick={onClose}
-            className="absolute right-3 p-1 rounded-full hover:bg-[#3a3b3c]"
+            className="absolute right-3 p-1 rounded-full hover:bg-white/10 transition-colors"
             aria-label={t('buttons.close') || 'Đóng'}
           >
             <span className="material-symbols-outlined text-[20px]">
@@ -172,136 +396,37 @@ export function PostShareModal({ open, onClose, post, t }) {
 
         {/* Body */}
         <div className="max-h-[70vh] overflow-y-auto">
-          {/* Khu nhập nội dung + thông tin user */}
-          <div className="p-4 space-y-4">
-            <div className="flex gap-3">
-              <img
-                src={post.author?.avatarUrl || post.author?.avatar || ''}
-                alt={post.author?.name || 'avatar'}
-                className="w-10 h-10 rounded-full object-cover bg-slate-500/40"
-              />
-              <div className="flex flex-col gap-1.5">
-                <span className="text-[15px] font-semibold">
-                  {post.author?.name || 'User'}
-                </span>
-                <div className="flex gap-2 flex-wrap relative">
-                  {/* Audience visibility – button + dropdown menu */}
-                  <button
-                    type="button"
-                    onClick={() => setAudienceOpen((v) => !v)}
-                    className="flex items-center gap-1 px-2.5 py-1 bg-[#3a3b3c] hover:bg-[#4e4f50] rounded-md text-[13px] font-semibold transition-colors"
-                  >
-                    <span className="material-symbols-outlined text-[16px]">
-                      {audience === 'public'
-                        ? 'public'
-                        : audience === 'friends'
-                        ? 'group'
-                        : 'lock'}
-                    </span>
-                    <span>
-                      {audience === 'public'
-                        ? t('dashboard.public') || 'Công khai'
-                        : audience === 'friends'
-                        ? t('dashboard.friendsOnly') || 'Bạn bè'
-                        : t('dashboard.shareAudienceOnlyMe') || 'Chỉ mình tôi'}
-                    </span>
-                    <span className="material-symbols-outlined text-[16px]">
-                      arrow_drop_down
-                    </span>
-                  </button>
+          <PostShareComposerSection
+            t={t}
+            post={post}
+            audience={audience}
+            setAudience={setAudience}
+            audienceOpen={audienceOpen}
+            setAudienceOpen={setAudienceOpen}
+            repostBlockRef={repostBlockRef}
+            repostTextareaRef={repostTextareaRef}
+            repostText={repostText}
+            onRepostTextChange={handleRepostTextChange}
+            onRepostTextKeyDown={handleRepostTextKeyDown}
+            showMentionDropdown={showMentionDropdown}
+            mentionCandidates={mentionCandidates}
+            onInsertMention={insertMention}
+            submitting={submitting}
+            uploading={uploading}
+            error={error}
+            images={images}
+            videoUrl={videoUrl}
+            documents={documents}
+            onRemoveImage={(idx) => setImages((prev) => prev.filter((_, i) => i !== idx))}
+            onRemoveVideo={() => setVideoUrl('')}
+            onRemoveDoc={(idx) => setDocuments((prev) => prev.filter((_, i) => i !== idx))}
+            onImageSelect={handleImageSelect}
+            onVideoSelect={handleVideoSelect}
+            onDocSelect={handleDocSelect}
+            addons={addons}
+          />
 
-                  {audienceOpen && (
-                    <div className="absolute z-10 top-full mt-1 right-0 w-48 rounded-lg bg-[#242526] border border-[#3e4042] shadow-lg py-1">
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setAudience('public')
-                          setAudienceOpen(false)
-                        }}
-                        className={`flex w-full items-center gap-2 px-3 py-2 text-xs text-left hover:bg-[#3a3b3c] ${
-                          audience === 'public' ? 'text-white' : 'text-[#e4e6eb]'
-                        }`}
-                      >
-                        <span className="material-symbols-outlined text-[18px]">
-                          public
-                        </span>
-                        <span>{t('dashboard.public') || 'Công khai'}</span>
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setAudience('friends')
-                          setAudienceOpen(false)
-                        }}
-                        className={`flex w-full items-center gap-2 px-3 py-2 text-xs text-left hover:bg-[#3a3b3c] ${
-                          audience === 'friends'
-                            ? 'text-white'
-                            : 'text-[#e4e6eb]'
-                        }`}
-                      >
-                        <span className="material-symbols-outlined text-[18px]">
-                          group
-                        </span>
-                        <span>{t('dashboard.friendsOnly') || 'Bạn bè'}</span>
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setAudience('onlyMe')
-                          setAudienceOpen(false)
-                        }}
-                        className={`flex w-full items-center gap-2 px-3 py-2 text-xs text-left hover:bg-[#3a3b3c] ${
-                          audience === 'onlyMe'
-                            ? 'text-white'
-                            : 'text-[#e4e6eb]'
-                        }`}
-                      >
-                        <span className="material-symbols-outlined text-[18px]">
-                          lock
-                        </span>
-                        <span>
-                          {t('dashboard.shareAudienceOnlyMe') || 'Chỉ mình tôi'}
-                        </span>
-                      </button>
-                    </div>
-                  )}
-                </div>
-              </div>
-            </div>
-
-            <div className="relative group">
-              <textarea
-                rows={3}
-                className="w-full bg-transparent border-none p-0 text-[18px] focus:ring-0 resize-none placeholder-[#b0b3b8] min-h-[80px]"
-                placeholder={
-                  t('dashboard.shareWriteSomething') ||
-                  'Hãy nói gì đó về nội dung này...'
-                }
-                value={repostText}
-                onChange={(e) => setRepostText(e.target.value)}
-              />
-              <button className="absolute bottom-2 right-0 text-[#b0b3b8] hover:text-white">
-                <span className="material-symbols-outlined text-[24px]">
-                  mood
-                </span>
-              </button>
-            </div>
-
-            <div className="flex justify-end pt-2">
-              <button
-                type="button"
-                onClick={handleRepost}
-                disabled={submitting}
-                className="px-10 py-2 bg-[#0866ff] hover:bg-[#0866ff]/90 text-white rounded-lg text-[15px] font-bold transition-all disabled:opacity-70 disabled:cursor-not-allowed"
-              >
-                {submitting
-                  ? t('dashboard.sharing') || 'Đang chia sẻ...'
-                  : t('dashboard.shareNow') || 'Chia sẻ'}
-              </button>
-            </div>
-          </div>
-
-          <div className="border-t border-[#3e4042] mx-4" />
+          <div className="border-t border-border-dark mx-4" />
 
           {/* Gửi bằng Messenger */}
           <div className="p-4">
@@ -311,14 +436,14 @@ export function PostShareModal({ open, onClose, post, t }) {
             <div className="relative group">
               <div className="flex gap-4 overflow-x-auto hide-scrollbar pb-2 relative">
                 {friendsForShareLoading ? (
-                  <div className="flex items-center justify-center h-16 px-4 text-xs text-[#b0b3b8]">
+                  <div className="flex items-center justify-center h-16 px-4 text-xs text-slate-400">
                     <span className="material-symbols-outlined animate-spin text-[20px] mr-1">
                       progress_activity
                     </span>
                     {t('dashboard.loading') || 'Đang tải...'}
                   </div>
                 ) : friendsForShare.length === 0 ? (
-                  <div className="flex items-center justify-center h-16 px-4 text-xs text-[#b0b3b8]">
+                  <div className="flex items-center justify-center h-16 px-4 text-xs text-slate-400">
                     {t('dashboard.noFriendsOnline') || 'Chưa có bạn bè.'}
                   </div>
                 ) : (
@@ -360,7 +485,7 @@ export function PostShareModal({ open, onClose, post, t }) {
                           <img
                             src={avatar}
                             alt={name}
-                            className="w-14 h-14 rounded-full border border-white/10 object-cover bg-[#3a3b3c]"
+                            className="w-14 h-14 rounded-full border border-border-dark object-cover bg-background-dark"
                           />
                           <span className="text-[12px] font-medium leading-tight truncate max-w-[72px]">
                             {name}
@@ -378,7 +503,7 @@ export function PostShareModal({ open, onClose, post, t }) {
                         }
                         className="flex flex-col items-center gap-1.5 min-w-[72px] text-center"
                       >
-                        <div className="w-14 h-14 rounded-full bg-[#3a3b3c] hover:bg-[#4e4f50] flex items-center justify-center cursor-pointer border border-white/10 transition-colors disabled:opacity-60">
+                        <div className="w-14 h-14 rounded-full bg-background-dark/80 hover:bg-background-dark flex items-center justify-center cursor-pointer border border-border-dark transition-colors disabled:opacity-60">
                           <span className="material-symbols-outlined">
                             more_horiz
                           </span>
@@ -394,14 +519,14 @@ export function PostShareModal({ open, onClose, post, t }) {
             </div>
           </div>
 
-          <div className="border-t border-[#3e4042] mx-4" />
+          <div className="border-t border-border-dark mx-4" />
 
           {/* Chia sẻ lên */}
           <div className="p-4">
             <h3 className="text-[17px] font-bold mb-4">
               {t('dashboard.shareExternal') || 'Chia sẻ lên'}
             </h3>
-            <div className="flex flex-wrap gap-8 text-[12px] text-[#b0b3b8]">
+            <div className="flex flex-wrap gap-8 text-[12px] text-slate-400">
               {/* Messenger */}
               <button
                 type="button"
@@ -411,7 +536,7 @@ export function PostShareModal({ open, onClose, post, t }) {
                 }}
                 className="flex flex-col items-center gap-2 group"
               >
-                <div className="w-12 h-12 bg-[#3a3b3c] rounded-full flex items-center justify-center hover:bg-[#4e4f50] transition-colors">
+                <div className="w-12 h-12 bg-background-dark/80 rounded-full flex items-center justify-center hover:bg-background-dark transition-colors border border-border-dark">
                   <span className="material-symbols-outlined text-[24px]">
                     chat_bubble
                   </span>
@@ -425,7 +550,7 @@ export function PostShareModal({ open, onClose, post, t }) {
                 onClick={() => handleCopyLink(true)}
                 className="flex flex-col items-center gap-2 group"
               >
-                <div className="w-12 h-12 bg-[#3a3b3c] rounded-full flex items-center justify-center hover:bg-[#4e4f50] transition-colors">
+                <div className="w-12 h-12 bg-background-dark/80 rounded-full flex items-center justify-center hover:bg-background-dark transition-colors border border-border-dark">
                   <span className="material-symbols-outlined text-[24px]">
                     link
                   </span>
@@ -444,7 +569,7 @@ export function PostShareModal({ open, onClose, post, t }) {
                 }}
                 className="flex flex-col items-center gap-2 group"
               >
-                <div className="w-12 h-12 bg-[#3a3b3c] rounded-full flex items-center justify-center hover:bg-[#4e4f50] transition-colors">
+                <div className="w-12 h-12 bg-background-dark/80 rounded-full flex items-center justify-center hover:bg-background-dark transition-colors border border-border-dark">
                   <span className="material-symbols-outlined text-[24px]">
                     groups
                   </span>
@@ -454,248 +579,61 @@ export function PostShareModal({ open, onClose, post, t }) {
             </div>
           </div>
 
-          {error ? (
-            <p className="px-4 pb-3 text-xs text-red-400 whitespace-pre-wrap break-words">
-              {error}
-            </p>
-          ) : null}
         </div>
 
-        {/* Footer chỉ có nút Hủy để đóng modal */}
-        <div className="flex items-center justify-end gap-2 px-4 py-3 border-t border-[#3e4042]">
+        {/* Footer: Cancel + Share with same size */}
+        <div className="flex items-center justify-end gap-2 px-4 py-3 border-t border-border-dark">
           <button
             type="button"
             onClick={onClose}
-            className="px-3 py-1.5 rounded-lg text-xs font-semibold text-[#e4e6eb] bg-[#3a3b3c] hover:bg-[#4e4f50]"
+            className="h-10 min-w-[120px] px-4 rounded-lg text-sm font-semibold text-slate-200 bg-background-dark/70 border border-border-dark hover:bg-background-dark"
           >
             {t('buttons.cancel') || 'Hủy'}
+          </button>
+          <button
+            type="button"
+            onClick={handleRepost}
+            disabled={submitting || uploading}
+            className="h-10 min-w-[120px] px-4 rounded-lg text-sm font-semibold text-background-dark bg-primary hover:opacity-90 disabled:opacity-70 disabled:cursor-not-allowed"
+          >
+            {submitting
+              ? t('dashboard.sharing') || 'Dang chia se...'
+              : t('dashboard.shareNow') || 'Chia se'}
           </button>
         </div>
       </div>
     </div>
   )
 
-  const messengerGroupsBody = showMessengerGroupModal ? (
-    <div className="fixed inset-0 z-[130] flex items-center justify-center bg-black/50">
-      <div className="w-full max-w-md rounded-2xl bg-[#242526] text-white border border-[#3e4042] shadow-xl overflow-hidden">
-        <div className="flex items-center justify-between px-4 py-3 border-b border-[#3e4042]">
-          <h3 className="text-base font-semibold">
-            {t('dashboard.shareMessengerSection') || 'Send via Messenger'}
-          </h3>
-          <button
-            type="button"
-            onClick={() => setShowMessengerGroupModal(false)}
-            className="p-1 rounded-full hover:bg-[#3a3b3c]"
-          >
-            <span className="material-symbols-outlined text-[20px]">close</span>
-          </button>
-        </div>
-
-        <div className="px-4 pt-3 pb-4 space-y-3">
-          <div>
-            <input
-              type="text"
-              value={messengerGroupSearch}
-              onChange={(e) => setMessengerGroupSearch(e.target.value)}
-              placeholder={(() => {
-                const raw = t('dashboard.searchGroupsPlaceholder')
-                return !raw || raw === 'dashboard.searchGroupsPlaceholder'
-                  ? 'Tìm kiếm bạn bè / group để gửi...'
-                  : raw
-              })()}
-              className="w-full rounded-lg bg-[#3a3b3c] border border-[#4e4f50] px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-[#0866ff]"
-            />
-          </div>
-
-          {messengerGroupsLoading ? (
-            <div className="flex items-center justify-center py-6 text-sm text-[#b0b3b8]">
-              <span className="material-symbols-outlined animate-spin text-[20px] mr-2">
-                progress_activity
-              </span>
-              {t('dashboard.loading') || 'Đang tải...'}
-            </div>
-          ) : (
-            <div className="space-y-2 max-h-[260px] overflow-y-auto">
-              {(() => {
-                const keyword = messengerGroupSearch.trim().toLowerCase()
-                const groupsFiltered = messengerGroups.filter((g) => {
-                  if (!keyword) return true
-                  const name = g?.name || ''
-                  return name.toLowerCase().includes(keyword)
-                })
-                const friendsFiltered = friendsForShare.filter((item) => {
-                  const u = item?.user || item
-                  if (!u) return false
-                  if (!keyword) return true
-                  const name = u?.name || ''
-                  return name.toLowerCase().includes(keyword)
-                })
-
-                const showFriendsSection = messengerModalMode === 'both'
-                const friendList = showFriendsSection
-                  ? friendsFiltered.slice(0, 5)
-                  : []
-                const groupList = groupsFiltered.slice(0, 5)
-
-                if (friendList.length === 0 && groupList.length === 0) {
-                  return (
-                    <p className="text-xs text-[#b0b3b8] py-4 text-center">
-                      {t('dashboard.noStudyGroups') || 'Không có kết quả phù hợp.'}
-                    </p>
-                  )
-                }
-
-                return (
-                  <>
-                    {friendList.length > 0 && (
-                      <div className="space-y-1">
-                        <p className="text-[11px] uppercase tracking-wide text-[#b0b3b8]">
-                          {t('dashboard.friends') || 'Friends'}
-                        </p>
-                        {friendList.map((item) => {
-                          const u = item?.user || item
-                          const name = u?.name || 'User'
-                          const id = u?.id ?? u?._id
-                          const avatar =
-                            u?.avatar ||
-                            (name
-                              ? `https://ui-avatars.com/api/?name=${encodeURIComponent(
-                                  name
-                                )}&background=13b6ec&color=fff`
-                              : DEFAULT_AVATAR)
-                          const isSelected =
-                            id != null && selectedFriendIds.has(String(id))
-                          return (
-                            <button
-                              key={id}
-                              type="button"
-                              onClick={() => {
-                                if (id == null) return
-                                setSelectedFriendIds((prev) => {
-                                  const next = new Set(prev)
-                                  const key = String(id)
-                                  if (next.has(key)) next.delete(key)
-                                  else next.add(key)
-                                  return next
-                                })
-                              }}
-                              className={`w-full flex items-center gap-3 px-2 py-2 rounded-lg text-left transition-colors ${
-                                isSelected
-                                  ? 'bg-[#3a3b3c] border border-[#4e4f50]'
-                                  : 'hover:bg-[#3a3b3c]'
-                              }`}
-                            >
-                              <img
-                                src={avatar}
-                                alt={name}
-                                className="w-9 h-9 rounded-full object-cover bg-[#3a3b3c]"
-                              />
-                              <p className="text-sm font-medium truncate">{name}</p>
-                            </button>
-                          )
-                        })}
-                      </div>
-                    )}
-
-                    {groupList.length > 0 && (
-                      <div className="space-y-1 mt-3">
-                        <p className="text-[11px] uppercase tracking-wide text-[#b0b3b8]">
-                          {t('dashboard.studyGroups') || 'Groups'}
-                        </p>
-                        {groupList.map((g) => {
-                          const name = g?.name || 'Group'
-                          const id = g?.id ?? g?._id
-                          const avatar =
-                            g?.avatar ||
-                            `https://ui-avatars.com/api/?name=${encodeURIComponent(
-                              name
-                            )}&background=13b6ec&color=fff`
-                          const isSelected =
-                            id != null && selectedGroupIds.has(String(id))
-                          return (
-                            <button
-                              key={id}
-                              type="button"
-                              onClick={() => {
-                                if (id == null) return
-                                setSelectedGroupIds((prev) => {
-                                  const next = new Set(prev)
-                                  const key = String(id)
-                                  if (next.has(key)) next.delete(key)
-                                  else next.add(key)
-                                  return next
-                                })
-                              }}
-                              className={`w-full flex items-center gap-3 px-2 py-2 rounded-lg text-left transition-colors ${
-                                isSelected
-                                  ? 'bg-[#3a3b3c] border border-[#4e4f50]'
-                                  : 'hover:bg-[#3a3b3c]'
-                              }`}
-                            >
-                              <img
-                                src={avatar}
-                                alt={name}
-                                className="w-9 h-9 rounded-full object-cover bg-[#3a3b3c]"
-                              />
-                              <div className="min-w-0">
-                                <p className="text-sm font-medium truncate">
-                                  {name}
-                                </p>
-                                {g.memberCount != null && (
-                                  <p className="text-[11px] text-[#b0b3b8]">
-                                    {g.memberCount}{' '}
-                                    {t('dashboard.members') || 'thành viên'}
-                                  </p>
-                                )}
-                              </div>
-                            </button>
-                          )
-                        })}
-                      </div>
-                    )}
-                  </>
-                )
-              })()}
-            </div>
-          )}
-
-          <div className="flex items-center justify-end gap-2 pt-1">
-            <button
-              type="button"
-              onClick={() => setShowMessengerGroupModal(false)}
-              className="px-3 py-1.5 rounded-lg text-xs font-semibold text-[#e4e6eb] bg-[#3a3b3c] hover:bg-[#4e4f50]"
-            >
-              {t('buttons.cancel') || 'Hủy'}
-            </button>
-            <button
-              type="button"
-              disabled={
-                selectedFriendIds.size === 0 && selectedGroupIds.size === 0
-              }
-              onClick={async () => {
-                try {
-                  await sendShareToTargets(
-                    selectedFriendIds,
-                    selectedGroupIds
-                  )
-                  setShowMessengerGroupModal(false)
-                } catch (e) {
-                  console.error('Failed to send share link via Messenger', e)
-                  alert(
-                    t('dashboard.shareSendFailed') ||
-                      'Không gửi được link qua tin nhắn. Vui lòng thử lại.'
-                  )
-                }
-              }}
-              className={`px-3 py-1.5 rounded-lg text-xs font-semibold text-white bg-[#0866ff] hover:bg-[#0866ff]/90 disabled:opacity-60 disabled:cursor-not-allowed`}
-            >
-              {t('messages.send') || 'Gửi'}
-            </button>
-          </div>
-        </div>
-      </div>
-    </div>
-  ) : null
+  const messengerGroupsBody = (
+    <PostShareMessengerGroupModal
+      open={showMessengerGroupModal}
+      t={t}
+      messengerGroupSearch={messengerGroupSearch}
+      setMessengerGroupSearch={setMessengerGroupSearch}
+      messengerGroupsLoading={messengerGroupsLoading}
+      messengerGroups={messengerGroups}
+      friendsForShare={friendsForShare}
+      messengerModalMode={messengerModalMode}
+      selectedFriendIds={selectedFriendIds}
+      setSelectedFriendIds={setSelectedFriendIds}
+      selectedGroupIds={selectedGroupIds}
+      setSelectedGroupIds={setSelectedGroupIds}
+      onClose={() => setShowMessengerGroupModal(false)}
+      onSend={async () => {
+        try {
+          await sendShareToTargets(selectedFriendIds, selectedGroupIds)
+          setShowMessengerGroupModal(false)
+        } catch (e) {
+          console.error('Failed to send share link via Messenger', e)
+          alert(
+            t('dashboard.shareSendFailed') ||
+              'Khong gui duoc link qua tin nhan. Vui long thu lai.'
+          )
+        }
+      }}
+    />
+  )
 
   return createPortal(
     <>

@@ -21,6 +21,7 @@ export function ProfilePage() {
     raw,
     profileSkillStats,
     profileFriends,
+    sortedProfileFriends,
     profileFriendsLoading,
     onlineUserIds,
     displayName,
@@ -136,6 +137,7 @@ export function ProfilePage() {
           <ProfileFriendsCard
             t={t}
             friends={filteredFriends}
+            allFriends={sortedProfileFriends}
             loading={profileFriendsLoading}
             friendSearch={friendSearch}
             setFriendSearch={setFriendSearch}

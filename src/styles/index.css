@@ -91,3 +91,16 @@ body {
   padding: 1rem;
   background-color: rgba(0, 0, 0, 0.6);
 }
+
+/* Register: WebKit/Blink date input — chừa vùng cho nút lịch, không đè lên yyyy */
+.register-dob-input::-webkit-calendar-picker-indicator {
+  cursor: pointer;
+  width: 1.375rem;
+  height: 1.375rem;
+  margin-left: 0.35rem;
+  flex-shrink: 0;
+  opacity: 0.92;
+}
+.register-dob-input::-webkit-datetime-edit-fields-wrapper {
+  padding-right: 0.35rem;
+}

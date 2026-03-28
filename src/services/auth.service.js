@@ -8,6 +8,14 @@ export const authService = {
     return apiClient.post(API_ENDPOINTS.AUTH.LOGIN, { email, password })
   },
 
+  loginWithGoogle: async (idToken) => {
+    return apiClient.post(API_ENDPOINTS.AUTH.SOCIAL_GOOGLE, { idToken })
+  },
+
+  loginWithFacebook: async (accessToken) => {
+    return apiClient.post(API_ENDPOINTS.AUTH.SOCIAL_FACEBOOK, { accessToken })
+  },
+
   register: async (userData) => {
     return apiClient.post(API_ENDPOINTS.AUTH.REGISTER, userData)
   },
@@ -35,6 +43,22 @@ export const authService = {
   updatePreferences: async (payload) => {
     return apiClient.patch(API_ENDPOINTS.AUTH.PREFERENCES, payload)
   },
+}
+
+function storeAuthFromResponse(res, remember, i18n) {
+  const storage = remember ? localStorage : sessionStorage
+  const { accessToken, refreshToken, user } = res?.data || {}
+  if (accessToken) storage.setItem('authToken', accessToken)
+  if (refreshToken) storage.setItem('refreshToken', refreshToken)
+  if (user) {
+    storage.setItem('user', JSON.stringify(user))
+    applyUserLanguage(user, i18n)
+    const lang =
+      user.preferences?.language === 'vi' || user.preferences?.language === 'en'
+        ? user.preferences.language
+        : 'vi'
+    storage.setItem('language', lang)
+  }
 }
 
 export async function submitRegisterForm(data, t) {
@@ -87,7 +111,6 @@ export async function submitLoginForm(data, i18n) {
   }
 
   const remember = data.remember !== false
-  const storage = remember ? localStorage : sessionStorage
 
   try {
     const res = await apiClient.post(API_ENDPOINTS.AUTH.LOGIN, {
@@ -96,18 +119,7 @@ export async function submitLoginForm(data, i18n) {
     })
 
     if (res.success && res.data) {
-      const { accessToken, refreshToken, user } = res.data
-      if (accessToken) storage.setItem('authToken', accessToken)
-      if (refreshToken) storage.setItem('refreshToken', refreshToken)
-      if (user) {
-        storage.setItem('user', JSON.stringify(user))
-        applyUserLanguage(user, i18n)
-        const lang =
-          user.preferences?.language === 'vi' || user.preferences?.language === 'en'
-            ? user.preferences.language
-            : 'vi'
-        storage.setItem('language', lang)
-      }
+      storeAuthFromResponse(res, remember, i18n)
       return { success: true, navigate: true }
     }
 
@@ -128,5 +140,26 @@ export async function submitLoginForm(data, i18n) {
       error: msg || i18n.t('auth.loginFailed'),
       ...(Object.keys(fieldErrors).length ? { fieldErrors } : {}),
     }
+  }
+}
+
+export async function submitSocialLogin({ provider, token, remember }, i18n) {
+  const useRemember = remember !== false
+  try {
+    const res =
+      provider === 'google'
+        ? await authService.loginWithGoogle(token)
+        : await authService.loginWithFacebook(token)
+
+    if (res?.success && res?.data) {
+      storeAuthFromResponse(res, useRemember, i18n)
+      return { success: true, navigate: true }
+    }
+    return { success: false, error: res?.message || i18n.t('auth.loginFailed') }
+  } catch (err) {
+    const msg = err?.isNetworkError
+      ? i18n.t('auth.networkError')
+      : err?.message ?? err?.data?.message
+    return { success: false, error: msg || i18n.t('auth.loginFailed') }
   }
 }

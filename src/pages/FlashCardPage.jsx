@@ -1,11 +1,17 @@
-import React, { useState, useEffect } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
-import { vocabularyData } from '../data/vocabularyData';
+import React, { useState, useEffect, useMemo } from 'react';
+import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
+import { getVocabularyTopic, CUSTOM_TOPIC_ID } from '../utils/getVocabularyTopic';
+import { vocabTopicDetailPath } from '../utils/vocabularyCustomRoutes';
+import { recordVocabTopicActivity } from '../utils/vocabularyRecentTopics';
 
 const FlashCardPage = () => {
+    const { t } = useTranslation();
     const { topicId } = useParams();
     const navigate = useNavigate();
-    const topic = vocabularyData?.[topicId];
+    const [searchParams] = useSearchParams();
+    const deckParam = searchParams.get('deck');
+    const topic = useMemo(() => getVocabularyTopic(topicId, deckParam), [topicId, deckParam]);
     const [cards, setCards] = useState([]);
     const [currentIndex, setCurrentIndex] = useState(0);
     const [isFlipped, setIsFlipped] = useState(false);
@@ -24,11 +30,15 @@ const FlashCardPage = () => {
         }
     }, [topic]);
 
+    useEffect(() => {
+        if (!topic) return;
+        recordVocabTopicActivity(topicId, 'flashcard', topicId === CUSTOM_TOPIC_ID ? deckParam : null);
+    }, [topic, topicId, deckParam]);
 
     if (!topic) {
         return (
             <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex items-center justify-center">
-                <p className="text-gray-500 dark:text-gray-400">Không tìm thấy dữ liệu cho chủ đề này.</p>
+                <p className="text-gray-500 dark:text-gray-400">{t('vocabulary.flashcardNoTopic')}</p>
             </div>
         );
     }
@@ -37,7 +47,7 @@ const FlashCardPage = () => {
     if (cards.length === 0) {
         return (
             <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex items-center justify-center">
-                <p className="text-gray-500 dark:text-gray-400">Chủ đề này chưa có từ vựng.</p>
+                <p className="text-gray-500 dark:text-gray-400">{t('vocabulary.flashcardEmpty')}</p>
             </div>
         );
     }
@@ -46,7 +56,7 @@ const FlashCardPage = () => {
     if (!currentCard) {
         return (
             <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex items-center justify-center">
-                <p className="text-gray-500 dark:text-gray-400">Đang tải dữ liệu...</p>
+                <p className="text-gray-500 dark:text-gray-400">{t('vocabulary.flashcardLoading')}</p>
             </div>
         );
     }
@@ -96,7 +106,7 @@ const FlashCardPage = () => {
             window.speechSynthesis.cancel();
             window.speechSynthesis.speak(utterance);
         } else {
-            alert('Trình duyệt không hỗ trợ phát âm.');
+            alert(t('vocabulary.flashBrowserNoSpeech'));
         }
     };
 
@@ -105,10 +115,10 @@ const FlashCardPage = () => {
             <div className="sticky top-0 z-10 bg-white/90 dark:bg-gray-800/90 backdrop-blur-sm border-b border-gray-200 dark:border-gray-700">
                 <div className="max-w-4xl mx-auto px-4 py-3">
                     <div className="flex justify-between items-center mb-2">
-                        <button onClick={() => navigate(`/topic/${topicId}`)} className="text-gray-600 dark:text-gray-300 hover:text-blue-600">
-                            ← Quay lại
+                        <button onClick={() => navigate(vocabTopicDetailPath(topicId, deckParam))} className="text-gray-600 dark:text-gray-300 hover:text-blue-600">
+                            ← {t('vocabulary.back')}
                         </button>
-                        <div className="text-sm text-gray-500 dark:text-gray-400">{learnedCount} / {totalCards} đã nhớ</div>
+                        <div className="text-sm text-gray-500 dark:text-gray-400">{t('vocabulary.flashLearnedProgress', { learned: learnedCount, total: totalCards })}</div>
                     </div>
                     <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
                         <div className="bg-green-500 h-2 rounded-full transition-all duration-300" style={{ width: `${progress}%` }} />
@@ -134,8 +144,13 @@ const FlashCardPage = () => {
                             <h2 className="text-4xl md:text-5xl font-bold text-gray-800 dark:text-white text-center">
                                 {currentCard.word}
                             </h2>
+                            {(currentCard.wordType || '').trim() ? (
+                                <p className="text-sm font-medium text-purple-600 dark:text-purple-400 mt-3 px-3 py-1 rounded-full bg-purple-100 dark:bg-purple-900/40">
+                                    {t(`vocabulary.wordType.${(currentCard.wordType || '').trim()}`)}
+                                </p>
+                            ) : null}
                             <p className="text-gray-500 dark:text-gray-400 mt-4">{currentCard.pronunciation}</p>
-                            <p className="text-gray-400 dark:text-gray-500 mt-8 text-sm">Nhấn vào thẻ để xem nghĩa</p>
+                            <p className="text-gray-400 dark:text-gray-500 mt-8 text-sm">{t('vocabulary.flashTapSeeMeaning')}</p>
                         </div>
                     ) : (
 
@@ -144,10 +159,13 @@ const FlashCardPage = () => {
                             <h3 className="text-3xl md:text-4xl font-bold text-white text-center mb-4">
                                 {currentCard.meaning}
                             </h3>
+                            {(currentCard.wordType || '').trim() ? (
+                                <p className="text-sm text-white/90 mb-2">{t(`vocabulary.wordType.${(currentCard.wordType || '').trim()}`)}</p>
+                            ) : null}
                             {currentCard.example && (
                                 <p className="text-blue-100 text-center italic">"{currentCard.example}"</p>
                             )}
-                            <p className="text-white/70 mt-8 text-sm">Nhấn vào thẻ để quay lại từ</p>
+                            <p className="text-white/70 mt-8 text-sm">{t('vocabulary.flashTapSeeWord')}</p>
                         </div>
                     )}
                 </div>
@@ -155,23 +173,23 @@ const FlashCardPage = () => {
 
                 <div className="flex flex-wrap justify-center gap-3 mb-6">
                     <button onClick={handlePrev} className="px-5 py-2 bg-gray-200 dark:bg-gray-700 rounded-full hover:bg-gray-300">
-                        ← Thẻ trước
+                        {t('vocabulary.flashPrev')}
                     </button>
                     <button onClick={handleShuffle} className="px-5 py-2 bg-gray-200 dark:bg-gray-700 rounded-full hover:bg-gray-300">
-                        🎲 Xáo trộn
+                        {t('vocabulary.flashShuffle')}
                     </button>
                     <button onClick={handleNext} className="px-5 py-2 bg-gray-200 dark:bg-gray-700 rounded-full hover:bg-gray-300">
-                        Thẻ sau →
+                        {t('vocabulary.flashNext')}
                     </button>
                 </div>
 
 
                 <div className="flex justify-center gap-4">
                     <button onClick={handleNotYet} className="px-8 py-3 bg-red-500 hover:bg-red-600 text-white rounded-full font-semibold">
-                        ✗ Vẫn chưa
+                        {t('vocabulary.flashNotYet')}
                     </button>
                     <button onClick={handleKnow} className="px-8 py-3 bg-green-500 hover:bg-green-600 text-white rounded-full font-semibold">
-                        ✓ Ghi nhớ
+                        {t('vocabulary.flashKnown')}
                     </button>
                 </div>
             </div>

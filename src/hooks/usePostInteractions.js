@@ -1,6 +1,7 @@
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect, useRef, useCallback } from 'react'
 import { communityService, uploadService } from '../services'
 import { searchGiphy, hasGiphyKey } from '../services/giphy.service'
+import { getExpandTargetsAfterReply } from '../utils/commentThread'
 
 // ─── Image viewer for post modal ──────────────────────────────────────────────
 
@@ -211,6 +212,7 @@ export function useDashboardPostComments(postId, t) {
   const commentLikeAnchorRef = useRef(null)
   const commentHoverTimerRef = useRef(null)
   const commentHideTimerRef = useRef(null)
+  const commentPendingHideRef = useRef(null)
   const [replyToComment, setReplyToComment] = useState(null)
 
   // Phân trang comment cấp 0 (root) – mỗi lần 10 comment
@@ -218,6 +220,20 @@ export function useDashboardPostComments(postId, t) {
   const [rootHasMore, setRootHasMore] = useState(true)
   // Phân trang reply theo thread: key = id comment gốc (cấp 1)
   const [threadPages, setThreadPages] = useState({}) // { [parentId]: { page, hasMore } }
+  const [expandAfterReply, setExpandAfterReply] = useState(null)
+  const pendingExpandParentIdRef = useRef(null)
+
+  const onExpandAfterReplyConsumed = useCallback(() => {
+    setExpandAfterReply(null)
+  }, [])
+
+  useEffect(() => {
+    const pid = pendingExpandParentIdRef.current
+    if (!pid) return
+    pendingExpandParentIdRef.current = null
+    const targets = getExpandTargetsAfterReply(pid, comments)
+    setExpandAfterReply({ ...targets, token: Date.now() })
+  }, [comments])
 
   const clearCommentReactionTimers = () => {
     if (commentHoverTimerRef.current) {
@@ -227,6 +243,10 @@ export function useDashboardPostComments(postId, t) {
     if (commentHideTimerRef.current) {
       window.clearTimeout(commentHideTimerRef.current)
       commentHideTimerRef.current = null
+    }
+    if (commentPendingHideRef.current) {
+      window.clearTimeout(commentPendingHideRef.current)
+      commentPendingHideRef.current = null
     }
   }
 
@@ -259,10 +279,27 @@ export function useDashboardPostComments(postId, t) {
       window.clearTimeout(commentHoverTimerRef.current)
       commentHoverTimerRef.current = null
     }
-    commentHideTimerRef.current = window.setTimeout(() => {
+    commentPendingHideRef.current = window.setTimeout(() => {
+      if (commentHideTimerRef.current) {
+        window.clearTimeout(commentHideTimerRef.current)
+        commentHideTimerRef.current = null
+      }
       setShowCommentReactionPicker(false)
       setCommentReactionBubbleRect(null)
-      commentHideTimerRef.current = null
+      commentPendingHideRef.current = null
+    }, REACTION_PICKER_LEAVE_DELAY)
+  }
+
+  const handleCommentReactionBubbleEnter = () => {
+    clearCommentReactionTimers()
+    setShowCommentReactionPicker(true)
+  }
+
+  const handleCommentReactionBubbleLeave = () => {
+    commentPendingHideRef.current = window.setTimeout(() => {
+      setShowCommentReactionPicker(false)
+      setCommentReactionBubbleRect(null)
+      commentPendingHideRef.current = null
     }, REACTION_PICKER_LEAVE_DELAY)
   }
 
@@ -283,11 +320,15 @@ export function useDashboardPostComments(postId, t) {
   }
 
   const handleFeedCommentLikeBlur = () => {
-    commentHideTimerRef.current = window.setTimeout(() => {
+    commentPendingHideRef.current = window.setTimeout(() => {
+      if (commentHideTimerRef.current) {
+        window.clearTimeout(commentHideTimerRef.current)
+        commentHideTimerRef.current = null
+      }
       setShowCommentReactionPicker(false)
       setCommentReactionBubbleRect(null)
       commentLikeAnchorRef.current = null
-      commentHideTimerRef.current = null
+      commentPendingHideRef.current = null
     }, REACTION_PICKER_LEAVE_DELAY)
   }
 
@@ -504,7 +545,11 @@ export function useDashboardPostComments(postId, t) {
       }
       const res = await communityService.commentPost(postId, payload)
       const newComment = res?.data?.comment ?? res?.data
-      if (newComment) setComments((prev) => [...prev, newComment])
+      const parentIdForExpand = replyToComment?.commentId
+      if (newComment) {
+        if (parentIdForExpand) pendingExpandParentIdRef.current = String(parentIdForExpand)
+        setComments((prev) => [...prev, newComment])
+      }
       setCommentText('')
       setCommentImages([])
       setCommentVideo('')
@@ -555,10 +600,12 @@ export function useDashboardPostComments(postId, t) {
       .catch(() => {})
   }
 
-  const handleToggleCommentLike = async (commentId) => {
+  const handleToggleCommentLike = async (commentId, reactionType) => {
     if (!commentId) return
+    const current = comments.find((c) => String(c?.id ?? c?._id) === String(commentId))
+    const nextReaction = reactionType || current?.userReaction || 'like'
     try {
-      const res = await communityService.setCommentReaction(commentId, 'like')
+      const res = await communityService.setCommentReaction(commentId, nextReaction)
       const data = res?.data ?? res
       const liked = data?.liked === true
       const userReaction = data?.userReaction ?? null
@@ -625,6 +672,8 @@ export function useDashboardPostComments(postId, t) {
     handleFeedCommentLikeMouseLeave,
     handleFeedCommentLikeFocus,
     handleFeedCommentLikeBlur,
+    handleCommentReactionBubbleEnter,
+    handleCommentReactionBubbleLeave,
     showCommentReactionPicker,
     commentReactionBubbleRect,
     hoveredCommentId,
@@ -635,5 +684,7 @@ export function useDashboardPostComments(postId, t) {
     rootHasMore,
     threadPages,
     loadMoreThreadComments,
+    expandAfterReply,
+    onExpandAfterReplyConsumed,
   }
 }

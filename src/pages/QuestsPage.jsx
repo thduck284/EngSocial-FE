@@ -30,23 +30,24 @@ const CHALLENGE_TYPE_LABELS = {
 }
 
 function formatTarget(quest, t) {
-  const v = quest.targetValue
-  if (quest.targetType === 'lesson') return `${v} ${v === 1 ? t('quests.lesson') : t('quests.lessons')}`
-  if (quest.targetType === 'practice_skill') return `${v} ${t('quests.practice')}`
-  if (quest.targetType === 'both') return `${v} ${t('quests.lessonOrPractice')}`
-  return `${v} ${t('quests.lessons')}`
+  const target = quest.condition?.target ?? quest.targetValue ?? 1
+  const category = (quest.condition?.filters?.category || 'all').toLowerCase()
+  const minScorePercent = Number(quest.condition?.filters?.minScorePercent ?? 0)
+  if (minScorePercent >= 100) return `${target} ${t('quests.lessons')} (100%)`
+  if (category === 'practice') return `${target} ${t('quests.practice')}`
+  if (category === 'all') return `${target} ${t('quests.lessonOrPractice')}`
+  return `${target} ${target === 1 ? t('quests.lesson') : t('quests.lessons')}`
 }
 
 /** Join URL for quest: lesson -> /lesson; practice_skill: skill "all" or empty -> reading, else specific skill. */
 function getQuestJoinTo(quest) {
   if (!quest) return ROUTES.LESSON
-  const t = quest.targetType
-  if (t === 'lesson') return ROUTES.LESSON
-  if (t === 'practice_skill') {
-    const s = (quest.skill || 'all').toLowerCase()
-    if (s === 'all' || s === '') return ROUTES.SKILLS.READING
-    if (s === 'listening') return ROUTES.SKILLS.LISTENING
-    if (s === 'writing') return ROUTES.SKILLS.WRITING
+  const category = (quest.condition?.filters?.category || 'all').toLowerCase()
+  const skill = (quest.condition?.filters?.skill || quest.skill || 'all').toLowerCase()
+  if (category === 'practice' || category === 'all') {
+    if (skill === 'all' || skill === '') return ROUTES.SKILLS.READING
+    if (skill === 'listening') return ROUTES.SKILLS.LISTENING
+    if (skill === 'writing') return ROUTES.SKILLS.WRITING
     return ROUTES.SKILLS.READING
   }
   return ROUTES.LESSON
@@ -284,14 +285,12 @@ export function QuestsPage() {
                             </button>
                           </>
                         )}
-                        {quest.targetType !== 'both' && (
-                          <Link
-                            to={getQuestJoinTo(quest)}
-                            className="px-4 py-2 rounded-lg bg-primary hover:bg-primary/90 text-background-dark text-sm font-semibold transition-colors"
-                          >
-                            {t('buttons.join')}
-                          </Link>
-                        )}
+                        <Link
+                          to={getQuestJoinTo(quest)}
+                          className="px-4 py-2 rounded-lg bg-primary hover:bg-primary/90 text-background-dark text-sm font-semibold transition-colors"
+                        >
+                          {t('buttons.join')}
+                        </Link>
                       </div>
                     </div>
                   </div>

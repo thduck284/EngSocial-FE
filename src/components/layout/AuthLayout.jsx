@@ -4,7 +4,7 @@ import { LanguageSwitcher } from '../ui/common/LanguageSwitcher'
 export function AuthLayout({ children, leftContent }) {
   return (
     <div className="bg-textured text-slate-100 min-h-screen flex items-center justify-center p-4">
-      <div className="max-w-4xl w-full grid grid-cols-1 md:grid-cols-2 bg-card-dark rounded-2xl overflow-hidden shadow-2xl border border-slate-800 relative">
+      <div className="max-w-5xl w-full grid grid-cols-1 md:grid-cols-2 bg-card-dark rounded-2xl overflow-hidden shadow-2xl border border-slate-800 relative">
         {/* Language switcher - same as dashboard */}
         <div className="absolute top-4 right-4 z-10">
           <LanguageSwitcher />
@@ -33,38 +33,77 @@ export function AuthLayout({ children, leftContent }) {
   )
 }
 
-export function SocialButtons({ onGoogle, onFacebook }) {
+export function SocialButtons({
+  onGoogle,
+  onFacebook,
+  facebookDisabled,
+  /** Trang đăng ký tự hiển thị divider khác — ẩn dòng "Or login with email" */
+  showEmailDivider = true,
+}) {
   const { t } = useTranslation()
   return (
     <>
-      <div className="grid grid-cols-1 gap-3 mb-6">
-        <button
-          type="button"
-          onClick={onGoogle}
-          className="flex items-center justify-center gap-3 w-full py-2.5 px-4 bg-white hover:bg-slate-100 text-slate-900 font-semibold rounded-xl transition-colors text-sm"
-        >
-          <img alt="Google" className="w-5 h-5" src="https://www.google.com/favicon.ico" />
-          {t('auth.continueWithGoogle')}
-        </button>
-        <button
-          type="button"
-          onClick={onFacebook}
-          className="flex items-center justify-center gap-3 w-full py-2.5 px-4 bg-[#1877F2] hover:bg-[#166fe5] text-white font-semibold rounded-xl transition-colors text-sm"
-        >
-          <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
-            <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z" />
-          </svg>
-          {t('auth.continueWithFacebook')}
-        </button>
-      </div>
-      <div className="relative mb-6">
-        <div className="absolute inset-0 flex items-center">
-          <div className="w-full border-t border-slate-700" />
+      <div className={`flex flex-col gap-2.5 ${showEmailDivider ? 'mb-6' : 'mb-4'}`}>
+        <div className="grid min-w-0 grid-cols-2 gap-3">
+          <button
+            type="button"
+            onClick={onGoogle}
+            className="group flex flex-row items-center justify-center gap-1.5 w-full min-w-0 py-1.5 px-2 rounded-xl bg-white text-slate-900 font-semibold text-[13px] sm:text-sm leading-snug text-center border border-slate-200/90 shadow-sm shadow-slate-900/5 hover:bg-slate-50 hover:border-slate-300/90 hover:shadow transition-all"
+          >
+            <img
+              alt=""
+              className="size-[1.125rem] sm:size-5 shrink-0 rounded-sm"
+              src="https://www.google.com/favicon.ico"
+            />
+            <span className="min-w-0 text-center break-words [text-wrap:balance]">
+              {t('auth.continueWithGoogle')}
+            </span>
+          </button>
+          <button
+            type="button"
+            disabled={facebookDisabled}
+            onClick={facebookDisabled ? undefined : onFacebook}
+            className={[
+              'flex flex-row items-center justify-center gap-1.5 w-full min-w-0 py-1.5 px-2 rounded-xl text-[13px] sm:text-sm leading-snug text-center transition-all',
+              facebookDisabled
+                ? 'cursor-not-allowed border border-slate-600/80 bg-slate-800/90 font-semibold text-slate-400 hover:bg-slate-800/90'
+                : [
+                    'border border-[#1877F2] bg-[#1877F2] font-bold text-white',
+                    'shadow-[inset_0_1px_0_rgba(255,255,255,0.18)] shadow-md shadow-black/15',
+                    'hover:bg-[#166FE5] hover:border-[#166FE5] active:bg-[#0f5bdc] active:border-[#0f5bdc]',
+                    'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#1877F2] focus-visible:ring-offset-2 focus-visible:ring-offset-[#0f1419]',
+                  ].join(' '),
+            ].join(' ')}
+          >
+            <svg
+              className={['size-[1.125rem] sm:size-5 shrink-0', facebookDisabled ? 'text-slate-500' : 'text-white'].join(' ')}
+              fill="currentColor"
+              viewBox="0 0 24 24"
+              aria-hidden
+            >
+              <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z" />
+            </svg>
+            <span
+              className={[
+                'min-w-0 text-center break-words [text-wrap:balance]',
+                facebookDisabled ? 'text-slate-400' : 'text-white',
+              ].join(' ')}
+            >
+              {t('auth.continueWithFacebook')}
+            </span>
+          </button>
         </div>
-        <div className="relative flex justify-center text-xs uppercase">
-          <span className="bg-card-dark px-2 text-slate-500">{t('auth.orLoginWith')}</span>
-        </div>
       </div>
+      {showEmailDivider ? (
+        <div className="relative mb-6">
+          <div className="absolute inset-0 flex items-center">
+            <div className="w-full border-t border-slate-700" />
+          </div>
+          <div className="relative flex justify-center text-xs uppercase">
+            <span className="bg-card-dark px-2 text-slate-500">{t('auth.orLoginWith')}</span>
+          </div>
+        </div>
+      ) : null}
     </>
   )
 }
