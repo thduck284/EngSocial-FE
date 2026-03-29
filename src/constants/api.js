@@ -2,11 +2,12 @@ const isLocalhost = typeof window !== 'undefined' && window.location.hostname ==
 const LOCAL_API = import.meta.env.VITE_API_LOCAL_URL
 const RENDER_API = import.meta.env.VITE_API_RENDER_URL
 
-export const API_BASE_URL = isLocalhost ? LOCAL_API : RENDER_API
-export const API_FALLBACK_BASE_URL = isLocalhost ? RENDER_API : null
-
-// Socket base URL (no /api suffix)
+const ensureApi = (url) => (url || '').replace(/\/api\/?$/, '') + '/api'
 const stripApi = (url) => (url || '').replace(/\/api\/?$/, '')
+
+export const API_BASE_URL = ensureApi(isLocalhost ? LOCAL_API : RENDER_API)
+export const API_FALLBACK_BASE_URL = isLocalhost ? ensureApi(RENDER_API) : null
+
 export const SOCKET_BASE_URL = stripApi(isLocalhost ? LOCAL_API : RENDER_API)
 export const SOCKET_FALLBACK_BASE_URL = isLocalhost ? stripApi(RENDER_API) : null
 

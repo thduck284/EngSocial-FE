@@ -99,13 +99,13 @@ class ApiClient {
         API_FALLBACK_BASE_URL &&
         !useFallback
       ) {
-        console.warn('[API] Local BE không kết nối được, thử Vercel...')
+        console.warn('[API] Local BE không kết nối được, thử Render...')
         return this.request(endpoint, options, true)
       }
       if (isNetworkError) {
         const friendly = {
           message: useFallback
-            ? 'Cannot connect to server. Local and Vercel API both failed. Check network or try again.'
+            ? 'Cannot connect to server. Local and Render API both failed. Check network or try again.'
             : 'Cannot connect to server. Run EngSocial-BE locally (npm run dev on port 5000) or try again.',
           isNetworkError: true,
         }

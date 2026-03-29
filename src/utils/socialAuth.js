@@ -50,7 +50,7 @@ export function isFacebookSdkBlockedOnHttp() {
 export async function getFacebookAccessToken() {
   if (isFacebookSdkBlockedOnHttp()) {
     throw new Error(
-      'Facebook chỉ chạy trên HTTPS. Trên máy hãy dùng Google / email; thử Facebook trên bản deploy (Vercel).'
+      'Facebook chỉ chạy trên HTTPS. Trên máy hãy dùng Google / email; thử Facebook trên bản deploy (Render).'
     )
   }
   const appId = import.meta.env.VITE_FACEBOOK_APP_ID
