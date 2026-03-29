@@ -47,7 +47,10 @@ export function ReadingLessonResultPage() {
         const status = progressData?.status
         const savedScore = progressData?.score
         const savedMax = progressData?.maxScore
-        const savedAnswers = progressData?.answers || []
+        const attempts = Array.isArray(progressData?.attemptHistory) ? progressData.attemptHistory : []
+        const latestAttempt = attempts.length > 0 ? attempts[attempts.length - 1] : null
+
+        const savedAnswers = progressData?.answers || latestAttempt?.answers || []
         const progressPercent = progressData?.progress
 
         if (status === 'completed') {
@@ -60,8 +63,7 @@ export function ReadingLessonResultPage() {
           setScore(0)
           setAnswers([])
         }
-        const attempts = Array.isArray(progressData?.attemptHistory) ? progressData.attemptHistory : []
-        const latestAttempt = attempts.length > 0 ? attempts[attempts.length - 1] : null
+
         const xp = latestAttempt?.xpEarned ?? progressData?.xpEarnedThisAttempt ?? 0
         if (xp != null) setXpEarned(xp)
         setQuestions(

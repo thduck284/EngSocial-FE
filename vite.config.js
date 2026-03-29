@@ -22,6 +22,7 @@ export default defineConfig(({ mode }) => {
     resolve: {
       alias: {
         '@': srcDir,
+        '@data': path.resolve(srcDir, 'data'),
         '@vocabulary': path.resolve(srcDir, 'data/vocabulary'),
       },
     },

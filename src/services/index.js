@@ -38,6 +38,7 @@ export { lessonsService } from './lessons.service.js'
 
 // Vocabulary (recent visits — server)
 export { vocabularyService } from './vocabulary.service.js'
+export { wordScrambleService } from './wordScramble.service.js'
 
 // Upload
 export { uploadService } from './upload.service.js'

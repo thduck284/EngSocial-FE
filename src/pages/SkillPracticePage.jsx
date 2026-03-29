@@ -1,4 +1,4 @@
-import { Link, useParams, useNavigate } from 'react-router-dom'
+import { Link, useParams, useNavigate, useLocation } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { useAuth } from '../context/AuthContext'
 import { SKILLS, SKILL_TABS } from '../constants'
@@ -12,6 +12,7 @@ const noopSetGroupConversations = () => {}
 
 export function SkillPracticePage() {
   const { skill = 'reading' } = useParams()
+  const { pathname } = useLocation()
   const { t } = useTranslation()
   const navigate = useNavigate()
   const { user, isModerator, isAdmin } = useAuth()
@@ -65,8 +66,8 @@ export function SkillPracticePage() {
         <div className="col-span-2 flex flex-col items-center justify-center py-16 px-4 rounded-xl bg-card-dark border border-border-dark text-center">
           <span className="material-symbols-outlined text-5xl text-gray-500 mb-4">folder_off</span>
           <p className="text-gray-400 text-sm mb-4">{t('skills.emptyPractices')}</p>
-          {canAddPractice && (
-            <Link to={ROUTES.MANAGE_SKILLS} className="inline-flex items-center gap-2 px-4 py-2.5 bg-primary hover:bg-primary/90 text-background-dark font-bold rounded-xl text-sm transition-all">
+          {canAddPractice && user?.id != null && (
+            <Link to={ROUTES.MANAGE_SKILLS(user.id)} className="inline-flex items-center gap-2 px-4 py-2.5 bg-primary hover:bg-primary/90 text-background-dark font-bold rounded-xl text-sm transition-all">
               <span className="material-symbols-outlined text-lg">add_circle</span>
               {t('skills.addPractice')}
             </Link>
@@ -117,9 +118,9 @@ export function SkillPracticePage() {
                 <span className="text-[10px] font-bold">{t('skills.ratingLabel')}: {card.rating}</span>
               </div>
               <div className="flex items-center gap-2">
-                {canAddPractice && card.id && (
+                {canAddPractice && user?.id != null && card.id && (
                   <>
-                    <Link to={`/manage/skills/${card.id}`} className="p-2 rounded-lg text-gray-400 hover:bg-white/10 hover:text-primary transition-colors" title={t('quests.edit')}>
+                    <Link to={`${ROUTES.MANAGE_SKILLS(user.id)}/${card.id}`} className="p-2 rounded-lg text-gray-400 hover:bg-white/10 hover:text-primary transition-colors" title={t('quests.edit')}>
                       <span className="material-symbols-outlined text-sm">edit</span>
                     </Link>
                     <button type="button" onClick={() => handleDeletePractice(card)} disabled={deletingId === card.id} className="p-2 rounded-lg text-gray-400 hover:bg-red-500/10 hover:text-red-400 transition-colors disabled:opacity-50" title={t('quests.delete')}>
@@ -195,9 +196,9 @@ export function SkillPracticePage() {
                 <span className="text-[10px] font-bold">{t('skills.ratingLabel')}: {card.rating}</span>
               </div>
               <div className="flex items-center gap-2">
-                {canAddPractice && card.id && (
+                {canAddPractice && user?.id != null && card.id && (
                   <>
-                    <Link to={`/manage/skills/${card.id}`} className="p-2 rounded-lg text-gray-400 hover:bg-white/10 hover:text-primary transition-colors" title={t('quests.edit')}>
+                    <Link to={`${ROUTES.MANAGE_SKILLS(user.id)}/${card.id}`} className="p-2 rounded-lg text-gray-400 hover:bg-white/10 hover:text-primary transition-colors" title={t('quests.edit')}>
                       <span className="material-symbols-outlined text-sm">edit</span>
                     </Link>
                     <button type="button" onClick={() => handleDeletePractice(card)} disabled={deletingId === card.id} className="p-2 rounded-lg text-gray-400 hover:bg-red-500/10 hover:text-red-400 transition-colors disabled:opacity-50" title={t('quests.delete')}>
@@ -273,9 +274,9 @@ export function SkillPracticePage() {
                 <span className="text-[10px] font-bold">{t('skills.ratingLabel')}: {card.rating}</span>
               </div>
               <div className="flex items-center gap-2">
-                {canAddPractice && card.id && (
+                {canAddPractice && user?.id != null && card.id && (
                   <>
-                    <Link to={`/manage/skills/${card.id}`} className="p-2 rounded-lg text-gray-400 hover:bg-white/10 hover:text-primary transition-colors" title={t('quests.edit')}>
+                    <Link to={`${ROUTES.MANAGE_SKILLS(user.id)}/${card.id}`} className="p-2 rounded-lg text-gray-400 hover:bg-white/10 hover:text-primary transition-colors" title={t('quests.edit')}>
                       <span className="material-symbols-outlined text-sm">edit</span>
                     </Link>
                     <button type="button" onClick={() => handleDeletePractice(card)} disabled={deletingId === card.id} className="p-2 rounded-lg text-gray-400 hover:bg-red-500/10 hover:text-red-400 transition-colors disabled:opacity-50" title={t('quests.delete')}>
@@ -310,9 +311,9 @@ export function SkillPracticePage() {
             <span className="material-symbols-outlined text-xl">history</span>
             {t('lessons.viewHistory')}
           </Link>
-          {canAddPractice && (
+          {canAddPractice && user?.id != null && (
             <Link
-              to={ROUTES.MANAGE_SKILLS}
+              to={ROUTES.MANAGE_SKILLS(user.id)}
               className="flex items-center justify-center gap-2 w-full py-3 bg-primary hover:bg-primary/90 text-background-dark font-semibold rounded-xl text-sm transition-all shadow-lg shadow-primary/25 border border-primary/30"
             >
               <span className="material-symbols-outlined text-xl">add_circle</span>
@@ -321,12 +322,12 @@ export function SkillPracticePage() {
           )}
           <div className="bg-card-dark rounded-xl border border-border-dark overflow-hidden">
             <div className="grid grid-cols-2 gap-1 p-1.5">
-              {SKILL_TABS.map(({ to, key, icon, label }) => (
+              {SKILL_TABS.map(({ to, icon, label }) => (
                 <Link
                   key={to}
                   to={to}
                   className={`py-2.5 px-2 rounded-lg text-xs font-medium flex items-center justify-center gap-1.5 transition-all min-w-0 ${
-                    key && key === skill
+                    pathname === to || (to === ROUTES.SKILLS.ENTERTAINMENT && pathname.startsWith(`${ROUTES.SKILLS.ENTERTAINMENT}/`))
                       ? 'bg-primary/20 text-primary border border-primary/40 font-semibold'
                       : 'hover:bg-white/5 text-gray-400 hover:text-white border border-transparent'
                   }`}

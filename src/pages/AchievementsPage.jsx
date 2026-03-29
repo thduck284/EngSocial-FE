@@ -6,7 +6,8 @@ import { AchievementDetails } from '../components/achievements/AchievementDetail
 import { AchievementFormModal } from '../components/achievements/AchievementFormModal'
 import { useAchievementsCatalog } from '../hooks/useAchievementsCatalog'
 
-export function AchievementsPage() {
+/** @param {{ embedded?: boolean }} props — embedded: trong khu /mod/:userId (không có AppHeader) */
+export function AchievementsPage({ embedded = false }) {
   const { t } = useTranslation()
   const { isModerator, isAdmin } = useAuth()
   const canManage = isModerator || isAdmin
@@ -43,7 +44,13 @@ export function AchievementsPage() {
   } = useAchievementsCatalog()
 
   return (
-    <main className="max-w-[1400px] mx-auto px-4 lg:px-10 py-4 h-[calc(100vh-80px)] overflow-hidden flex flex-col">
+    <main
+      className={
+        embedded
+          ? 'max-w-[1400px] mx-auto px-4 lg:px-10 py-4 min-h-[min(920px,calc(100dvh-7rem))] flex flex-col overflow-hidden'
+          : 'max-w-[1400px] mx-auto px-4 lg:px-10 py-4 h-[calc(100vh-80px)] overflow-hidden flex flex-col'
+      }
+    >
       <div className="mb-3 shrink-0 rounded-2xl border border-primary/25 bg-gradient-to-r from-indigo-500/20 via-sky-500/10 to-emerald-400/10 px-5 py-4 lg:px-7 lg:py-5 shadow-[0_18px_60px_rgba(15,23,42,0.65)]">
         <div className="flex items-start gap-4">
           <div className="hidden sm:flex size-11 rounded-2xl bg-black/40 border border-white/10 items-center justify-center shadow-lg">

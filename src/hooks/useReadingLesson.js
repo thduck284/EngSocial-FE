@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { lessonsService } from '../services'
 
@@ -30,6 +30,8 @@ export function useReadingLesson(id, t) {
   const [showVocabTable, setShowVocabTable] = useState(false)
   const [passageLang, setPassageLang] = useState('en')
   const [highlightOn, setHighlightOn] = useState(false)
+  /** Mốc mở bài (giây) để gửi timeSpent khi nộp — backend cộng vào UserSkillStats (đổi sang phút) */
+  const lessonOpenedAtMs = useRef(null)
 
   useEffect(() => {
     if (!id) return
@@ -38,6 +40,7 @@ export function useReadingLesson(id, t) {
       .getReadingContent(id)
       .then((res) => {
         const data = res?.data || null
+        lessonOpenedAtMs.current = Date.now()
         setContent(data)
         const est = data?.content?.estimatedTime || 15
         setCountdownSeconds(est * 60)
@@ -126,8 +129,12 @@ export function useReadingLesson(id, t) {
       questionIndex: i,
       answer: answers[i],
     }))
+    const elapsedSec =
+      lessonOpenedAtMs.current != null
+        ? Math.max(0, Math.floor((Date.now() - lessonOpenedAtMs.current) / 1000))
+        : 0
     lessonsService
-      .submit(id, { answers: answersPayload, timeSpent: 0 })
+      .submit(id, { answers: answersPayload, timeSpent: elapsedSec })
       .then((res) => {
         const xp = res?.data?.xpEarnedThisAttempt ?? 0
         setCompleteMessage(

@@ -9,7 +9,7 @@ import { useLessonsList } from '../hooks/useLessons'
 
 export function LessonsPage() {
   const { t } = useTranslation()
-  const { isModerator, isAdmin } = useAuth()
+  const { isModerator, isAdmin, user } = useAuth()
   const canAddLesson = isModerator || isAdmin
 
   const {
@@ -55,9 +55,9 @@ export function LessonsPage() {
               >
                 <span className="material-symbols-outlined text-lg">history</span>
               </Link>
-              {canAddLesson && (
+              {canAddLesson && user?.id != null && (
                 <Link
-                  to={ROUTES.MANAGE_LESSONS}
+                  to={ROUTES.MANAGE_LESSONS(user.id)}
                   className="p-2 rounded-lg bg-primary/10 text-primary hover:bg-primary hover:text-background-dark transition-all"
                   title={t('lessons.addLesson')}
                 >
@@ -166,9 +166,9 @@ export function LessonsPage() {
               <span className="material-symbols-outlined text-lg">history</span>
               {t('lessons.viewHistory')}
             </Link>
-            {canAddLesson && (
+            {canAddLesson && user?.id != null && (
               <Link
-                to={ROUTES.MANAGE_LESSONS}
+                to={ROUTES.MANAGE_LESSONS(user.id)}
                 className="inline-flex items-center gap-2 px-4 py-2.5 bg-primary hover:bg-primary/90 text-background-dark font-bold rounded-xl text-sm transition-all shadow-lg shadow-primary/20"
               >
                 <span className="material-symbols-outlined text-lg">add_circle</span>
@@ -295,9 +295,9 @@ export function LessonsPage() {
                     </div>
                   </div>
                 </Link>
-                {canAddLesson && (
+                {canAddLesson && user?.id != null && (
                   <div className="flex items-center gap-1 shrink-0">
-                    <Link to={`/manage/lessons/${lesson.id}`} className="p-2 rounded-lg text-gray-400 hover:bg-white/10 hover:text-primary transition-colors" title={t('quests.edit')}>
+                    <Link to={`${ROUTES.MANAGE_LESSONS(user.id)}/${lesson.id}`} className="p-2 rounded-lg text-gray-400 hover:bg-white/10 hover:text-primary transition-colors" title={t('quests.edit')}>
                       <span className="material-symbols-outlined text-sm">edit</span>
                     </Link>
                     <button type="button" onClick={() => onDeleteLesson(lesson)} disabled={deletingId === lesson.id} className="p-2 rounded-lg text-gray-400 hover:bg-red-500/10 hover:text-red-400 transition-colors disabled:opacity-50" title={t('quests.delete')}>

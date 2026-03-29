@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { Link, useParams, useNavigate } from 'react-router-dom'
 import { lessonsService } from '../services'
 
@@ -13,11 +13,15 @@ export function WritingLessonPage() {
   const [noteContent, setNoteContent] = useState('')
   const [submitting, setSubmitting] = useState(false)
   const [submitMessage, setSubmitMessage] = useState('')
+  const lessonOpenedAtMs = useRef(null)
 
   useEffect(() => {
     lessonsService
       .getWritingContent(id)
-      .then((res) => setContent(res?.data || null))
+      .then((res) => {
+        lessonOpenedAtMs.current = Date.now()
+        setContent(res?.data || null)
+      })
       .catch(() => setContent(null))
       .finally(() => setLoading(false))
   }, [id])
@@ -31,8 +35,12 @@ export function WritingLessonPage() {
     if (!id || !inRange || !userText.trim()) return
     setSubmitting(true)
     setSubmitMessage('')
+    const elapsedSec =
+      lessonOpenedAtMs.current != null
+        ? Math.max(0, Math.floor((Date.now() - lessonOpenedAtMs.current) / 1000))
+        : 0
     lessonsService
-      .submitWriting(id, { content: userText, wordCount })
+      .submitWriting(id, { content: userText, wordCount, timeSpent: elapsedSec })
       .then(() => {
         setSubmitMessage('Nop bai thanh cong')
         setTimeout(() => navigate('/lesson/history'), 1200)

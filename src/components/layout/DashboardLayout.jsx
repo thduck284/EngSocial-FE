@@ -8,10 +8,13 @@ import { ChatbotButton } from '../ui/chatbot/ChatbotButton'
 const isLessonDoingPage = (pathname) =>
   /^\/(lesson|practice)\/(reading|listening|writing)\/[^/]+$/.test(pathname)
 
+const isWordScrambleFullScreen = (pathname) => pathname === ROUTES.SKILLS.ENTERTAINMENT_WORD_SCRAMBLE
+
 export function DashboardLayout() {
   const location = useLocation()
   const { isAuthenticated } = useAuth()
-  const hideChatbot = isLessonDoingPage(location.pathname)
+  const fullScreenGame = isWordScrambleFullScreen(location.pathname)
+  const hideChatbot = isLessonDoingPage(location.pathname) || fullScreenGame
 
   if (!isAuthenticated) {
     return <Navigate to={ROUTES.LOGIN} state={{ from: location }} replace />
@@ -20,7 +23,13 @@ export function DashboardLayout() {
   return (
     <div className="bg-background-dark text-white h-screen flex flex-col w-full min-w-0 overflow-hidden">
       <AppHeader />
-      <div className="flex-1 min-h-0 overflow-y-auto overflow-x-clip">
+      <div
+        className={
+          fullScreenGame
+            ? 'flex-1 min-h-0 overflow-hidden flex flex-col'
+            : 'flex-1 min-h-0 overflow-y-auto overflow-x-clip'
+        }
+      >
         <Outlet />
       </div>
       {!hideChatbot && <ChatbotButton />}

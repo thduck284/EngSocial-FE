@@ -1,6 +1,6 @@
 const isLocalhost = typeof window !== 'undefined' && window.location.hostname === 'localhost'
-const LOCAL_API = 'http://localhost:5000/api'
-const RENDER_API = 'https://engsocial-be.onrender.com/api'
+const LOCAL_API = import.meta.env.VITE_API_LOCAL_URL
+const RENDER_API = import.meta.env.VITE_API_RENDER_URL
 export const API_BASE_URL = isLocalhost
   ? (import.meta.env.VITE_API_BASE_URL || LOCAL_API)
   : (import.meta.env.VITE_API_BASE_URL || RENDER_API)
@@ -15,7 +15,7 @@ export const SOCKET_FALLBACK_BASE_URL = isLocalhost ? stripApi(RENDER_API) : nul
 export const SOCKET_ENABLED = typeof window !== 'undefined'
 
 // Admin app URL: dùng cho nút "Thêm bài học" / "Thêm bài tập" (moderator/admin)
-export const ADMIN_APP_URL = import.meta.env.VITE_ADMIN_APP_URL || 'http://localhost:4000'
+export const ADMIN_APP_URL = import.meta.env.VITE_ADMIN_APP_URL
 
 // API Endpoints
 export const API_ENDPOINTS = {
@@ -101,6 +101,15 @@ export const API_ENDPOINTS = {
   VOCABULARY: {
     RECENT: '/vocabulary/recent',
     RECORD_RECENT: '/vocabulary/recent',
+  },
+
+  /** Word Scramble — từ vựng game (next công khai; CRUD moderator/admin) */
+  WORD_SCRAMBLE: {
+    NEXT: '/word-scramble/next',
+    WORDS: '/word-scramble/words',
+    WORDS_ALL: '/word-scramble/words/all',
+    WORDS_IMPORT_TSV: '/word-scramble/words/import-tsv',
+    WORD: (id) => `/word-scramble/words/${id}`,
   },
 
   // Quests
@@ -251,8 +260,13 @@ export const ROUTES = {
     READING: '/skills/reading',
     LISTENING: '/skills/listening',
     WRITING: '/skills/writing',
+    /** Giải trí — danh sách game */
+    ENTERTAINMENT: '/skills/entertainment',
+    /** Xáo chữ từ vựng */
+    ENTERTAINMENT_WORD_SCRAMBLE: '/skills/entertainment/word-scramble',
   },
-  ENTER: '/enter',
+  /** @deprecated Dùng ROUTES.SKILLS.ENTERTAINMENT */
+  ENTER: '/skills/entertainment',
   LESSONS: '/lessons',
   LESSON: '/lesson',
   LESSON_HISTORY: '/lesson/history',
@@ -278,10 +292,27 @@ export const ROUTES = {
   MESSAGES_CONVERSATION: (id) => `/messages/conversation/${id}`,
   FRIENDS: '/friends',
   NOTIFICATIONS: '/notifications',
-  MANAGE_LESSONS: '/manage/lessons',
-  MANAGE_SKILLS: '/manage/skills',
-  MANAGE_QUESTS: '/manage/quests',
-  MANAGE_CHALLENGES: '/manage/challenges',
+  /**
+   * Khu mod/staff: /mod/:userId/... (userId = tài khoản đang đăng nhập).
+   * URL cũ /manage/* redirect về /mod/:id/* trong App.
+   */
+  MANAGE_ROOT: (userId) => `/mod/${encodeURIComponent(String(userId))}`,
+  /** Trang tổng quan khu mod (dashboard thẻ chức năng) */
+  MANAGE_OVERVIEW: (userId) => `/mod/${encodeURIComponent(String(userId))}/over-view`,
+  MANAGE_LESSONS: (userId) => `/mod/${encodeURIComponent(String(userId))}/lessons`,
+  MANAGE_SKILLS: (userId) => `/mod/${encodeURIComponent(String(userId))}/skills`,
+  MANAGE_QUESTS: (userId) => `/mod/${encodeURIComponent(String(userId))}/quests`,
+  MANAGE_CHALLENGES: (userId) => `/mod/${encodeURIComponent(String(userId))}/challenges`,
+  MANAGE_WORD_SCRAMBLE: (userId) => `/mod/${encodeURIComponent(String(userId))}/word-scramble`,
+  MANAGE_ENTERTAINMENT: (userId) => `/mod/${encodeURIComponent(String(userId))}/entertainment`,
+  MANAGE_ACHIEVEMENTS: (userId) => `/mod/${encodeURIComponent(String(userId))}/achievements`,
+}
+
+/** Phần path sau /mod/:userId (vd. `/lessons`); null nếu không phải route mod */
+export function modPathTail(pathname) {
+  if (!pathname || !pathname.startsWith('/mod/')) return null
+  const tail = pathname.replace(/^\/mod\/[^/]+/, '')
+  return tail || '/'
 }
 
 // Navigation items (for AppHeader)

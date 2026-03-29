@@ -28,12 +28,17 @@ const LEVEL_KEYS = { A1: 'levelA1', A2: 'levelA2', B1: 'levelB1', B2: 'levelB2',
 
 export function ManageLessonsPage() {
   const { t } = useTranslation()
-  const { id } = useParams()
+  const params = useParams()
+  const rawId = params.id
+  const { userId } = params
   const location = useLocation()
   const navigate = useNavigate()
-  const isEdit = !!id
-  const isPractice = location.pathname.includes('/manage/skills')
+  const isPractice = /\/mod\/[^/]+\/skills(\/|$)/.test(location.pathname)
+  const isNewPath = /\/mod\/[^/]+\/(lessons|skills)\/new\/?$/.test(location.pathname)
+  const id = isNewPath ? undefined : rawId
+  const isEdit = Boolean(id)
   const category = isPractice ? 'practice' : 'lesson'
+  const manageListLink = isPractice ? ROUTES.MANAGE_SKILLS(userId) : ROUTES.MANAGE_LESSONS(userId)
 
   const [form, setForm] = useState(() => defaultForm(category))
   const [error, setError] = useState('')
@@ -307,18 +312,19 @@ export function ManageLessonsPage() {
         await lessonsService.update(id, payload)
         if (isPractice) {
           setSuccessMessage(t('manageLessons.practiceUpdated'))
-          setTimeout(() => navigate(ROUTES.SKILLS.READING), 1500)
+          setTimeout(() => navigate(manageListLink), 1500)
         } else {
           setSuccessMessage(t('manageLessons.lessonUpdated'))
-          setTimeout(() => navigate(ROUTES.LESSONS), 1500)
+          setTimeout(() => navigate(manageListLink), 1500)
         }
       } else {
         await lessonsService.create(payload)
         if (isPractice) {
           setSuccessMessage(t('manageLessons.practiceAdded'))
-          setTimeout(() => navigate(ROUTES.SKILLS.READING), 1500)
+          setTimeout(() => navigate(manageListLink), 1500)
         } else {
-          navigate(ROUTES.LESSONS)
+          setSuccessMessage(t('manageLessons.lessonAdded'))
+          setTimeout(() => navigate(manageListLink), 1500)
         }
       }
     } catch (e) {
@@ -328,7 +334,7 @@ export function ManageLessonsPage() {
     }
   }
 
-  const backLink = isPractice ? ROUTES.SKILLS.READING : ROUTES.LESSONS
+  const backLink = manageListLink
   const pageTitle = isEdit
     ? (isPractice ? t('manageLessons.editPractice') : t('manageLessons.editLesson'))
     : (isPractice ? t('manageLessons.pageTitleAddPractice') : t('manageLessons.pageTitleAddLesson'))
@@ -360,7 +366,9 @@ export function ManageLessonsPage() {
           <nav className="flex items-center gap-2 text-sm text-gray-400 mb-2">
             <Link to={backLink} className="hover:text-primary transition-colors">{t('manageLessons.back')}</Link>
             <span className="material-symbols-outlined text-xs">chevron_right</span>
-            <span className="text-gray-400">{isPractice ? t('manageLessons.skillsLabel') : t('manageLessons.lessonsLabel')}</span>
+            <Link to={manageListLink} className="text-gray-400 hover:text-primary transition-colors">
+              {isPractice ? t('manageLessons.skillsLabel') : t('manageLessons.lessonsLabel')}
+            </Link>
           </nav>
           <h1 className="text-2xl md:text-3xl font-bold text-white">{pageTitle}</h1>
         </div>

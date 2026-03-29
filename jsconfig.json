@@ -3,6 +3,8 @@
     "baseUrl": ".",
     "paths": {
       "@/*": ["src/*"],
+      "@data": ["src/data"],
+      "@data/*": ["src/data/*"],
       "@vocabulary": ["src/data/vocabulary/index.js"],
       "@vocabulary/*": ["src/data/vocabulary/*"]
     }

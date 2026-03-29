@@ -13,8 +13,9 @@ function toDateInput(date) {
 export function ManageChallengesPage() {
   const { t } = useTranslation()
   const navigate = useNavigate()
-  const { id } = useParams()
-  const isEdit = !!id
+  const { id, userId } = useParams()
+  const isEdit = Boolean(id)
+  const listPath = userId != null && userId !== '' ? ROUTES.MANAGE_CHALLENGES(userId) : ROUTES.QUESTS
   const [loading, setLoading] = useState(false)
   const [loadingChallenge, setLoadingChallenge] = useState(isEdit)
   const [error, setError] = useState(null)
@@ -80,8 +81,10 @@ export function ManageChallengesPage() {
       }
       if (isEdit) {
         await challengesService.update(id, body)
+      } else {
+        await challengesService.create(body)
       }
-      navigate(ROUTES.QUESTS)
+      navigate(listPath)
     } catch (e) {
       setError(e?.message || t('common.saveFailed'))
     } finally {
@@ -91,40 +94,33 @@ export function ManageChallengesPage() {
 
   if (loadingChallenge) {
     return (
-      <div className="max-w-2xl mx-auto px-4 md:px-6 py-8 flex justify-center items-center min-h-[200px]">
+      <div className="max-w-6xl mx-auto px-4 md:px-6 py-8 flex justify-center items-center min-h-[200px]">
         <span className="material-symbols-outlined animate-spin text-4xl text-primary">progress_activity</span>
       </div>
     )
   }
 
-  if (!isEdit) {
-    return (
-      <div className="max-w-2xl mx-auto px-4 md:px-6 py-8">
-        <p className="text-gray-400 mb-4">Select a challenge to edit from the Quests page.</p>
-        <Link to={ROUTES.QUESTS} className="text-primary hover:underline">{t('manageQuests.back')}</Link>
-      </div>
-    )
-  }
-
   return (
-    <div className="max-w-2xl mx-auto px-4 md:px-6 py-8">
+    <div className="max-w-6xl mx-auto px-4 md:px-6 py-6 md:py-8">
       {error && (
         <div className="mb-6 py-3 px-4 rounded-xl bg-red-500/10 border border-red-500/30 text-red-400 text-sm flex items-center gap-2">
           <span className="material-symbols-outlined">error</span>
           {error}
         </div>
       )}
-      <div className="flex flex-col md:flex-row md:items-center justify-between mb-8 gap-4">
+      <div className="flex flex-col md:flex-row md:items-center justify-between mb-6 gap-4">
         <div>
           <nav className="flex items-center gap-2 text-sm text-gray-400 mb-2">
-            <Link to={ROUTES.QUESTS} className="hover:text-primary transition-colors">{t('manageQuests.back')}</Link>
+            <Link to={listPath} className="hover:text-primary transition-colors">{t('manageQuests.back')}</Link>
             <span className="material-symbols-outlined text-xs">chevron_right</span>
-            <span className="text-gray-400">Challenges</span>
+            <span className="text-gray-400">{t('manageChallenges.listTitle')}</span>
           </nav>
-          <h1 className="text-2xl md:text-3xl font-bold text-white">{t('quests.edit')} challenge</h1>
+          <h1 className="text-xl md:text-2xl font-bold text-white">
+            {isEdit ? t('manageChallenges.editChallenge') : t('manageChallenges.addChallenge')}
+          </h1>
         </div>
-        <button type="button" onClick={save} disabled={loading || loadingChallenge} className="px-6 py-2.5 rounded-xl bg-primary text-background-dark font-bold hover:opacity-90 disabled:opacity-50 transition-all">
-          {loading ? t('manageQuests.saving') : isEdit ? t('manageQuests.update') : 'Save'}
+        <button type="button" onClick={save} disabled={loading || loadingChallenge} className="px-4 py-2 rounded-lg bg-primary text-background-dark text-sm font-bold hover:opacity-90 disabled:opacity-50 transition-all">
+          {loading ? t('manageQuests.saving') : isEdit ? t('manageQuests.update') : t('manageChallenges.saveNew')}
         </button>
       </div>
 
@@ -222,6 +218,15 @@ export function ManageChallengesPage() {
             </div>
           </div>
         </div>
+      </div>
+
+      <div className="mt-8 flex justify-between pt-6 border-t border-border-dark">
+        <Link to={listPath} className="px-4 py-2 rounded-lg border border-border-dark text-sm font-medium hover:bg-white/5 text-gray-400 transition-all">
+          {t('manageQuests.cancel')}
+        </Link>
+        <button type="button" onClick={save} disabled={loading} className="px-6 py-2 rounded-lg bg-primary text-background-dark text-sm font-bold hover:opacity-90 disabled:opacity-50 transition-all">
+          {loading ? t('manageQuests.saving') : isEdit ? t('manageQuests.update') : t('manageChallenges.saveNew')}
+        </button>
       </div>
     </div>
   )

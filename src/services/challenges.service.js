@@ -19,6 +19,7 @@ export const challengesService = {
     return apiClient.get(API_ENDPOINTS.CHALLENGES.LEADERBOARD(id))
   },
   getById: (id) => apiClient.get(API_ENDPOINTS.CHALLENGES.DETAIL(id)),
+  create: (body) => apiClient.post(API_ENDPOINTS.CHALLENGES.LIST, body),
   update: (id, body) => apiClient.put(API_ENDPOINTS.CHALLENGES.DETAIL(id), body),
   delete: (id) => apiClient.delete(API_ENDPOINTS.CHALLENGES.DETAIL(id)),
 }

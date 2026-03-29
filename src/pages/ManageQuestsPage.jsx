@@ -5,19 +5,20 @@ import { ROUTES } from '../constants'
 
 export function ManageQuestsPage() {
   const { t } = useTranslation()
-  const { id } = useParams()
+  const { id, userId } = useParams()
+  const listPath = userId != null && userId !== '' ? ROUTES.MANAGE_QUESTS(userId) : ROUTES.QUESTS
   const { form, setForm, error, loading, loadingQuest, isEdit, save } = useManageQuestForm(id, t)
 
   if (loadingQuest) {
     return (
-      <div className="max-w-2xl mx-auto px-4 md:px-6 py-8 flex justify-center items-center min-h-[200px]">
+      <div className="max-w-6xl mx-auto px-4 md:px-6 py-8 flex justify-center items-center min-h-[200px]">
         <span className="material-symbols-outlined animate-spin text-4xl text-primary">progress_activity</span>
       </div>
     )
   }
 
   return (
-    <div className="max-w-2xl mx-auto px-4 md:px-6 py-8">
+    <div className="max-w-6xl mx-auto px-4 md:px-6 py-6 md:py-8">
       {error && (
         <div className="mb-6 py-3 px-4 rounded-xl bg-red-500/10 border border-red-500/30 text-red-400 text-sm flex items-center gap-2">
           <span className="material-symbols-outlined">error</span>
@@ -186,10 +187,10 @@ export function ManageQuestsPage() {
       </div>
 
       <div className="mt-8 flex justify-between pt-6 border-t border-border-dark">
-        <Link to={ROUTES.QUESTS} className="px-6 py-3 rounded-xl border border-border-dark font-medium hover:bg-white/5 text-gray-400 transition-all">
+        <Link to={listPath} className="px-4 py-2 rounded-lg border border-border-dark text-sm font-medium hover:bg-white/5 text-gray-400 transition-all">
           {t('manageQuests.cancel')}
         </Link>
-        <button type="button" onClick={save} disabled={loading} className="px-8 py-3 rounded-xl bg-primary text-background-dark font-bold hover:opacity-90 disabled:opacity-50 transition-all">
+        <button type="button" onClick={save} disabled={loading} className="px-6 py-2 rounded-lg bg-primary text-background-dark text-sm font-bold hover:opacity-90 disabled:opacity-50 transition-all">
           {t('manageQuests.saveQuestBtn')}
         </button>
       </div>

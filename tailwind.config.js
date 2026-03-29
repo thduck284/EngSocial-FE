@@ -25,6 +25,16 @@ export default {
       boxShadow: {
         glow: '0 0 15px rgba(19, 182, 236, 0.2)',
       },
+      keyframes: {
+        'ws-correct-pop': {
+          '0%': { transform: 'scale(1)', filter: 'brightness(1)' },
+          '40%': { transform: 'scale(1.04)', filter: 'brightness(1.15)' },
+          '100%': { transform: 'scale(1)', filter: 'brightness(1)' },
+        },
+      },
+      animation: {
+        'ws-correct-pop': 'ws-correct-pop 0.55s cubic-bezier(0.34, 1.56, 0.64, 1)',
+      },
     },
   },
   plugins: [],

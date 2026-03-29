@@ -7,15 +7,15 @@ export const SKILLS = {
   writing: { icon: 'edit_note', label: 'skills.writing', color: 'text-emerald-400' },
 }
 
-/** Tab điều hướng (SkillPracticePage, EnterPage) */
+/** Tab điều hướng (SkillPracticePage, EntertainmentLayout) */
 export const SKILL_TABS = [
   { to: ROUTES.SKILLS.READING, key: 'reading', icon: 'menu_book', label: 'skills.reading' },
   { to: ROUTES.SKILLS.LISTENING, key: 'listening', icon: 'headset', label: 'skills.listening' },
   { to: ROUTES.SKILLS.WRITING, key: 'writing', icon: 'edit_note', label: 'skills.writing' },
-  { to: ROUTES.ENTER, key: 'enter', icon: 'sports_esports', label: 'skills.entertainment' },
+  { to: ROUTES.SKILLS.ENTERTAINMENT, key: 'entertainment', icon: 'sports_esports', label: 'skills.entertainment' },
 ]
 
-/** Cấu hình sidebar thống kê kỹ năng (EnterPage) */
+/** Cấu hình sidebar thống kê kỹ năng (EntertainmentLayout) */
 export const SKILL_STATS_CONFIG = [
   { icon: 'menu_book', label: 'skills.reading', color: 'text-blue-400', key: 'reading' },
   { icon: 'headset', label: 'skills.listening', color: 'text-orange-400', key: 'listening' },

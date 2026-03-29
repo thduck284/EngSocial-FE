@@ -9,6 +9,7 @@ import { NAV_ITEMS, ROUTES } from '../../constants'
 import { SOCKET_ENABLED, SOCKET_BASE_URL, SOCKET_FALLBACK_BASE_URL } from '../../constants/api'
 import { getAuthToken } from '../../utils/auth'
 import { notificationsService, conversationService } from '../../services'
+import { LogoutConfirmModal } from './LogoutConfirmModal'
 
 const LogoIcon = () => (
   <div className="size-8">
@@ -26,10 +27,12 @@ export function AppHeader() {
   const navigate = useNavigate()
   const [searchParams] = useSearchParams()
   const { t } = useTranslation()
-  const { user, logout } = useAuth()
+  const { user, logout, isModerator, isAdmin } = useAuth()
+  const staffWorkTo = (isAdmin || isModerator) && user?.id != null ? ROUTES.MANAGE_OVERVIEW(user.id) : null
   const avatarUrl = user?.avatar || 'https://ui-avatars.com/api/?name=' + encodeURIComponent(user?.name || 'User') + '&background=13b6ec&color=fff'
   const [notifOpen, setNotifOpen] = useState(false)
   const [avatarOpen, setAvatarOpen] = useState(false)
+  const [logoutConfirmOpen, setLogoutConfirmOpen] = useState(false)
   const [unreadCount, setUnreadCount] = useState(0)
   const [messagesUnreadCount, setMessagesUnreadCount] = useState(0)
   const [searchValue, setSearchValue] = useState(() => (location.pathname === ROUTES.SEARCH ? searchParams.get('q') || '' : ''))
@@ -122,12 +125,18 @@ export function AppHeader() {
     return () => document.removeEventListener('click', handleClickOutside)
   }, [avatarOpen])
 
-  const handleLogout = () => {
+  const openLogoutConfirm = () => {
     setAvatarOpen(false)
+    setLogoutConfirmOpen(true)
+  }
+
+  const confirmLogout = () => {
+    setLogoutConfirmOpen(false)
     logout()
   }
 
   return (
+    <>
     <header className="sticky top-0 z-50 w-screen max-w-none ml-[calc(-50vw+50%)] bg-background-dark/80 backdrop-blur-md border-b border-border-dark px-4 md:px-10 py-3">
       <div className="max-w-[1440px] mx-auto flex items-center justify-between gap-4">
         <div className="flex items-center gap-6 flex-1 min-w-0">
@@ -159,9 +168,10 @@ export function AppHeader() {
                 className={`font-medium text-sm transition-colors whitespace-nowrap ${
                   location.pathname === to ||
                   (to === ROUTES.LESSON && (location.pathname === '/lesson' || location.pathname.startsWith('/lesson/') || location.pathname === '/lessons')) ||
-                  (to === ROUTES.PRACTICE && (location.pathname === '/practice' || location.pathname.startsWith('/practice/') || location.pathname.startsWith('/skills'))) ||
+                  (to === ROUTES.PRACTICE && (location.pathname === '/practice' || location.pathname.startsWith('/practice/') || location.pathname.startsWith('/skills') || location.pathname === '/enter')) ||
                   (to === ROUTES.WORDS_NOTES && (location.pathname.startsWith('/words-notes') || location.pathname.startsWith('/topic/'))) ||
-                  (to === ROUTES.QUESTS && (location.pathname === '/quests' || location.pathname.startsWith('/manage/quests'))) ||
+                  (to === ROUTES.QUESTS &&
+                    (location.pathname === '/quests' || /^\/mod\/[^/]+\/quests(\/|$)/.test(location.pathname))) ||
                   (to === ROUTES.COMMUNITY && (location.pathname === '/community' || location.pathname === '/community/'))
                     ? 'text-primary font-semibold border-b-2 border-primary pb-1'
                     : 'text-gray-400 hover:text-primary'
@@ -234,6 +244,16 @@ export function AppHeader() {
                   <span className="material-symbols-outlined text-lg">person</span>
                   {t('header.profile')}
                 </Link>
+                {staffWorkTo && (
+                  <Link
+                    to={staffWorkTo}
+                    onClick={() => setAvatarOpen(false)}
+                    className="flex items-center gap-2 px-4 py-2.5 text-sm text-gray-200 hover:bg-gray-700/50 hover:text-primary transition-colors"
+                  >
+                    <span className="material-symbols-outlined text-lg">dashboard</span>
+                    {t('header.yourWork')}
+                  </Link>
+                )}
                 <Link
                   to="/settings"
                   onClick={() => setAvatarOpen(false)}
@@ -245,7 +265,7 @@ export function AppHeader() {
                 <div className="my-1 border-t border-border-dark" />
                 <button
                   type="button"
-                  onClick={handleLogout}
+                  onClick={openLogoutConfirm}
                   className="flex items-center gap-2 w-full px-4 py-2.5 text-sm text-red-400 hover:bg-red-500/10 transition-colors text-left"
                 >
                   <span className="material-symbols-outlined text-lg">logout</span>
@@ -257,5 +277,11 @@ export function AppHeader() {
         </div>
       </div>
     </header>
+    <LogoutConfirmModal
+      open={logoutConfirmOpen}
+      onCancel={() => setLogoutConfirmOpen(false)}
+      onConfirm={confirmLogout}
+    />
+    </>
   )
 }

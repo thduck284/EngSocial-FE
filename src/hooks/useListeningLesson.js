@@ -12,6 +12,7 @@ import { formatTime } from '../utils/dateTime'
  */
 export function useListeningLesson(id, t) {
   const audioRef = useRef(null)
+  const lessonOpenedAtMs = useRef(null)
 
   const [content, setContent] = useState(null)
   const [loading, setLoading] = useState(true)
@@ -43,6 +44,7 @@ export function useListeningLesson(id, t) {
       .getListeningContent(id)
       .then((res) => {
         const data = res?.data || null
+        lessonOpenedAtMs.current = Date.now()
         setContent(data)
         if (data?.duration) setDuration(data.duration)
         if (data?.totalQuestions) setCurrentQuestion(0)
@@ -161,8 +163,12 @@ export function useListeningLesson(id, t) {
       questionIndex: i,
       answer: answers[i],
     }))
+    const elapsedSec =
+      lessonOpenedAtMs.current != null
+        ? Math.max(0, Math.floor((Date.now() - lessonOpenedAtMs.current) / 1000))
+        : currentTime || 0
     lessonsService
-      .submit(id, { answers: answersPayload, timeSpent: currentTime || 0 })
+      .submit(id, { answers: answersPayload, timeSpent: elapsedSec })
       .then((res) => {
         const xp = res?.data?.xpEarnedThisAttempt ?? 0
         setCompleteMessage(

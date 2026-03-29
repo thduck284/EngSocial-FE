@@ -65,8 +65,8 @@ function getChallengeJoinTo(challenge) {
 
 export function QuestsPage() {
   const { t } = useTranslation()
-  const { isModerator, isAdmin } = useAuth()
-  const canAddQuest = isModerator || isAdmin
+  const { isAdmin, user } = useAuth()
+  const canManageGamification = isAdmin
   const [tab, setTab] = useState(TAB_QUESTS)
   const [quests, setQuests] = useState([])
   const [challenges, setChallenges] = useState([])
@@ -175,18 +175,18 @@ export function QuestsPage() {
       <div className="flex flex-wrap items-center justify-between gap-3 mb-4">
         <div />
         <div className="flex items-center gap-3">
-          {canAddQuest && tab === TAB_QUESTS && (
+          {canManageGamification && tab === TAB_QUESTS && user?.id != null && (
             <Link
-              to={ROUTES.MANAGE_QUESTS}
+              to={`${ROUTES.MANAGE_QUESTS(user.id)}/new`}
               className="inline-flex items-center gap-2 px-4 py-2.5 bg-primary hover:bg-primary/90 text-background-dark font-bold rounded-xl text-sm transition-all shadow-lg shadow-primary/20"
             >
               <span className="material-symbols-outlined text-lg">add_circle</span>
               {t('quests.addQuestBtn')}
             </Link>
           )}
-          {canAddQuest && tab === TAB_CHALLENGES && (
+          {canManageGamification && tab === TAB_CHALLENGES && user?.id != null && (
             <Link
-              to={ROUTES.MANAGE_CHALLENGES}
+              to={`${ROUTES.MANAGE_CHALLENGES(user.id)}/new`}
               className="inline-flex items-center gap-2 px-4 py-2.5 bg-primary hover:bg-primary/90 text-background-dark font-bold rounded-xl text-sm transition-all shadow-lg shadow-primary/20"
             >
               <span className="material-symbols-outlined text-lg">add_circle</span>
@@ -275,9 +275,9 @@ export function QuestsPage() {
                         <span>{formatTarget(quest, t)}</span>
                       </div>
                       <div className="flex items-center gap-1 ml-auto">
-                        {canAddQuest && (
+                        {canManageGamification && user?.id != null && (
                           <>
-                            <Link to={`/manage/quests/${quest.id}`} className="p-2 rounded-lg text-gray-400 hover:bg-white/10 hover:text-primary transition-colors" title={t('quests.edit')}>
+                            <Link to={`${ROUTES.MANAGE_QUESTS(user.id)}/${quest.id}`} className="p-2 rounded-lg text-gray-400 hover:bg-white/10 hover:text-primary transition-colors" title={t('quests.edit')}>
                               <span className="material-symbols-outlined text-lg">edit</span>
                             </Link>
                             <button type="button" onClick={() => handleDelete(quest)} disabled={deletingId === quest.id} className="p-2 rounded-lg text-gray-400 hover:bg-red-500/10 hover:text-red-400 transition-colors disabled:opacity-50" title={t('quests.delete')}>
@@ -355,9 +355,9 @@ export function QuestsPage() {
                         {t('quests.participantsCount', { count: challenge.participantCount ?? 0 })}
                       </span>
                       <div className="flex items-center gap-1">
-                        {canAddQuest && (
+                        {canManageGamification && user?.id != null && (
                           <>
-                            <Link to={`${ROUTES.MANAGE_CHALLENGES}/${challenge.id}`} className="p-2 rounded-lg text-gray-400 hover:bg-white/10 hover:text-primary transition-colors" title={t('quests.edit')}>
+                            <Link to={`${ROUTES.MANAGE_CHALLENGES(user.id)}/${challenge.id}`} className="p-2 rounded-lg text-gray-400 hover:bg-white/10 hover:text-primary transition-colors" title={t('quests.edit')}>
                               <span className="material-symbols-outlined text-lg">edit</span>
                             </Link>
                             <button type="button" onClick={() => handleDeleteChallenge(challenge)} disabled={deletingChallengeId === challenge.id} className="p-2 rounded-lg text-gray-400 hover:bg-red-500/10 hover:text-red-400 transition-colors disabled:opacity-50" title={t('quests.delete')}>

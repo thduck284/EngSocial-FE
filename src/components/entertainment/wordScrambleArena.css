@@ -1,0 +1,601 @@
+/* Chỉ dùng trong Word Scramble — không ảnh hưởng theme dashboard */
+@import url('https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@500;600;700&family=Outfit:wght@400;500;600;700&display=swap');
+
+.ws-arena {
+  --ws-violet: #a78bfa;
+  --ws-cyan: #22d3ee;
+  --ws-pink: #f472b6;
+  --ws-deep: #070510;
+  font-family: 'Outfit', 'Lexend', system-ui, sans-serif;
+  color: #e2e8f0;
+}
+
+.ws-arena .ws-font-display {
+  font-family: 'Chakra Petch', 'Outfit', sans-serif;
+  letter-spacing: 0.04em;
+}
+
+.ws-arena__mesh {
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(ellipse 80% 50% at 20% 20%, rgba(139, 92, 246, 0.22), transparent 50%),
+    radial-gradient(ellipse 60% 40% at 85% 75%, rgba(34, 211, 238, 0.18), transparent 45%),
+    radial-gradient(ellipse 50% 60% at 50% 100%, rgba(244, 114, 182, 0.12), transparent 40%),
+    linear-gradient(168deg, #0a0618 0%, #0f172a 45%, #06030f 100%);
+  background-size: 100% 100%, 100% 100%, 100% 100%, 200% 200%;
+  animation: ws-mesh-shift 14s ease-in-out infinite;
+}
+
+@keyframes ws-mesh-shift {
+  0%,
+  100% {
+    background-position: 0% 0%, 0% 0%, 0% 0%, 0% 40%;
+  }
+  50% {
+    background-position: 0% 0%, 0% 0%, 0% 0%, 100% 60%;
+  }
+}
+
+.ws-arena__grid {
+  position: absolute;
+  inset: 0;
+  background-image:
+    linear-gradient(rgba(167, 139, 250, 0.06) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(34, 211, 238, 0.05) 1px, transparent 1px);
+  background-size: 48px 48px;
+  mask-image: radial-gradient(ellipse 85% 70% at 50% 45%, black 20%, transparent 75%);
+  animation: ws-grid-pan 20s linear infinite;
+  pointer-events: none;
+}
+
+@keyframes ws-grid-pan {
+  0% {
+    transform: perspective(400px) rotateX(2deg) translateY(0);
+  }
+  100% {
+    transform: perspective(400px) rotateX(2deg) translateY(48px);
+  }
+}
+
+.ws-arena__scan {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    transparent 0%,
+    rgba(34, 211, 238, 0.03) 48%,
+    rgba(167, 139, 250, 0.06) 50%,
+    transparent 52%
+  );
+  background-size: 100% 200%;
+  animation: ws-scan 7s linear infinite;
+  pointer-events: none;
+  opacity: 0.7;
+}
+
+@keyframes ws-scan {
+  0% {
+    background-position: 0 -100%;
+  }
+  100% {
+    background-position: 0 100%;
+  }
+}
+
+.ws-arena__orb {
+  position: absolute;
+  border-radius: 50%;
+  filter: blur(60px);
+  pointer-events: none;
+  animation: ws-orb-float 8s ease-in-out infinite;
+}
+
+.ws-arena__orb--a {
+  width: min(45vw, 320px);
+  height: min(45vw, 320px);
+  left: -10%;
+  top: 15%;
+  background: rgba(139, 92, 246, 0.35);
+  animation-delay: 0s;
+}
+
+.ws-arena__orb--b {
+  width: min(40vw, 280px);
+  height: min(40vw, 280px);
+  right: -8%;
+  bottom: 10%;
+  background: rgba(34, 211, 238, 0.28);
+  animation-delay: -3s;
+  animation-duration: 10s;
+}
+
+.ws-arena__orb--c {
+  width: min(30vw, 200px);
+  height: min(30vw, 200px);
+  left: 40%;
+  top: 60%;
+  background: rgba(244, 114, 182, 0.2);
+  animation-delay: -5s;
+  animation-duration: 9s;
+}
+
+@keyframes ws-orb-float {
+  0%,
+  100% {
+    transform: translate(0, 0) scale(1);
+    opacity: 0.85;
+  }
+  33% {
+    transform: translate(24px, -18px) scale(1.08);
+    opacity: 1;
+  }
+  66% {
+    transform: translate(-16px, 12px) scale(0.95);
+    opacity: 0.75;
+  }
+}
+
+.ws-sparkle {
+  position: absolute;
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: #fff;
+  box-shadow: 0 0 10px 2px rgba(167, 139, 250, 0.9), 0 0 20px 4px rgba(34, 211, 238, 0.35);
+  pointer-events: none;
+  animation: ws-twinkle 2.8s ease-in-out infinite;
+  opacity: 0;
+}
+
+@keyframes ws-twinkle {
+  0%,
+  100% {
+    opacity: 0;
+    transform: scale(0.4);
+  }
+  35% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  70% {
+    opacity: 0.45;
+    transform: scale(0.8);
+  }
+}
+
+/* Thanh điều hướng trong game */
+.ws-topbar {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  padding: 0.65rem 1rem;
+  margin: 0 0.5rem;
+  border-radius: 1rem;
+  background: linear-gradient(135deg, rgba(30, 27, 75, 0.55) 0%, rgba(15, 23, 42, 0.65) 100%);
+  border: 1px solid rgba(167, 139, 250, 0.28);
+  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.35), inset 0 1px 0 rgba(255, 255, 255, 0.06);
+  backdrop-filter: blur(14px);
+  animation: ws-topbar-in 0.5s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+}
+
+@keyframes ws-topbar-in {
+  from {
+    opacity: 0;
+    transform: translateY(-12px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.ws-topbar::after {
+  content: '';
+  position: absolute;
+  left: 8%;
+  right: 8%;
+  bottom: 0;
+  height: 2px;
+  border-radius: 2px;
+  background: linear-gradient(90deg, transparent, var(--ws-cyan), var(--ws-violet), var(--ws-pink), transparent);
+  opacity: 0.85;
+  animation: ws-line-shine 3s ease-in-out infinite;
+}
+
+@keyframes ws-line-shine {
+  0%,
+  100% {
+    filter: brightness(1);
+    opacity: 0.6;
+  }
+  50% {
+    filter: brightness(1.4);
+    opacity: 1;
+  }
+}
+
+.ws-link-back {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: rgba(226, 232, 240, 0.85);
+  transition: color 0.2s, transform 0.2s, text-shadow 0.2s;
+}
+
+.ws-link-back:hover {
+  color: var(--ws-cyan);
+  text-shadow: 0 0 18px rgba(34, 211, 238, 0.55);
+  transform: translateX(-2px);
+}
+
+.ws-chip-btn {
+  font-size: 0.7rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  padding: 0.4rem 0.75rem;
+  border-radius: 9999px;
+  border: 1px solid rgba(167, 139, 250, 0.35);
+  color: rgba(226, 232, 240, 0.9);
+  background: rgba(15, 23, 42, 0.5);
+  transition: transform 0.2s, box-shadow 0.2s, border-color 0.2s;
+}
+
+.ws-chip-btn:hover {
+  border-color: rgba(34, 211, 238, 0.55);
+  box-shadow: 0 0 16px rgba(34, 211, 238, 0.25);
+  transform: translateY(-1px) scale(1.02);
+}
+
+/* Thẻ chọn mode / độ khó */
+.ws-choice-card {
+  position: relative;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.5rem;
+  padding: 1.5rem 1.75rem;
+  text-align: left;
+  border-radius: 1.25rem;
+  border: 1px solid rgba(167, 139, 250, 0.3);
+  background: linear-gradient(155deg, rgba(30, 27, 75, 0.75) 0%, rgba(15, 23, 42, 0.88) 100%);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.05);
+  transition: transform 0.35s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.35s, border-color 0.25s;
+  animation: ws-card-in 0.55s cubic-bezier(0.22, 1, 0.36, 1) backwards;
+}
+
+@keyframes ws-card-in {
+  from {
+    opacity: 0;
+    transform: translateY(28px) scale(0.94);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+.ws-choice-card::before {
+  content: '';
+  position: absolute;
+  inset: -40%;
+  background: conic-gradient(from 180deg at 50% 50%, transparent, rgba(34, 211, 238, 0.12), transparent 40%);
+  animation: ws-card-spin 10s linear infinite;
+  opacity: 0;
+  transition: opacity 0.35s;
+}
+
+.ws-choice-card:hover::before {
+  opacity: 1;
+}
+
+@keyframes ws-card-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.ws-choice-card:hover {
+  transform: translateY(-6px) scale(1.02);
+  border-color: rgba(34, 211, 238, 0.55);
+  box-shadow: 0 16px 48px rgba(99, 102, 241, 0.25), 0 0 40px rgba(34, 211, 238, 0.12);
+}
+
+.ws-choice-card:active {
+  transform: translateY(-2px) scale(0.99);
+}
+
+.ws-choice-card .material-symbols-outlined {
+  transition: transform 0.35s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.ws-choice-card:hover .material-symbols-outlined {
+  transform: scale(1.12) rotate(-4deg);
+}
+
+/* Panel chơi */
+.ws-game-shell {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: 0;
+  border-radius: 1.25rem;
+  overflow: hidden;
+  border: 1px solid rgba(167, 139, 250, 0.32);
+  background: linear-gradient(165deg, rgba(30, 27, 75, 0.82) 0%, rgba(15, 23, 42, 0.92) 55%, rgba(10, 6, 24, 0.95) 100%);
+  box-shadow: 0 12px 48px rgba(0, 0, 0, 0.45), 0 0 0 1px rgba(255, 255, 255, 0.04) inset,
+    0 0 60px rgba(99, 102, 241, 0.08);
+  backdrop-filter: blur(12px);
+  transition: box-shadow 0.3s, border-color 0.3s;
+  animation: ws-shell-in 0.6s cubic-bezier(0.22, 1, 0.36, 1) backwards;
+}
+
+@keyframes ws-shell-in {
+  from {
+    opacity: 0;
+    transform: scale(0.97) translateY(12px);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+.ws-game-shell.ws-game-shell--shake {
+  animation: ws-shell-shake 0.45s ease-in-out;
+}
+
+@keyframes ws-shell-shake {
+  0%,
+  100% {
+    transform: translateX(0);
+  }
+  20% {
+    transform: translateX(-10px);
+  }
+  40% {
+    transform: translateX(10px);
+  }
+  60% {
+    transform: translateX(-5px);
+  }
+  80% {
+    transform: translateX(5px);
+  }
+}
+
+.ws-game-header {
+  border-bottom: 1px solid rgba(167, 139, 250, 0.2);
+  background: linear-gradient(180deg, rgba(99, 102, 241, 0.08) 0%, transparent 100%);
+}
+
+.ws-turn-banner {
+  background: linear-gradient(90deg, transparent, rgba(34, 211, 238, 0.12), transparent);
+  border-bottom: 1px solid rgba(34, 211, 238, 0.2);
+  animation: ws-banner-pulse 2.2s ease-in-out infinite;
+}
+
+@keyframes ws-banner-pulse {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.88;
+  }
+}
+
+.ws-input-game {
+  width: 100%;
+  border-radius: 0.875rem;
+  border: 1px solid rgba(167, 139, 250, 0.35);
+  background: rgba(7, 5, 16, 0.65);
+  color: #f1f5f9;
+  transition: border-color 0.25s, box-shadow 0.25s, transform 0.2s;
+}
+
+.ws-input-game:focus {
+  outline: none;
+  border-color: rgba(34, 211, 238, 0.65);
+  box-shadow: 0 0 0 3px rgba(34, 211, 238, 0.15), 0 0 28px rgba(34, 211, 238, 0.12);
+}
+
+.ws-btn-arcade {
+  border-radius: 0.875rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  background: linear-gradient(135deg, #22d3ee 0%, #a78bfa 50%, #f472b6 100%);
+  background-size: 200% 200%;
+  color: #0f172a;
+  border: none;
+  box-shadow: 0 4px 20px rgba(167, 139, 250, 0.35);
+  transition: transform 0.2s, box-shadow 0.25s, filter 0.2s;
+  animation: ws-btn-gradient 4s ease infinite;
+}
+
+@keyframes ws-btn-gradient {
+  0%,
+  100% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+}
+
+.ws-btn-arcade:hover {
+  transform: translateY(-2px) scale(1.02);
+  box-shadow: 0 8px 32px rgba(34, 211, 238, 0.35), 0 0 24px rgba(244, 114, 182, 0.2);
+  filter: brightness(1.08);
+}
+
+.ws-btn-arcade:active {
+  transform: translateY(0) scale(0.98);
+}
+
+.ws-pill-active {
+  border-color: rgba(34, 211, 238, 0.55) !important;
+  background: linear-gradient(135deg, rgba(34, 211, 238, 0.15), rgba(167, 139, 250, 0.12)) !important;
+  box-shadow: 0 0 20px rgba(34, 211, 238, 0.15);
+  animation: ws-pill-glow 2s ease-in-out infinite;
+}
+
+@keyframes ws-pill-glow {
+  0%,
+  100% {
+    box-shadow: 0 0 16px rgba(34, 211, 238, 0.12);
+  }
+  50% {
+    box-shadow: 0 0 28px rgba(167, 139, 250, 0.2);
+  }
+}
+
+.ws-pill-idle {
+  border-color: rgba(148, 163, 184, 0.2) !important;
+  background: rgba(7, 5, 16, 0.45) !important;
+}
+
+.ws-letter {
+  display: inline-block;
+  animation: ws-letter-pop 0.45s cubic-bezier(0.34, 1.56, 0.64, 1) backwards;
+}
+
+@keyframes ws-letter-pop {
+  from {
+    opacity: 0;
+    transform: translateY(14px) scale(0.5) rotate(-8deg);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1) rotate(0);
+  }
+}
+
+.ws-hero-gradient {
+  background: linear-gradient(120deg, #e9d5ff 0%, #67e8f9 45%, #f9a8d4 90%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  filter: drop-shadow(0 0 24px rgba(167, 139, 250, 0.35));
+}
+
+.ws-subtle-pulse {
+  animation: ws-subtle-pulse 2.5s ease-in-out infinite;
+}
+
+.ws-fade-rise {
+  animation: ws-fade-rise 0.65s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+@keyframes ws-fade-rise {
+  from {
+    opacity: 0;
+    transform: translateY(22px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes ws-subtle-pulse {
+  0%,
+  100% {
+    opacity: 0.65;
+  }
+  50% {
+    opacity: 1;
+  }
+}
+
+/* Matching Animation & UI */
+.ws-matching {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2.5rem;
+  flex: 1;
+  min-height: 40vh;
+  animation: ws-fade-rise 0.8s ease-out;
+}
+
+.ws-matching__container {
+  position: relative;
+  width: min(40vw, 220px);
+  height: min(40vw, 220px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.ws-matching__spinner {
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  border: 4px solid transparent;
+  border-top-color: var(--ws-cyan);
+  border-bottom-color: var(--ws-violet);
+  animation: ws-spin 1.5s cubic-bezier(0.5, 0, 0.5, 1) infinite;
+  box-shadow: 0 0 30px rgba(34, 211, 238, 0.2), inset 0 0 20px rgba(167, 139, 250, 0.15);
+}
+
+.ws-matching__spinner--inner {
+  inset: 18px;
+  border-top-color: var(--ws-pink);
+  border-bottom-color: #fff;
+  animation: ws-spin 2s linear infinite reverse;
+  opacity: 0.7;
+}
+
+.ws-matching__orb {
+  width: min(15vw, 70px);
+  height: min(15vw, 70px);
+  background: radial-gradient(circle at 30% 30%, #fff, var(--ws-cyan));
+  border-radius: 50%;
+  box-shadow: 0 0 40px var(--ws-cyan), 0 0 70px rgba(167, 139, 250, 0.45);
+  animation: ws-matching-pulse 2s ease-in-out infinite;
+}
+
+.ws-matching__text {
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.ws-matching__title {
+  font-family: 'Chakra Petch', sans-serif;
+  font-size: clamp(1.2rem, 4vw, 1.75rem);
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.3em;
+  color: #fff;
+  text-shadow: 0 0 20px rgba(34, 211, 238, 0.6);
+}
+
+.ws-matching__status {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--ws-cyan);
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  opacity: 0.8;
+  animation: ws-subtle-pulse 2s ease-in-out infinite;
+}
+
+@keyframes ws-spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+@keyframes ws-matching-pulse {
+  0%, 100% { transform: scale(1); filter: brightness(1) drop-shadow(0 0 20px var(--ws-cyan)); }
+  50% { transform: scale(1.15); filter: brightness(1.3) drop-shadow(0 0 40px var(--ws-violet)); }
+}

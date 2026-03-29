@@ -1,4 +1,4 @@
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
 import { Link, useLocation } from 'react-router-dom'
 import { ROUTES } from '../constants'
 import { ProfilePostsList } from '../components/profile/ProfilePostsList'
@@ -12,6 +12,7 @@ import { ProfilePhotosGrid } from '../components/profile/ProfilePhotosGrid'
 import { ProfileVideosGrid } from '../components/profile/ProfileVideosGrid'
 import { ProfileSkillsTab } from '../components/profile/ProfileSkillsTab'
 import { useProfilePage, useProfilePhotos, useProfileVideos } from '../hooks/useProfile'
+import { LogoutConfirmModal } from '../components/layout/LogoutConfirmModal'
 
 export function ProfilePage() {
   const {
@@ -56,6 +57,8 @@ export function ProfilePage() {
     handleSaveAvatar,
     setProfileTab,
   } = useProfilePage()
+
+  const [logoutConfirmOpen, setLogoutConfirmOpen] = useState(false)
 
   const location = useLocation()
   // Đồng bộ tab với URL: /profile, /profile/personalInfo, /profile/skills, /profile/posts, /profile/photos, /profile/video
@@ -255,12 +258,20 @@ export function ProfilePage() {
         <button
           type="button"
           className="flex items-center gap-2 px-6 py-3 rounded-xl border-2 border-red-100 dark:border-red-900/30 font-bold text-red-500 hover:bg-red-50 dark:hover:bg-red-500/10 transition-all w-full sm:w-auto"
-          onClick={handleLogout}
+          onClick={() => setLogoutConfirmOpen(true)}
         >
           <span className="material-symbols-outlined">logout</span>
           {t('header.logout')}
         </button>
       </div>
+      <LogoutConfirmModal
+        open={logoutConfirmOpen}
+        onCancel={() => setLogoutConfirmOpen(false)}
+        onConfirm={() => {
+          setLogoutConfirmOpen(false)
+          handleLogout()
+        }}
+      />
     </main>
   )
 }

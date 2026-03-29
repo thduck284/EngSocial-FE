@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, useParams } from 'react-router-dom'
 import { questsService } from '../services'
 import { ROUTES } from '../constants'
 
@@ -79,7 +79,8 @@ export function useManageQuestForm(id, t) {
       } else {
         await questsService.create(form)
       }
-      navigate(ROUTES.QUESTS)
+      if (userId != null && userId !== '') navigate(ROUTES.MANAGE_QUESTS(userId))
+      else navigate(ROUTES.QUESTS)
     } catch (e) {
       setError(e.message || t('manageQuests.saveFailed'))
     } finally {

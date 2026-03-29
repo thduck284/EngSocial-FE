@@ -1,5 +1,6 @@
-import { Routes, Route, Navigate } from 'react-router-dom'
-import { AuthProvider } from './context/AuthContext'
+import { Routes, Route, Navigate, useLocation } from 'react-router-dom'
+import { AuthProvider, useAuth } from './context/AuthContext'
+import { ROUTES } from './constants'
 import { LoginPage } from './pages/LoginPage'
 import { RegisterPage } from './pages/RegisterPage'
 import { ForgotPasswordPage } from './pages/ForgotPasswordPage'
@@ -7,7 +8,9 @@ import { ResetPasswordPage } from './pages/ResetPasswordPage'
 import { TermPage } from './pages/TermPage'
 import { DashboardPage } from './pages/DashboardPage'
 import { PostPhotoPage } from './pages/PostPhotoPage'
-import { EnterPage } from './pages/EnterPage'
+import { EntertainmentLayout } from './pages/EntertainmentLayout'
+import { EntertainmentHomePage } from './pages/EntertainmentHomePage'
+import { EntertainmentWordScramblePage } from './pages/EntertainmentWordScramblePage'
 import { SkillPracticePage } from './pages/SkillPracticePage'
 import { ListeningLessonPage } from './pages/ListeningLessonPage'
 import { ReadingLessonPage } from './pages/ReadingLessonPage'
@@ -20,14 +23,20 @@ import { LessonHistoryPage } from './pages/LessonHistoryPage'
 import { QuestsPage } from './pages/QuestsPage'
 import { AchievementsPage } from './pages/AchievementsPage'
 import { ManageLessonsPage } from './pages/ManageLessonsPage'
+import { ManageLessonsListPage } from './pages/ManageLessonsListPage'
 import { ManageQuestsPage } from './pages/ManageQuestsPage'
+import { ManageQuestsListPage } from './pages/ManageQuestsListPage'
 import { ManageChallengesPage } from './pages/ManageChallengesPage'
+import { ManageChallengesListPage } from './pages/ManageChallengesListPage'
+import { ManageWordScramblePage } from './pages/ManageWordScramblePage'
+import { StaffManageHomePage } from './pages/StaffManageHomePage'
+import { StaffEntertainmentHomePage } from './pages/StaffEntertainmentHomePage'
 import { SearchPage } from './pages/SearchPage'
 import { MessagesPage } from './pages/MessagesPage'
 import { CommunityPage } from './pages/CommunityPage'
 import { GroupCreatePage } from './pages/GroupCreatePage'
 import { DashboardLayout } from './components/layout/DashboardLayout'
-import { RequireModeratorOrAdmin } from './components/layout/RequireModeratorOrAdmin'
+import { StaffPortalLayout } from './components/layout/StaffPortalLayout'
 import { GuestOnlyLayout } from './components/layout/GuestOnlyLayout'
 import { WordsNotesLayout } from './components/vocabulary/WordsNotesLayout'
 import VocabularyTopicsTab from './pages/VocabularyTopicsTab'
@@ -39,6 +48,17 @@ import VocabularyDataPage from './pages/VocabularyDataPage'
 import LearnPage from './pages/LearnPage'
 import MatchGamePage from './pages/MatchGamePage'
 import TestPage from './pages/TestPage'
+
+/** /manage/* → /mod/:userId/* */
+function LegacyManageRedirect() {
+  const { user, isAuthenticated, isModerator, isAdmin } = useAuth()
+  const location = useLocation()
+  if (!isAuthenticated) return <Navigate to={ROUTES.LOGIN} state={{ from: location }} replace />
+  if (!isModerator && !isAdmin) return <Navigate to={ROUTES.HOME} replace />
+  const suffix = location.pathname === '/manage' ? '' : location.pathname.slice('/manage'.length)
+  if (suffix === '' || suffix === '/') return <Navigate to={ROUTES.MANAGE_OVERVIEW(user.id)} replace />
+  return <Navigate to={`${ROUTES.MANAGE_ROOT(user.id)}${suffix.startsWith('/') ? suffix : `/${suffix}`}`} replace />
+}
 
 function App() {
   return (
@@ -69,7 +89,11 @@ function App() {
           <Route path="community/my-groups" element={<CommunityPage />} />
           <Route path="community/create" element={<GroupCreatePage />} />
 
-          <Route path="enter" element={<EnterPage />} />
+          <Route path="enter" element={<Navigate to="/skills/entertainment" replace />} />
+          <Route path="skills/entertainment" element={<EntertainmentLayout />}>
+            <Route index element={<EntertainmentHomePage />} />
+          </Route>
+          <Route path="skills/entertainment/word-scramble" element={<EntertainmentWordScramblePage />} />
           <Route path="lesson" element={<LessonsPage />} />
           <Route path="lesson/history" element={<LessonHistoryPage />} />
           <Route path="lesson/reading/:id" element={<ReadingLessonPage />} />
@@ -83,15 +107,6 @@ function App() {
           <Route path="practice/listening/:id" element={<ListeningLessonPage />} />
           <Route path="practice/writing/:id" element={<WritingLessonPage />} />
           <Route path="lessons" element={<Navigate to="/lesson" replace />} />
-
-          <Route path="manage/lessons" element={<RequireModeratorOrAdmin><ManageLessonsPage /></RequireModeratorOrAdmin>} />
-          <Route path="manage/lessons/:id" element={<RequireModeratorOrAdmin><ManageLessonsPage /></RequireModeratorOrAdmin>} />
-          <Route path="manage/skills" element={<RequireModeratorOrAdmin><ManageLessonsPage /></RequireModeratorOrAdmin>} />
-          <Route path="manage/skills/:id" element={<RequireModeratorOrAdmin><ManageLessonsPage /></RequireModeratorOrAdmin>} />
-          <Route path="manage/quests" element={<RequireModeratorOrAdmin><ManageQuestsPage /></RequireModeratorOrAdmin>} />
-          <Route path="manage/quests/:id" element={<RequireModeratorOrAdmin><ManageQuestsPage /></RequireModeratorOrAdmin>} />
-          <Route path="manage/challenges" element={<RequireModeratorOrAdmin><ManageChallengesPage /></RequireModeratorOrAdmin>} />
-          <Route path="manage/challenges/:id" element={<RequireModeratorOrAdmin><ManageChallengesPage /></RequireModeratorOrAdmin>} />
 
           <Route path="quests" element={<QuestsPage />} />
           <Route path="achievements" element={<AchievementsPage />} />
@@ -124,6 +139,28 @@ function App() {
           <Route path="topic/:topicId/learn" element={<LearnPage />} />
           <Route path="topic/:topicId/match" element={<MatchGamePage />} />
           <Route path="topic/:topicId/test" element={<TestPage />} />
+        </Route>
+
+        <Route path="/manage/*" element={<LegacyManageRedirect />} />
+
+        <Route path="/mod/:userId" element={<StaffPortalLayout />}>
+          <Route index element={<Navigate to="over-view" replace />} />
+          <Route path="over-view" element={<StaffManageHomePage />} />
+          <Route path="lessons" element={<ManageLessonsListPage mode="lesson" />} />
+          <Route path="lessons/new" element={<ManageLessonsPage />} />
+          <Route path="lessons/:id" element={<ManageLessonsPage />} />
+          <Route path="skills" element={<ManageLessonsListPage mode="practice" />} />
+          <Route path="skills/new" element={<ManageLessonsPage />} />
+          <Route path="skills/:id" element={<ManageLessonsPage />} />
+          <Route path="quests" element={<ManageQuestsListPage />} />
+          <Route path="quests/new" element={<ManageQuestsPage />} />
+          <Route path="quests/:id" element={<ManageQuestsPage />} />
+          <Route path="challenges" element={<ManageChallengesListPage />} />
+          <Route path="challenges/new" element={<ManageChallengesPage />} />
+          <Route path="challenges/:id" element={<ManageChallengesPage />} />
+          <Route path="entertainment" element={<StaffEntertainmentHomePage />} />
+          <Route path="word-scramble" element={<ManageWordScramblePage />} />
+          <Route path="achievements" element={<AchievementsPage embedded />} />
         </Route>
 
         <Route path="*" element={<Navigate to="/home" replace />} />
