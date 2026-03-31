@@ -1,4 +1,4 @@
-const isLocalhost = typeof window !== 'undefined' && window.location.hostname === 'localhost'
+const isLocalhost = typeof window !== 'undefined' && (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')
 const LOCAL_API = import.meta.env.VITE_API_LOCAL_URL
 const RENDER_API = import.meta.env.VITE_API_RENDER_URL
 
@@ -10,6 +10,9 @@ export const API_FALLBACK_BASE_URL = isLocalhost ? ensureApi(RENDER_API) : null
 
 export const SOCKET_BASE_URL = stripApi(isLocalhost ? LOCAL_API : RENDER_API)
 export const SOCKET_FALLBACK_BASE_URL = isLocalhost ? stripApi(RENDER_API) : null
+
+// AI Matchmaking URL
+export const API_AI_MATCHING_URL = import.meta.env.VITE_API_AI_MATCHING_URL
 
 // Socket.IO works with Render (long-lived server). Only disabled when no backend or serverless.
 export const SOCKET_ENABLED = typeof window !== 'undefined'

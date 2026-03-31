@@ -28,9 +28,10 @@ export function DashboardPage() {
     weeklyLeaderboardLoading,
   } = useDashboardData()
 
-  const studyGroups = useStudyGroups()
-  const { onlineUserIds } = useDashboardSocket(user, studyGroups.setGroupConversations)
-  const friends = useDashboardFriends(onlineUserIds)
+  const [onlineUserIds, setOnlineUserIds] = useState(new Set())
+  const studyGroups = useStudyGroups(setOnlineUserIds)
+  const friends = useDashboardFriends(onlineUserIds, setOnlineUserIds, studyGroups.allConversations)
+  useDashboardSocket(user, studyGroups.setConversations, friends.setOnlineFriends, setOnlineUserIds)
 
   const {
     friendsFilterTab,
@@ -99,6 +100,7 @@ export function DashboardPage() {
           setFriendsFilterTab={setFriendsFilterTab}
           displayedFriendsList={displayedFriendsList}
           onlineUserIds={onlineUserIds}
+          groupConversations={studyGroups.groupConversations}
           weeklyLeaderboard={weeklyLeaderboard}
           weeklyLeaderboardLoading={weeklyLeaderboardLoading}
         />

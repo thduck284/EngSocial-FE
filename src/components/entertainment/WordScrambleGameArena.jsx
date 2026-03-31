@@ -1,4 +1,4 @@
-import './wordScrambleArena.css'
+import '../../styles/wordScrambleArena.css'
 
 /** Vị trí % + delay (s) cho hạt sáng */
 const SPARKLE_LAYOUT = [
@@ -49,9 +49,15 @@ export function WordScrambleGameArena({ children, topBar }) {
           aria-hidden
         />
       ))}
-      <div className="relative z-10 flex flex-col flex-1 min-h-0">
-        {topBar}
-        <div className="flex-1 min-h-0 flex flex-col px-2 sm:px-4 pb-3 pt-1 overflow-hidden">{children}</div>
+      <div className="relative z-10 flex flex-col flex-1 min-h-0 mt-2">
+        {topBar && (
+          <div className="ws-topbar mx-1 sm:mx-2 mt-1 min-h-[50px] shrink-0">
+            {topBar}
+          </div>
+        )}
+        <div className="flex-1 min-h-0 flex flex-col px-2 sm:px-4 pb-3 pt-3 overflow-hidden justify-center">
+          {children}
+        </div>
       </div>
     </div>
   )

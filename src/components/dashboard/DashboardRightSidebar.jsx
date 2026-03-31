@@ -66,11 +66,10 @@ export function DashboardRightSidebar({
                     key={value}
                     type="button"
                     onClick={() => { setFriendTab(value); setFriendSelectOpen(false) }}
-                    className={`w-full flex items-center gap-2 px-3 py-2.5 text-xs font-medium transition-colors ${
-                      friendTab === value
+                    className={`w-full flex items-center gap-2 px-3 py-2.5 text-xs font-medium transition-colors ${friendTab === value
                         ? 'bg-primary/10 text-primary dark:bg-primary/20'
                         : 'text-slate-700 dark:text-[#92bbc9] hover:bg-slate-50 dark:hover:bg-[#233f48]'
-                    }`}
+                      }`}
                   >
                     <span className="material-symbols-outlined text-[18px]">{icon}</span>
                     <span className="truncate">{label}</span>
@@ -229,9 +228,8 @@ export function DashboardRightSidebar({
           </button>
         </div>
         <div
-          className={`space-y-3 overflow-y-auto pr-1 custom-scrollbar ${
-            displayedFriendsList.length > 5 ? 'max-h-[200px]' : ''
-          }`}
+          className={`space-y-3 overflow-y-auto pr-1 custom-scrollbar ${displayedFriendsList.length > 5 ? 'max-h-[200px]' : ''
+            }`}
         >
           {displayedFriendsList.length === 0 ? (
             <p className="text-xs text-slate-500 dark:text-[#92bbc9]">{t('dashboard.noFriendsOnline')}</p>
@@ -241,7 +239,7 @@ export function DashboardRightSidebar({
               const id = u?.id ?? u?._id
               const name = u?.name || 'User'
               const avatar = u?.avatar || (name ? `https://ui-avatars.com/api/?name=${encodeURIComponent(name)}&background=13b6ec&color=fff` : DEFAULT_AVATAR)
-              const isOnline = id != null && onlineUserIds.has(String(id))
+              const isOnline = item.isOnline
               return (
                 <div
                   key={id}
@@ -291,29 +289,29 @@ export function DashboardRightSidebar({
             {(weeklyLeaderboard.list || []).length === 0 ? (
               <p className="text-xs text-slate-500 dark:text-[#92bbc9] py-4 text-center">{t('dashboard.noLeaderboardData')}</p>
             ) : (
-            <div className="space-y-3">
-              {(weeklyLeaderboard.list || []).slice(0, 3).map((entry, index) => (
-                <div
-                  key={entry.userId ?? entry.id ?? `lb-${index}-${entry.rank}`}
-                  className={`flex items-center justify-between ${entry.rank === 1 ? 'p-2 bg-yellow-500/5 rounded-lg border border-yellow-500/10' : 'px-2 py-1'}`}
-                >
-                  <div className="flex items-center gap-3">
-                    <span className={`font-bold w-4 text-xs shrink-0 ${entry.rank === 1 ? 'text-yellow-500' : 'text-slate-400 dark:text-[#92bbc9]'}`}>
-                      {entry.rank}
-                    </span>
-                    <img
-                      src={entry.avatar || DEFAULT_AVATAR}
-                      alt=""
-                      className="size-8 rounded-full object-cover bg-slate-300 dark:bg-[#233f48] shrink-0"
-                    />
-                    <span className={`text-xs truncate max-w-[100px] ${entry.rank === 1 ? 'font-bold' : 'font-medium'}`}>
-                      {entry.name || 'User'}
-                    </span>
+              <div className="space-y-3">
+                {(weeklyLeaderboard.list || []).slice(0, 3).map((entry, index) => (
+                  <div
+                    key={entry.userId ?? entry.id ?? `lb-${index}-${entry.rank}`}
+                    className={`flex items-center justify-between ${entry.rank === 1 ? 'p-2 bg-yellow-500/5 rounded-lg border border-yellow-500/10' : 'px-2 py-1'}`}
+                  >
+                    <div className="flex items-center gap-3">
+                      <span className={`font-bold w-4 text-xs shrink-0 ${entry.rank === 1 ? 'text-yellow-500' : 'text-slate-400 dark:text-[#92bbc9]'}`}>
+                        {entry.rank}
+                      </span>
+                      <img
+                        src={entry.avatar || DEFAULT_AVATAR}
+                        alt=""
+                        className="size-8 rounded-full object-cover bg-slate-300 dark:bg-[#233f48] shrink-0"
+                      />
+                      <span className={`text-xs truncate max-w-[100px] ${entry.rank === 1 ? 'font-bold' : 'font-medium'}`}>
+                        {entry.name || 'User'}
+                      </span>
+                    </div>
+                    <span className="text-xs font-semibold shrink-0">{entry.xp != null ? `${Number(entry.xp).toLocaleString()} XP` : '0 XP'}</span>
                   </div>
-                  <span className="text-xs font-semibold shrink-0">{entry.xp != null ? `${Number(entry.xp).toLocaleString()} XP` : '0 XP'}</span>
-                </div>
-              ))}
-            </div>
+                ))}
+              </div>
             )}
             {weeklyLeaderboard.currentUser && (
               <div className="mt-4 pt-4 border-t border-slate-100 dark:border-[#325a67]">

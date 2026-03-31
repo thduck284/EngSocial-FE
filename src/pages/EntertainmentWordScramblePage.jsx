@@ -12,6 +12,7 @@ import { WordScramblePlayerCountPicker } from '../components/entertainment/WordS
 import { WordScrambleMatching } from '../components/entertainment/WordScrambleMatching'
 import { WordScrambleMultiLobby } from '../components/entertainment/WordScrambleMultiLobby'
 import { WordScrambleGameArena } from '../components/entertainment/WordScrambleGameArena'
+import { WordScrambleInviteBubble } from '../components/entertainment/WordScrambleInviteBubble'
 
 export function EntertainmentWordScramblePage() {
   const { t } = useTranslation()
@@ -23,6 +24,8 @@ export function EntertainmentWordScramblePage() {
   const [pendingJoinCode, setPendingJoinCode] = useState(/** @type {null | string} */ (null))
   const [difficulty, setDifficulty] = useState(/** @type {null | 'easy' | 'medium' | 'hard'} */ (null))
   const [isMatching, setIsMatching] = useState(false)
+  const [inviteCopied, setInviteCopied] = useState(false)
+  const [isInviteBubbleOpen, setIsInviteBubbleOpen] = useState(false)
 
   const token = getAuthToken()
   const myUserId = user?.id ?? user?._id
@@ -33,7 +36,7 @@ export function EntertainmentWordScramblePage() {
     if (!lobbyParam || !isAuthenticated) return
     const code = lobbyParam.trim().toUpperCase()
     if (code.length < 4) return
-    setMode('multi')
+    setMode('multi-private')
     setPendingJoinCode(code)
     setMultiPastLobby(false)
     setPlayerCount(null)
@@ -60,7 +63,7 @@ export function EntertainmentWordScramblePage() {
   )
 
   const lobbySocketEnabled =
-    mode === 'multi' &&
+    (mode === 'multi-quick' || mode === 'multi-private') &&
     !multiPastLobby &&
     (!!pendingJoinCode || (playerCount != null && [2, 4, 6, 8].includes(playerCount)))
 
@@ -71,7 +74,7 @@ export function EntertainmentWordScramblePage() {
     joinCode: pendingJoinCode,
     myUserId: myUserId != null ? String(myUserId) : null,
     onMatchingStarted: () => {
-      if (mode === 'multi') {
+      if (mode === 'multi-quick' || mode === 'multi-private') {
         setIsMatching(true)
       }
     },
@@ -88,7 +91,7 @@ export function EntertainmentWordScramblePage() {
     onJoinedWithCapacity,
   })
 
-  const handleModeSelect = (/** @type {'solo' | 'multi'} */ m) => {
+  const handleModeSelect = (/** @type {'solo' | 'multi-quick' | 'multi-private'} */ m) => {
     setMode(m)
     setMultiPastLobby(false)
     setPendingJoinCode(null)
@@ -102,6 +105,7 @@ export function EntertainmentWordScramblePage() {
     setPlayerCount(null)
     setPendingJoinCode(null)
     setDifficulty(null)
+    setIsMatching(false)
     clearLobbyQuery()
   }
 
@@ -115,37 +119,101 @@ export function EntertainmentWordScramblePage() {
     setMultiPastLobby(false)
   }
 
+  const isMulti = mode === 'multi-quick' || mode === 'multi-private'
+  const isInLobby = isMulti && (playerCount != null || pendingJoinCode) && !multiPastLobby
+
+  const copyInvite = async () => {
+    if (!lobby.inviteUrl) return
+    try {
+      await navigator.clipboard.writeText(lobby.inviteUrl)
+      setInviteCopied(true)
+      window.setTimeout(() => setInviteCopied(false), 2000)
+    } catch { setInviteCopied(false) }
+  }
+
+  const toggleInviteBubble = (e) => {
+    e?.stopPropagation?.()
+    setIsInviteBubbleOpen(prev => !prev)
+  }
+
   return (
     <WordScrambleGameArena
       topBar={
-        <div className="ws-topbar mx-1 sm:mx-2 mt-1">
-          <Link to={ROUTES.SKILLS.ENTERTAINMENT} className="ws-link-back">
-            <span className="material-symbols-outlined text-xl">arrow_back</span>
-            <span className="hidden sm:inline">{t('enter.backToGameList')}</span>
-          </Link>
+        <>
+          {isInLobby ? (
+            <button type="button" onClick={handleLobbyBack} className="ws-link-back px-1">
+              <span className="material-symbols-outlined text-xl">arrow_back</span>
+              <span className="hidden sm:inline">{t('enter.game.backPickPlayers')}</span>
+            </button>
+          ) : mode != null ? (
+            <button type="button" onClick={resetAll} className="ws-link-back px-1">
+              <span className="material-symbols-outlined text-xl">arrow_back</span>
+              <span className="hidden sm:inline">{t('enter.game.backPickMode')}</span>
+            </button>
+          ) : (
+            <Link to={ROUTES.SKILLS.ENTERTAINMENT} className="ws-link-back">
+              <span className="material-symbols-outlined text-xl">arrow_back</span>
+              <span className="hidden sm:inline">{t('enter.backToGameList')}</span>
+            </Link>
+          )}
           <div className="flex items-center gap-2 flex-wrap justify-end">
-            {mode === 'solo' && difficulty != null && (
-              <button type="button" onClick={resetDifficultyOnly} className="ws-chip-btn">
-                {t('enter.game.changeDifficulty')}
-              </button>
-            )}
-            {mode != null && (
-              <button type="button" onClick={resetAll} className="ws-chip-btn">
-                {t('enter.game.changeMode')}
-              </button>
+            {isInLobby && lobby.roomCode ? (
+              <>
+                <span className="text-[10px] sm:text-xs font-bold uppercase tracking-wider text-fuchsia-300/80 px-2 py-1 rounded-lg border border-fuchsia-500/30 bg-fuchsia-950/40">
+                  {t('enter.game.modeMultiTitle')}{lobby.capacity ? ` · ${lobby.capacity}P` : ''}
+                </span>
+                <span className="text-[10px] sm:text-xs font-mono text-cyan-200/90 px-2 py-1 rounded-lg border border-cyan-500/25 bg-slate-950/60">
+                  {lobby.roomCode}
+                </span>
+                <div className="relative">
+                  <button
+                    type="button"
+                    onClick={toggleInviteBubble}
+                    disabled={!lobby.inviteUrl}
+                    className="text-[10px] sm:text-xs font-bold px-3 py-1.5 rounded-lg border border-violet-400/40 bg-violet-500/15 text-violet-100 hover:bg-violet-500/25 disabled:opacity-40"
+                  >
+                    {t('enter.game.wsLobbyInvite')}
+                  </button>
+
+                  {isInviteBubbleOpen && (
+                    <WordScrambleInviteBubble 
+                      lobby={lobby} 
+                      onClose={() => setIsInviteBubbleOpen(false)} 
+                    />
+                  )}
+                </div>
+              </>
+            ) : (
+              <>
+                {mode === 'solo' && difficulty != null && (
+                  <button type="button" onClick={resetDifficultyOnly} className="ws-chip-btn">
+                    {t('enter.game.changeDifficulty')}
+                  </button>
+                )}
+                {mode != null && (
+                  <button type="button" onClick={resetAll} className="ws-chip-btn">
+                    {t('enter.game.changeMode')}
+                  </button>
+                )}
+              </>
             )}
           </div>
-        </div>
+        </>
       }
     >
       {mode == null ? (
         <WordScrambleModePicker onSelect={handleModeSelect} />
-      ) : mode === 'multi' && playerCount == null && !pendingJoinCode && !isMatching ? (
+      ) : isMulti && playerCount == null && !pendingJoinCode && !isMatching ? (
         <WordScramblePlayerCountPicker
           onSelect={(n) => {
             setPlayerCount(n)
-            lobby.findMatch(n)
-            setIsMatching(true)
+            if (mode === 'multi-quick') {
+              lobby.findMatch(n)
+              setIsMatching(true)
+            } else {
+              // multi-private: Tạo phòng luôn
+              lobby.create(n)
+            }
           }}
           onBack={() => {
             setMode(null)
@@ -161,20 +229,20 @@ export function EntertainmentWordScramblePage() {
             lobby.leaveRoom()
           }}
         />
-      ) : mode === 'multi' && (playerCount != null || pendingJoinCode) && !multiPastLobby ? (
+      ) : isMulti && (playerCount != null || pendingJoinCode) && !multiPastLobby ? (
         <WordScrambleMultiLobby lobby={lobby} onBack={handleLobbyBack} />
       ) : difficulty == null && mode === 'solo' ? (
         <WordScrambleDifficultyPicker
           onSelect={setDifficulty}
-          onBack={() => (mode === 'multi' ? setMultiPastLobby(false) : setMode(null))}
-          backLabelKey={mode === 'multi' ? 'enter.game.backMultiLobby' : 'enter.game.backPickMode'}
+          onBack={() => (isMulti ? setMultiPastLobby(false) : setMode(null))}
+          backLabelKey={isMulti ? 'enter.game.backMultiLobby' : 'enter.game.backPickMode'}
         />
       ) : (
         <EntertainmentWordScramble
-          key={`${mode}-${mode === 'multi' ? playerCount : ''}-${difficulty}`}
+          key={`${mode}-${isMulti ? playerCount : ''}-${difficulty}`}
           fullScreen
           gameMode={mode}
-          playerCount={mode === 'multi' ? playerCount ?? 2 : 1}
+          playerCount={isMulti ? playerCount ?? 2 : 1}
           difficulty={difficulty}
         />
       )}

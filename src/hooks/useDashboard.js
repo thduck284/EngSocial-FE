@@ -59,7 +59,7 @@ export function useDashboardData() {
           suggestedGroups: d.suggestedGroups || [],
         }))
       })
-      .catch(() => {})
+      .catch(() => { })
   }, [])
 
   useEffect(() => {
@@ -135,7 +135,7 @@ export function useDashboardData() {
         setPostsPage(1)
         setHasMorePosts(Boolean(pagination.hasNextPage))
       })
-      .catch(() => {})
+      .catch(() => { })
   }
 
   const handlePostFromModal = () => {
@@ -155,8 +155,8 @@ export function useDashboardData() {
           typeof nextCount === 'number'
             ? nextCount
             : liked
-            ? current + (p.liked ? 0 : 1)
-            : Math.max(0, current - 1)
+              ? current + (p.liked ? 0 : 1)
+              : Math.max(0, current - 1)
         const next = {
           ...p,
           liked: Boolean(liked),
@@ -223,16 +223,23 @@ export function useDashboardData() {
 
 // ─── useDashboardSocket ────────────────────────────────────────────────────────
 
-const OFFLINE_DELAY_MS = 2500
+const OFFLINE_DELAY_MS = 0 // Made instant to match study groups behavior
 
-export function useDashboardSocket(user, setGroupConversations) {
-  const [onlineUserIds, setOnlineUserIds] = useState(new Set())
+export function useDashboardSocket(user, setConversations, setOnlineFriends, setOnlineUserIds) {
   const socketRef = useRef(null)
   const fallbackTriedRef = useRef(false)
   const pendingOfflineRef = useRef({})
+  const settersRef = useRef({ setConversations, setOnlineFriends, setOnlineUserIds })
+
+  useEffect(() => {
+    settersRef.current = { setConversations, setOnlineFriends, setOnlineUserIds }
+  }, [setConversations, setOnlineFriends, setOnlineUserIds])
 
   useEffect(() => {
     if (!SOCKET_ENABLED || !user) return
+    const userIdForAuth = user.id ?? user._id
+    if (!userIdForAuth) return
+
     const token = getAuthToken()
     if (!token) return
     const opts = { auth: { token }, transports: ['websocket', 'polling'] }
@@ -242,18 +249,33 @@ export function useDashboardSocket(user, setGroupConversations) {
       socket.on('conversation:userOnline', (payload) => {
         const userId = payload?.userId != null ? String(payload.userId) : null
         if (!userId) return
+
         if (pending[userId]) {
           clearTimeout(pending[userId])
           delete pending[userId]
         }
-        setOnlineUserIds((prev) => new Set([...prev, userId]))
-        setGroupConversations((prev) =>
-          prev.map((c) =>
-            Array.isArray(c.members) &&
-            c.members.some((m) => String(m?.userId) === userId)
-              ? { ...c, online: true }
-              : c
-          )
+
+        // 1. Update the centralized Set
+        settersRef.current.setOnlineUserIds?.((prev) => new Set([...prev, userId]))
+
+        // 2. Update Conversations (Group and Direct)
+        settersRef.current.setConversations?.((prev) =>
+          prev.map((c) => {
+            const isGroupMatch = Array.isArray(c.members) &&
+              c.members.some((m) => String(m?.userId ?? m?.id ?? '') === userId)
+            const isDirectMatch = String(c.otherUserId ?? '') === userId
+            return (isGroupMatch || isDirectMatch) ? { ...c, online: true, isOnline: true } : c
+          })
+        )
+
+        // 3. Update Friends List (check all possible ID locations)
+        settersRef.current.setOnlineFriends?.((prev) =>
+          prev.map((f) => {
+            const u = f?.user || f
+            const currentId = String(u?.id ?? u?._id ?? f?.id ?? f?._id ?? '')
+            if (currentId === userId) return { ...f, online: true, isOnline: true }
+            return f
+          })
         )
       })
       socket.on('conversation:userOffline', (payload) => {
@@ -262,18 +284,25 @@ export function useDashboardSocket(user, setGroupConversations) {
         if (pending[userId]) return
         pending[userId] = setTimeout(() => {
           delete pending[userId]
-          setOnlineUserIds((prev) => {
+          settersRef.current.setOnlineUserIds?.((prev) => {
             const next = new Set(prev)
             next.delete(userId)
             return next
           })
-          setGroupConversations((prev) =>
-            prev.map((c) =>
-              Array.isArray(c.members) &&
-              c.members.some((m) => String(m?.userId) === userId)
-                ? { ...c, online: false }
-                : c
-            )
+          settersRef.current.setConversations?.((prev) =>
+            prev.map((c) => {
+              const isGroupMatch = Array.isArray(c.members) &&
+                c.members.some((m) => String(m?.userId ?? m?.id ?? '') === userId)
+              const isDirectMatch = String(c.otherUserId ?? '') === userId
+              return (isGroupMatch || isDirectMatch) ? { ...c, online: false, isOnline: false } : c
+            })
+          )
+          settersRef.current.setOnlineFriends?.((prev) =>
+            prev.map((f) => {
+              const u = f?.user || f
+              if (String(u?.id ?? u?._id) === userId) return { ...f, online: false, isOnline: false }
+              return f
+            })
           )
         }, OFFLINE_DELAY_MS)
       })
@@ -299,14 +328,14 @@ export function useDashboardSocket(user, setGroupConversations) {
       socketRef.current?.disconnect()
       socketRef.current = null
     }
-  }, [user, setGroupConversations])
+  }, [user?.id, user?._id])
 
-  return { onlineUserIds }
+  return {}
 }
 
 // ─── useDashboardFriends ───────────────────────────────────────────────────────
 
-export function useDashboardFriends(onlineUserIds) {
+export function useDashboardFriends(onlineUserIds, setOnlineUserIds, allConversations = []) {
   const [onlineFriends, setOnlineFriends] = useState([])
   const [friendsFilterTab, setFriendsFilterTab] = useState('all')
   const [friendTab, setFriendTab] = useState('suggestions')
@@ -322,33 +351,47 @@ export function useDashboardFriends(onlineUserIds) {
       .getList({ limit: 100 })
       .then((res) => {
         const list = res?.data?.data ?? res?.data ?? []
-        setOnlineFriends(Array.isArray(list) ? list : [])
+        const friendsList = Array.isArray(list) ? list : []
+        setOnlineFriends(friendsList)
+
+        // Initial populate: if anyone is online from the API, add them to the Set
+        if (setOnlineUserIds) {
+          const currentlyOnline = friendsList
+            .filter(f => (f?.user || f)?.online || (f?.user || f)?.isOnline)
+            .map(f => String((f?.user || f).id ?? (f?.user || f)._id))
+
+          if (currentlyOnline.length > 0) {
+            setOnlineUserIds(prev => new Set([...prev, ...currentlyOnline]))
+          }
+        }
       })
       .catch(() => setOnlineFriends([]))
-  }, [])
+  }, [setOnlineUserIds])
 
   const loadFriendTabData = (tab) => {
     setFriendTabLoading(true)
     if (tab === 'suggestions') {
-      friendsService
-        .getSuggestions({ limit: 10 })
-        .then((res) => {
-          const raw = res?.data?.data ?? res?.data ?? []
-          const list = Array.isArray(raw) ? raw : []
-          setSuggestionsList(
-            list.map((item) =>
-              item?.user
-                ? {
-                    ...item.user,
-                    mutualFriendsCount:
-                      item.mutualFriendsCount ?? item.mutualCount,
-                  }
-                : item
-            )
-          )
-        })
-        .catch(() => setSuggestionsList([]))
-        .finally(() => setFriendTabLoading(false))
+      // friendsService
+      //   .getSuggestions({ limit: 10 })
+      //   .then((res) => {
+      //     const raw = res?.data?.data ?? res?.data ?? []
+      //     const list = Array.isArray(raw) ? raw : []
+      //     setSuggestionsList(
+      //       list.map((item) =>
+      //         item?.user
+      //           ? {
+      //             ...item.user,
+      //             mutualFriendsCount:
+      //               item.mutualFriendsCount ?? item.mutualCount,
+      //           }
+      //           : item
+      //       )
+      //     )
+      //   })
+      //   .catch(() => setSuggestionsList([]))
+      //   .finally(() => setFriendTabLoading(false))
+      setSuggestionsList([])
+      setFriendTabLoading(false)
     } else if (tab === 'sent') {
       friendsService
         .getSentRequests({ limit: 10 })
@@ -385,15 +428,22 @@ export function useDashboardFriends(onlineUserIds) {
   }, [friendSelectOpen])
 
   const displayedFriendsList = useMemo(() => {
-    const list =
+    const listWithStatus = onlineFriends.map((item) => {
+      const u = item?.user || item
+      const id = u?.id ?? u?._id
+      const isSetOnline = id != null && onlineUserIds instanceof Set && onlineUserIds.has(String(id))
+      const isItemOnline = item.online === true || u?.online === true || u?.isOnline === true
+      const isConvOnline = Array.isArray(allConversations) && allConversations.some(c =>
+        String(c.otherUserId) === String(id) && c.online === true
+      )
+      return { ...item, isOnline: isSetOnline || isItemOnline || isConvOnline }
+    })
+
+    const filtered =
       friendsFilterTab === 'all'
-        ? [...onlineFriends]
-        : onlineFriends.filter((item) => {
-            const u = item?.user || item
-            const id = u?.id ?? u?._id
-            return id != null && onlineUserIds.has(String(id))
-          })
-    if (friendsFilterTab !== 'all') return list
+        ? listWithStatus
+        : listWithStatus.filter((item) => item.isOnline)
+
     const getActiveTime = (item) => {
       const u = item?.user || item
       const t =
@@ -406,21 +456,17 @@ export function useDashboardFriends(onlineUserIds) {
         0
       return t ? new Date(t).getTime() : 0
     }
-    return list.sort((a, b) => {
-      const uA = a?.user || a
-      const uB = b?.user || b
-      const idA = uA?.id ?? uA?._id
-      const idB = uB?.id ?? uB?._id
-      const onlineA = idA != null && onlineUserIds.has(String(idA))
-      const onlineB = idB != null && onlineUserIds.has(String(idB))
-      if (onlineA && !onlineB) return -1
-      if (!onlineA && onlineB) return 1
+
+    return [...filtered].sort((a, b) => {
+      if (a.isOnline && !b.isOnline) return -1
+      if (!a.isOnline && b.isOnline) return 1
       return getActiveTime(b) - getActiveTime(a)
     })
-  }, [friendsFilterTab, onlineFriends, onlineUserIds])
+  }, [friendsFilterTab, onlineFriends, onlineUserIds, allConversations])
 
-  return {
+  return useMemo(() => ({
     onlineFriends,
+    setOnlineFriends,
     friendsFilterTab,
     setFriendsFilterTab,
     friendTab,
@@ -434,17 +480,27 @@ export function useDashboardFriends(onlineUserIds) {
     friendSelectOpen,
     setFriendSelectOpen,
     friendSelectRef,
-  }
+  }), [
+    onlineFriends,
+    friendsFilterTab,
+    friendTab,
+    suggestionsList,
+    sentRequestsList,
+    receivedRequestsList,
+    friendTabLoading,
+    displayedFriendsList,
+    friendSelectOpen
+  ])
 }
 
 // ─── useStudyGroups ────────────────────────────────────────────────────────────
 
-export function useStudyGroups() {
-  const [groupConversations, setGroupConversations] = useState([])
+export function useStudyGroups(setOnlineUserIds) {
+  const [conversations, setConversations] = useState([])
   const [loading, setLoading] = useState(false)
   const [showStudyGroupsModal, setShowStudyGroupsModal] = useState(false)
 
-  const loadGroupConversations = () => {
+  const loadConversations = () => {
     setLoading(true)
     conversationService
       .getList()
@@ -453,28 +509,50 @@ export function useStudyGroups() {
         const list = Array.isArray(raw)
           ? raw
           : raw?.data && Array.isArray(raw.data)
-          ? raw.data
-          : []
-        const groups = list.filter(
-          (c) => c.isGroup === true || c.type === 'group'
-        )
-        setGroupConversations(groups)
+            ? raw.data
+            : []
+        setConversations(list)
+
+        // Populate online users from conversations (especially direct ones)
+        if (setOnlineUserIds && list.length > 0) {
+          const currentlyOnline = list
+            .filter(c => c.online === true || c.isOnline === true)
+            .flatMap(c => {
+              if (c.otherUserId) return [String(c.otherUserId)]
+              if (Array.isArray(c.members)) {
+                return c.members
+                  .filter(m => m.online === true || m.isOnline === true)
+                  .map(m => String(m.userId ?? m.id ?? ''))
+              }
+              return []
+            })
+            .filter(id => id && id !== 'undefined')
+
+          if (currentlyOnline.length > 0) {
+            setOnlineUserIds(prev => new Set([...prev, ...currentlyOnline]))
+          }
+        }
       })
-      .catch(() => setGroupConversations([]))
+      .catch(() => setConversations([]))
       .finally(() => setLoading(false))
   }
 
   useEffect(() => {
-    loadGroupConversations()
+    loadConversations()
   }, [])
 
   const openStudyGroupsModal = () => setShowStudyGroupsModal(true)
 
+  const groupConversations = conversations.filter(
+    (c) => c.isGroup === true || c.type === 'group'
+  )
+
   return {
+    allConversations: conversations,
+    setConversations,
     groupConversations,
-    setGroupConversations,
     groupConversationsLoading: loading,
-    loadGroupConversations,
+    loadConversations,
     showStudyGroupsModal,
     setShowStudyGroupsModal,
     openStudyGroupsModal,

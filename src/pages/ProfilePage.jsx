@@ -59,6 +59,7 @@ export function ProfilePage() {
   } = useProfilePage()
 
   const [logoutConfirmOpen, setLogoutConfirmOpen] = useState(false)
+  const activeOnlineCount = (sortedProfileFriends || []).filter(f => f.isOnline).length
 
   const location = useLocation()
   // Đồng bộ tab với URL: /profile, /profile/personalInfo, /profile/skills, /profile/posts, /profile/photos, /profile/video
@@ -144,6 +145,7 @@ export function ProfilePage() {
             loading={profileFriendsLoading}
             friendSearch={friendSearch}
             setFriendSearch={setFriendSearch}
+            onlineCount={activeOnlineCount}
             onlineUserIds={onlineUserIds}
             navigate={navigate}
           />

@@ -195,6 +195,13 @@ export function useWordScrambleLobby({
     })
   }, [])
 
+  const create = useCallback((cap) => {
+    setStartError(null)
+    socketRef.current?.emit('wordScrambleLobby:create', { capacity: cap }, (/** @type {{ ok?: boolean, error?: string, state?: unknown }} */ res) => {
+      if (!res?.ok) setStartError(res?.error || 'create_failed')
+    })
+  }, [])
+
   const startGame = useCallback(() => {
     setStartError(null)
     socketRef.current?.emit('wordScrambleLobby:start', {}, (/** @type {{ ok?: boolean, error?: string }} */ res) => {
@@ -236,6 +243,7 @@ export function useWordScrambleLobby({
     setReady,
     sendChat,
     findMatch,
+    create,
     startGame,
     leaveRoom,
     disconnectSocket,

@@ -4,7 +4,7 @@ import { useTranslation } from 'react-i18next'
 import { communityService, userService, rawService, friendsService } from '../services'
 import { useAuth } from '../context/AuthContext'
 import { getAuthStorage } from '../utils/auth'
-import { useDashboardSocket } from '../hooks'
+import { useDashboardSocket, useStudyGroups } from '../hooks'
 import {
   formatDateForInput,
   normalizeFriendsFromResponse,
@@ -316,7 +316,9 @@ export function useProfilePage() {
   const [profileSkillDetails, setProfileSkillDetails] = useState([])
   const [profileFriends, setProfileFriends] = useState([])
   const [profileFriendsLoading, setProfileFriendsLoading] = useState(true)
-  const { onlineUserIds } = useDashboardSocket(user, () => {})
+  const [onlineUserIds, setOnlineUserIds] = useState(new Set())
+  const studyGroups = useStudyGroups(setOnlineUserIds)
+  useDashboardSocket(user, studyGroups.setConversations, undefined, setOnlineUserIds)
 
   useEffect(() => {
     setProfileFriendsLoading(true)
@@ -510,19 +512,33 @@ export function useProfilePage() {
     }
   }
 
+  const listWithStatus = useMemo(() => {
+    return profileFriends.map((f) => {
+      const id = String(f.id ?? f._id ?? '')
+      const isSocketOnline = onlineUserIds.has(id)
+      const isApiOnline = f.online === true
+      const isConvOnline = studyGroups.allConversations.some((c) => {
+        if (c.isGroup) return false
+        const other = c.participants?.find((p) => String(p._id ?? p.id ?? '') === id)
+        return other && other.online === true
+      })
+      const isOnline = isSocketOnline || isApiOnline || isConvOnline
+      return { ...f, isOnline }
+    })
+  }, [profileFriends, onlineUserIds, studyGroups.allConversations])
+
   const sortedProfileFriends = useMemo(
-    () => sortFriendsByOnlineAndLastActive(profileFriends, onlineUserIds),
-    [profileFriends, onlineUserIds]
+    () => sortFriendsByOnlineAndLastActive(listWithStatus, onlineUserIds),
+    [listWithStatus, onlineUserIds]
   )
 
-  const filteredFriends = sortFriendsByOnlineAndLastActive(
-    profileFriends.filter(
+  const filteredFriends = useMemo(() => {
+    return listWithStatus.filter(
       (f) =>
         !friendSearch.trim() ||
         (f.name && f.name.toLowerCase().includes(friendSearch.toLowerCase()))
-    ),
-    onlineUserIds
-  )
+    )
+  }, [listWithStatus, friendSearch])
 
   const goalsDone = raw.goals.filter((g) => g.done).length
   const goalsTotal = raw.goals.length
