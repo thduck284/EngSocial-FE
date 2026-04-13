@@ -29,6 +29,7 @@ export function useWordScrambleLobby({
   const [roomState, setRoomState] = useState(/** @type {null | Record<string, unknown>} */ (null))
   const [initError, setInitError] = useState(/** @type {string | null} */ (null))
   const [startError, setStartError] = useState(/** @type {string | null} */ (null))
+  const [isMatchingLocal, setIsMatchingLocal] = useState(false)
   const [chatTail, setChatTail] = useState(/** @type {Array<{ userId: string, name: string, text: string, ts: number }>} */ ([]))
 
   const socketRef = useRef(null)
@@ -63,6 +64,7 @@ export function useWordScrambleLobby({
       setChatTail([])
       setInitError(null)
       setStartError(null)
+      setIsMatchingLocal(false)
       return undefined
     }
 
@@ -90,14 +92,25 @@ export function useWordScrambleLobby({
         }
       })
       s.on('wordScrambleLobby:matching', () => {
+        setIsMatchingLocal(true)
         onMatchingStartedRef.current?.()
       })
       s.on('wordScrambleLobby:started', (data) => {
         if (data?.roomCode) {
-          // Nếu nhận được roomCode (từ Quick Match), ta tự động join room đó hoặc cập nhật state
-          console.log('Auto-matched to room:', data.roomCode)
+          console.log('Match started for room:', data.roomCode)
         }
         onGameStartedRef.current?.(data)
+        setIsMatchingLocal(false)
+      })
+
+      // LẮNG NGHE TIN NHẮN TOÀN CỤC (FAIL-SAFE)
+      s.on('wordScrambleLobby:matchFoundGlobal', (data) => {
+        const myId = String(myUserId)
+        if (data?.userIds?.map(String).includes(myId)) {
+          console.log('[Lobby] Global Match Found for me! Entering game...')
+          onGameStartedRef.current?.(data)
+          setIsMatchingLocal(false)
+        }
       })
     }
 
@@ -178,7 +191,7 @@ export function useWordScrambleLobby({
       initDoneRef.current = false
       setConnected(false)
     }
-  }, [enabled, token, joinCode, capacity, disconnectSocket])
+  }, [enabled, token, joinCode, capacity, disconnectSocket, myUserId])
 
   const setReady = useCallback((ready) => {
     socketRef.current?.emit('wordScrambleLobby:setReady', { ready }, () => {})
@@ -190,8 +203,13 @@ export function useWordScrambleLobby({
 
   const findMatch = useCallback((cap) => {
     setStartError(null)
+    setIsMatchingLocal(true)
+    onMatchingStartedRef.current?.()
     socketRef.current?.emit('wordScrambleLobby:findMatch', { capacity: cap }, (/** @type {{ ok?: boolean, error?: string }} */ res) => {
-      if (!res?.ok) setStartError(res?.error || 'find_match_failed')
+      if (!res?.ok) {
+        setStartError(res?.error || 'find_match_failed')
+        setIsMatchingLocal(false)
+      }
     })
   }, [])
 
@@ -202,11 +220,38 @@ export function useWordScrambleLobby({
     })
   }, [])
 
+  const startPollingRef = useRef(null)
+
+  const stopStartLoop = () => {
+    if (startPollingRef.current) {
+      clearInterval(startPollingRef.current)
+      startPollingRef.current = null
+    }
+  }
+
   const startGame = useCallback(() => {
     setStartError(null)
-    socketRef.current?.emit('wordScrambleLobby:start', {}, (/** @type {{ ok?: boolean, error?: string }} */ res) => {
-      if (!res?.ok) setStartError(res?.error || 'start_failed')
-    })
+    setIsMatchingLocal(true)
+    onMatchingStartedRef.current?.()
+
+    const attempt = () => {
+      socketRef.current?.emit('wordScrambleLobby:start', {}, (/** @type {{ ok?: boolean, error?: string }} */ res) => {
+        if (res?.ok) {
+          stopStartLoop()
+        } else if (res?.error === 'not_enough_players') {
+          // Room not full, keep spinning and wait for next poll
+          console.log('Lobby is not full yet, retrying in 3s...')
+        } else {
+          setStartError(res?.error || 'start_failed')
+          setIsMatchingLocal(false)
+          stopStartLoop()
+        }
+      })
+    }
+
+    attempt()
+    stopStartLoop()
+    startPollingRef.current = setInterval(attempt, 3000)
   }, [])
 
   const slots = Array.isArray(roomState?.slots) ? roomState.slots : []
@@ -218,13 +263,13 @@ export function useWordScrambleLobby({
   const mySlot = occupied.find((s) => s && String(s.userId) === myId)
   const seated = !!mySlot
   const myReady = !!(mySlot && mySlot.ready)
-  const isHost = !!myId && hostId === myId
-  const allOccupiedReady = occupied.length > 0 && occupied.every((s) => s && s.ready)
-  const canStart = isHost && allOccupiedReady
+  const isHost = !!myId && !!hostId && myId === hostId
+  const canStart = isHost && connected
+  const isMatching = isMatchingLocal
 
   const inviteUrl =
     typeof window !== 'undefined' && roomCode
-      ? `${window.location.origin}/skills/entertainment/word-scramble?lobby=${encodeURIComponent(roomCode)}`
+      ? `${window.location.origin}/practice/entertainment/word-scramble?lobby=${encodeURIComponent(roomCode)}`
       : ''
 
   return {
@@ -248,5 +293,6 @@ export function useWordScrambleLobby({
     leaveRoom,
     disconnectSocket,
     inviteUrl,
+    isMatching,
   }
 }

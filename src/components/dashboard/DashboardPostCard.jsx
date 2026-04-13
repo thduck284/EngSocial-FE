@@ -12,7 +12,6 @@ import { PostCommentsSectionBase } from '../ui/post/PostCommentsSectionBase'
 import { PostContentBody } from '../ui/post/PostContentBody'
 import { PostOptionsMenu } from '../ui/post/PostOptionsMenu'
 import { MentionedUsersModal } from '../ui/post/MentionedUsersModal'
-import { PostImageViewerModal } from '../ui/post/PostImageViewerModal'
 import { SharedPostPreviewCard } from '../ui/post/SharedPostPreviewCard'
 import { EditPostModal } from '../ui/post/EditPostModal'
 import { useDashboardPostCard } from '../../hooks'
@@ -21,6 +20,8 @@ import { PostShareModal } from '../ui/post/PostShareModal'
 import { formatReactionCount, getPostReactionTotal } from '../../utils/post'
 import { AlertModal } from '../ui/common/AlertModal'
 import { getPostVisibilityLabel, normalizeMentions } from '../../utils/post'
+import { PostInteractionsModal } from '../ui/post/PostInteractionsModal'
+import { PostDetailModal } from '../ui/post/PostDetailModal'
 
 /** Max characters to show before "See more" */
 const MAX_CONTENT_PREVIEW = 300
@@ -42,13 +43,10 @@ export function DashboardPostCard({
   const [showShareModal, setShowShareModal] = useState(false)
   const [contentExpanded, setContentExpanded] = useState(false)
   /** null = closed, number = open at that image index */
-  const [imageViewerIndex, setImageViewerIndex] = useState(null)
-  const [imageViewerReturnPath, setImageViewerReturnPath] = useState(null)
   const [likeLoading, setLikeLoading] = useState(false)
   const [showReactionsModal, setShowReactionsModal] = useState(false)
   const [reactionsModalInitialTab, setReactionsModalInitialTab] = useState('all')
   const [modalMentions, setModalMentions] = useState([])
-  const [viewerPost, setViewerPost] = useState(post)
   const [editingPost, setEditingPost] = useState(false)
   const [editContent, setEditContent] = useState('')
   const [editImages, setEditImages] = useState([])
@@ -61,6 +59,9 @@ export function DashboardPostCard({
   const [editUploading, setEditUploading] = useState(false)
   const [isSavedPost, setIsSavedPost] = useState(Boolean(post?.saved ?? post?.isSaved))
   const [showDeleteConfirmModal, setShowDeleteConfirmModal] = useState(false)
+  const [showInteractionsModal, setShowInteractionsModal] = useState(false)
+  const [interactionsType, setInteractionsType] = useState('comments') // 'comments' | 'shares'
+  const [showDetailModal, setShowDetailModal] = useState(false)
   if (!post) return null
 
   const postId = post?.id ?? post?._id
@@ -178,7 +179,6 @@ export function DashboardPostCard({
     contentExpanded,
     maxContentPreview: MAX_CONTENT_PREVIEW,
     setModalMentions,
-    setViewerPost,
     setIsSavedPost,
     isOwnPost,
     postActionLoading,
@@ -264,33 +264,39 @@ export function DashboardPostCard({
           <div className="flex justify-between items-start mb-4">
             <div className="flex gap-3">
               {post?.group?.id && useHomeCommunityStyle && !hidePostGroupLabel ? (
-                <Link
-                  to={`/community/group/${post.group.id}/about`}
-                  className="relative size-11 shrink-0 block"
-                  title={post.group.name || 'Community Group'}
-                >
-                  <img
-                    src={
-                      post.group.icon ||
-                      (post.group.name
-                        ? `https://ui-avatars.com/api/?name=${encodeURIComponent(post.group.name)}&background=334155&color=fff`
-                        : authorAvatar)
-                    }
-                    alt={post.group.name || 'Group avatar'}
-                    className="size-11 rounded-full object-cover bg-slate-300"
-                  />
+                <div className="relative size-11 shrink-0">
+                  <Link
+                    to={`/community/group/${post.group.id}/about`}
+                    className="block"
+                    title={post.group.name || 'Community Group'}
+                  >
+                    <img
+                      src={
+                        post.group.icon ||
+                        (post.group.name
+                          ? `https://ui-avatars.com/api/?name=${encodeURIComponent(post.group.name)}&background=334155&color=fff`
+                          : authorAvatar)
+                      }
+                      alt={post.group.name || 'Group avatar'}
+                      className="size-11 rounded-full object-cover bg-slate-300"
+                    />
+                  </Link>
+                  <Link to={authorId ? ROUTES.PROFILE_USER(authorId) : '#'}>
+                    <img
+                      src={authorAvatar}
+                      alt={author.name || 'User avatar'}
+                      className="absolute -bottom-0.5 -right-0.5 size-6 rounded-full object-cover border-2 border-white dark:border-[#111e22] bg-slate-300 hover:brightness-110"
+                    />
+                  </Link>
+                </div>
+              ) : (
+                <Link to={authorId ? ROUTES.PROFILE_USER(authorId) : '#'}>
                   <img
                     src={authorAvatar}
-                    alt={author.name || 'User avatar'}
-                    className="absolute -bottom-0.5 -right-0.5 size-6 rounded-full object-cover border-2 border-white dark:border-[#111e22] bg-slate-300"
+                    alt=""
+                    className="size-11 rounded-full object-cover bg-slate-300 hover:opacity-80 transition-opacity"
                   />
                 </Link>
-              ) : (
-                <img
-                  src={authorAvatar}
-                  alt=""
-                  className="size-11 rounded-full object-cover bg-slate-300"
-                />
               )}
               <div>
                 {post?.group?.id && !hidePostGroupLabel && (
@@ -307,7 +313,9 @@ export function DashboardPostCard({
                 {post?.group?.id && useHomeCommunityStyle && !hidePostGroupLabel ? (
                   <div className="flex items-center gap-1.5 flex-wrap text-[12px]">
                     <h4 className="text-[12px] font-semibold text-slate-900 dark:text-slate-100">
-                      {author.name || 'User'}
+                      <Link to={authorId ? ROUTES.PROFILE_USER(authorId) : '#'} className="hover:text-primary transition-colors">
+                        {author.name || 'User'}
+                      </Link>
                       {firstMention && firstMentionId && (
                         <>
                           {' '}
@@ -352,7 +360,9 @@ export function DashboardPostCard({
                 ) : (
                   <>
                     <h4 className="text-[13px] font-semibold text-slate-900 dark:text-slate-100">
-                      {author.name || 'User'}
+                      <Link to={authorId ? ROUTES.PROFILE_USER(authorId) : '#'} className="hover:text-primary transition-colors">
+                        {author.name || 'User'}
+                      </Link>
                       {firstMention && firstMentionId && (
                         <>
                           {' '}
@@ -439,13 +449,11 @@ export function DashboardPostCard({
               setShowMentionsModal(true)
             }}
             onOpenImageViewer={(index) => {
-              setViewerPost(sharedPost)
-              setImageViewerIndex(index)
               const spId = sharedPost?.id ?? sharedPost?._id
               if (spId) {
                 const params = new URLSearchParams()
                 params.set('image', String(index))
-                navigate(`/post/photo/${spId}?${params.toString()}`)
+                navigate(`/post/photo/${spId}?${params.toString()}`, { state: { background: location } })
               }
             }}
           />
@@ -458,11 +466,10 @@ export function DashboardPostCard({
                 key={`img-${i}-${url.slice(0, 50)}`}
                 type="button"
                 onClick={() => {
-                  setImageViewerIndex(i)
                   if (postId) {
                     const params = new URLSearchParams()
                     params.set('image', String(i))
-                    navigate(`/post/photo/${postId}?${params.toString()}`)
+                    navigate(`/post/photo/${postId}?${params.toString()}`, { state: { background: location } })
                   }
                 }}
                 className="flex-1 min-w-0 cursor-pointer block focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 rounded overflow-hidden"
@@ -478,18 +485,6 @@ export function DashboardPostCard({
             ))}
           </div>
         )}
-      <PostImageViewerModal
-        open={imageViewerIndex !== null}
-        onClose={() => {
-          setImageViewerIndex(null)
-          navigate(-1)
-        }}
-        post={viewerPost}
-        initialImageIndex={imageViewerIndex ?? 0}
-        onLikeClick={typeof onToggleLike === 'function' ? handleLikeClick : undefined}
-        likeLoading={likeLoading}
-        onReactionClick={typeof onToggleLike === 'function' ? handleReactionClick : undefined}
-      />
         {post.video && typeof post.video === 'string' && post.video.trim() && (
           <div className="mt-4 rounded-xl overflow-hidden border border-slate-200 dark:border-[#325a67]">
             <video src={post.video} controls className="w-full max-h-80" preload="metadata" />
@@ -554,8 +549,23 @@ export function DashboardPostCard({
             )}
           </div>
           <div className="flex items-center gap-4 shrink-0">
-            <span className="tabular-nums">{t('dashboard.commentsCount', { count: post.commentCount ?? 0 })}</span>
-            <span className="tabular-nums">{t('dashboard.sharesCount', { count: post.shareCount ?? 0 })}</span>
+            <button
+              onClick={() => {
+                setShowDetailModal(true)
+              }}
+              className="tabular-nums hover:underline hover:text-primary transition-colors cursor-pointer"
+            >
+              {t('dashboard.commentsCount', { count: post.commentCount ?? 0 })}
+            </button>
+            <button
+              onClick={() => {
+                setInteractionsType('shares')
+                setShowInteractionsModal(true)
+              }}
+              className="tabular-nums hover:underline hover:text-primary transition-colors cursor-pointer"
+            >
+              {t('dashboard.sharesCount', { count: post.shareCount ?? 0 })}
+            </button>
           </div>
         </div>
         {/* Divider between summary and actions (full-width border line) */}
@@ -589,7 +599,7 @@ export function DashboardPostCard({
           </div>
           <button
             type="button"
-            onClick={() => setShowCommentsPanel((v) => !v)}
+            onClick={() => setShowDetailModal(true)}
             className="flex-1 flex items-center justify-center gap-2 py-2 text-base font-medium text-slate-500 dark:text-[#92bbc9] hover:bg-slate-50 dark:hover:bg-[#233f48] rounded-lg transition-colors"
           >
             <span className="material-symbols-outlined text-2xl">chat_bubble</span>
@@ -772,6 +782,20 @@ export function DashboardPostCard({
           setShowDeleteConfirmModal(false)
           handleDeletePost()
         }}
+      />
+      <PostInteractionsModal
+        open={showInteractionsModal}
+        onClose={() => setShowInteractionsModal(false)}
+        postId={postId}
+        type={interactionsType}
+      />
+      <PostDetailModal
+        open={showDetailModal}
+        onClose={() => setShowDetailModal(false)}
+        post={post}
+        onToggleLike={handleLikeClick}
+        onUpdatePost={onUpdatePost}
+        likeLoading={likeLoading}
       />
     </>
   )

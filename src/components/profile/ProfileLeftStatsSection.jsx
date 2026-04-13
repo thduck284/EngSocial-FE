@@ -32,50 +32,6 @@ export function ProfileLeftStatsSection({ t, profileSkillStats, raw, goalsDone, 
         </div>
       </div>
 
-      <div className="bg-white dark:bg-card-dark rounded-2xl p-6 border border-slate-200 dark:border-border-dark">
-        <div className="flex justify-between items-center mb-4">
-          <h4 className="font-bold dark:text-white flex items-center gap-2">
-            <span className="material-symbols-outlined text-primary">check_circle</span>
-            {t('profile.dailyGoals')}
-          </h4>
-          <span className="text-xs font-bold text-primary">
-            {goalsDone}/{goalsTotal} {t('dashboard.completed')}
-          </span>
-        </div>
-        <div className="space-y-4">
-          {raw.goals.map((goal) => (
-            <label key={goal.labelKey} className="flex items-center gap-3 cursor-pointer">
-              <div
-                className={`w-5 h-5 rounded border-2 flex items-center justify-center ${
-                  goal.done ? 'border-primary bg-primary' : 'border-slate-300 dark:border-slate-600'
-                }`}
-              >
-                {goal.done && (
-                  <span className="material-symbols-outlined text-white text-[16px]">check</span>
-                )}
-              </div>
-              <span
-                className={`text-sm font-medium ${
-                  goal.done ? 'line-through text-slate-400' : 'dark:text-slate-300'
-                }`}
-              >
-                {t(goal.labelKey)}
-              </span>
-            </label>
-          ))}
-          <div className="mt-4 pt-4 border-t border-slate-100 dark:border-border-dark">
-            <div className="flex justify-between text-xs mb-1">
-              <span className="text-slate-500">{t('profile.dailyStreak')}</span>
-              <span className="font-bold text-orange-500 flex items-center gap-1">
-                <span className="material-symbols-outlined text-[16px]">
-                  local_fire_department
-                </span>
-                7 {t('profile.days')}
-              </span>
-            </div>
-          </div>
-        </div>
-      </div>
 
       <div className="bg-white dark:bg-card-dark rounded-2xl p-6 border border-slate-200 dark:border-border-dark">
         <h4 className="font-bold mb-4 dark:text-white flex items-center gap-2">

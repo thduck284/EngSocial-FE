@@ -35,6 +35,7 @@ export function useDashboardData() {
   const [postsLoadingMore, setPostsLoadingMore] = useState(false)
   const [postsPage, setPostsPage] = useState(1)
   const [hasMorePosts, setHasMorePosts] = useState(true)
+  const [feedTab, setFeedTab] = useState('all') // all, following, popular
   const [showCreateModal, setShowCreateModal] = useState(false)
   const [profileProgress, setProfileProgress] = useState({
     level: 1,
@@ -81,26 +82,27 @@ export function useDashboardData() {
     setPostsPage(1)
     setHasMorePosts(true)
     communityService
-      .getPosts({ limit: POSTS_PAGE_SIZE, page: 1 })
+      .getPosts({ limit: POSTS_PAGE_SIZE, page: 1, tab: feedTab })
       .then((res) => {
         const list = Array.isArray(res?.data) ? res.data : []
         const pagination = res?.meta?.pagination ?? res?.pagination ?? {}
         setPosts(list)
         setHasMorePosts(Boolean(pagination.hasNextPage))
       })
-      .catch(() => {
+      .catch((err) => {
+        console.error('Failed to fetch posts:', err)
         setPosts([])
         setHasMorePosts(false)
       })
       .finally(() => setPostsLoading(false))
-  }, [])
+  }, [feedTab])
 
   const loadMorePosts = () => {
     if (postsLoadingMore || !hasMorePosts) return
     const nextPage = postsPage + 1
     setPostsLoadingMore(true)
     communityService
-      .getPosts({ limit: POSTS_PAGE_SIZE, page: nextPage })
+      .getPosts({ limit: POSTS_PAGE_SIZE, page: nextPage, tab: feedTab })
       .then((res) => {
         const list = Array.isArray(res?.data) ? res.data : []
         const pagination = res?.meta?.pagination ?? res?.pagination ?? {}
@@ -127,7 +129,7 @@ export function useDashboardData() {
 
   const refetchPosts = () => {
     communityService
-      .getPosts({ limit: POSTS_PAGE_SIZE, page: 1 })
+      .getPosts({ limit: POSTS_PAGE_SIZE, page: 1, tab: feedTab })
       .then((res) => {
         const list = Array.isArray(res?.data) ? res.data : []
         const pagination = res?.meta?.pagination ?? res?.pagination ?? {}
@@ -206,9 +208,10 @@ export function useDashboardData() {
     raw,
     posts,
     postsLoading,
-    postsLoadingMore,
     hasMorePosts,
     loadMorePosts,
+    feedTab,
+    setFeedTab,
     showCreateModal,
     setShowCreateModal,
     profileProgress,

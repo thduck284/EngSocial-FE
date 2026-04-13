@@ -15,6 +15,17 @@ export function AuthProvider({ children }) {
 
   // Đồng bộ state với storage khi mount (sau refresh hoặc mở tab mới)
   useEffect(() => {
+    // Migration: Nếu có token ở sessionStorage nhưng chưa có ở localStorage (do logic cũ),
+    // ta chuyển sang localStorage để hỗ trợ mở tab mới.
+    const sToken = sessionStorage.getItem('authToken')
+    const lToken = localStorage.getItem('authToken')
+    if (sToken && !lToken) {
+      ;['authToken', 'refreshToken', 'user', 'rememberedEmail', 'rememberedPassword'].forEach((key) => {
+        const val = sessionStorage.getItem(key)
+        if (val) localStorage.setItem(key, val)
+      })
+    }
+
     if (getAuthToken() && getStoredUser()) {
       setUser(getStoredUser())
     }

@@ -3,6 +3,7 @@ import { Link, useParams } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { lessonsService } from '../services'
 import { ROUTES } from '../constants'
+import { AlertModal } from '../components/ui/common/AlertModal'
 import { SKILL_TABS_LESSONS, TOPIC_OPTIONS, LEVEL_ORDER, SKILL_ORDER } from '../constants/lessons'
 
 const LEVELS = ['A1', 'A2', 'B1', 'B2', 'C1', 'C2']
@@ -50,6 +51,14 @@ export function ManageLessonsListPage({ mode }) {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
   const [deletingId, setDeletingId] = useState(null)
+  const [selectedLessonForResults, setSelectedLessonForResults] = useState(null)
+  const [userResults, setUserResults] = useState([])
+  const [userResultsLoading, setUserResultsLoading] = useState(false)
+  const [gradingUser, setGradingUser] = useState(null)
+  const [gradeScore, setGradeScore] = useState('')
+  const [gradeFeedback, setGradeFeedback] = useState('')
+  const [gradingSubmitting, setGradingSubmitting] = useState(false)
+  const [gradingAiLoading, setGradingAiLoading] = useState(false)
 
   const [skillFilter, setSkillFilter] = useState('all')
   const [levelFilter, setLevelFilter] = useState('all')
@@ -59,6 +68,7 @@ export function ManageLessonsListPage({ mode }) {
   const [sortKey, setSortKey] = useState('title')
   const [sortDir, setSortDir] = useState('asc')
   const [page, setPage] = useState(1)
+  const [itemToDelete, setItemToDelete] = useState(null)
 
   const load = useCallback(() => {
     setError('')
@@ -165,18 +175,96 @@ export function ManageLessonsListPage({ mode }) {
     setSearchQuery('')
   }
 
-  const onDelete = async (row) => {
-    const id = row?.id ?? row?._id
-    if (!id) return
-    if (!window.confirm(t('lessons.confirmDeleteLesson', { title: row.title || id }))) return
+  const onDelete = (row) => {
+    setItemToDelete(row)
+  }
+
+  const handleConfirmDelete = async () => {
+    if (!itemToDelete) return
+    const id = itemToDelete.id ?? itemToDelete._id
     setDeletingId(String(id))
+    const oldItem = itemToDelete
+    setItemToDelete(null)
     try {
       await lessonsService.delete(id)
       load()
     } catch {
-      /* optional toast */
+      setItemToDelete(oldItem)
     } finally {
       setDeletingId(null)
+    }
+  }
+
+  const onViewResults = async (row) => {
+    const id = row?.id ?? row?._id
+    if (!id) return
+    setSelectedLessonForResults(row)
+    setUserResultsLoading(true)
+    setUserResults([])
+    try {
+      const res = await lessonsService.getAllResults(id)
+      setUserResults(res?.data || [])
+    } catch (err) {
+      console.error('Cant load results', err)
+    } finally {
+      setUserResultsLoading(false)
+    }
+  }
+
+  const onStartGrading = (result) => {
+    setGradingUser(result)
+    setGradeScore(result.submission?.score ?? result.submission?.aiScore ?? '')
+    setGradeFeedback(result.submission?.feedback ?? result.submission?.aiFeedback ?? '')
+  }
+
+  const onUseAIResult = () => {
+    if (!gradingUser?.submission) return
+    setGradeScore(gradingUser.submission.aiScore ?? '')
+    setGradeFeedback(gradingUser.submission.aiFeedback ?? '')
+  }
+
+  const handleGradeWithAi = async () => {
+    if (!selectedLessonForResults || !gradingUser) return
+    const lessonId = selectedLessonForResults.id || selectedLessonForResults._id
+    const userId = gradingUser.user.id || gradingUser.user._id
+
+    setGradingAiLoading(true)
+    try {
+      const res = await lessonsService.aiGradeWriting(lessonId, userId)
+      const updatedProgress = res?.data
+      if (updatedProgress?.submission) {
+        setGradingUser(prev => ({
+          ...prev,
+          submission: updatedProgress.submission
+        }))
+        setGradeScore(updatedProgress.submission.aiScore || '')
+        setGradeFeedback(updatedProgress.submission.aiFeedback || '')
+      }
+    } catch (err) {
+      console.error('AI Grading failed', err)
+    } finally {
+      setGradingAiLoading(false)
+    }
+  }
+
+  const onSubmitGrade = async () => {
+    if (!selectedLessonForResults || !gradingUser) return
+    const lessonId = selectedLessonForResults.id || selectedLessonForResults._id
+    const userId = gradingUser.user.id
+    
+    setGradingSubmitting(true)
+    try {
+      await lessonsService.gradeWriting(lessonId, userId, {
+        score: Number(gradeScore),
+        feedback: gradeFeedback
+      })
+      // Refresh results
+      onViewResults(selectedLessonForResults)
+      setGradingUser(null)
+    } catch (err) {
+      console.error('Grading failed', err)
+    } finally {
+      setGradingSubmitting(false)
     }
   }
 
@@ -398,6 +486,14 @@ export function ManageLessonsListPage({ mode }) {
                       </td>
                       <td className="px-4 py-3 text-right">
                         <div className="inline-flex items-center gap-1">
+                          <button
+                            type="button"
+                            onClick={() => onViewResults(row)}
+                            className="p-2 rounded-lg text-gray-400 hover:bg-white/10 hover:text-emerald-400 transition-colors"
+                            title={t('staffDashboard.viewResults')}
+                          >
+                            <span className="material-symbols-outlined text-lg">group</span>
+                          </button>
                           <Link
                             to={editPath}
                             className="p-2 rounded-lg text-gray-400 hover:bg-white/10 hover:text-primary transition-colors"
@@ -457,6 +553,235 @@ export function ManageLessonsListPage({ mode }) {
           </div>
         ) : null}
       </div>
+
+      {/* User Results Modal */}
+      {selectedLessonForResults && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
+          <div className="bg-card-dark border border-border-dark w-full max-w-2xl rounded-2xl overflow-hidden shadow-2xl animate-in fade-in zoom-in duration-200">
+            <div className="p-4 border-b border-border-dark flex items-center justify-between bg-background-dark/50">
+              <div>
+                <h3 className="text-lg font-bold text-white">{t('staffDashboard.userResultsTitle')}</h3>
+                <p className="text-[11px] text-primary truncate max-w-[400px]">
+                  {selectedLessonForResults.title}
+                </p>
+              </div>
+              <button
+                onClick={() => setSelectedLessonForResults(null)}
+                className="p-2 rounded-lg text-gray-400 hover:bg-white/10 transition-colors"
+              >
+                <span className="material-symbols-outlined">close</span>
+              </button>
+            </div>
+            
+            <div className="p-0 max-h-[70vh] overflow-y-auto custom-scrollbar">
+              {userResultsLoading ? (
+                <div className="py-20 text-center">
+                  <span className="material-symbols-outlined animate-spin text-3xl text-primary">progress_activity</span>
+                </div>
+              ) : userResults.length === 0 ? (
+                <div className="py-20 text-center text-gray-500 flex flex-col items-center">
+                  <span className="material-symbols-outlined text-5xl mb-3 opacity-20">history_edu</span>
+                  <p className="text-sm">{t('staffDashboard.noResults')}</p>
+                </div>
+              ) : (
+                <table className="w-full text-left text-sm">
+                  <thead className="sticky top-0 bg-card-dark border-b border-border-dark">
+                    <tr>
+                      <th className="px-5 py-3 text-[11px] font-bold text-gray-500 uppercase">{t('staffDashboard.colUser')}</th>
+                      <th className="px-5 py-3 text-[11px] font-bold text-gray-500 uppercase text-center">{t('staffDashboard.colScore')}</th>
+                      <th className="px-5 py-3 text-[11px] font-bold text-gray-500 uppercase text-right">{t('staffDashboard.colCompletedAt')}</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-border-dark/50">
+                    {userResults.map((res) => (
+                      <tr key={res.id} className="hover:bg-white/[0.02] transition-colors">
+                        <td className="px-5 py-3">
+                          <div className="flex items-center gap-3">
+                            <div className="size-8 rounded-full bg-primary/20 flex items-center justify-center overflow-hidden border border-primary/20">
+                              {res.user.avatar ? (
+                                <img src={res.user.avatar} alt="" className="size-full object-cover" />
+                              ) : (
+                                <span className="text-xs font-bold text-primary">{res.user.name?.[0]}</span>
+                              )}
+                            </div>
+                            <div>
+                              <p className="text-sm font-bold text-white">
+                                {res.user.name} 
+                                {res.attemptNo > 0 && (
+                                  <span className="ml-2 text-[10px] text-primary bg-primary/10 px-1.5 py-0.5 rounded border border-primary/20">
+                                    Lần {res.attemptNo}
+                                  </span>
+                                )}
+                              </p>
+                              <p className="text-[10px] text-gray-500">{res.user.email}</p>
+                            </div>
+                          </div>
+                        </td>
+                        <td className="px-5 py-3 text-center">
+                          {(res.status === 'in_progress' && res.submission?.submittedAt) ? (
+                            <span className="px-2.5 py-1 rounded-full text-[10px] font-bold bg-amber-500/10 text-amber-400 border border-amber-500/20 uppercase tracking-wider">
+                              Review
+                            </span>
+                          ) : (
+                            <span className={`px-2.5 py-1 rounded-full text-xs font-black ${res.score >= 80 ? 'bg-emerald-500/10 text-emerald-400' : 'bg-primary/10 text-primary'}`}>
+                              {res.score}/{res.maxScore || 100}
+                            </span>
+                          )}
+                        </td>
+                        <td className="px-5 py-3 text-right">
+                          <div className="flex flex-col items-end">
+                            <span className="text-xs text-gray-500 font-medium">
+                              {new Date(res.completedAt || res.submission?.submittedAt).toLocaleDateString('vi-VN', {
+                                day: '2-digit',
+                                month: '2-digit'
+                              })}
+                            </span>
+                            {selectedLessonForResults.skill === 'writing' && (
+                              <button
+                                onClick={() => onStartGrading(res)}
+                                className="mt-1 text-[10px] font-bold text-primary hover:underline uppercase tracking-tighter"
+                              >
+                                {(res.status === 'in_progress' && res.submission?.submittedAt) ? 'Chấm điểm' : 'Sửa điểm'}
+                              </button>
+                            )}
+                          </div>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              )}
+            </div>
+            
+            <div className="p-4 border-t border-border-dark bg-background-dark/50 flex justify-end">
+              <button
+                onClick={() => setSelectedLessonForResults(null)}
+                className="px-5 py-2 rounded-xl border border-border-dark text-gray-400 font-bold text-xs hover:bg-white/5"
+              >
+                {t('common.close')}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Grading Modal */}
+      {gradingUser && (
+        <div className="fixed inset-0 z-[110] flex items-center justify-center p-4 bg-black/90 backdrop-blur-md">
+          <div className="bg-card-dark border border-border-dark w-full max-w-4xl rounded-2xl overflow-hidden shadow-2xl flex flex-col md:flex-row h-[90vh] md:h-auto max-h-[95vh] animate-in fade-in slide-in-from-bottom-4 duration-300">
+            {/* Left Hand: Student Submission */}
+            <div className="flex-1 p-6 border-r border-border-dark overflow-y-auto custom-scrollbar">
+              <div className="flex items-center gap-3 mb-6">
+                <div className="size-10 rounded-full bg-primary/20 flex items-center justify-center border border-primary/20 overflow-hidden">
+                  {gradingUser.user.avatar ? <img src={gradingUser.user.avatar} className="size-full object-cover" /> : <span className="font-bold text-primary">{gradingUser.user.name?.[0]}</span>}
+                </div>
+                <div>
+                  <h4 className="font-bold text-white">{gradingUser.user.name}</h4>
+                  <p className="text-[10px] text-gray-500 uppercase tracking-widest">Bài làm Writing</p>
+                </div>
+              </div>
+              
+              <div className="space-y-4">
+                <div className="bg-background-dark/50 rounded-xl p-5 border border-border-dark">
+                  <h5 className="text-[11px] font-bold text-gray-500 uppercase mb-3 tracking-wider">Nội dung bài viết</h5>
+                  <div className="text-sm text-gray-300 leading-relaxed whitespace-pre-wrap font-serif">
+                    {gradingUser.submission?.content}
+                  </div>
+                  <div className="mt-4 pt-4 border-t border-border-dark/30 text-[10px] text-gray-500 flex justify-between">
+                    <span>Số từ: {gradingUser.submission?.wordCount}</span>
+                    <span>Đã nộp: {new Date(gradingUser.submission?.submittedAt).toLocaleString()}</span>
+                  </div>
+                </div>
+
+                <div className="bg-primary/5 rounded-xl p-4 border border-primary/10 italic">
+                  <div className="flex items-center gap-2 mb-2">
+                    <span className="material-symbols-outlined text-sm text-primary">psychology</span>
+                    <span className="text-[11px] font-bold text-primary uppercase">Gợi ý từ AI (Score: {gradingUser.submission?.aiScore})</span>
+                  </div>
+                  <p className="text-[11px] text-gray-400 leading-relaxed">
+                    {gradingUser.submission?.aiFeedback}
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            {/* Right Hand: Grading Form */}
+            <div className="w-full md:w-[320px] lg:w-[400px] p-6 bg-background-dark/30 flex flex-col">
+              <div className="flex flex-col gap-2 mb-6">
+                <div className="flex items-center justify-between">
+                  <h4 className="font-bold text-white">Chấm điểm & Nhận xét</h4>
+                  <button
+                    onClick={handleGradeWithAi}
+                    disabled={gradingAiLoading}
+                    className="text-[10px] font-bold text-emerald-400 hover:underline flex items-center gap-1 disabled:opacity-50"
+                  >
+                    <span className={`material-symbols-outlined text-sm ${gradingAiLoading ? 'animate-spin' : ''}`}>
+                      {gradingAiLoading ? 'progress_activity' : 'psychology'}
+                    </span>
+                    {gradingAiLoading ? 'ĐANG CHẤM...' : 'CHẤM BẰNG AI'}
+                  </button>
+                </div>
+                {gradingUser.submission?.aiScore && (
+                  <button onClick={onUseAIResult} className="text-[10px] font-bold text-gray-500 hover:text-primary flex items-center gap-1 transition-colors self-end">
+                    <span className="material-symbols-outlined text-sm">auto_fix</span> Dùng kết quả AI có sẵn
+                  </button>
+                )}
+              </div>
+
+              <div className="space-y-5 flex-1">
+                <div>
+                  <label className="block text-xs font-bold text-gray-500 uppercase mb-2">Điểm số (0-100)</label>
+                  <input
+                    type="number"
+                    min="0"
+                    max="100"
+                    value={gradeScore}
+                    onChange={(e) => setGradeScore(e.target.value)}
+                    className="w-full bg-background-dark border border-border-dark rounded-xl px-4 py-3 text-lg font-black text-primary focus:ring-2 focus:ring-primary outline-none"
+                    placeholder="85"
+                  />
+                </div>
+
+                <div className="flex-1 flex flex-col">
+                  <label className="block text-xs font-bold text-gray-500 uppercase mb-2">Nhận xét chi tiết</label>
+                  <textarea
+                    value={gradeFeedback}
+                    onChange={(e) => setGradeFeedback(e.target.value)}
+                    className="w-full flex-1 min-h-[150px] bg-background-dark border border-border-dark rounded-xl p-4 text-sm text-white focus:ring-2 focus:ring-primary outline-none resize-none custom-scrollbar"
+                    placeholder="Viết nhận xét cho học viên..."
+                  />
+                </div>
+              </div>
+
+              <div className="mt-8 flex gap-3">
+                <button
+                  onClick={() => setGradingUser(null)}
+                  className="flex-1 py-3 px-4 border border-border-dark rounded-xl text-gray-400 font-bold text-xs hover:bg-white/5"
+                >
+                  Hủy
+                </button>
+                <button
+                  onClick={onSubmitGrade}
+                  disabled={gradingSubmitting || !gradeScore}
+                  className="flex-[2] py-3 px-4 bg-primary text-background-dark rounded-xl font-black text-xs hover:opacity-90 disabled:opacity-50"
+                >
+                  {gradingSubmitting ? 'ĐANG LƯU...' : 'LƯU KẾT QUẢ'}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      <AlertModal
+        open={!!itemToDelete}
+        title={t('manageLessons.deleteConfirmTitle') || t('quests.delete')}
+        message={t('lessons.confirmDeleteLesson', { title: itemToDelete?.title || '' })}
+        confirmText={t('common.confirm') || 'OK'}
+        cancelText={t('common.cancel') || 'Cancel'}
+        onClose={() => setItemToDelete(null)}
+        onConfirm={handleConfirmDelete}
+      />
     </div>
   )
 }

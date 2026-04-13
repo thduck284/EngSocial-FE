@@ -60,3 +60,6 @@ export { leaderboardService } from './leaderboard.service.js'
 
 // Chatbot
 export { chatbotService } from './chatbot.service.js'
+
+// Groups
+export { groupService } from './group.service.js'

@@ -151,7 +151,8 @@ export function useLogin() {
   const [remember, setRemember] = useState(() => {
     const rememberedEmail = localStorage.getItem('rememberedEmail')
     const rememberedPassword = localStorage.getItem('rememberedPassword')
-    return !!(rememberedEmail && rememberedPassword)
+    if (rememberedEmail && rememberedPassword) return true
+    return true // Default to true for better UX across tabs
   })
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState(null)

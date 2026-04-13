@@ -19,6 +19,10 @@ export function useCommunityGroups() {
   const [feedLoading, setFeedLoading] = useState(false)
   const [feedHasMore, setFeedHasMore] = useState(false)
   const [feedPage, setFeedPage] = useState(1)
+  const [feedSort, setFeedSort] = useState('latest')
+  
+  const [discoverGroups, setDiscoverGroups] = useState([])
+  const [loadingDiscover, setLoadingDiscover] = useState(false)
 
   const loadGroupPosts = async (groupId, page = 1) => {
     if (!groupId) return
@@ -57,11 +61,13 @@ export function useCommunityGroups() {
     }
   }
 
-  const loadFeedPosts = async (page = 1) => {
+  const loadFeedPosts = async (page = 1, sort = 'latest') => {
     setFeedLoading(true)
     try {
-      const res = await communityService.getPosts({ page, limit: 5 })
+      // Tăng limit để tăng khả năng lấy được bài viết nhóm sau khi filter ở FE (hoặc nếu BE hỗ trợ scope: 'groups')
+      const res = await communityService.getPosts({ page, limit: 12, scope: 'groups', sort })
       const raw = res?.data ?? res ?? {}
+      if (page === 1) setFeedSort(sort)
       let list = []
       if (Array.isArray(raw)) {
         list = raw
@@ -75,8 +81,8 @@ export function useCommunityGroups() {
         list = []
       }
 
-      // Chỉ lấy bài viết thuộc community group (có groupId)
-      list = list.filter((p) => p && (p.groupId || p.group?.id || p.group?._id))
+      // Lọc các bài viết thực sự thuộc về một nhóm
+      const filteredList = list.filter((p) => p && (p.groupId || p.group?.id || p.group?._id))
 
       const meta =
         raw.meta?.pagination ||
@@ -84,15 +90,43 @@ export function useCommunityGroups() {
         raw.data?.meta?.pagination ||
         raw.data?.meta ||
         {}
-      setFeedPosts((prev) => (page === 1 ? list : [...prev, ...list]))
-      const totalPages = meta.totalPages ?? (list.length < 5 ? page : page + 1)
-      setFeedHasMore(page < totalPages)
+      
+      setFeedPosts((prev) => (page === 1 ? filteredList : [...prev, ...filteredList]))
+      
+      const hasNext = meta.hasNextPage ?? (list.length >= 12)
+      setFeedHasMore(hasNext)
       setFeedPage(page)
-    } catch {
+
+      // Nếu trang hiện tại không có bài viết nào phù hợp sau khi lọc,
+      // nhưng BE vẫn báo còn trang tiếp theo, tự động load thêm trang mới.
+      if (filteredList.length === 0 && hasNext && page < 5) { // Giới hạn page < 5 để tránh loop vô tận nếu dữ liệu rác nhiều
+        loadFeedPosts(page + 1)
+      }
+    } catch (err) {
+      console.error('Community Feed Error:', err)
       if (page === 1) setFeedPosts([])
       setFeedHasMore(false)
     } finally {
       setFeedLoading(false)
+    }
+  }
+
+  const loadDiscoverGroups = async () => {
+    setLoadingDiscover(true)
+    try {
+      const res = await groupService.list({ limit: 30, discovery: true })
+      const raw = res?.data
+      if (Array.isArray(raw)) {
+        setDiscoverGroups(raw)
+      } else if (Array.isArray(raw?.data)) {
+        setDiscoverGroups(raw.data)
+      } else {
+        setDiscoverGroups([])
+      }
+    } catch {
+      setDiscoverGroups([])
+    } finally {
+      setLoadingDiscover(false)
     }
   }
 
@@ -189,11 +223,11 @@ export function useCommunityGroups() {
 
   const loadMoreFeedPosts = () => {
     if (feedLoading || !feedHasMore) return
-    loadFeedPosts(feedPage + 1)
+    loadFeedPosts(feedPage + 1, feedSort)
   }
 
   const handlePostReactionUpdate = (postId, patch) => {
-    setPosts((prev) =>
+    const updater = (prev) =>
       prev.map((p) => {
         const id = p?.id ?? p?._id
         if (String(id) !== String(postId)) return p
@@ -205,7 +239,8 @@ export function useCommunityGroups() {
           reactionCounts: patch.reactionCounts ?? p.reactionCounts,
         }
       })
-    )
+    setPosts(updater)
+    setFeedPosts(updater)
   }
 
   const applyPostUpdate = (list = [], postId, updated = {}) =>
@@ -392,8 +427,12 @@ export function useCommunityGroups() {
     feedPosts,
     feedLoading,
     feedHasMore,
+    feedSort,
     loadFeedPosts,
     loadMoreFeedPosts,
+    discoverGroups,
+    loadingDiscover,
+    loadDiscoverGroups,
     leaveCommunityGroup,
     joinCommunityGroup,
     handleMemberRemovedFromGroup,

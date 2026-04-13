@@ -141,7 +141,7 @@ export function useProfilePhotos(userId, { pageSize = 5 } = {}) {
         const images = Array.isArray(post?.images) ? post.images : []
         return images
           .filter((url) => typeof url === 'string' && url.trim())
-          .map((url) => ({ url, postId }))
+          .map((url, imgIdx) => ({ url, postId, imgIdx }))
       })
 
       postsPageRef.current = currentPage + 1
@@ -251,7 +251,9 @@ export function useProfileVideos(userId, { pageSize = 5 } = {}) {
         if (post?.sharedPostId || post?.sharedPost) return []
         const postId = post?.id ?? post?._id
         const video = typeof post?.video === 'string' ? post.video.trim() : ''
-        return video ? [{ url: video, postId }] : []
+        if (!video) return []
+        const imagesCount = Array.isArray(post?.images) ? post.images.length : 0
+        return [{ url: video, postId, mediaIdx: imagesCount }]
       })
 
       postsPageRef.current = currentPage + 1
@@ -343,6 +345,12 @@ export function useProfilePage() {
       .catch(() => {})
   }, [])
 
+  const [profileProgress, setProfileProgress] = useState({
+    level: user?.level ?? 1,
+    xp: user?.xp ?? 0,
+    xpMax: 500
+  })
+
   useEffect(() => {
     userService
       .getStats()
@@ -352,18 +360,25 @@ export function useProfilePage() {
         setProfileSkillStats(list)
         const details = Array.isArray(data?.skillStats) ? data.skillStats : []
         setProfileSkillDetails(details)
+        
+        // Sync level and XP
+        setProfileProgress({
+          level: Number(data.level || data.currentLevel || user?.level || 1),
+          xp: Number(data.currentXp || data.xpInLevel || data.xp || user?.xp || 0),
+          xpMax: Number(data.xpToNextLevel || 500)
+        })
       })
       .catch(() => {
         setProfileSkillStats(defaultSkillStats)
         setProfileSkillDetails([])
       })
-  }, [defaultSkillStats])
+  }, [defaultSkillStats, user?.level, user?.xp])
 
   const profile = raw.userProfile
   const displayName = user?.name ?? profile.name
-  const displayLevel = user?.level ?? profile.level
-  const displayXp = Number(user?.xp ?? profile.xp) || 0
-  const displayXpMax = Number(user?.xpMax ?? profile.xpMax ?? 500) || 500
+  const displayLevel = profileProgress.level
+  const displayXp = profileProgress.xp
+  const displayXpMax = profileProgress.xpMax
   const displayAvatar = user?.avatar ?? profile.avatar ?? DEFAULT_AVATAR
   const xpPercent = displayXpMax ? Math.min(100, Math.round((displayXp / displayXpMax) * 100)) : 0
 

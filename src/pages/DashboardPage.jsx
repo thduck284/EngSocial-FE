@@ -26,6 +26,8 @@ export function DashboardPage() {
     removePostFromFeed,
     weeklyLeaderboard,
     weeklyLeaderboardLoading,
+    feedTab,
+    setFeedTab,
   } = useDashboardData()
 
   const [onlineUserIds, setOnlineUserIds] = useState(new Set())
@@ -81,6 +83,8 @@ export function DashboardPage() {
           postsLoadingMore={postsLoadingMore}
           hasMorePosts={hasMorePosts}
           loadMorePosts={loadMorePosts}
+          feedTab={feedTab}
+          setFeedTab={setFeedTab}
           friendsList={displayedFriendsList}
         />
       </div>

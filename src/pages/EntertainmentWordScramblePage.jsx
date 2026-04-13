@@ -26,21 +26,14 @@ export function EntertainmentWordScramblePage() {
   const [isMatching, setIsMatching] = useState(false)
   const [inviteCopied, setInviteCopied] = useState(false)
   const [isInviteBubbleOpen, setIsInviteBubbleOpen] = useState(false)
+  const [activeRoomCode, setActiveRoomCode] = useState(/** @type {string | null} */ (null))
+  const [actualMatchedCount, setActualMatchedCount] = useState(/** @type {number | null} */ (null))
+  const [pendingQuickMatchCapacity, setPendingQuickMatchCapacity] = useState(/** @type {number | null} */ (null))
 
   const token = getAuthToken()
   const myUserId = user?.id ?? user?._id
 
   const lobbyParam = searchParams.get('lobby')
-
-  useEffect(() => {
-    if (!lobbyParam || !isAuthenticated) return
-    const code = lobbyParam.trim().toUpperCase()
-    if (code.length < 4) return
-    setMode('multi-private')
-    setPendingJoinCode(code)
-    setMultiPastLobby(false)
-    setPlayerCount(null)
-  }, [lobbyParam, isAuthenticated])
 
   const clearLobbyQuery = useCallback(() => {
     setSearchParams(
@@ -52,6 +45,18 @@ export function EntertainmentWordScramblePage() {
       { replace: true }
     )
   }, [setSearchParams])
+
+  useEffect(() => {
+    if (!lobbyParam || !isAuthenticated) return
+    const code = lobbyParam.trim().toUpperCase()
+    if (code.length < 4) return
+    // Unified matchmaking: lobby code is ignored, everyone uses the same queue flow.
+    setMode('multi-quick')
+    setPendingJoinCode(null)
+    setMultiPastLobby(false)
+    setPlayerCount(null)
+    clearLobbyQuery()
+  }, [lobbyParam, isAuthenticated, clearLobbyQuery])
 
   const onJoinedWithCapacity = useCallback(
     (n) => {
@@ -79,22 +84,37 @@ export function EntertainmentWordScramblePage() {
       }
     },
     onGameStarted: (data) => {
+      // Capture the actual players from the lobby before it disconnects
+      const n = lobby.slots.filter(s => s != null).length || playerCount || 2
+      setActualMatchedCount(n)
+      
+      if (data?.roomCode) {
+        setActiveRoomCode(data.roomCode)
+      }
+
       setMultiPastLobby(true)
       setIsMatching(false)
       setDifficulty('medium')
       console.log('Matchmaking AI Result:', data?.aiResult)
-      if (data?.roomCode) {
-        // Có thể cần logic chuyển hướng hoặc thông báo nếu cần, 
-        // nhưng hiện tại EntertainmentWordScramble sẽ tự render dựa trên mode/playerCount
-      }
     },
     onJoinedWithCapacity,
   })
 
+  useEffect(() => {
+    if (mode !== 'multi-quick') return
+    if (!pendingQuickMatchCapacity) return
+    if (!lobby.connected) return
+    lobby.findMatch(pendingQuickMatchCapacity)
+    setIsMatching(true)
+    setPendingQuickMatchCapacity(null)
+  }, [mode, pendingQuickMatchCapacity, lobby.connected, lobby])
+
   const handleModeSelect = (/** @type {'solo' | 'multi-quick' | 'multi-private'} */ m) => {
-    setMode(m)
+    // No private/public split for matchmaking behavior.
+    setMode(m === 'multi-private' ? 'multi-quick' : m)
     setMultiPastLobby(false)
     setPendingJoinCode(null)
+    setActiveRoomCode(null)
     clearLobbyQuery()
   }
 
@@ -106,6 +126,9 @@ export function EntertainmentWordScramblePage() {
     setPendingJoinCode(null)
     setDifficulty(null)
     setIsMatching(false)
+    setActualMatchedCount(null)
+    setActiveRoomCode(null)
+    setPendingQuickMatchCapacity(null)
     clearLobbyQuery()
   }
 
@@ -117,6 +140,8 @@ export function EntertainmentWordScramblePage() {
     setPendingJoinCode(null)
     clearLobbyQuery()
     setMultiPastLobby(false)
+    setActiveRoomCode(null)
+    setPendingQuickMatchCapacity(null)
   }
 
   const isMulti = mode === 'multi-quick' || mode === 'multi-private'
@@ -208,8 +233,7 @@ export function EntertainmentWordScramblePage() {
           onSelect={(n) => {
             setPlayerCount(n)
             if (mode === 'multi-quick') {
-              lobby.findMatch(n)
-              setIsMatching(true)
+              setPendingQuickMatchCapacity(n)
             } else {
               // multi-private: Tạo phòng luôn
               lobby.create(n)
@@ -226,6 +250,7 @@ export function EntertainmentWordScramblePage() {
           onCancel={() => {
             setIsMatching(false)
             setPlayerCount(null)
+            setPendingQuickMatchCapacity(null)
             lobby.leaveRoom()
           }}
         />
@@ -239,10 +264,11 @@ export function EntertainmentWordScramblePage() {
         />
       ) : (
         <EntertainmentWordScramble
-          key={`${mode}-${isMulti ? playerCount : ''}-${difficulty}`}
+          key={`${mode}-${isMulti ? playerCount : ''}-${difficulty}-${activeRoomCode}`}
           fullScreen
           gameMode={mode}
-          playerCount={isMulti ? playerCount ?? 2 : 1}
+          roomCode={activeRoomCode}
+          playerCount={isMulti ? (actualMatchedCount || playerCount || 2) : 1}
           difficulty={difficulty}
         />
       )}

@@ -46,7 +46,10 @@ export const authService = {
 }
 
 function storeAuthFromResponse(res, remember, i18n) {
-  const storage = remember ? localStorage : sessionStorage
+  // Always use localStorage for tokens to ensure crossing tabs works correctly.
+  // The 'remember' flag can still be used for other UI logic if needed.
+  const storage = localStorage 
+
   const { accessToken, refreshToken, user } = res?.data || {}
   if (accessToken) storage.setItem('authToken', accessToken)
   if (refreshToken) storage.setItem('refreshToken', refreshToken)

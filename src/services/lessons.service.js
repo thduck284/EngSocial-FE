@@ -22,4 +22,15 @@ export const lessonsService = {
   submit: (id, body) => apiClient.post(API_ENDPOINTS.LESSONS.SUBMIT(id), body),
   submitWriting: (id, body) => apiClient.post(API_ENDPOINTS.LESSONS.SUBMIT_WRITING(id), body),
   complete: (id) => apiClient.post(API_ENDPOINTS.LESSONS.COMPLETE(id)),
+  getReviews: (id, params = {}) => {
+    const q = new URLSearchParams(params).toString()
+    return apiClient.get(`${API_ENDPOINTS.LESSONS.REVIEWS(id)}${q ? `?${q}` : ''}`)
+  },
+  addReview: (id, body) => apiClient.post(API_ENDPOINTS.LESSONS.REVIEWS(id), body),
+  getAllResults: (id, params = {}) => {
+    const q = new URLSearchParams(params).toString()
+    return apiClient.get(`${API_ENDPOINTS.LESSONS.DETAIL(id)}/all-results${q ? `?${q}` : ''}`)
+  },
+  gradeWriting: (id, userId, body) => apiClient.post(`${API_ENDPOINTS.LESSONS.DETAIL(id)}/grade/${userId}`, body),
+  aiGradeWriting: (id, userId) => apiClient.post(API_ENDPOINTS.LESSONS.AI_GRADE(id, userId)),
 }

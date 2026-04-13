@@ -73,15 +73,27 @@ export function PostImageViewerLeft({
       )}
       <div className="flex-1 flex items-center justify-center min-h-0 p-4 overflow-auto">
         {currentSrc && (
-          <img
-            src={currentSrc}
-            alt=""
-            className="max-w-full max-h-full w-auto h-auto object-contain transition-transform duration-200"
-            style={{ transform: `scale(${zoom})` }}
-            onClick={(e) => e.stopPropagation()}
-            referrerPolicy="no-referrer"
-            draggable={false}
-          />
+          currentSrc.split('?')[0].match(/\.(mp4|webm|ogg|mov)$|^https:\/\/.+video.+/i) ? (
+            <video
+              src={currentSrc}
+              controls
+              autoPlay
+              className="max-w-full max-h-full w-auto h-auto object-contain transition-transform duration-200"
+              style={{ transform: `scale(${zoom})` }}
+              onClick={(e) => e.stopPropagation()}
+              draggable={false}
+            />
+          ) : (
+            <img
+              src={currentSrc}
+              alt=""
+              className="max-w-full max-h-full w-auto h-auto object-contain transition-transform duration-200"
+              style={{ transform: `scale(${zoom})` }}
+              onClick={(e) => e.stopPropagation()}
+              referrerPolicy="no-referrer"
+              draggable={false}
+            />
+          )
         )}
       </div>
     </div>

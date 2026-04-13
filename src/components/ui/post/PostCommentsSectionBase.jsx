@@ -167,7 +167,7 @@ export function PostCommentsSectionBase({
       {showCommentReactionPicker && commentReactionBubbleRect && hoveredCommentId != null &&
         createPortal(
           <div
-            className="fixed z-[100] flex items-center gap-1 rounded-full bg-white dark:bg-[#1a353d] border border-slate-200 dark:border-[#325a67] shadow-lg p-[5px]"
+            className="fixed z-[10000] flex items-center gap-1 rounded-full bg-white dark:bg-[#1a353d] border border-slate-200 dark:border-[#325a67] shadow-lg p-[5px]"
             style={{
               left: commentReactionBubbleRect.left + commentReactionBubbleRect.width / 2,
               top: commentReactionBubbleRect.top - 8,

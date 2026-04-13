@@ -1,3 +1,4 @@
+import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { ROUTES } from '../constants'
@@ -19,6 +20,11 @@ export function SearchPage() {
   const { t } = useTranslation()
   const { user } = useAuth()
   const search = useSearchPage()
+
+  const [onlineUserIds, setOnlineUserIds] = useState(new Set())
+  const studyGroups = useStudyGroups(setOnlineUserIds)
+  const friends = useDashboardFriends(onlineUserIds, setOnlineUserIds, studyGroups.allConversations)
+  useDashboardSocket(user, studyGroups.setConversations, friends.setOnlineFriends, setOnlineUserIds)
 
   const {
     q,
@@ -73,13 +79,10 @@ export function SearchPage() {
 
   // Reuse dashboard hooks so right sidebar (Friend suggestions, Study groups, Weekly leaderboard)
   // looks exactly like home.
-  const studyGroups = useStudyGroups()
-  const { onlineUserIds } = useDashboardSocket(user, studyGroups.setGroupConversations)
   const {
     weeklyLeaderboard,
     weeklyLeaderboardLoading,
   } = useDashboardData()
-  const friends = useDashboardFriends(onlineUserIds)
 
   const {
     friendsFilterTab: dashFriendsFilterTab,

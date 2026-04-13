@@ -5,7 +5,7 @@ import { getExpandTargetsAfterReply } from '../utils/commentThread'
 
 // ─── Image viewer for post modal ──────────────────────────────────────────────
 
-export function usePostImageViewer({ open, initialImageIndex = 0, imagesList, onClose }) {
+export function usePostImageViewer({ open, initialImageIndex = 0, imagesList, onClose, onIndexChange }) {
   const [currentIndex, setCurrentIndex] = useState(initialImageIndex)
   const [zoom, setZoom] = useState(1)
   const [fullscreen, setFullscreen] = useState(false)
@@ -20,6 +20,12 @@ export function usePostImageViewer({ open, initialImageIndex = 0, imagesList, on
     setFullscreen(false)
     setContentExpanded(false)
   }, [open, initialImageIndex, imagesList.length])
+
+  useEffect(() => {
+    if (open && onIndexChange) {
+      onIndexChange(currentIndex)
+    }
+  }, [currentIndex, open, onIndexChange])
 
   useEffect(() => {
     if (!open) return

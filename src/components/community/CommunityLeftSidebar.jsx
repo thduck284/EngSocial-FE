@@ -14,6 +14,7 @@ export function CommunityLeftSidebar({
   const location = useLocation()
   const isYourGroupsActive = location.pathname.endsWith('/community/my-groups')
   const isMyFeedActive = location.pathname.endsWith('/community/group-feed')
+  const isDiscoverActive = location.pathname.endsWith('/community/discover')
 
   return (
     <aside className="hidden md:block md:col-span-3 space-y-6">
@@ -51,8 +52,22 @@ export function CommunityLeftSidebar({
             </span>
             <span>{t('groups.sidebar.myFeed')}</span>
           </button>
-          <button className="w-full flex items-center gap-3 p-3 rounded-lg hover:bg-slate-800 transition-colors text-slate-200">
-            <span className="material-symbols-outlined text-slate-300">explore</span>
+          <button
+            type="button"
+            onClick={() => navigate('/community/discover')}
+            className={`w-full flex items-center gap-3 p-3 rounded-lg transition-colors ${
+              isDiscoverActive
+                ? 'bg-primary/15 text-primary-100 font-semibold border border-primary/40'
+                : 'hover:bg-slate-800 text-slate-200'
+            }`}
+          >
+            <span
+              className={`material-symbols-outlined ${
+                isDiscoverActive ? 'text-primary' : 'text-slate-300'
+              }`}
+            >
+              explore
+            </span>
             <span>{t('groups.sidebar.discover')}</span>
           </button>
           <button

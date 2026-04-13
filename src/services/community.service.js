@@ -47,4 +47,10 @@ export const communityService = {
   getCommentReactions: async (commentId) => {
     return apiClient.get(`/community/comments/${commentId}/reactions`)
   },
+  getPostCommentUsers: async (postId) => {
+    return apiClient.get(API_ENDPOINTS.COMMUNITY.POST_COMMENT_USERS(postId))
+  },
+  getPostShareUsers: async (postId) => {
+    return apiClient.get(API_ENDPOINTS.COMMUNITY.POST_SHARE_USERS(postId))
+  },
 }

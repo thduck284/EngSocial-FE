@@ -87,6 +87,12 @@ export function PostPhotoPage() {
       onLikeClick={undefined}
       likeLoading={false}
       onReactionClick={undefined}
+      onIndexChange={(newIndex) => {
+        if (newIndex === initialImageIndex) return
+        const params = new URLSearchParams(location.search)
+        params.set('image', String(newIndex))
+        navigate({ search: params.toString() }, { replace: true, state: location.state })
+      }}
     />
   )
 }

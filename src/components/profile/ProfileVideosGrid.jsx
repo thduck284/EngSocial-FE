@@ -1,8 +1,11 @@
 import { useEffect, useRef } from 'react'
+import { useNavigate, useLocation } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 
 export function ProfileVideosGrid({ videos, loading, error, hasMore, loadMore }) {
   const { t } = useTranslation()
+  const navigate = useNavigate()
+  const location = useLocation()
   const sentinelRef = useRef(null)
 
   useEffect(() => {
@@ -50,17 +53,30 @@ export function ProfileVideosGrid({ videos, loading, error, hasMore, loadMore })
     <div className="w-full">
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         {videos.map((item, index) => (
-          <div
+          <button
             key={`${item.postId || 'post'}-${index}-${item.url}`}
-            className="overflow-hidden rounded-xl border border-slate-200 dark:border-border-dark bg-black"
+            onClick={() => {
+              if (item.postId) {
+                const params = new URLSearchParams()
+                if (item.mediaIdx != null) params.set('image', String(item.mediaIdx))
+                navigate(`/post/photo/${item.postId}?${params.toString()}`, {
+                  state: { background: location },
+                })
+              }
+            }}
+            className="relative group overflow-hidden rounded-xl border border-slate-200 dark:border-border-dark bg-black cursor-pointer block w-full outline-none focus:ring-2 focus:ring-primary"
           >
             <video
               src={item.url}
-              controls
               preload="metadata"
-              className="w-full h-56 object-cover"
+              className="w-full h-56 object-cover pointer-events-none"
             />
-          </div>
+            <div className="absolute inset-0 bg-black/20 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+              <div className="w-12 h-12 rounded-full bg-white/20 backdrop-blur-md flex items-center justify-center border border-white/30 scale-90 group-hover:scale-100 transition-transform">
+                <span className="material-symbols-outlined text-white text-3xl">play_arrow</span>
+              </div>
+            </div>
+          </button>
         ))}
       </div>
       <div ref={sentinelRef} className="h-6" />

@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { lessonsService } from '../services'
+import { addVocabNote } from '../utils/vocabularyUserStorage'
 
 /**
  * Hook for Reading Lesson page: content, quiz state, notes, countdown, vocab, pagination.
@@ -26,6 +27,7 @@ export function useReadingLesson(id, t) {
   const [showIncompleteModal, setShowIncompleteModal] = useState(false)
   const [completingLesson, setCompletingLesson] = useState(false)
   const [completeMessage, setCompleteMessage] = useState('')
+  const [showConfirmModal, setShowConfirmModal] = useState(false)
   const [vocabIndex, setVocabIndex] = useState(0)
   const [showVocabTable, setShowVocabTable] = useState(false)
   const [passageLang, setPassageLang] = useState('en')
@@ -36,17 +38,26 @@ export function useReadingLesson(id, t) {
   useEffect(() => {
     if (!id) return
     setLoading(true)
+    // Fetch lesson content
     lessonsService
       .getReadingContent(id)
       .then((res) => {
         const data = res?.data || null
         lessonOpenedAtMs.current = Date.now()
         setContent(data)
-        const est = data?.content?.estimatedTime || 15
+        const est = data?.content?.estimatedTime || data?.estimatedTime || 15
         setCountdownSeconds(est * 60)
       })
       .catch(() => setContent(null))
       .finally(() => setLoading(false))
+
+    // Load existing notes for this lesson from backend
+    lessonsService
+      .getProgress(id)
+      .then((res) => {
+        // Confirmation that progress exists
+      })
+      .catch((err) => console.error('Failed to load reading lesson progress:', err))
   }, [id])
 
   const vocabularyList = content?.vocabulary || []
@@ -95,9 +106,17 @@ export function useReadingLesson(id, t) {
   }, [currentQuestion])
 
   const handleSaveNote = () => {
-    if (!id) return
+    if (!id || (!noteTitle.trim() && !noteContent.trim())) return
     setNoteSaving(true)
     setNoteSavedMessage('')
+
+    // 1. Save to local storage (match /lesson behavior)
+    addVocabNote({
+      title: noteTitle || `${content?.content?.title || 'Reading Note'}`,
+      content: noteContent
+    })
+
+    // 2. Save to backend for cross-device sync
     lessonsService
       .addNote(id, { title: noteTitle, content: noteContent })
       .then(() => {
@@ -106,13 +125,19 @@ export function useReadingLesson(id, t) {
         setNoteContent('')
         setTimeout(() => setNoteSavedMessage(''), 2500)
       })
-      .catch(() => setNoteSavedMessage(''))
+      .catch((err) => {
+        console.error('Failed to save reading note to backend:', err)
+        // Still show success since it saved locally
+        setNoteSavedMessage(t('readingLesson.noteSaved'))
+        setNoteTitle('')
+        setNoteContent('')
+        setTimeout(() => setNoteSavedMessage(''), 2500)
+      })
       .finally(() => setNoteSaving(false))
   }
 
   const handleComplete = () => {
     if (!id) return
-    setCompleteMessage('')
     const allAnswered =
       totalQuestions === 0 ||
       questions.every((_, i) => {
@@ -123,16 +148,25 @@ export function useReadingLesson(id, t) {
       setShowIncompleteModal(true)
       return
     }
+    setShowConfirmModal(true)
+  }
+
+  const handleConfirmComplete = () => {
+    setShowConfirmModal(false)
     setCompletingLesson(true)
+    setCompleteMessage('')
+    
     const answersPayload = questions.map((q, i) => ({
       questionId: String(q?.id ?? i + 1),
       questionIndex: i,
       answer: answers[i],
     }))
+    
     const elapsedSec =
       lessonOpenedAtMs.current != null
         ? Math.max(0, Math.floor((Date.now() - lessonOpenedAtMs.current) / 1000))
         : 0
+
     lessonsService
       .submit(id, { answers: answersPayload, timeSpent: elapsedSec })
       .then((res) => {
@@ -217,15 +251,18 @@ export function useReadingLesson(id, t) {
     setPageInput,
     showHint,
     setShowHint,
-    showIncompleteModal,
     closeIncompleteModal,
     completingLesson,
     completeMessage,
+    showConfirmModal,
+    setShowConfirmModal,
     handleComplete,
+    handleConfirmComplete,
     vocabIndex,
     setVocabIndex,
     showVocabTable,
     setShowVocabTable,
+    answers,
     passageLang,
     setPassageLang,
     highlightOn,

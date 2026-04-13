@@ -24,6 +24,8 @@ export function DashboardMainFeed({
   postsLoadingMore = false,
   hasMorePosts = false,
   loadMorePosts,
+  feedTab = 'all',
+  setFeedTab,
   friendsList = [],
 }) {
   const { t } = useTranslation()
@@ -211,18 +213,39 @@ export function DashboardMainFeed({
 
       <div className="flex items-center gap-4 bg-white/50 dark:bg-transparent p-1 rounded-xl">
         <div className="flex gap-2 p-1 bg-slate-200/50 dark:bg-[#111e22] rounded-xl border border-slate-200 dark:border-[#325a67]">
-          <button className="px-6 py-2 bg-white dark:bg-[#233f48] rounded-lg text-sm font-bold shadow-sm">
+          <button
+            type="button"
+            onClick={() => setFeedTab?.('all')}
+            className={`px-6 py-2 rounded-lg text-sm font-bold shadow-sm transition-all ${
+              feedTab === 'all'
+                ? 'bg-white dark:bg-[#233f48] text-primary'
+                : 'text-slate-500 dark:text-[#92bbc9] hover:bg-white/30 dark:hover:bg-[#233f48]/50'
+            }`}
+          >
             {t('dashboard.all')}
           </button>
-          <button className="px-6 py-2 hover:bg-white/50 dark:hover:bg-[#233f48]/50 rounded-lg text-sm font-medium text-slate-500 dark:text-[#92bbc9]">
+          <button
+            type="button"
+            onClick={() => setFeedTab?.('following')}
+            className={`px-6 py-2 rounded-lg text-sm font-bold shadow-sm transition-all ${
+              feedTab === 'following'
+                ? 'bg-white dark:bg-[#233f48] text-primary'
+                : 'text-slate-500 dark:text-[#92bbc9] hover:bg-white/30 dark:hover:bg-[#233f48]/50'
+            }`}
+          >
             {t('dashboard.following')}
           </button>
-          <button className="px-6 py-2 hover:bg-white/50 dark:hover:bg-[#233f48]/50 rounded-lg text-sm font-medium text-slate-500 dark:text-[#92bbc9]">
+          <button
+            type="button"
+            onClick={() => setFeedTab?.('popular')}
+            className={`px-6 py-2 rounded-lg text-sm font-bold shadow-sm transition-all ${
+              feedTab === 'popular'
+                ? 'bg-white dark:bg-[#233f48] text-primary'
+                : 'text-slate-500 dark:text-[#92bbc9] hover:bg-white/30 dark:hover:bg-[#233f48]/50'
+            }`}
+          >
             {t('dashboard.popular')}
           </button>
-        </div>
-        <div className="flex items-center gap-2 text-sm font-medium text-slate-500 dark:text-[#92bbc9] cursor-pointer">
-          {t('dashboard.newest')} <span className="material-symbols-outlined text-lg">expand_more</span>
         </div>
       </div>
 

@@ -1,19 +1,25 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
+import { io } from 'socket.io-client'
 import { wordScrambleService } from '../../services/wordScramble.service'
 import { scrambleLetters } from '../../utils/scrambleLetters'
+import { SOCKET_BASE_URL } from '../../constants/api'
+import { getAuthToken } from '../../utils/auth'
+import { useAuth } from '../../context/AuthContext'
 
 const MULTI_PLAYER_COUNTS = [2, 4, 6, 8]
 
-/** @param {{ fullScreen?: boolean, gameMode?: 'solo' | 'multi', playerCount?: number, difficulty?: 'easy' | 'medium' | 'hard' }} props */
+/** @param {{ fullScreen?: boolean, gameMode?: 'solo' | 'multi' | 'multi-quick' | 'multi-private', roomCode?: string | null, playerCount?: number, difficulty?: 'easy' | 'medium' | 'hard' }} props */
 export function EntertainmentWordScramble({
   fullScreen = false,
   gameMode = 'solo',
+  roomCode = null,
   playerCount = 2,
   difficulty = 'medium',
 }) {
   const { t } = useTranslation()
-  const isMulti = gameMode === 'multi'
+  const { user } = useAuth()
+  const isMulti = gameMode && gameMode.startsWith('multi')
   const rawPc = Number(playerCount) || 2
   const nPlayers = isMulti
     ? MULTI_PLAYER_COUNTS.includes(rawPc)
@@ -21,13 +27,26 @@ export function EntertainmentWordScramble({
       : MULTI_PLAYER_COUNTS[0]
     : 1
   const shellRef = useRef(null)
+  const socketRef = useRef(null)
+
   const [entry, setEntry] = useState(null)
   const [scrambled, setScrambled] = useState('')
   const [input, setInput] = useState('')
   const [feedback, setFeedback] = useState(null)
   const [score, setScore] = useState(0)
   const [streak, setStreak] = useState(0)
+
+  // Trạng thái Network Game
+  const [networkPlayers, setNetworkPlayers] = useState([])
+  const [activePlayerIdx, setActivePlayerIdx] = useState(0)
+  const [roundId, setRoundId] = useState(0)
+  const [timeLimitSec, setTimeLimitSec] = useState(null)
+  const [timeLeftSec, setTimeLeftSec] = useState(null)
+  const [gameEnded, setGameEnded] = useState(false)
+
+  // Trạng thái Local Multi Game
   const [activePlayer, setActivePlayer] = useState(1)
+
   const [scores, setScores] = useState(() =>
     Object.fromEntries(Array.from({ length: nPlayers }, (_, i) => [i + 1, 0]))
   )
@@ -37,6 +56,97 @@ export function EntertainmentWordScramble({
   const [wrongPulse, setWrongPulse] = useState(false)
   const [loadingWord, setLoadingWord] = useState(true)
   const [fetchError, setFetchError] = useState(false)
+
+  const myId = user?.id || user?._id
+
+  // Helper sync logic
+  const applyGameState = useCallback((game) => {
+    if (!game) return
+    setNetworkPlayers(game.players || [])
+    setActivePlayerIdx(game.turnIndex || 0)
+    setRoundId(Number(game.currentRoundId || 0))
+    setGameEnded(game.status === 'finished')
+
+    if (game.currentWord) {
+      const w = game.currentWord
+      const word = String(w.word).trim().toLowerCase()
+      setEntry({
+        word,
+        meaning: String(w.meaning ?? '').trim(),
+        example: w.example ? String(w.example).trim() : '',
+      })
+      setScrambled(scrambleLetters(word))
+      const nextLimit = Number(w.timeLimitSec) || null
+      setTimeLimitSec(nextLimit)
+      setTimeLeftSec(nextLimit)
+      setInput('')
+      setFeedback(null)
+      setLoadingWord(false)
+    }
+  }, [])
+
+  // SOCKET CONNECTION
+  useEffect(() => {
+    if (!isMulti || !roomCode) return undefined
+
+    const token = getAuthToken()
+    const socket = io(SOCKET_BASE_URL, { auth: { token } })
+    socketRef.current = socket
+
+    socket.on('connect', () => {
+      socket.emit('wordScrambleGame:join', { roomCode, difficulty }, (res) => {
+        if (res?.ok && res.state) {
+          applyGameState(res.state)
+        }
+      })
+    })
+
+    socket.on('wordScrambleGame:update', (data) => {
+      if (data?.game) applyGameState(data.game)
+    })
+
+    socket.on('wordScrambleGame:newWord', ({ wordData }) => {
+      if (wordData) {
+        const word = String(wordData.word).trim().toLowerCase()
+        setEntry({
+          word,
+          meaning: String(wordData.meaning ?? '').trim(),
+          example: wordData.example ? String(wordData.example).trim() : '',
+        })
+        setScrambled(scrambleLetters(word))
+        const nextLimit = Number(wordData.timeLimitSec) || null
+        setTimeLimitSec(nextLimit)
+        setTimeLeftSec(nextLimit)
+        setInput('')
+        setFeedback(null)
+        setLoadingWord(false)
+      }
+    })
+    socket.on('wordScrambleGame:ended', ({ reason }) => {
+      setGameEnded(true)
+      if (reason === 'timeout') {
+        setFeedback('timeout')
+      }
+      setTimeLeftSec(0)
+    })
+
+    return () => {
+      socket.disconnect()
+      socketRef.current = null
+    }
+  }, [isMulti, roomCode, applyGameState, difficulty])
+
+  useEffect(() => {
+    if (!isMulti) return undefined
+    if (!timeLeftSec || timeLeftSec <= 0) return undefined
+    const timer = window.setInterval(() => {
+      setTimeLeftSec((prev) => {
+        if (!prev || prev <= 1) return 0
+        return prev - 1
+      })
+    }, 1000)
+    return () => window.clearInterval(timer)
+  }, [isMulti, roundId, timeLeftSec])
 
   const pickNext = useCallback(async () => {
     setLoadingWord(true)
@@ -71,12 +181,13 @@ export function EntertainmentWordScramble({
   }, [difficulty])
 
   useEffect(() => {
+    if (isMulti) return undefined
     setLoadingWord(true)
     let cancelled = false
-    ;(async () => {
-      await pickNext()
-      if (!cancelled) setLoadingWord(false)
-    })()
+      ; (async () => {
+        await pickNext()
+        if (!cancelled) setLoadingWord(false)
+      })()
     return () => {
       cancelled = true
     }
@@ -92,8 +203,32 @@ export function EntertainmentWordScramble({
     return () => window.clearTimeout(timer)
   }, [wrongPulse, fullScreen])
 
-  const onCheck = useCallback(() => {
-    if (!entry || feedback === 'correct') return
+  const onCheck = useCallback(async () => {
+    if (!entry || feedback === 'correct' || gameEnded) return
+
+    if (isMulti && roomCode && socketRef.current) {
+      // ONLINE MODE
+      socketRef.current.emit('wordScrambleGame:submit', {
+        roomCode,
+        answer: input.trim(),
+        roundId,
+      }, (res) => {
+        if (!res?.ok) {
+          console.error('Submit failed:', res?.error)
+          return
+        }
+        if (res?.correct) {
+          setFeedback('correct')
+        } else {
+          setFeedback('wrong')
+          setWrongPulse(true)
+          window.setTimeout(() => setWrongPulse(false), 450)
+        }
+      })
+      return
+    }
+
+    // LOCAL MULTI / SOLO MODE
     const ok = input.trim().toLowerCase() === entry.word
     if (ok) {
       setFeedback('correct')
@@ -119,18 +254,23 @@ export function EntertainmentWordScramble({
       setWrongPulse(true)
       window.setTimeout(() => setWrongPulse(false), 450)
     }
-  }, [entry, feedback, input, isMulti, streak, activePlayer, streaks, nPlayers])
+  }, [entry, feedback, input, isMulti, roomCode, streak, activePlayer, streaks, nPlayers, roundId, gameEnded])
 
   const onNext = useCallback(() => {
+    if (isMulti && roomCode && socketRef.current) {
+      // Đã có từ mới từ emit update ở trên, 
+      // nhưng nếu Host muốn bỏ qua từ này thì có thể gọi lệnh riêng
+      return
+    }
     setLoadingWord(true)
-    ;(async () => {
-      await pickNext()
-      setLoadingWord(false)
-    })()
-    if (isMulti) {
+      ; (async () => {
+        await pickNext()
+        setLoadingWord(false)
+      })()
+    if (isMulti && (!roomCode || !socketRef.current)) {
       setActivePlayer((p) => ((p % nPlayers) + 1))
     }
-  }, [pickNext, isMulti, nPlayers])
+  }, [pickNext, isMulti, roomCode, nPlayers])
 
   const onKeyDown = (e) => {
     if (e.key === 'Enter') {
@@ -167,10 +307,10 @@ export function EntertainmentWordScramble({
             type="button"
             onClick={() => {
               setLoadingWord(true)
-              ;(async () => {
-                await pickNext()
-                setLoadingWord(false)
-              })()
+                ; (async () => {
+                  await pickNext()
+                  setLoadingWord(false)
+                })()
             }}
             className={
               fullScreen
@@ -198,9 +338,8 @@ export function EntertainmentWordScramble({
 
   const shellClass = fullScreen
     ? 'ws-game-shell flex flex-col flex-1 min-h-0'
-    : `rounded-xl border border-border-dark bg-card-dark overflow-hidden transition-shadow ${
-        wrongPulse ? 'ring-2 ring-red-500/60' : ''
-      }`
+    : `rounded-xl border border-border-dark bg-card-dark overflow-hidden transition-shadow ${wrongPulse ? 'ring-2 ring-red-500/60' : ''
+    }`
 
   const headerClass = fullScreen
     ? 'ws-game-header flex flex-wrap items-center justify-between gap-3 shrink-0 px-4 sm:px-8 py-3'
@@ -223,9 +362,8 @@ export function EntertainmentWordScramble({
       <div className={headerClass}>
         <div className="min-w-0">
           <h2
-            className={`font-bold flex flex-wrap items-center gap-2 ${
-              fullScreen ? 'ws-font-display text-xl sm:text-2xl text-white' : 'text-lg text-white'
-            }`}
+            className={`font-bold flex flex-wrap items-center gap-2 ${fullScreen ? 'ws-font-display text-xl sm:text-2xl text-white' : 'text-lg text-white'
+              }`}
           >
             <span className="material-symbols-outlined text-cyan-300 drop-shadow-[0_0_8px_rgba(34,211,238,0.45)]">
               shuffle
@@ -251,33 +389,39 @@ export function EntertainmentWordScramble({
               {t('enter.game.streak', { n: streak })}
             </span>
           </div>
-        ) : (
+        ) : !fullScreen ? (
           <div className="flex flex-wrap items-center gap-2 sm:gap-3 shrink-0 max-w-full">
-            {Array.from({ length: nPlayers }, (_, i) => i + 1).map((pid) => (
-              <div
-                key={pid}
-                className={`rounded-xl px-3 py-2 border text-sm transition-all duration-300 ${
-                  fullScreen
-                    ? activePlayer === pid
-                      ? 'ws-pill-active text-white'
-                      : 'ws-pill-idle text-slate-500'
-                    : activePlayer === pid
-                      ? 'border-primary bg-primary/15 text-white'
-                      : 'border-border-dark bg-background-dark/80 text-gray-400'
-                }`}
-              >
-                <span className={fullScreen ? 'font-bold text-cyan-200' : 'font-bold text-primary'}>
-                  {t('enter.game.playerLabel', { n: pid })}
-                </span>
-                <span className="mx-2 text-slate-500">|</span>
-                <span>{t('enter.game.score', { n: scores[pid] ?? 0 })}</span>
-                <span className={fullScreen ? 'text-fuchsia-300/90 ml-2' : 'text-primary/80 ml-2'}>
-                  {t('enter.game.streakShort', { n: streaks[pid] ?? 0 })}
-                </span>
-              </div>
-            ))}
+            {(networkPlayers.length > 0 ? networkPlayers : Array.from({ length: nPlayers }, (_, i) => ({ name: `Player ${i + 1}`, userId: i + 1 }))).map((p, i) => {
+              const pid = i + 1
+              const isActive = networkPlayers.length > 0 ? (activePlayerIdx === i) : (activePlayer === pid)
+              const pScore = networkPlayers.length > 0 ? (p.score ?? 0) : (scores[pid] ?? 0)
+              const pStreak = networkPlayers.length > 0 ? (p.streak ?? 0) : (streaks[pid] ?? 0)
+
+              return (
+                <div
+                  key={p.userId || pid}
+                  className={`rounded-xl px-3 py-2 border text-sm transition-all duration-300 ${fullScreen
+                      ? isActive
+                        ? 'ws-pill-active text-white'
+                        : 'ws-pill-idle text-slate-500'
+                      : isActive
+                        ? 'border-primary bg-primary/15 text-white'
+                        : 'border-border-dark bg-background-dark/80 text-gray-400'
+                    }`}
+                >
+                  <span className={fullScreen ? 'font-bold text-cyan-200' : 'font-bold text-primary'}>
+                    {p.name || t('enter.game.playerLabel', { n: pid })}
+                  </span>
+                  <span className="mx-2 text-slate-500">|</span>
+                  <span>{t('enter.game.score', { n: pScore })}</span>
+                  <span className={fullScreen ? 'text-fuchsia-300/90 ml-2' : 'text-primary/80 ml-2'}>
+                    {t('enter.game.streakShort', { n: pStreak })}
+                  </span>
+                </div>
+              )
+            })}
           </div>
-        )}
+        ) : null}
       </div>
 
       {isMulti && (
@@ -288,53 +432,51 @@ export function EntertainmentWordScramble({
               : 'px-4 py-2.5 bg-primary/10 border-b border-primary/20 text-center text-sm font-semibold text-primary shrink-0'
           }
         >
-          {t('enter.game.turnPlayer', { n: activePlayer })}
+          {timeLimitSec
+            ? `${t('enter.game.answerTimer')}: ${Math.max(0, Number(timeLeftSec ?? timeLimitSec))}s`
+            : t('enter.game.answerTimerPreparing')}
         </div>
       )}
 
       <div
-        className={`space-y-6 min-h-0 ${
-          fullScreen
-            ? 'flex-1 flex flex-col px-4 sm:px-8 py-6 sm:py-10 overflow-y-auto justify-center min-h-0'
-            : 'p-5 md:p-8'
-        }`}
+        className={fullScreen
+          ? `flex-1 min-h-0 px-4 sm:px-8 py-6 sm:py-10 ${isMulti ? 'flex gap-4 sm:gap-6' : 'overflow-y-auto'}`
+          : 'p-5 md:p-8'}
       >
-        {entry && (
-          <>
+        <div className={`space-y-6 min-h-0 ${fullScreen ? (isMulti ? 'flex-1 pr-1' : '') : ''}`}>
+          {entry && (
+            <>
             <div className={fullScreen ? 'ws-fade-rise' : ''}>
               <p
-                className={`text-[10px] font-bold uppercase tracking-wider mb-2 ${
-                  fullScreen ? 'text-cyan-500/70' : 'text-gray-500'
-                }`}
+                className={`text-[10px] font-bold uppercase tracking-wider mb-2 ${fullScreen ? 'text-cyan-500/70' : 'text-gray-500'
+                  }`}
               >
                 {t('enter.game.scrambledLabel')}
               </p>
               <p
-                className={`font-mono font-bold break-all leading-tight ${
-                  fullScreen
+                className={`font-mono font-bold break-all leading-tight ${fullScreen
                     ? 'text-3xl sm:text-4xl md:text-5xl text-transparent bg-clip-text bg-gradient-to-r from-cyan-200 via-fuchsia-200 to-pink-200'
                     : 'tracking-[0.35em] text-primary text-2xl md:text-3xl'
-                }`}
+                  }`}
               >
                 {fullScreen
                   ? scrambled.split('').map((ch, i) => (
-                      <span
-                        key={`${entry.word}-${scrambled}-${i}`}
-                        className="ws-letter inline-block mr-1 sm:mr-1.5"
-                        style={{ animationDelay: `${i * 42}ms` }}
-                      >
-                        {ch}
-                      </span>
-                    ))
+                    <span
+                      key={`${entry.word}-${scrambled}-${i}`}
+                      className="ws-letter inline-block mr-1 sm:mr-1.5"
+                      style={{ animationDelay: `${i * 42}ms` }}
+                    >
+                      {ch}
+                    </span>
+                  ))
                   : scrambled.split('').join(' ')}
               </p>
             </div>
 
             <div>
               <p
-                className={`text-[10px] font-bold uppercase tracking-wider mb-2 ${
-                  fullScreen ? 'text-fuchsia-400/65' : 'text-gray-500'
-                }`}
+                className={`text-[10px] font-bold uppercase tracking-wider mb-2 ${fullScreen ? 'text-fuchsia-400/65' : 'text-gray-500'
+                  }`}
               >
                 {t('enter.game.meaningLabel')}
               </p>
@@ -351,9 +493,8 @@ export function EntertainmentWordScramble({
             <div className="space-y-2">
               <label
                 htmlFor="scramble-input"
-                className={`text-[10px] font-bold uppercase tracking-wider ${
-                  fullScreen ? 'text-violet-400/70' : 'text-gray-500'
-                }`}
+                className={`text-[10px] font-bold uppercase tracking-wider ${fullScreen ? 'text-violet-400/70' : 'text-gray-500'
+                  }`}
               >
                 {isMulti ? t('enter.game.answerForPlayer', { n: activePlayer }) : t('enter.game.yourAnswer')}
               </label>
@@ -369,7 +510,7 @@ export function EntertainmentWordScramble({
                   if (feedback === 'wrong') setFeedback(null)
                 }}
                 onKeyDown={onKeyDown}
-                disabled={feedback === 'correct'}
+                disabled={feedback === 'correct' || gameEnded}
                 className={
                   fullScreen
                     ? `ws-input-game ${feedback === 'correct' ? 'opacity-60' : ''} py-4 text-lg sm:text-xl px-4`
@@ -381,9 +522,8 @@ export function EntertainmentWordScramble({
 
             {feedback === 'correct' && (
               <p
-                className={`text-sm font-bold flex items-center gap-2 ${
-                  fullScreen ? 'text-emerald-300 animate-ws-correct-pop drop-shadow-[0_0_12px_rgba(52,211,153,0.35)]' : 'font-semibold text-emerald-400'
-                }`}
+                className={`text-sm font-bold flex items-center gap-2 ${fullScreen ? 'text-emerald-300 animate-ws-correct-pop drop-shadow-[0_0_12px_rgba(52,211,153,0.35)]' : 'font-semibold text-emerald-400'
+                  }`}
               >
                 <span className="material-symbols-outlined text-lg">check_circle</span>
                 {isMulti ? t('enter.game.correctMulti', { n: activePlayer }) : t('enter.game.correct')}
@@ -391,43 +531,96 @@ export function EntertainmentWordScramble({
             )}
             {feedback === 'wrong' && (
               <p
-                className={`text-sm font-bold flex items-center gap-2 ${
-                  fullScreen ? 'text-amber-300 animate-pulse' : 'font-semibold text-amber-400'
-                }`}
+                className={`text-sm font-bold flex items-center gap-2 ${fullScreen ? 'text-amber-300 animate-pulse' : 'font-semibold text-amber-400'
+                  }`}
               >
                 <span className="material-symbols-outlined text-lg">refresh</span>
                 {isMulti ? t('enter.game.wrongMulti') : t('enter.game.wrong')}
               </p>
             )}
+            {feedback === 'timeout' && (
+              <p
+                className={`text-sm font-bold flex items-center gap-2 ${fullScreen ? 'text-rose-300 animate-pulse' : 'font-semibold text-rose-400'
+                  }`}
+              >
+                <span className="material-symbols-outlined text-lg">timer_off</span>
+                {t('enter.game.matchEndedByTimeout')}
+              </p>
+            )}
 
-            <div className="flex flex-wrap gap-3">
-              {feedback !== 'correct' ? (
-                <button
-                  type="button"
-                  onClick={onCheck}
-                  className={
-                    fullScreen
-                      ? 'ws-btn-arcade px-8 py-3.5 text-sm sm:text-base'
-                      : 'rounded-xl bg-primary text-background-dark font-bold hover:brightness-110 transition-all px-6 py-2.5 text-sm'
-                  }
-                >
-                  {t('enter.game.submit')}
-                </button>
-              ) : (
-                <button
-                  type="button"
-                  onClick={onNext}
-                  className={
-                    fullScreen
-                      ? 'ws-btn-arcade px-8 py-3.5 text-sm sm:text-base'
-                      : 'rounded-xl bg-primary text-background-dark font-bold hover:brightness-110 transition-all px-6 py-2.5 text-sm'
-                  }
-                >
-                  {t('enter.game.nextWord')}
-                </button>
-              )}
+              <div className="flex flex-wrap gap-3">
+                {feedback !== 'correct' ? (
+                  <button
+                    type="button"
+                    onClick={onCheck}
+                    className={
+                      fullScreen
+                        ? 'ws-btn-arcade px-8 py-3.5 text-sm sm:text-base'
+                        : 'rounded-xl bg-primary text-background-dark font-bold hover:brightness-110 transition-all px-6 py-2.5 text-sm'
+                    }
+                  >
+                    {t('enter.game.submit')}
+                  </button>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={onNext}
+                    className={
+                      fullScreen
+                        ? 'ws-btn-arcade px-8 py-3.5 text-sm sm:text-base'
+                        : 'rounded-xl bg-primary text-background-dark font-bold hover:brightness-110 transition-all px-6 py-2.5 text-sm'
+                    }
+                  >
+                    {t('enter.game.nextWord')}
+                  </button>
+                )}
+              </div>
+            </>
+          )}
+        </div>
+
+        {fullScreen && isMulti && (
+          <aside className="w-[240px] sm:w-[280px] shrink-0 self-stretch rounded-2xl border border-violet-500/30 bg-slate-950/45 p-3 sm:p-4 my-[5px]">
+            <p className="text-[10px] uppercase tracking-wider text-violet-300/75 font-bold mb-3 ws-font-display">
+              {t('enter.game.modeMultiTitle')}
+            </p>
+            <div className="space-y-2.5">
+              {(networkPlayers.length > 0
+                ? networkPlayers
+                : Array.from({ length: nPlayers }, (_, i) => ({ name: `Player ${i + 1}`, userId: i + 1 }))
+              ).map((p, i, arr) => {
+                const pid = i + 1
+                const isActive = networkPlayers.length > 0 ? (activePlayerIdx === i) : (activePlayer === pid)
+                const pScore = networkPlayers.length > 0 ? (p.score ?? 0) : (scores[pid] ?? 0)
+                const pStreak = networkPlayers.length > 0 ? (p.streak ?? 0) : (streaks[pid] ?? 0)
+                const rank = [...arr]
+                  .sort((a, b) => (b?.score ?? 0) - (a?.score ?? 0))
+                  .findIndex((rp) => String(rp?.userId ?? '') === String(p?.userId ?? '')) + 1
+
+                return (
+                  <div
+                    key={p.userId || pid}
+                    className={`rounded-xl px-3 py-3 border text-sm transition-all duration-300 ${
+                      isActive ? 'ws-pill-active text-white' : 'ws-pill-idle text-slate-400'
+                    }`}
+                  >
+                    <div className="flex items-center justify-between gap-2">
+                      <p className="font-bold text-cyan-200 truncate">
+                        {p.name || t('enter.game.playerLabel', { n: pid })}
+                      </p>
+                      <span className="text-[11px] font-bold px-2 py-0.5 rounded-full border border-cyan-400/35 text-cyan-200">
+                        #{rank}
+                      </span>
+                    </div>
+                    <div className="mt-1.5 flex items-center justify-between text-xs">
+                      <span className="text-slate-300">{t('enter.game.score', { n: pScore })}</span>
+                      <span className="text-fuchsia-300/90">{t('enter.game.streakShort', { n: pStreak })}</span>
+                    </div>
+                  </div>
+                )
+              })}
             </div>
-          </>
+          </aside>
         )}
       </div>
     </div>

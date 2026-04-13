@@ -4,10 +4,9 @@ import { useTranslation } from 'react-i18next'
 import { ROUTES, SKILL_TABS, SKILLS } from '../constants'
 import { DEFAULT_AVATAR } from '../constants/ui'
 import { useAuth } from '../context/AuthContext'
-import { useDashboardSocket, useDashboardFriends } from '../hooks'
+import { useDashboardSocket, useDashboardFriends, useStudyGroups } from '../hooks'
 import { rawService } from '../services/raw.service'
 
-const noopSetGroupConversations = () => {}
 
 export function EntertainmentLayout() {
   const { pathname } = useLocation()
@@ -15,14 +14,13 @@ export function EntertainmentLayout() {
   const { t } = useTranslation()
   const { user } = useAuth()
 
-  const { onlineUserIds } = useDashboardSocket(user, noopSetGroupConversations)
-  const { friendsFilterTab, setFriendsFilterTab, displayedFriendsList } = useDashboardFriends(onlineUserIds)
+  const [onlineUserIds, setOnlineUserIds] = useState(new Set())
+  const { allConversations, setConversations } = useStudyGroups(setOnlineUserIds)
+  const { friendsFilterTab, setFriendsFilterTab, displayedFriendsList, setOnlineFriends } =
+    useDashboardFriends(onlineUserIds, setOnlineUserIds, allConversations)
+  useDashboardSocket(user, setConversations, setOnlineFriends, setOnlineUserIds)
 
-  const onlineCount = displayedFriendsList.filter((item) => {
-    const u = item?.user || item
-    const id = u?.id ?? u?._id
-    return id != null && onlineUserIds.has(String(id))
-  }).length
+  const onlineCount = displayedFriendsList.filter((item) => item.isOnline).length
 
   const [rawData, setRawData] = useState({
     hotGames: [],
@@ -205,7 +203,7 @@ export function EntertainmentLayout() {
                 const avatar =
                   u?.avatar ||
                   (name ? `https://ui-avatars.com/api/?name=${encodeURIComponent(name)}&background=13b6ec&color=fff` : DEFAULT_AVATAR)
-                const isOnline = id != null && onlineUserIds.has(String(id))
+                const isOnline = item.isOnline
                 return (
                   <div key={id} className="flex items-center gap-3 p-2 rounded-lg hover:bg-white/5 transition-colors group">
                     <Link to={id ? `/profile/${id}` : '#'} className="flex items-center gap-3 min-w-0 flex-1">

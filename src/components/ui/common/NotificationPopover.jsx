@@ -1,9 +1,10 @@
 import { useEffect, useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
-import { notificationsService } from '../../../services'
+import { notificationsService, groupService } from '../../../services'
 import { formatPostTime } from '../../../utils/dateTime'
 import { ROUTES } from '../../../constants'
+import { showEngSuccessToast } from '../../../utils/showEngToast'
 
 function renderNotificationContent(n, t) {
   if (n.type === 'friend_request') {
@@ -39,11 +40,35 @@ function renderNotificationContent(n, t) {
       </>
     )
   }
-  if (n.type === 'like') {
+  if (n.type === 'like' || n.type === 'post_like') {
     return (
       <>
         <span className="font-bold">{n.data?.userName || 'Someone'}</span>{' '}
         {t('notifications.likedPost', { defaultValue: 'liked your post.' })}
+      </>
+    )
+  }
+  if (n.type === 'comment_like') {
+    return (
+      <>
+        <span className="font-bold">{n.data?.userName || 'Someone'}</span>{' '}
+        {t('notifications.likedComment', { defaultValue: 'reacted to your comment.' })}
+      </>
+    )
+  }
+  if (n.type === 'mention' || n.type === 'post_mention') {
+    return (
+      <>
+        <span className="font-bold">{n.data?.userName || 'Someone'}</span>{' '}
+        {t('notifications.mentionedYou', { defaultValue: 'mentioned you in a post.' })}
+      </>
+    )
+  }
+  if (n.type === 'post_shared') {
+    return (
+      <>
+        <span className="font-bold">{n.data?.userName || 'Someone'}</span>{' '}
+        {t('notifications.postShared', { defaultValue: 'shared your post.' })}
       </>
     )
   }
@@ -57,6 +82,10 @@ function getNotificationLink(n) {
   if ((n.type === 'friend_request' || n.type === 'friend_request_accepted') && n.fromUserId) {
     return ROUTES.PROFILE_USER(n.fromUserId)
   }
+  if (n.type === 'mention' || n.type === 'post_mention' || n.type === 'post_shared') {
+    const pid = n.data?.postId || n.relatedId
+    if (pid) return `${ROUTES.COMMUNITY}/posts/${pid}`
+  }
   if (n.type === 'group_invite') {
     const gid = n.data?.groupId || n.relatedId
     if (gid) return `/community/group/${gid}/about`
@@ -65,23 +94,35 @@ function getNotificationLink(n) {
   return null
 }
 
-export function NotificationPopover({ open, onClose, anchorRef, unreadCount, onMarkAllRead, onUnreadChange }) {
+export function NotificationPopover({ open, onClose, anchorRef, unreadCount, onMarkAllRead, onUnreadChange, onOpenPostModal }) {
   const panelRef = useRef(null)
   const { t } = useTranslation()
   const [notifications, setNotifications] = useState([])
   const [loading, setLoading] = useState(false)
+  const [joinedGroupIds, setJoinedGroupIds] = useState(new Set())
 
   useEffect(() => {
     if (open) {
       setLoading(true)
-      notificationsService
-        .getNotifications({ limit: 20 })
-        .then((res) => {
-          const data = res?.data
-          const list = data?.notifications ?? (Array.isArray(data) ? data : [])
+      
+      // Fetch both notifications and member groups
+      Promise.all([
+        notificationsService.getNotifications({ limit: 20 }),
+        groupService.listMine({ limit: 100 })
+      ])
+        .then(([notifRes, groupsRes]) => {
+          const notifData = notifRes?.data
+          const list = notifData?.notifications ?? (Array.isArray(notifData) ? notifData : [])
           setNotifications(Array.isArray(list) ? list : [])
+
+          const groupsList = groupsRes?.data?.groups || (Array.isArray(groupsRes?.data) ? groupsRes.data : [])
+          const ids = new Set(groupsList.map(g => String(g.id || g._id)))
+          setJoinedGroupIds(ids)
         })
-        .catch(() => setNotifications([]))
+        .catch(() => {
+          setNotifications([])
+          setJoinedGroupIds(new Set())
+        })
         .finally(() => setLoading(false))
     }
   }, [open])
@@ -110,7 +151,38 @@ export function NotificationPopover({ open, onClose, anchorRef, unreadCount, onM
     } catch (_) {}
   }
 
-  const handleItemClick = async (n) => {
+  const handleItemClick = async (n, e) => {
+    // Check if it's a post notification that we should open in modal
+    const isPostNotif =
+      n.type === 'mention' ||
+      n.type === 'post_mention' ||
+      n.type === 'post_shared' ||
+      n.type === 'comment' ||
+      n.type === 'like' ||
+      n.relatedType === 'post'
+
+    if (isPostNotif && onOpenPostModal) {
+      if (e) {
+        e.preventDefault()
+        e.stopPropagation()
+      }
+      const pid = n.data?.postId || n.relatedId
+      if (pid) {
+        onOpenPostModal(pid)
+        onClose?.()
+        
+        // Mark as read without navigation
+        if (n.read === false) {
+          try {
+            await notificationsService.markAsRead(n.id)
+            onUnreadChange?.()
+            setNotifications((prev) => prev.map((x) => (x.id === n.id ? { ...x, read: true } : x)))
+          } catch (_) {}
+        }
+        return
+      }
+    }
+
     const link = getNotificationLink(n)
     if (n.read === false) {
       try {
@@ -169,6 +241,51 @@ export function NotificationPopover({ open, onClose, anchorRef, unreadCount, onM
                 )}
                 <div className="flex-1 min-w-0">
                   <p className="text-sm leading-snug text-gray-200">{renderNotificationContent(n, t)}</p>
+                  
+                  {n.type === 'group_invite' && !joinedGroupIds.has(String(n.data?.groupId || n.relatedId)) && (
+                    <div className="flex items-center gap-2 mt-2">
+                      <button
+                        type="button"
+                        onClick={async (e) => {
+                          e.preventDefault()
+                          e.stopPropagation()
+                          const gid = n.data?.groupId || n.relatedId
+                          if (!gid) return
+                          try {
+                            await groupService.acceptGroupInvite(gid)
+                            showEngSuccessToast(t('groups.header.inviteAcceptedSuccess', { defaultValue: 'Đã tham gia nhóm!' }))
+                            setNotifications(prev => prev.filter(item => item.id !== n.id))
+                            onUnreadChange?.()
+                          } catch (err) {
+                            window.alert(err?.message || 'Failed')
+                          }
+                        }}
+                        className="px-3 py-1.5 rounded-lg bg-primary text-white text-[11px] font-bold hover:brightness-110"
+                      >
+                        {t('groups.header.inviteAccept', { defaultValue: 'Chấp nhận' })}
+                      </button>
+                      <button
+                        type="button"
+                        onClick={async (e) => {
+                          e.preventDefault()
+                          e.stopPropagation()
+                          const gid = n.data?.groupId || n.relatedId
+                          if (!gid) return
+                          try {
+                            await groupService.declineGroupInvite(gid)
+                            setNotifications(prev => prev.filter(item => item.id !== n.id))
+                            onUnreadChange?.()
+                          } catch (err) {
+                            window.alert(err?.message || 'Failed')
+                          }
+                        }}
+                        className="px-3 py-1.5 rounded-lg bg-gray-700 text-gray-200 text-[11px] font-bold hover:bg-gray-600"
+                      >
+                        {t('groups.header.inviteDecline', { defaultValue: 'Từ chối' })}
+                      </button>
+                    </div>
+                  )}
+
                   <div className="flex items-center justify-between mt-1">
                     <span className="text-xs text-gray-500">{formatPostTime(n.createdAt)}</span>
                     {n.read === false && <span className="size-2 bg-primary rounded-full shrink-0" />}
@@ -176,11 +293,34 @@ export function NotificationPopover({ open, onClose, anchorRef, unreadCount, onM
                 </div>
               </div>
             )
+            const isPostNotif =
+              n.type === 'mention' ||
+              n.type === 'post_mention' ||
+              n.type === 'post_shared' ||
+              n.type === 'comment' ||
+              n.type === 'like' ||
+              n.relatedType === 'post'
+
+            if (isPostNotif && onOpenPostModal) {
+              return (
+                <button
+                  key={n.id}
+                  type="button"
+                  onClick={(e) => handleItemClick(n, e)}
+                  className={`w-full text-left p-4 transition-colors border-b border-border-dark last:border-b-0 ${
+                    n.read === false ? 'bg-primary/5 border-l-4 border-l-primary hover:bg-gray-800/50' : 'hover:bg-gray-800/50'
+                  }`}
+                >
+                  {content}
+                </button>
+              )
+            }
+
             return link ? (
               <Link
                 key={n.id}
                 to={link}
-                onClick={() => handleItemClick(n)}
+                onClick={(e) => handleItemClick(n, e)}
                 className={`block w-full text-left p-4 transition-colors border-b border-border-dark last:border-b-0 ${
                   n.read === false ? 'bg-primary/5 border-l-4 border-l-primary hover:bg-gray-800/50' : 'hover:bg-gray-800/50'
                 }`}
@@ -191,7 +331,7 @@ export function NotificationPopover({ open, onClose, anchorRef, unreadCount, onM
               <button
                 key={n.id}
                 type="button"
-                onClick={() => handleItemClick(n)}
+                onClick={(e) => handleItemClick(n, e)}
                 className={`w-full text-left p-4 transition-colors border-b border-border-dark last:border-b-0 ${
                   n.read === false ? 'bg-primary/5 border-l-4 border-l-primary hover:bg-gray-800/50' : 'hover:bg-gray-800/50'
                 }`}

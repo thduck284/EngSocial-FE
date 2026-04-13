@@ -5,6 +5,7 @@ import {
   addVocabNote,
   deleteVocabNote,
 } from '../../utils/vocabularyUserStorage'
+import { AlertModal } from '../ui/common/AlertModal'
 
 /** Độ dài tối đa phần xem trước trong danh sách; dài hơn thì có nút xem chi tiết */
 const PREVIEW_MAX_CHARS = 220
@@ -41,6 +42,7 @@ export default function VocabularyNotesPanel() {
   const [savedHint, setSavedHint] = useState('')
   const [detailNote, setDetailNote] = useState(null)
   const [composerOpen, setComposerOpen] = useState(false)
+  const [itemToDelete, setItemToDelete] = useState(null)
 
   const refresh = () => setNotes(getVocabNotes())
 
@@ -84,7 +86,7 @@ export default function VocabularyNotesPanel() {
   const openComposer = () => setComposerOpen(true)
 
   return (
-    <div className="max-w-3xl mx-auto w-full">
+    <div className="max-w-6xl mx-auto w-full px-4 mb-20">
       {/* Thẻ tóm tắt — bấm vào mở modal thêm ghi chú */}
       <div
         role="button"
@@ -96,95 +98,107 @@ export default function VocabularyNotesPanel() {
             openComposer()
           }
         }}
-        className="bg-white/80 dark:bg-[#1f2e36]/80 backdrop-blur-sm rounded-2xl shadow-xl border border-gray-200 dark:border-gray-700 p-6 md:p-8 cursor-pointer transition-all hover:border-purple-400/50 dark:hover:border-purple-500/40 hover:shadow-lg outline-none focus-visible:ring-2 focus-visible:ring-purple-500"
+        className="group relative bg-white/80 dark:bg-[#1f2e36]/80 backdrop-blur-sm rounded-3xl shadow-xl border border-gray-200 dark:border-gray-700 p-6 md:p-8 cursor-pointer transition-all hover:border-purple-400 dark:hover:border-purple-500 hover:shadow-2xl outline-none mb-10 overflow-hidden"
       >
-        <div className="flex items-start justify-between gap-4">
-          <div className="min-w-0">
-            <h2 className="text-2xl font-bold text-gray-800 dark:text-white mb-2 flex items-center gap-2">
-              <span className="material-symbols-outlined text-primary">note_alt</span>
+        <div className="flex flex-col md:flex-row items-center justify-between gap-8 relative z-10">
+          <div className="text-center md:text-left">
+            <h2 className="text-3xl font-black text-transparent bg-clip-text bg-gradient-to-r from-purple-600 to-pink-600 mb-3 flex items-center justify-center md:justify-start gap-4">
+              <span className="material-symbols-outlined text-purple-600 dark:text-purple-400 text-4xl">note_alt</span>
               {t('vocabulary.notesTitle')}
             </h2>
-            <p className="text-gray-600 dark:text-gray-400 text-sm mb-4">
+            <p className="text-gray-600 dark:text-gray-400 text-base max-w-lg mb-4">
               {t('vocabulary.notesIntro')}
             </p>
-            <p className="text-xs text-gray-500 dark:text-gray-500 mb-3">
+            <p className="text-xs text-gray-500 dark:text-gray-500">
               {t('vocabulary.notesOpenComposerHint')}
             </p>
           </div>
-          <span
-            className="material-symbols-outlined text-gray-400 dark:text-gray-500 shrink-0 text-2xl"
-            aria-hidden
-          >
-            edit_note
-          </span>
+          
+          <div className="flex items-center gap-2 px-6 py-3 rounded-2xl bg-gradient-to-r from-purple-600 to-pink-600 text-white font-bold shadow-lg shadow-purple-500/20 hover:shadow-xl hover:shadow-purple-500/30 active:scale-95 transition-all">
+            <span className="material-symbols-outlined">add_circle</span>
+            {t('vocabulary.notesAddNote')}
+          </div>
         </div>
-        <div className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-gradient-to-r from-purple-600 to-pink-600 text-white text-sm font-semibold pointer-events-none">
-          <span className="material-symbols-outlined text-lg" aria-hidden>
-            add
-          </span>
-          {t('vocabulary.notesAddNote')}
-        </div>
+        <div className="absolute inset-0 rounded-3xl bg-gradient-to-r from-purple-400 to-pink-400 opacity-0 group-hover:opacity-5 transition-opacity duration-300" />
       </div>
 
       {savedHint && (
-        <p className="text-sm text-emerald-600 dark:text-emerald-400 mt-3 text-center sm:text-left">{savedHint}</p>
+        <p className="text-sm text-emerald-600 dark:text-emerald-400 mt-3 text-center sm:text-left animate-bounce">{savedHint}</p>
       )}
 
-      <div className="mt-10">
-        <h3 className="text-lg font-semibold text-gray-800 dark:text-white mb-4">
-          {t('vocabulary.notesSavedList', { count: notes.length })}
-        </h3>
+      <div className="mt-12 space-y-6">
+        <div className="flex items-center justify-between px-2">
+          <h3 className="text-xl font-black text-white flex items-center gap-3">
+            <span className="material-symbols-outlined text-primary">description</span>
+            {t('vocabulary.notesSavedList', { count: notes.length })}
+          </h3>
+          <div className="h-[1px] flex-1 mx-4 bg-gradient-to-r from-white/10 to-transparent" />
+        </div>
+
         {notes.length === 0 ? (
-          <p className="text-gray-500 dark:text-gray-400 text-center py-12 bg-white/50 dark:bg-gray-800/50 rounded-2xl border border-dashed border-gray-300 dark:border-gray-600">
-            {t('vocabulary.notesEmpty')}
-          </p>
+          <div className="py-20 text-center flex flex-col items-center justify-center bg-white/5 rounded-3xl border-2 border-dashed border-white/5">
+            <span className="material-symbols-outlined text-6xl text-gray-700 mb-4">folder_open</span>
+            <p className="text-gray-500 text-lg font-medium">
+              {t('vocabulary.notesEmpty')}
+            </p>
+          </div>
         ) : (
-          <ul className="space-y-3">
-            {notes.map((n) => {
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {notes.map((n, idx) => {
               const { preview, truncated } = buildNotePreview(n.content)
               const displayBody = preview || t('vocabulary.dash')
+
               return (
-                <li
+                <div
                   key={n.id}
-                  className="bg-white dark:bg-[#1f2e36] rounded-xl border border-gray-200 dark:border-gray-700 p-4 flex flex-col gap-3"
+                  className="group relative bg-white/80 dark:bg-[#1f2e36]/80 backdrop-blur-sm rounded-3xl shadow-xl border border-gray-200 dark:border-gray-700 p-6 flex flex-col gap-6 transition-all duration-300 hover:shadow-2xl hover:-translate-y-1 hover:border-purple-400 dark:hover:border-purple-500 overflow-hidden"
                 >
-                  <div className="min-w-0 flex-1">
-                    {n.title ? (
-                      <p className="font-semibold text-gray-900 dark:text-white">{n.title}</p>
-                    ) : null}
-                    <p className="text-gray-700 dark:text-gray-300 whitespace-pre-wrap text-sm mt-1 line-clamp-5">
+                  <div className="flex-1 min-w-0 flex flex-col gap-3 relative z-10">
+                    <div className="flex items-start justify-between mb-1">
+                      <h4 className="font-bold text-lg text-gray-800 dark:text-gray-100 group-hover:text-purple-600 dark:group-hover:text-purple-400 transition-colors line-clamp-1">
+                        {n.title || t('vocabulary.notesTitle')}
+                      </h4>
+                      <span className="material-symbols-outlined text-gray-400 transition-colors text-xl">push_pin</span>
+                    </div>
+                    
+                    <p className="text-gray-600 dark:text-gray-400 text-sm leading-relaxed whitespace-pre-wrap line-clamp-6 mb-2">
                       {displayBody}
                     </p>
-                    <p className="text-xs text-gray-400 mt-2">
-                      {new Date(n.createdAt).toLocaleString(dateLocale)}
-                    </p>
                   </div>
-                  <div className="flex flex-wrap items-center gap-2 sm:justify-end">
-                    {truncated ? (
+
+                  <div className="flex items-center justify-between pt-4 border-t border-gray-100 dark:border-gray-700 relative z-10">
+                    <span className="text-[10px] font-bold text-gray-500 uppercase tracking-widest mt-1">
+                      {new Date(n.createdAt).toLocaleDateString(dateLocale, { month: 'short', day: 'numeric', year: 'numeric' })}
+                    </span>
+                    
+                    <div className="flex items-center gap-3">
+                      {truncated && (
+                        <button
+                          type="button"
+                          onClick={() => setDetailNote(n)}
+                          className="size-8 rounded-full bg-purple-100 dark:bg-purple-900/30 text-purple-600 dark:text-purple-400 flex items-center justify-center hover:bg-gradient-to-r from-purple-600 to-pink-600 hover:text-white transition-all transform hover:scale-110 shadow-sm"
+                          title={t('vocabulary.notesViewDetail')}
+                        >
+                          <span className="material-symbols-outlined text-lg">visibility</span>
+                        </button>
+                      )}
                       <button
                         type="button"
-                        onClick={() => setDetailNote(n)}
-                        className="text-sm font-medium text-primary hover:underline"
+                        onClick={() => {
+                          setItemToDelete(n)
+                        }}
+                        className="size-8 rounded-full bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400 flex items-center justify-center hover:bg-red-600 hover:text-white transition-all transform hover:scale-110 shadow-sm"
+                        title={t('vocabulary.delete')}
                       >
-                        {t('vocabulary.notesViewDetail')}
+                        <span className="material-symbols-outlined text-lg">delete</span>
                       </button>
-                    ) : null}
-                    <button
-                      type="button"
-                      onClick={() => {
-                        deleteVocabNote(n.id)
-                        if (detailNote?.id === n.id) setDetailNote(null)
-                        refresh()
-                      }}
-                      className="text-sm text-red-600 dark:text-red-400 hover:underline"
-                    >
-                      {t('vocabulary.delete')}
-                    </button>
+                    </div>
                   </div>
-                </li>
+                  <div className="absolute inset-0 rounded-3xl bg-gradient-to-r from-purple-400 to-pink-400 opacity-0 group-hover:opacity-5 transition-opacity duration-300" />
+                </div>
               )
             })}
-          </ul>
+          </div>
         )}
       </div>
 
@@ -198,52 +212,52 @@ export default function VocabularyNotesPanel() {
           onClick={closeComposer}
         >
           <div
-            className="bg-white dark:bg-[#1f2e36] rounded-2xl shadow-2xl w-full max-w-lg max-h-[min(90vh,720px)] flex flex-col border border-gray-200 dark:border-gray-700"
+            className="bg-[#131f26] rounded-3xl shadow-2xl w-full max-w-lg max-h-[min(90vh,720px)] flex flex-col border border-white/10"
             onClick={(e) => e.stopPropagation()}
           >
-            <div className="p-5 border-b border-gray-200 dark:border-gray-700 shrink-0 flex items-start justify-between gap-3">
+            <div className="p-6 border-b border-white/5 shrink-0 flex items-start justify-between gap-3 bg-gradient-to-br from-[#131f26] to-[#0b1115]">
               <div>
                 <h3
                   id="vocab-note-composer-title"
-                  className="text-lg font-bold text-gray-900 dark:text-white flex items-center gap-2"
+                  className="text-lg font-black text-white flex items-center gap-2"
                 >
-                  <span className="material-symbols-outlined text-primary">note_alt</span>
+                  <span className="material-symbols-outlined text-purple-400">note_alt</span>
                   {t('vocabulary.notesTitle')}
                 </h3>
-                <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                <p className="text-xs text-gray-500 mt-1">
                   {t('vocabulary.notesIntro')}
                 </p>
               </div>
               <button
                 type="button"
                 onClick={closeComposer}
-                className="shrink-0 p-2 rounded-lg text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-800"
+                className="shrink-0 p-2 rounded-xl text-gray-500 hover:bg-white/5 transition-colors"
                 aria-label={t('vocabulary.notesCloseDetail')}
               >
                 <span className="material-symbols-outlined text-xl">close</span>
               </button>
             </div>
-            <div className="p-5 overflow-y-auto flex-1 min-h-0 space-y-3">
+            <div className="p-6 overflow-y-auto flex-1 min-h-0 space-y-4">
               <input
                 type="text"
                 value={title}
                 onChange={(e) => setTitle(e.target.value)}
                 placeholder={t('vocabulary.notesTitlePlaceholder')}
-                className="w-full rounded-xl border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 px-4 py-3 text-gray-900 dark:text-white placeholder:text-gray-500 focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                className="w-full rounded-2xl border border-white/5 bg-[#0b1115]/50 px-5 py-3.5 text-white placeholder:text-gray-600 focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all outline-none"
               />
               <textarea
                 value={content}
                 onChange={(e) => setContent(e.target.value)}
                 placeholder={t('vocabulary.notesContentPlaceholder')}
                 rows={5}
-                className="w-full rounded-xl border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 px-4 py-3 text-gray-900 dark:text-white placeholder:text-gray-500 focus:ring-2 focus:ring-purple-500 focus:border-transparent resize-y min-h-[140px]"
+                className="w-full rounded-2xl border border-white/5 bg-[#0b1115]/50 px-5 py-4 text-white placeholder:text-gray-600 focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all outline-none resize-none min-h-[160px]"
               />
             </div>
-            <div className="p-4 border-t border-gray-200 dark:border-gray-700 shrink-0 flex flex-wrap justify-end gap-2">
+            <div className="p-5 border-t border-white/5 shrink-0 flex flex-wrap justify-end gap-3 bg-black/20">
               <button
                 type="button"
                 onClick={closeComposer}
-                className="px-5 py-2.5 rounded-xl border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-200 text-sm font-medium hover:bg-gray-50 dark:hover:bg-gray-800"
+                className="px-6 py-2.5 rounded-xl border border-white/5 text-gray-400 text-sm font-bold hover:bg-white/5 transition-all"
               >
                 {t('common.cancel')}
               </button>
@@ -268,30 +282,38 @@ export default function VocabularyNotesPanel() {
           onClick={closeDetail}
         >
           <div
-            className="bg-white dark:bg-[#1f2e36] rounded-2xl shadow-2xl w-full max-w-lg max-h-[min(85vh,640px)] flex flex-col border border-gray-200 dark:border-gray-700"
+            className="bg-[#131f26] rounded-3xl shadow-2xl w-full max-w-lg max-h-[min(85vh,640px)] flex flex-col border border-white/10"
             onClick={(e) => e.stopPropagation()}
           >
-            <div className="p-5 border-b border-gray-200 dark:border-gray-700 shrink-0">
+            <div className="p-6 border-b border-white/5 shrink-0 bg-gradient-to-br from-[#131f26] to-[#0b1115] relative">
               <h3
                 id="vocab-note-detail-title"
-                className="text-lg font-bold text-gray-900 dark:text-white pr-8"
+                className="text-lg font-black text-white pr-10"
               >
                 {detailNote.title?.trim() ? detailNote.title : t('vocabulary.notesTitle')}
               </h3>
-            </div>
-            <div className="p-5 overflow-y-auto flex-1 min-h-0">
-              <p className="text-gray-700 dark:text-gray-300 whitespace-pre-wrap text-sm leading-relaxed">
-                {detailNote.content?.trim() ? detailNote.content : t('vocabulary.dash')}
-              </p>
-              <p className="text-xs text-gray-400 mt-4">
-                {new Date(detailNote.createdAt).toLocaleString(dateLocale)}
-              </p>
-            </div>
-            <div className="p-4 border-t border-gray-200 dark:border-gray-700 shrink-0 flex justify-end gap-2">
               <button
                 type="button"
                 onClick={closeDetail}
-                className="px-5 py-2.5 rounded-xl bg-gradient-to-r from-purple-600 to-pink-600 text-white text-sm font-semibold hover:opacity-95"
+                className="absolute right-4 top-4 p-2 rounded-xl text-gray-500 hover:bg-white/5 transition-colors"
+                aria-label={t('vocabulary.notesCloseDetail')}
+              >
+                <span className="material-symbols-outlined text-xl">close</span>
+              </button>
+            </div>
+            <div className="p-6 overflow-y-auto flex-1 min-h-0">
+              <p className="text-gray-400 whitespace-pre-wrap text-sm leading-relaxed font-medium">
+                {detailNote.content?.trim() ? detailNote.content : t('vocabulary.dash')}
+              </p>
+              <p className="text-[10px] font-bold text-gray-500 uppercase tracking-widest mt-6">
+                {new Date(detailNote.createdAt).toLocaleString(dateLocale)}
+              </p>
+            </div>
+            <div className="p-5 border-t border-white/5 shrink-0 flex justify-end bg-black/20">
+              <button
+                type="button"
+                onClick={closeDetail}
+                className="px-8 py-2.5 rounded-xl bg-gradient-to-r from-purple-600 to-pink-600 text-white text-sm font-black shadow-lg shadow-purple-500/20 hover:shadow-xl hover:shadow-purple-500/30 active:scale-95 transition-all uppercase tracking-widest"
               >
                 {t('vocabulary.notesCloseDetail')}
               </button>
@@ -299,6 +321,23 @@ export default function VocabularyNotesPanel() {
           </div>
         </div>
       ) : null}
+
+      <AlertModal
+        open={!!itemToDelete}
+        title={t('common.confirmDelete')}
+        message={t('vocabulary.deleteNoteConfirm', { title: itemToDelete?.title || t('vocabulary.notesTitle') })}
+        confirmText={t('vocabulary.delete')}
+        cancelText={t('common.cancel')}
+        onClose={() => setItemToDelete(null)}
+        onConfirm={() => {
+          if (itemToDelete) {
+            deleteVocabNote(itemToDelete.id)
+            if (detailNote?.id === itemToDelete.id) setDetailNote(null)
+            refresh()
+            setItemToDelete(null)
+          }
+        }}
+      />
     </div>
   )
 }

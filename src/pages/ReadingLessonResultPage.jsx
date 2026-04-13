@@ -16,6 +16,8 @@ export function ReadingLessonResultPage() {
   const [error, setError] = useState(null)
   const [lessonTitle, setLessonTitle] = useState('')
   const [passageText, setPassageText] = useState('')
+  const [translationVi, setTranslationVi] = useState('')
+  const [passageLang, setPassageLang] = useState('en') // en | vi
   const [score, setScore] = useState(0)
   const [maxScore, setMaxScore] = useState(10)
   const [xpEarned, setXpEarned] = useState(0)
@@ -42,6 +44,7 @@ export function ReadingLessonResultPage() {
         setLessonTitle(lessonContent?.title || content?.title || '')
         setMaxScore(qList.length || 10)
         setPassageText(lessonContent?.text || '')
+        setTranslationVi(lessonContent?.translationVi || '')
 
         const progressData = progress?.data ?? progress
         const status = progressData?.status
@@ -100,155 +103,218 @@ export function ReadingLessonResultPage() {
     )
   }
 
-  return (
-    <main className="px-6 md:px-8 lg:px-10 py-8 flex flex-col max-w-[1200px] mx-auto w-full">
-      <div className="flex flex-col gap-2 mb-8">
-        <h1 className="text-white text-3xl md:text-4xl font-black tracking-tight">{t('lessonResult.title')}</h1>
-        <p className="text-gray-400 text-base md:text-lg">
-          {t('lessonResult.subtitle')} <span className="text-primary font-semibold italic">&quot;{lessonTitle}&quot;</span>.
-        </p>
-      </div>
+  const scrollToQuestion = (idx) => {
+    const el = document.getElementById(`question-card-${idx}`)
+    if (el) {
+      el.scrollIntoView({ behavior: 'smooth', block: 'center' })
+    }
+  }
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-10">
-        <div className="flex flex-col gap-3 rounded-xl p-6 md:p-8 bg-card-dark border border-border-dark shadow-lg relative overflow-hidden group">
-          <div className="absolute top-0 left-0 w-1 h-full bg-primary transition-all group-hover:w-2" />
-          <p className="text-gray-400 text-sm font-semibold uppercase tracking-wider">{t('lessonResult.scoreLabel')}</p>
-          <div className="flex items-baseline gap-2">
-            <p className="text-white text-3xl md:text-4xl font-black">{score}/{maxScore}</p>
-            <span className="text-green-500 text-sm font-bold flex items-center gap-1">
-              <span className="material-symbols-outlined text-xs">trending_up</span>
-              {progressPercent}%
+  return (
+    <main className="max-w-[1440px] mx-auto grid grid-cols-12 gap-6 p-4 md:p-6 lg:p-8">
+      {/* Sidebar Trái - Thông tin bài học & Kết quả tổng quát */}
+      <aside className="col-span-12 lg:col-span-3 space-y-5">
+        <div className="bg-card-dark rounded-2xl p-6 border border-border-dark shadow-xl flex flex-col gap-5 sticky top-6">
+          <div className="flex flex-col gap-1.5">
+            <h1 className="text-white text-2xl font-black tracking-tight">{t('lessonResult.title')}</h1>
+            <p className="text-gray-400 text-xs leading-relaxed">
+              {t('lessonResult.subtitle')} <span className="text-primary font-bold italic">"{lessonTitle}"</span>.
+            </p>
+          </div>
+
+          <div className="grid grid-cols-1 gap-3">
+            {/* Thẻ điểm số */}
+            <div className="bg-background-dark/30 rounded-xl p-5 border border-border-dark relative overflow-hidden group">
+              <div className="absolute top-0 left-0 w-1 h-full bg-primary transition-all group-hover:w-1.5" />
+              <p className="text-gray-500 text-[9px] font-bold uppercase tracking-widest mb-1.5">{t('lessonResult.scoreLabel')}</p>
+              <div className="flex items-baseline gap-2">
+                <p className="text-white text-3xl font-black">{score}/{maxScore}</p>
+                <span className="text-green-500 text-[10px] font-bold flex items-center gap-0.5">
+                  <span className="material-symbols-outlined text-[12px]">trending_up</span>
+                  {progressPercent}%
+                </span>
+              </div>
+              <div className="w-full bg-background-dark h-1 rounded-full mt-3">
+                <div
+                  className="bg-primary h-full rounded-full shadow-[0_0_8px_rgba(19,182,236,0.4)] transition-all duration-1000"
+                  style={{ width: `${progressPercent}%` }}
+                />
+              </div>
+            </div>
+
+            {/* Thẻ XP */}
+            <div className="bg-background-dark/30 rounded-xl p-5 border border-border-dark relative overflow-hidden group">
+              <div className="absolute top-0 left-0 w-1 h-full bg-green-500 transition-all group-hover:w-1.5" />
+              <p className="text-gray-500 text-[9px] font-bold uppercase tracking-widest mb-1.5">{t('lessonResult.xpEarned')}</p>
+              <div className="flex items-baseline gap-2">
+                <p className="text-white text-3xl font-black">+{displayXp} XP</p>
+                {displayXp > 0 && (
+                  <span className="text-green-500 text-[10px] font-bold flex items-center gap-0.5 animate-pulse">
+                    <span className="material-symbols-outlined text-[12px]">bolt</span>
+                    {t('lessonResult.bonus')}
+                  </span>
+                )}
+              </div>
+            </div>
+          </div>
+
+          {/* Phụ lục câu hỏi */}
+          <div className="space-y-3">
+            <p className="text-gray-500 text-[9px] font-bold uppercase tracking-widest flex items-center gap-2">
+              <span className="material-symbols-outlined text-sm">list_alt</span>
+              {t('lessonResult.questionDetails')}
+            </p>
+            <div className="flex flex-wrap gap-2">
+              {questions.map((q, idx) => {
+                const userAnswer = getAnswerForQuestion(idx)
+                const userValue = userAnswer?.answer ?? userAnswer?.userAnswer
+                const isCorrect = userAnswer?.isCorrect ?? (userValue != null && String(userValue).trim() === String(q.correctAnswer).trim())
+                
+                return (
+                  <button
+                    key={idx}
+                    onClick={() => scrollToQuestion(idx)}
+                    className={`size-8 rounded-lg flex items-center justify-center text-xs font-bold transition-all border shrink-0 hover:scale-110 active:scale-95 ${
+                      isCorrect 
+                        ? 'bg-green-500/10 border-green-500/30 text-green-500 hover:bg-green-500/20' 
+                        : 'bg-red-500/10 border-red-500/30 text-red-500 hover:bg-red-500/20'
+                    }`}
+                  >
+                    {idx + 1}
+                  </button>
+                )
+              })}
+            </div>
+          </div>
+
+          <div className="flex flex-col gap-2.5 mt-2">
+            <button
+              type="button"
+              onClick={() => navigate(`/lesson/reading/${id}`)}
+              className="w-full cursor-pointer flex items-center justify-center rounded-xl h-11 bg-card-dark text-white text-xs font-bold transition-all hover:bg-gray-700 active:scale-95 border border-border-dark group"
+            >
+              <span className="material-symbols-outlined mr-2 text-sm group-hover:rotate-180 transition-transform">refresh</span>
+              {t('lessonResult.retry')}
+            </button>
+            <Link
+              to={ROUTES.LESSON}
+              className="w-full cursor-pointer flex items-center justify-center rounded-xl h-11 bg-primary text-white text-xs font-bold shadow-lg shadow-primary/25 transition-all hover:brightness-110 active:scale-95"
+            >
+              <span className="material-symbols-outlined mr-2 text-sm">view_list</span>
+              {t('lessonResult.backToList')}
+            </Link>
+          </div>
+        </div>
+      </aside>
+
+      {/* Nội dung chính - Đoạn văn & Chi tiết câu hỏi */}
+      <div className="col-span-12 lg:col-span-9 space-y-6">
+        {passageText && (
+          <section className="bg-card-dark rounded-2xl border border-border-dark overflow-hidden shadow-xl">
+            <details className="group" open>
+              <summary className="flex cursor-pointer items-center justify-between p-5 list-none hover:bg-white/5 transition-colors">
+                <div className="flex items-center gap-3">
+                  <div className="size-8 rounded-lg bg-primary/10 flex items-center justify-center">
+                    <span className="material-symbols-outlined text-primary text-xl">menu_book</span>
+                  </div>
+                  <h3 className="text-white text-lg font-bold">{t('lessonResult.passageTitle')}</h3>
+                </div>
+                <div className="flex items-center gap-3">
+                  {translationVi && (
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.preventDefault()
+                        e.stopPropagation()
+                        setPassageLang(prev => (prev === 'en' ? 'vi' : 'en'))
+                      }}
+                      className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-tighter transition-colors border border-primary/30 bg-primary/10 text-primary hover:bg-primary/20"
+                    >
+                      <span className="material-symbols-outlined text-sm">translate</span>
+                      {passageLang === 'en' ? 'Dịch Tiếng Việt' : 'Xem Tiếng Anh'}
+                    </button>
+                  )}
+                  <span className="material-symbols-outlined text-gray-500 transition-transform duration-300 group-open:rotate-180">expand_more</span>
+                </div>
+              </summary>
+              <div className="p-7 pt-2 text-gray-300 leading-relaxed text-sm space-y-4 border-t border-border-dark/30 bg-background-dark/20">
+                {(passageLang === 'vi' && translationVi ? translationVi : passageText)
+                  .split('\n\n')
+                  .filter(Boolean)
+                  .map((p, i) => (
+                    <p key={i} className={passageLang === 'vi' ? 'italic text-gray-400' : ''}>{p}</p>
+                  ))}
+              </div>
+            </details>
+          </section>
+        )}
+
+        <section className="space-y-5">
+          <div className="flex items-center justify-between px-1">
+            <h2 className="text-white text-xl font-black tracking-tight flex items-center gap-2">
+              <span className="material-symbols-outlined text-primary text-2xl">fact_check</span>
+              {t('lessonResult.questionDetails')}
+            </h2>
+            <span className="bg-card-dark text-gray-500 text-[9px] font-bold px-2.5 py-1 rounded-full border border-border-dark uppercase tracking-widest">
+              {t('lessonResult.showingQuestions', { count: questions.length, total: questions.length })}
             </span>
           </div>
-          <div className="w-full bg-background-dark h-1.5 rounded-full mt-2">
-            <div
-              className="bg-primary h-full rounded-full shadow-glow transition-all"
-              style={{ width: `${progressPercent}%` }}
-            />
-          </div>
-        </div>
-        <div className="flex flex-col gap-3 rounded-xl p-6 md:p-8 bg-card-dark border border-border-dark shadow-lg relative overflow-hidden group">
-          <div className="absolute top-0 left-0 w-1 h-full bg-primary transition-all group-hover:w-2" />
-          <p className="text-gray-400 text-sm font-semibold uppercase tracking-wider">{t('lessonResult.completedLabel')}</p>
-          <div className="flex items-baseline gap-2">
-            <p className="text-white text-3xl md:text-4xl font-black">{progressPercent}%</p>
-          </div>
-          <div className="w-full bg-background-dark h-1.5 rounded-full mt-2">
-            <div
-              className="bg-primary h-full rounded-full shadow-glow transition-all"
-              style={{ width: `${progressPercent}%` }}
-            />
-          </div>
-        </div>
-        <div className="flex flex-col gap-3 rounded-xl p-6 md:p-8 bg-card-dark border border-border-dark shadow-lg relative overflow-hidden group">
-          <div className="absolute top-0 left-0 w-1 h-full bg-green-500 transition-all group-hover:w-2" />
-          <p className="text-gray-400 text-sm font-semibold uppercase tracking-wider">{t('lessonResult.xpEarned')}</p>
-          <div className="flex items-baseline gap-2">
-            <p className="text-white text-3xl md:text-4xl font-black">+{displayXp} XP</p>
-            {displayXp > 0 && (
-              <span className="text-green-500 text-sm font-bold flex items-center gap-1">
-                <span className="material-symbols-outlined text-xs">bolt</span>
-                {t('lessonResult.bonus')}
-              </span>
-            )}
-          </div>
-          <div className="flex gap-1 mt-2">
-            <span className="size-2 rounded-full bg-green-500 animate-pulse" />
-            <span className="size-2 rounded-full bg-green-500/40" />
-            <span className="size-2 rounded-full bg-green-500/20" />
-          </div>
-        </div>
-      </div>
 
-      {passageText && (
-        <section className="mb-10">
-          <details className="group bg-card-dark/40 border border-border-dark rounded-xl overflow-hidden transition-all duration-300" open>
-            <summary className="flex cursor-pointer items-center justify-between p-6 list-none hover:bg-card-dark/60 transition-colors">
-              <div className="flex items-center gap-3">
-                <span className="material-symbols-outlined text-primary">menu_book</span>
-                <h3 className="text-white text-lg font-bold">{t('lessonResult.passageTitle')}</h3>
-              </div>
-              <span className="material-symbols-outlined text-white transition-transform duration-300 group-open:rotate-180">expand_more</span>
-            </summary>
-            <div className="p-6 pt-0 text-gray-400 leading-relaxed text-base italic border-t border-border-dark/30 bg-card-dark/20">
-              {passageText}
-            </div>
-          </details>
-        </section>
-      )}
+          <div className="flex flex-col gap-5">
+            {questions.map((q, index) => {
+              const userAnswer = getAnswerForQuestion(index)
+              const userValue = userAnswer?.answer ?? userAnswer?.userAnswer
+              const isCorrect = userAnswer?.isCorrect ?? (userValue != null && String(userValue).trim() === String(q.correctAnswer).trim())
+              const correctText = q.options?.find((o) => o.value === q.correctAnswer)?.text || q.correctAnswer
+              const userText = q.options?.find((o) => o.value === userValue)?.text || userValue
 
-      <section className="flex flex-col gap-6">
-        <div className="flex items-center justify-between mb-2">
-          <h2 className="text-white text-2xl font-bold">{t('lessonResult.questionDetails')}</h2>
-          <span className="text-gray-400 text-sm">{t('lessonResult.showingQuestions', { count: questions.length, total: questions.length })}</span>
-        </div>
-
-        {questions.map((q, index) => {
-          const userAnswer = getAnswerForQuestion(index)
-          const userValue = userAnswer?.answer ?? userAnswer?.userAnswer
-          const isCorrect = userAnswer?.isCorrect ?? (userValue != null && String(userValue).trim() === String(q.correctAnswer).trim())
-          const correctText = q.options?.find((o) => o.value === q.correctAnswer)?.text || q.correctAnswer
-          const userText = q.options?.find((o) => o.value === userValue)?.text || userValue
-
-          return (
-            <div
-              key={q.id || index}
-              className={`bg-card-dark border rounded-xl p-6 flex flex-col gap-4 shadow-sm ${!isCorrect ? 'border-l-4 border-l-red-500' : 'border-border-dark'}`}
-            >
-              <div className="flex items-center justify-between">
-                <span className="text-primary font-bold uppercase text-xs tracking-widest">{t('lessonResult.questionNum', { num: index + 1 })}</span>
+              return (
                 <div
-                  className={`flex items-center gap-2 px-3 py-1 rounded-full text-xs font-bold ${
-                    isCorrect ? 'bg-green-500/10 border border-green-500/30 text-green-500' : 'bg-red-500/10 border border-red-500/30 text-red-500'
-                  }`}
+                  key={q.id || index}
+                  id={`question-card-${index}`}
+                  className={`bg-card-dark border rounded-2xl p-7 flex flex-col gap-5 shadow-lg transition-all border-border-dark hover:border-gray-700 ${!isCorrect ? 'border-l-4 border-l-red-500' : ''}`}
                 >
-                  <span className="material-symbols-outlined text-sm">{isCorrect ? 'check_circle' : 'cancel'}</span>
-                  {isCorrect ? t('lessonResult.correct') : t('lessonResult.incorrect')}
-                </div>
-              </div>
-              <p className="text-white text-lg font-medium">{q.question}</p>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className={`p-4 rounded-lg border ${!isCorrect ? 'bg-red-500/10 border-red-500/20' : 'bg-background-dark/50 border-border-dark'}`}>
-                  <p className="text-gray-500 text-xs font-bold uppercase mb-1">{t('lessonResult.yourAnswer')}</p>
-                  <p className={`text-white font-medium ${!isCorrect ? 'line-through decoration-red-500/50' : ''}`}>{userText || '—'}</p>
-                </div>
-                <div className="p-4 rounded-lg bg-green-500/5 border border-green-500/20">
-                  <p className="text-green-500/90 text-xs font-bold uppercase mb-1">{t('lessonResult.correctAnswer')}</p>
-                  <p className="text-white font-medium">{correctText || '—'}</p>
-                </div>
-              </div>
-              {q.explanation && (
-                <details className="group mt-2">
-                  <summary className="flex items-center gap-2 text-primary font-bold text-sm cursor-pointer list-none hover:opacity-80 transition-colors">
-                    <span className="material-symbols-outlined text-sm">info</span>
-                    {t('lessonResult.viewExplanation')}
-                  </summary>
-                  <div className="mt-3 p-4 bg-primary/5 rounded-lg border-l-4 border-primary text-gray-400 text-sm leading-relaxed">
-                    {q.explanation}
+                  <div className="flex items-center justify-between">
+                    <span className="text-primary font-black uppercase text-[9px] tracking-[0.2em]">{t('lessonResult.questionNum', { num: index + 1 })}</span>
+                    <div
+                      className={`flex items-center gap-1.5 px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-tight ${
+                        isCorrect ? 'bg-green-500/10 border border-green-500/30 text-green-500' : 'bg-red-500/10 border border-red-500/30 text-red-500'
+                      }`}
+                    >
+                      <span className="material-symbols-outlined text-xs">{isCorrect ? 'check_circle' : 'cancel'}</span>
+                      {isCorrect ? t('lessonResult.correct') : t('lessonResult.incorrect')}
+                    </div>
                   </div>
-                </details>
-              )}
-            </div>
-          )
-        })}
-      </section>
-
-      <div className="mt-12 mb-20 flex flex-col sm:flex-row items-center justify-center gap-4">
-        <button
-          type="button"
-          onClick={() => navigate(`/lesson/reading/${id}`)}
-          className="flex min-w-[200px] cursor-pointer items-center justify-center rounded-xl h-14 px-8 bg-card-dark text-white text-base font-bold transition-all hover:bg-gray-700 active:scale-95 border border-border-dark"
-        >
-          <span className="material-symbols-outlined mr-2">refresh</span>
-          {t('lessonResult.retry')}
-        </button>
-        <Link
-          to={ROUTES.LESSON}
-          className="flex min-w-[200px] cursor-pointer items-center justify-center rounded-xl h-14 px-8 bg-primary text-white text-base font-bold shadow-lg shadow-primary/25 transition-all hover:brightness-110 active:scale-95"
-        >
-          <span className="material-symbols-outlined mr-2">view_list</span>
-          {t('lessonResult.backToList')}
-        </Link>
+                  
+                  <p className="text-white text-lg font-bold leading-tight">{q.question}</p>
+                  
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                    <div className={`p-4 rounded-xl border transition-colors ${!isCorrect ? 'bg-red-500/5 border-red-500/20' : 'bg-background-dark/50 border-border-dark'}`}>
+                      <p className="text-gray-500 text-[9px] font-bold uppercase tracking-widest mb-1">{t('lessonResult.yourAnswer')}</p>
+                      <p className={`text-white text-sm font-bold ${!isCorrect ? 'line-through decoration-red-500/30 text-gray-500' : ''}`}>{userText || '—'}</p>
+                    </div>
+                    <div className="p-4 rounded-xl bg-green-500/5 border border-green-500/20">
+                      <p className="text-green-500/70 text-[9px] font-bold uppercase tracking-widest mb-1">{t('lessonResult.correctAnswer')}</p>
+                      <p className="text-white text-sm font-bold">{correctText || '—'}</p>
+                    </div>
+                  </div>
+                  
+                  {q.explanation && (
+                    <details className="group">
+                      <summary className="flex items-center gap-1.5 text-primary font-black text-[10px] cursor-pointer list-none hover:opacity-80 transition-all uppercase tracking-widest p-1.5 -mx-1.5 rounded-lg active:bg-primary/5">
+                        <span className="material-symbols-outlined text-base transition-transform group-open:rotate-90">info</span>
+                        {t('lessonResult.viewExplanation')}
+                      </summary>
+                      <div className="mt-3 p-5 bg-primary/5 rounded-xl border-l-[3px] border-primary text-gray-400 text-xs leading-relaxed italic shadow-inner">
+                        {q.explanation}
+                      </div>
+                    </details>
+                  )}
+                </div>
+              )
+            })}
+          </div>
+        </section>
       </div>
     </main>
   )

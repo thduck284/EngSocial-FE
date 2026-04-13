@@ -14,6 +14,7 @@ export function practiceToCard(p, skill) {
     topic: p.topic,
     time: p.time,
     questions: p.questions || '',
+    totalQuestions: p.totalQuestions,
     rating: String(p.rating || 0),
     img: p.thumbnail,
     accent: p.accent || '',
@@ -21,5 +22,6 @@ export function practiceToCard(p, skill) {
     type: p.type || '',
     typeClass: p.type ? 'bg-primary/10 text-primary border-primary/20' : '',
     length: p.length || '',
+    xpReward: p.xpReward,
   }
 }

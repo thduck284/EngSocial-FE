@@ -19,8 +19,9 @@ import { ReactionsModal } from './ReactionsModal'
 import { PostContentBody } from './PostContentBody'
 import { MentionedUsersModal } from './MentionedUsersModal'
 import { PostImageViewerCommentsSection } from './PostImageViewerCommentsSection'
+import { PostInteractionsModal } from './PostInteractionsModal'
 
-export function PostImageViewerModal({ open, onClose, post, initialImageIndex = 0, onLikeClick, likeLoading = false, onReactionClick }) {
+export function PostImageViewerModal({ open, onClose, post, initialImageIndex = 0, onLikeClick, likeLoading = false, onReactionClick, onIndexChange }) {
   const { t } = useTranslation()
   const [showMentionsModal, setShowMentionsModal] = useState(false)
   const [optionsMenuOpen, setOptionsMenuOpen] = useState(false)
@@ -44,8 +45,13 @@ export function PostImageViewerModal({ open, onClose, post, initialImageIndex = 
   const [showCommentReactionsModal, setShowCommentReactionsModal] = useState(false)
   const [commentReactionsModalInitialTab, setCommentReactionsModalInitialTab] = useState('all')
   const [commentReactionsModalCommentId, setCommentReactionsModalCommentId] = useState(null)
+  const [showInteractionsModal, setShowInteractionsModal] = useState(false)
+  const [interactionsType, setInteractionsType] = useState('comments')
 
-  const imagesList = Array.isArray(post?.images) ? post.images.filter((url) => typeof url === 'string' && url.trim()) : []
+  const imagesList = [
+    ...(Array.isArray(post?.images) ? post.images.filter((url) => typeof url === 'string' && url.trim()) : []),
+    ...(post?.video && typeof post.video === 'string' && post.video.trim() ? [post.video] : [])
+  ]
   const postId = post?.id ?? post?._id
   const author = post?.author ?? {}
   const authorAvatar = author.avatar || (author.name ? `https://ui-avatars.com/api/?name=${encodeURIComponent(author.name)}&background=13b6ec&color=fff` : DEFAULT_AVATAR)
@@ -68,7 +74,7 @@ export function PostImageViewerModal({ open, onClose, post, initialImageIndex = 
     zoomIn,
     zoomOut,
     toggleFullscreen,
-  } = usePostImageViewer({ open, initialImageIndex, imagesList, onClose })
+  } = usePostImageViewer({ open, initialImageIndex, imagesList, onClose, onIndexChange })
 
   const currentSrc = imagesList[currentIndex] || null
   const isLongContent = contentToShow.length > 300
@@ -176,10 +182,14 @@ export function PostImageViewerModal({ open, onClose, post, initialImageIndex = 
         <aside className="w-full md:max-w-[520px] lg:max-w-[580px] flex-1 flex flex-col bg-[#111e22] border-t md:border-t-0 md:border-l border-[#325a67] overflow-y-auto pt-4">
           <div className="border-b border-[#325a67] px-4 py-2">
             <div className="flex items-start justify-between gap-2">
-              <img src={authorAvatar} alt="" className="size-9 rounded-full object-cover bg-slate-600 shrink-0" />
+              <Link to={author.id ?? author._id ? ROUTES.PROFILE_USER(author.id ?? author._id) : '#'}>
+                <img src={authorAvatar} alt="" className="size-9 rounded-full object-cover bg-slate-600 shrink-0 hover:opacity-80 transition-opacity" />
+              </Link>
               <div className="min-w-0 flex-1">
                 <p className="text-sm text-slate-100">
-                  <span className="font-bold">{author.name || 'User'}</span>
+                  <Link to={author.id ?? author._id ? ROUTES.PROFILE_USER(author.id ?? author._id) : '#'} className="font-bold hover:text-primary transition-colors">
+                    {author.name || 'User'}
+                  </Link>
                   {mentionsList.length > 0 && (
                     <>
                       {' '}
@@ -298,8 +308,24 @@ export function PostImageViewerModal({ open, onClose, post, initialImageIndex = 
               )}
             </div>
             <div className="flex items-center gap-4 shrink-0">
-              <span className="tabular-nums">{t('dashboard.commentsCount', { count: post.commentCount ?? 0 })}</span>
-              <span className="tabular-nums">{t('dashboard.sharesCount', { count: post.shareCount ?? 0 })}</span>
+              <button
+                onClick={() => {
+                  setInteractionsType('comments')
+                  setShowInteractionsModal(true)
+                }}
+                className="tabular-nums hover:underline hover:text-primary transition-colors cursor-pointer"
+              >
+                {t('dashboard.commentsCount', { count: post.commentCount ?? 0 })}
+              </button>
+              <button
+                onClick={() => {
+                  setInteractionsType('shares')
+                  setShowInteractionsModal(true)
+                }}
+                className="tabular-nums hover:underline hover:text-primary transition-colors cursor-pointer"
+              >
+                {t('dashboard.sharesCount', { count: post.shareCount ?? 0 })}
+              </button>
             </div>
           </div>
           <div className="flex w-full items-center justify-between border-b border-[#325a67] px-3 py-1.5">
@@ -486,6 +512,12 @@ export function PostImageViewerModal({ open, onClose, post, initialImageIndex = 
         initialTab={commentReactionsModalInitialTab}
         likeCount={0}
         reactionCounts={{}}
+      />
+      <PostInteractionsModal
+        open={showInteractionsModal}
+        onClose={() => setShowInteractionsModal(false)}
+        postId={postId}
+        type={interactionsType}
       />
     </div>
   )

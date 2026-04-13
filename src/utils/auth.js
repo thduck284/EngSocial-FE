@@ -16,7 +16,7 @@ export function getRefreshToken() {
  * Storage đang dùng cho auth (localStorage hoặc sessionStorage).
  */
 export function getAuthStorage() {
-  return localStorage.getItem('authToken') ? localStorage : sessionStorage
+  return localStorage
 }
 
 export function isAuthenticated() {

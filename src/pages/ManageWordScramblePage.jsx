@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { wordScrambleService } from '../services/wordScramble.service'
+import { AlertModal } from '../components/ui/common/AlertModal'
 
 /** Cùng chiều cao với input / nút (36px) */
 const selectClass =
@@ -144,6 +145,8 @@ export function ManageWordScramblePage() {
   const [exportMenuOpen, setExportMenuOpen] = useState(false)
   const [exporting, setExporting] = useState(false)
   const [deletingAll, setDeletingAll] = useState(false)
+  const [itemToDelete, setItemToDelete] = useState(null)
+  const [isBulkDelete, setIsBulkDelete] = useState(false)
   const limit = 50
 
   const fetchList = useCallback(
@@ -232,8 +235,14 @@ export function ManageWordScramblePage() {
     }
   }
 
-  const onDeleteAll = async () => {
-    if (!window.confirm(t('manageWordScramble.confirmDeleteAll'))) return
+  const onDeleteAll = () => {
+    setIsBulkDelete(true)
+    setItemToDelete({ title: 'ALL' }) // dummy to open modal
+  }
+
+  const handleConfirmDeleteAll = async () => {
+    setIsBulkDelete(false)
+    setItemToDelete(null)
     setError('')
     setDeletingAll(true)
     try {
@@ -287,8 +296,15 @@ export function ManageWordScramblePage() {
     }
   }
 
-  const onDelete = async (id) => {
-    if (!window.confirm(t('manageWordScramble.confirmDelete'))) return
+  const onDelete = (id) => {
+    setIsBulkDelete(false)
+    setItemToDelete({ id })
+  }
+
+  const handleConfirmDeleteSingle = async () => {
+    if (!itemToDelete) return
+    const { id } = itemToDelete
+    setItemToDelete(null)
     setError('')
     try {
       await wordScrambleService.deleteWord(id)
@@ -597,6 +613,19 @@ export function ManageWordScramblePage() {
           </div>
         ) : null}
       </div>
+
+      <AlertModal
+        open={!!itemToDelete}
+        title={t('quests.delete')}
+        message={isBulkDelete ? t('manageWordScramble.confirmDeleteAll') : t('manageWordScramble.confirmDelete')}
+        confirmText={t('common.confirm')}
+        cancelText={t('common.cancel')}
+        onClose={() => {
+          setItemToDelete(null)
+          setIsBulkDelete(false)
+        }}
+        onConfirm={isBulkDelete ? handleConfirmDeleteAll : handleConfirmDeleteSingle}
+      />
     </div>
   )
 }

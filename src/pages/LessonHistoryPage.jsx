@@ -28,8 +28,8 @@ export function LessonHistoryPage() {
     lessonsService
       .getMyProgress(params)
       .then((res) => {
-        const list = res?.data?.data ?? res?.data ?? []
-        const pag = res?.data?.pagination ?? res?.pagination ?? null
+        const list = res?.data ?? []
+        const pag = res?.meta?.pagination ?? null
         setData(Array.isArray(list) ? list : [])
         setPagination(pag)
       })
@@ -46,12 +46,13 @@ export function LessonHistoryPage() {
   return (
     <main className="max-w-[1440px] mx-auto grid grid-cols-12 gap-6 p-6">
       <aside className="col-span-12 lg:col-span-3 space-y-6 lg:sticky lg:top-20 lg:self-start">
-        <div className="bg-card-dark rounded-xl p-5 border border-border-dark">
-          <h3 className="font-bold text-sm flex items-center gap-2 mb-4">
-            <span className="material-symbols-outlined text-primary">history</span>
+        <div className="bg-card-dark/60 backdrop-blur-xl rounded-2xl p-6 border border-white/5 shadow-2xl relative overflow-hidden group/sidebar">
+          <div className="absolute top-0 left-0 w-1 h-full bg-primary opacity-0 group-hover/sidebar:opacity-100 transition-opacity" />
+          <h3 className="font-bold text-sm flex items-center gap-3 mb-4 text-white">
+            <span className="material-symbols-outlined text-primary bg-primary/10 p-1.5 rounded-lg">history</span>
             {t('lessonHistory.title')}
           </h3>
-          <p className="text-xs text-gray-400 mb-4">{t('lessonHistory.subtitle')}</p>
+          <p className="text-xs text-gray-400 mb-6 leading-relaxed">{t('lessonHistory.subtitle')}</p>
           <div className="space-y-3">
             <label className="block text-xs font-medium text-gray-400">{t('lessonHistory.filterStatus')}</label>
             <select
@@ -61,7 +62,10 @@ export function LessonHistoryPage() {
             >
               <option value="">{t('lessonHistory.statusAll')}</option>
               <option value="completed">{t('lessonHistory.statusCompleted')}</option>
-              <option value="in_progress">{t('lessonHistory.statusInProgress')}</option>
+              <option value="under_review">{t('lessonHistory.statusUnderReview')}</option>
+              {filterSkill !== 'writing' && (
+                <option value="in_progress">{t('lessonHistory.statusInProgress')}</option>
+              )}
             </select>
             <label className="block text-xs font-medium text-gray-400">{t('lessonHistory.filterSkill')}</label>
             <select
@@ -92,7 +96,7 @@ export function LessonHistoryPage() {
                 setFilterCategory('')
                 setPage(1)
               }}
-              className="w-full flex items-center justify-center gap-2 py-2.5 rounded-lg text-sm font-medium text-gray-400 hover:text-white hover:bg-gray-700 transition-all"
+              className="w-full flex items-center justify-center gap-2 py-3 mt-4 rounded-xl text-xs font-bold text-gray-400 hover:text-white hover:bg-white/5 border border-transparent hover:border-white/10 transition-all"
             >
               <span className="material-symbols-outlined text-lg">refresh</span>
               {t('lessonHistory.reset')}
@@ -100,7 +104,7 @@ export function LessonHistoryPage() {
           </div>
           <Link
             to={ROUTES.LESSON}
-            className="mt-4 flex items-center justify-center gap-2 w-full py-2.5 bg-background-dark hover:bg-gray-700 text-gray-300 rounded-xl text-sm font-medium border border-border-dark transition-all"
+            className="mt-6 flex items-center justify-center gap-2 w-full py-3 bg-white/5 hover:bg-white/10 text-gray-300 hover:text-primary rounded-xl text-xs font-bold border border-white/5 transition-all"
           >
             <span className="material-symbols-outlined text-lg">arrow_back</span>
             {t('lessonHistory.backToLessons')}
@@ -132,22 +136,35 @@ export function LessonHistoryPage() {
 
         {!loading && data.length > 0 && (
           <div className="space-y-2">
-            {data.map((item) => {
-              const lesson = item.lesson
-              const href = lesson?.id ? getLessonLink(lesson) : ROUTES.LESSON
-              const title = lesson?.title || t('lessonHistory.unknownLesson')
-              const level = lesson?.level || ''
-              const skill = lesson?.skill || ''
-              const isCompleted = item.status === 'completed'
+              {data.map((item) => {
+                const lesson = item.lesson
+                const isCompleted = item.status === 'completed'
+                const isUnderReview = item.status === 'under_review'
+                const isInProgress = item.status === 'in_progress'
+                const skill = lesson?.skill || ''
+                const id = lesson?.id
+
+                let href = ROUTES.LESSON
+                if (id) {
+                  if (isCompleted || isUnderReview) {
+                    href = `/lesson/${skill}/${id}/result`
+                  } else {
+                    href = getLessonLink(lesson)
+                  }
+                }
+
+                const title = lesson?.title || t('lessonHistory.unknownLesson')
+                const level = lesson?.level || ''
               return (
                 <div
                   key={item.id}
-                  className="flex items-center gap-4 p-4 bg-card-dark rounded-xl border border-border-dark hover:border-primary/50 transition-all group"
+                  className="flex flex-col sm:flex-row items-start sm:items-center gap-4 p-5 bg-card-dark/40 backdrop-blur-sm rounded-2xl border border-white/5 hover:border-primary/40 hover:bg-card-dark/60 transition-all group relative overflow-hidden"
                 >
+                  <div className="absolute inset-0 bg-gradient-to-r from-primary/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none" />
                   <Link to={href} className="flex flex-1 items-center gap-4 min-w-0">
-                    <span className="w-10 h-10 rounded-lg bg-gray-700 text-primary flex items-center justify-center shrink-0">
+                    <span className={`w-10 h-10 rounded-lg bg-gray-700 flex items-center justify-center shrink-0 ${isCompleted ? 'text-green-400' : isUnderReview ? 'text-amber-400' : 'text-primary'}`}>
                       <span className="material-symbols-outlined">
-                        {isCompleted ? 'check_circle' : 'play_circle'}
+                        {isCompleted ? 'check_circle' : isUnderReview ? 'rate_review' : 'play_circle'}
                       </span>
                     </span>
                     <div className="min-w-0 flex-1">
@@ -163,30 +180,47 @@ export function LessonHistoryPage() {
                         {skill && (
                           <span className="text-[10px] text-gray-500">{t(`skills.${skill}`)}</span>
                         )}
-                        <span className={`text-[10px] font-medium ${isCompleted ? 'text-green-400' : 'text-yellow-500'}`}>
-                          {isCompleted ? t('lessonHistory.completed') : t('lessonHistory.inProgress')}
-                        </span>
+                        {isCompleted && (
+                          <span className="text-[10px] font-medium text-green-400">{t('lessonHistory.completed')}</span>
+                        )}
+                        {isUnderReview && (
+                          <span className="text-[10px] font-medium text-amber-400">{t('lessonHistory.underReview') || 'Under Review'}</span>
+                        )}
+                        {isInProgress && (
+                          <span className="text-[10px] font-medium text-yellow-500">{t('lessonHistory.inProgress')}</span>
+                        )}
                         {item.progress != null && (
                           <span className="text-[10px] text-gray-500">{item.progress}%</span>
                         )}
                       </div>
                     </div>
                   </Link>
-                  <div className="flex items-center gap-2 shrink-0">
-                    {isCompleted && skill === 'reading' && lesson?.id && (
-                      <Link
-                        to={ROUTES.LESSON_READING_RESULT(lesson.id)}
-                        className="px-4 py-2 bg-primary text-white hover:brightness-110 font-bold text-xs rounded-lg transition-all"
-                      >
-                        {t('lessonHistory.viewResult')}
-                      </Link>
-                    )}
+                  <div className="flex flex-col sm:flex-row items-center gap-2 shrink-0">
+                    {/* View Result / Continue button */}
                     <Link
                       to={href}
-                      className="px-4 py-2 bg-primary/10 text-primary hover:bg-primary hover:text-background-dark font-bold text-xs rounded-lg transition-all"
+                      className={`px-4 py-2 w-full sm:w-auto text-center font-bold text-xs rounded-lg transition-all ${
+                        isCompleted 
+                          ? 'bg-emerald-500/10 text-emerald-500 hover:bg-emerald-500 hover:text-white' 
+                          : isUnderReview 
+                            ? 'bg-amber-500/10 text-amber-500 hover:bg-amber-500 hover:text-white'
+                            : 'bg-primary text-background-dark hover:brightness-110'
+                      }`}
                     >
-                      {isCompleted ? t('lessonHistory.viewAgain') : t('lessonHistory.continue')}
+                      {isCompleted ? t('lessonResult.viewResult') || t('lessonHistory.viewResult') : isUnderReview ? (t('lessonHistory.viewSubmission') || 'View Submission') : t('lessonHistory.continue')}
                     </Link>
+
+                    {/* Retry Button (only for completed or in-progress) */}
+                    {(!isUnderReview && id) && (
+                      <Link
+                        to={getLessonLink(lesson)}
+                        className="px-4 py-2 w-full sm:w-auto text-center bg-gray-700/50 text-gray-300 hover:bg-gray-700 hover:text-white font-bold text-xs rounded-lg transition-all border border-border-dark flex items-center justify-center gap-1.5"
+                        title={t('lessonResult.retry')}
+                      >
+                         <span className="material-symbols-outlined text-sm">refresh</span>
+                         {t('lessonResult.retry') || 'Retry'}
+                      </Link>
+                    )}
                   </div>
                 </div>
               )
@@ -195,25 +229,39 @@ export function LessonHistoryPage() {
         )}
 
         {!loading && data.length > 0 && totalPages > 1 && (
-          <div className="flex justify-center gap-2 pt-4">
+          <div className="flex items-center justify-center gap-4 pt-8">
             <button
               type="button"
-              onClick={() => setPage((p) => Math.max(1, p - 1))}
+              onClick={() => { setPage((p) => Math.max(1, p - 1)); window.scrollTo(0, 0) }}
               disabled={currentPage <= 1}
-              className="px-4 py-2 rounded-lg bg-card-dark border border-border-dark text-sm font-medium text-gray-400 hover:text-white disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+              className="size-10 flex items-center justify-center rounded-xl bg-card-dark border border-border-dark text-gray-400 hover:text-primary hover:border-primary disabled:opacity-30 disabled:pointer-events-none transition-all"
             >
-              {t('readingLesson.previous')}
+              <span className="material-symbols-outlined">chevron_left</span>
             </button>
-            <span className="px-4 py-2 text-sm text-gray-400">
-              {currentPage} / {totalPages}
-            </span>
+            
+            <div className="flex items-center gap-1.5">
+              {Array.from({ length: totalPages }, (_, i) => i + 1).map((p) => (
+                <button
+                  key={p}
+                  onClick={() => { setPage(p); window.scrollTo(0, 0) }}
+                  className={`size-10 flex items-center justify-center rounded-xl text-xs font-black transition-all border ${
+                    currentPage === p 
+                      ? 'bg-primary border-primary text-background-dark shadow-lg shadow-primary/20' 
+                      : 'bg-card-dark border-border-dark text-gray-500 hover:border-gray-600 hover:text-gray-300'
+                  }`}
+                >
+                  {p}
+                </button>
+              ))}
+            </div>
+
             <button
               type="button"
-              onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+              onClick={() => { setPage((p) => Math.min(totalPages, p + 1)); window.scrollTo(0, 0) }}
               disabled={currentPage >= totalPages}
-              className="px-4 py-2 rounded-lg bg-card-dark border border-border-dark text-sm font-medium text-gray-400 hover:text-white disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+              className="size-10 flex items-center justify-center rounded-xl bg-card-dark border border-border-dark text-gray-400 hover:text-primary hover:border-primary disabled:opacity-30 disabled:pointer-events-none transition-all"
             >
-              {t('readingLesson.next')}
+              <span className="material-symbols-outlined">chevron_right</span>
             </button>
           </div>
         )}

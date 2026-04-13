@@ -87,6 +87,8 @@ export const API_ENDPOINTS = {
     READING_CONTENT: (id) => `/lessons/reading/${id}/content`,
     LISTENING_CONTENT: (id) => `/lessons/listening/${id}/content`,
     WRITING_CONTENT: (id) => `/lessons/writing/${id}/content`,
+    REVIEWS: (id) => `/lessons/${id}/reviews`,
+    AI_GRADE: (id, userId) => `/lessons/${id}/ai-grade/${userId}`,
   },
 
   UPLOAD: {
@@ -142,6 +144,8 @@ export const API_ENDPOINTS = {
     REACTION_POST: (id) => `/community/posts/${id}/reaction`,
     POST_REACTIONS: (id) => `/community/posts/${id}/reactions`,
     COMMENT_POST: (id) => `/community/posts/${id}/comments`,
+    POST_COMMENT_USERS: (id) => `/community/posts/${id}/comment-users`,
+    POST_SHARE_USERS: (id) => `/community/posts/${id}/share-users`,
   },
 
   // Conversations (chat)
@@ -260,19 +264,20 @@ export const ROUTES = {
   RESET_PASSWORD: '/reset-password',
   DASHBOARD: '/home',
   SKILLS: {
-    READING: '/skills/reading',
-    LISTENING: '/skills/listening',
-    WRITING: '/skills/writing',
+    READING: '/practice/reading',
+    LISTENING: '/practice/listening',
+    WRITING: '/practice/writing',
     /** Giải trí — danh sách game */
-    ENTERTAINMENT: '/skills/entertainment',
+    ENTERTAINMENT: '/practice/entertainment',
     /** Xáo chữ từ vựng */
-    ENTERTAINMENT_WORD_SCRAMBLE: '/skills/entertainment/word-scramble',
+    ENTERTAINMENT_WORD_SCRAMBLE: '/practice/entertainment/word-scramble',
   },
   /** @deprecated Dùng ROUTES.SKILLS.ENTERTAINMENT */
-  ENTER: '/skills/entertainment',
+  ENTER: '/practice/entertainment',
   LESSONS: '/lessons',
   LESSON: '/lesson',
   LESSON_HISTORY: '/lesson/history',
+  LESSON_REVIEWS: (id) => `/lesson/${id}/reviews`,
   LESSON_READING_RESULT: (id) => `/lesson/reading/${id}/result`,
   PRACTICE: '/practice',
   QUESTS: '/quests',
@@ -282,7 +287,7 @@ export const ROUTES = {
     READING: (id) => `/lesson/reading/${id}`,
     WRITING: (id) => `/lesson/writing/${id}`,
   },
-  COMMUNITY: '/community/my-groups',
+  COMMUNITY: '/community/group-feed',
   /** Trang « Từ & ghi chú » / Words & notes */
   WORDS_NOTES: '/words-notes',
   /** @deprecated Dùng WORDS_NOTES; giữ alias để code cũ */

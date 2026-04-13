@@ -5,16 +5,16 @@ import { ROUTES } from '../constants'
  */
 export function getDefaultSkillStats() {
   return [
-    { icon: 'menu_book', label: 'skills.reading', value: '0 XP', change: '', changeColor: 'text-blue-400', to: ROUTES.SKILLS?.READING || '/skills/reading' },
-    { icon: 'headset', label: 'skills.listening', value: '0 XP', change: '', changeColor: 'text-orange-400', to: ROUTES.SKILLS?.LISTENING || '/skills/listening' },
-    { icon: 'edit_note', label: 'skills.writing', value: '0 XP', change: '', changeColor: 'text-emerald-400', to: ROUTES.SKILLS?.WRITING || '/skills/writing' },
+    { icon: 'menu_book', label: 'skills.reading', value: '0 XP', change: '', changeColor: 'text-blue-400', to: ROUTES.SKILLS?.READING || '/practice/reading' },
+    { icon: 'headset', label: 'skills.listening', value: '0 XP', change: '', changeColor: 'text-orange-400', to: ROUTES.SKILLS?.LISTENING || '/practice/listening' },
+    { icon: 'edit_note', label: 'skills.writing', value: '0 XP', change: '', changeColor: 'text-emerald-400', to: ROUTES.SKILLS?.WRITING || '/practice/writing' },
   ]
 }
 
 const SKILLS_CONFIG = [
-  { skill: 'reading', icon: 'menu_book', labelKey: 'skills.reading', to: ROUTES.SKILLS?.READING || '/skills/reading', changeColor: 'text-emerald-400' },
-  { skill: 'listening', icon: 'headset', labelKey: 'skills.listening', to: ROUTES.SKILLS?.LISTENING || '/skills/listening', changeColor: 'text-orange-400' },
-  { skill: 'writing', icon: 'edit_note', labelKey: 'skills.writing', to: ROUTES.SKILLS?.WRITING || '/skills/writing', changeColor: 'text-emerald-400' },
+  { skill: 'reading', icon: 'menu_book', labelKey: 'skills.reading', to: ROUTES.SKILLS?.READING || '/practice/reading', changeColor: 'text-emerald-400' },
+  { skill: 'listening', icon: 'headset', labelKey: 'skills.listening', to: ROUTES.SKILLS?.LISTENING || '/practice/listening', changeColor: 'text-orange-400' },
+  { skill: 'writing', icon: 'edit_note', labelKey: 'skills.writing', to: ROUTES.SKILLS?.WRITING || '/practice/writing', changeColor: 'text-emerald-400' },
 ]
 
 /**

@@ -148,7 +148,7 @@ export function CommunityMain({
   // About tab: show group intro instead of posts
   if (activeTab === 'about') {
     return (
-      <section className="md:col-span-9 lg:col-span-6 space-y-6">
+      <div className="space-y-6">
         {/* Card: mô tả dài về nhóm */}
         <div className="bg-slate-900/80 border border-slate-800 rounded-xl p-6 space-y-3">
           <h2 className="text-base font-bold">
@@ -293,7 +293,7 @@ export function CommunityMain({
             </p>
           </div>
         </div>
-      </section>
+      </div>
     )
   }
 
@@ -301,7 +301,7 @@ export function CommunityMain({
   if (activeTab === 'people') {
     const gid = activeGroup?.id || activeGroup?._id || null
     return (
-      <section className="md:col-span-9 lg:col-span-6 space-y-6">
+      <div className="space-y-6">
         <CommunityGroupJoinRequestsCard
           groupId={gid}
           enabled={!!gid}
@@ -315,12 +315,12 @@ export function CommunityMain({
           variant="embedded"
           onMemberRemovedFromGroup={onMemberRemovedFromGroup}
         />
-      </section>
+      </div>
     )
   }
 
   return (
-    <section className="md:col-span-9 lg:col-span-6 space-y-6">
+    <div className="space-y-6">
       {!hideComposer && (
         <>
           {/* Create post */}
@@ -420,7 +420,7 @@ export function CommunityMain({
           )}
         </>
       )}
-    </section>
+    </div>
   )
 }
 

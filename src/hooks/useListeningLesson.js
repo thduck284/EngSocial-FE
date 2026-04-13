@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from 'react'
 import { useNavigate, useLocation } from 'react-router-dom'
 import { lessonsService } from '../services'
+import { addVocabNote } from '../utils/vocabularyUserStorage'
 import { SPEED_OPTIONS } from '../constants/lessons'
 import { formatTime } from '../utils/dateTime'
 
@@ -30,6 +31,8 @@ export function useListeningLesson(id, t) {
   const [noteSavedMessage, setNoteSavedMessage] = useState('')
   const [completingLesson, setCompletingLesson] = useState(false)
   const [completeMessage, setCompleteMessage] = useState('')
+  const [showConfirmModal, setShowConfirmModal] = useState(false)
+  const [showIncompleteModal, setShowIncompleteModal] = useState(false)
   const [showHint, setShowHint] = useState(false)
   const [editingPage, setEditingPage] = useState(false)
   const [pageInput, setPageInput] = useState('')
@@ -40,6 +43,7 @@ export function useListeningLesson(id, t) {
   useEffect(() => {
     if (!id) return
     setLoading(true)
+    // Fetch lesson content
     lessonsService
       .getListeningContent(id)
       .then((res) => {
@@ -48,11 +52,22 @@ export function useListeningLesson(id, t) {
         setContent(data)
         if (data?.duration) setDuration(data.duration)
         if (data?.totalQuestions) setCurrentQuestion(0)
-        const initialCountdown = (data?.estimatedTime || 5) * 60
+        const initialCountdown = (data?.content?.estimatedTime || data?.estimatedTime || 15) * 60
         setCountdownSeconds(initialCountdown)
       })
       .catch(() => setContent(null))
       .finally(() => setLoading(false))
+
+    // Load existing notes for this lesson from backend
+    lessonsService
+      .getProgress(id)
+      .then((res) => {
+        const notes = res?.data?.notes || []
+        // Optional: show most recent note in fields?
+        // Usually, LessonPage sidebar notes are for "new" entry, 
+        // but confirmation is good.
+      })
+      .catch((err) => console.error('Failed to load lesson progress:', err))
   }, [id])
 
   const vocabularyList = content?.vocabulary || []
@@ -129,9 +144,17 @@ export function useListeningLesson(id, t) {
   }, [currentQuestion])
 
   const handleSaveNote = () => {
-    if (!id) return
+    if (!id || (!noteTitle.trim() && !noteContent.trim())) return
     setNoteSaving(true)
     setNoteSavedMessage('')
+
+    // 1. Save to local storage (like in /lesson) so it shows up in "Words & Notes"
+    addVocabNote({ 
+      title: noteTitle || `${content?.content?.title || 'Listening Note'}`, 
+      content: noteContent 
+    })
+
+    // 2. Save to backend for cross-device persistence
     lessonsService
       .addNote(id, { title: noteTitle, content: noteContent })
       .then(() => {
@@ -140,7 +163,14 @@ export function useListeningLesson(id, t) {
         setNoteContent('')
         setTimeout(() => setNoteSavedMessage(''), 2500)
       })
-      .catch(() => setNoteSavedMessage(''))
+      .catch((err) => {
+        console.error('Failed to save note to backend:', err)
+        // Still show success since it saved locally
+        setNoteSavedMessage(t('listeningLesson.noteSaved'))
+        setNoteTitle('')
+        setNoteContent('')
+        setTimeout(() => setNoteSavedMessage(''), 2500)
+      })
       .finally(() => setNoteSaving(false))
   }
 
@@ -153,20 +183,28 @@ export function useListeningLesson(id, t) {
         return a != null && String(a).trim() !== ''
       })
     if (!allAnswered) {
-      setCompleteMessage(t('readingLesson.pleaseAnswerAll'))
+      setShowIncompleteModal(true)
       return
     }
+    setShowConfirmModal(true)
+  }
+
+  const handleConfirmComplete = () => {
+    setShowConfirmModal(false)
     setCompletingLesson(true)
     setCompleteMessage('')
+    
     const answersPayload = questions.map((q, i) => ({
       questionId: String(q?.id ?? i + 1),
       questionIndex: i,
       answer: answers[i],
     }))
+    
     const elapsedSec =
       lessonOpenedAtMs.current != null
         ? Math.max(0, Math.floor((Date.now() - lessonOpenedAtMs.current) / 1000))
         : currentTime || 0
+
     lessonsService
       .submit(id, { answers: answersPayload, timeSpent: elapsedSec })
       .then((res) => {
@@ -174,8 +212,7 @@ export function useListeningLesson(id, t) {
         setCompleteMessage(
           xp > 0 ? t('listeningLesson.completeSuccess', { xp }) : t('listeningLesson.completeSuccessShort')
         )
-        const fromPractice = location.pathname.startsWith('/practice/')
-        const redirectTo = fromPractice ? '/practice' : '/lesson'
+        const redirectTo = `/lesson/listening/${id}/result`
         setTimeout(() => {
           setCompleteMessage('')
           navigate(redirectTo)
@@ -286,6 +323,8 @@ export function useListeningLesson(id, t) {
     progress,
     accentLabel,
     currentQuestion,
+    answers,
+    setCurrentQuestion,
     selectedAnswer,
     setSelectedAnswer,
     noteTitle,
@@ -297,7 +336,12 @@ export function useListeningLesson(id, t) {
     handleSaveNote,
     completingLesson,
     completeMessage,
+    showConfirmModal,
+    setShowConfirmModal,
+    showIncompleteModal,
+    setShowIncompleteModal,
     handleComplete,
+    handleConfirmComplete,
     showHint,
     setShowHint,
     editingPage,

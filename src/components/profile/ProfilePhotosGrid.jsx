@@ -1,8 +1,11 @@
 import { useEffect, useRef } from 'react'
+import { useNavigate, useLocation } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 
 export function ProfilePhotosGrid({ photos, loading, error, hasMore, loadMore }) {
   const { t } = useTranslation()
+  const navigate = useNavigate()
+  const location = useLocation()
   const sentinelRef = useRef(null)
 
   useEffect(() => {
@@ -58,9 +61,18 @@ export function ProfilePhotosGrid({ photos, loading, error, hasMore, loadMore })
     <div className="w-full">
       <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
         {photos.map((item, index) => (
-          <div
+          <button
             key={`${item.postId || 'post'}-${index}-${item.url}`}
-            className="relative group overflow-hidden rounded-xl border border-slate-200 dark:border-border-dark bg-slate-100 dark:bg-slate-800"
+            onClick={() => {
+              if (item.postId) {
+                const params = new URLSearchParams()
+                if (item.imgIdx != null) params.set('image', String(item.imgIdx))
+                navigate(`/post/photo/${item.postId}?${params.toString()}`, {
+                  state: { background: location },
+                })
+              }
+            }}
+            className="relative group overflow-hidden rounded-xl border border-slate-200 dark:border-border-dark bg-slate-100 dark:bg-slate-800 cursor-pointer block w-full outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2"
           >
             <img
               src={item.url}
@@ -68,7 +80,8 @@ export function ProfilePhotosGrid({ photos, loading, error, hasMore, loadMore })
               className="w-full h-40 object-cover group-hover:scale-105 transition-transform duration-200"
               loading="lazy"
             />
-          </div>
+            <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors" />
+          </button>
         ))}
       </div>
       <div ref={sentinelRef} className="h-6" />

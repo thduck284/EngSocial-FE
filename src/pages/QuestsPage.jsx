@@ -4,6 +4,7 @@ import { useTranslation } from 'react-i18next'
 import { useAuth } from '../context/AuthContext'
 import { questsService, challengesService } from '../services'
 import { ROUTES } from '../constants'
+import { AlertModal } from '../components/ui/common/AlertModal'
 
 const TAB_QUESTS = 'quests'
 const TAB_CHALLENGES = 'challenges'
@@ -75,6 +76,8 @@ export function QuestsPage() {
   const [deletingId, setDeletingId] = useState(null)
   const [deletingChallengeId, setDeletingChallengeId] = useState(null)
   const [filterType, setFilterType] = useState('all')
+  const [itemToDelete, setItemToDelete] = useState(null)
+  const [deleteType, setDeleteType] = useState(null) // 'quest' or 'challenge'
 
   const TYPE_ORDER = { one_time: 0, daily: 1, weekly: 2 }
 
@@ -138,30 +141,38 @@ export function QuestsPage() {
 
   const handleDelete = async (quest) => {
     if (!quest?.id) return
-    if (!window.confirm(t('quests.confirmDelete', { title: quest.title }))) return
-    setDeletingId(quest.id)
-    try {
-      await questsService.delete(quest.id)
-      loadQuests()
-    } catch {
-      setDeletingId(null)
-    } finally {
-      setDeletingId(null)
-    }
+    setDeleteType('quest')
+    setItemToDelete(quest)
   }
 
   const handleDeleteChallenge = async (challenge) => {
     if (!challenge?.id) return
-    if (!window.confirm(t('quests.confirmDelete', { title: challenge.title || challenge.titleVi }))) return
-    setDeletingChallengeId(challenge.id)
-    try {
-      await challengesService.delete(challenge.id)
-      loadChallenges()
-    } catch {
-      setDeletingChallengeId(null)
-    } finally {
-      setDeletingChallengeId(null)
+    setDeleteType('challenge')
+    setItemToDelete(challenge)
+  }
+
+  const handleConfirmDelete = async () => {
+    if (!itemToDelete || !deleteType) return
+    const id = itemToDelete.id
+    if (deleteType === 'quest') {
+      setDeletingId(id)
+      try {
+        await questsService.delete(id)
+        loadQuests()
+      } finally {
+        setDeletingId(null)
+      }
+    } else {
+      setDeletingChallengeId(id)
+      try {
+        await challengesService.delete(id)
+        loadChallenges()
+      } finally {
+        setDeletingChallengeId(null)
+      }
     }
+    setItemToDelete(null)
+    setDeleteType(null)
   }
 
   const formatChallengeDate = (date) => {
@@ -389,6 +400,22 @@ export function QuestsPage() {
       )}
         </div>
       </div>
+      <AlertModal
+        open={!!itemToDelete}
+        title={
+          deleteType === 'quest'
+            ? t('manageQuests.deleteConfirmTitle')
+            : t('manageChallenges.deleteConfirmTitle')
+        }
+        message={t('quests.confirmDelete', { title: itemToDelete?.title || itemToDelete?.titleVi || '' })}
+        confirmText={t('common.confirm')}
+        cancelText={t('common.cancel')}
+        onClose={() => {
+          setItemToDelete(null)
+          setDeleteType(null)
+        }}
+        onConfirm={handleConfirmDelete}
+      />
     </main>
   )
 }

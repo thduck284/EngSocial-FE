@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Link, useParams, useNavigate, useLocation } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { useAuth } from '../context/AuthContext'
@@ -8,6 +8,8 @@ import { DEFAULT_AVATAR } from '../constants/ui'
 import { useSkillPractices } from '../hooks/useLessons'
 import { useDashboardSocket, useDashboardFriends, useStudyGroups } from '../hooks'
 import { friendsService } from '../services/friends.service'
+import { userService } from '../services'
+import { AlertModal } from '../components/ui/common/AlertModal'
 
 // Stable no-op so socket effect does not re-run every render (no group conversations on skills page)
 const noopSetGroupConversations = () => {}
@@ -22,6 +24,32 @@ export function SkillPracticePage() {
 
   const [onlineUserIds, setOnlineUserIds] = useState(new Set())
   const studyGroups = useStudyGroups(setOnlineUserIds)
+  const [userStats, setUserStats] = useState(null)
+
+  useEffect(() => {
+    userService.getStats().then(res => setUserStats(res?.data)).catch(console.error)
+  }, [])
+
+  const skillStatsMap = (userStats?.skillStats || []).reduce((acc, cur) => {
+    acc[cur.key] = cur
+    return acc
+  }, {})
+
+  const currentSkillStat = skillStatsMap[skill] || {}
+  const weeklyTimeMins = currentSkillStat.weeklyTimeSpent || 0
+  const formatTimeVal = (val) => {
+    const num = Number(val || 0)
+    return num.toLocaleString(undefined, {
+      minimumFractionDigits: 0,
+      maximumFractionDigits: 1,
+    })
+  }
+  const weeklyTimeStr =
+    weeklyTimeMins >= 60
+      ? `${Math.floor(weeklyTimeMins / 60)}h ${formatTimeVal(weeklyTimeMins % 60)}m`
+      : `${formatTimeVal(weeklyTimeMins)}m`
+  const doneLessons = currentSkillStat.lessonsCompleted || 0
+
   const {
     friendsFilterTab,
     setFriendsFilterTab,
@@ -52,6 +80,8 @@ export function SkillPracticePage() {
     setFilterLevel,
     filterTopic,
     setFilterTopic,
+    filterTitle,
+    setFilterTitle,
     handleApplyFilters,
     handleResetFilters,
     handleDeletePractice,
@@ -59,6 +89,10 @@ export function SkillPracticePage() {
     rawData,
     cards,
   } = useSkillPractices(skill, t)
+
+  const [reviewModalOpen, setReviewModalOpen] = useState(false)
+  const [selectedLessonForReview, setSelectedLessonForReview] = useState(null)
+  const [itemToDelete, setItemToDelete] = useState(null)
 
   const current = SKILLS[skill] || SKILLS.reading
   const isReading = skill === 'reading'
@@ -127,6 +161,11 @@ export function SkillPracticePage() {
                   <span className="material-symbols-outlined text-xs">quiz</span> {card.questions}
                 </span>
               )}
+              {card.xpReward != null && (
+                <span className="px-2 py-0.5 bg-yellow-500/10 text-yellow-500 text-[10px] rounded flex items-center gap-1 font-bold border border-yellow-500/20">
+                  <span className="material-symbols-outlined text-[12px] fill-icon">star</span> {card.xpReward} XP
+                </span>
+              )}
             </div>
             <div className="flex items-center justify-between pt-2 border-t border-border-dark">
               <div className="flex items-center gap-1">
@@ -139,11 +178,18 @@ export function SkillPracticePage() {
                     <Link to={`${ROUTES.MANAGE_SKILLS(user.id)}/${card.id}`} className="p-2 rounded-lg text-gray-400 hover:bg-white/10 hover:text-primary transition-colors" title={t('quests.edit')}>
                       <span className="material-symbols-outlined text-sm">edit</span>
                     </Link>
-                    <button type="button" onClick={() => handleDeletePractice(card)} disabled={deletingId === card.id} className="p-2 rounded-lg text-gray-400 hover:bg-red-500/10 hover:text-red-400 transition-colors disabled:opacity-50" title={t('quests.delete')}>
+                    <button type="button" onClick={() => setItemToDelete(card)} disabled={deletingId === card.id} className="p-2 rounded-lg text-gray-400 hover:bg-red-500/10 hover:text-red-400 transition-colors disabled:opacity-50" title={t('quests.delete')}>
                       <span className="material-symbols-outlined text-sm">delete</span>
                     </button>
                   </>
                 )}
+                <Link
+                  to={ROUTES.LESSON_REVIEWS(card.id)}
+                  className="p-2 rounded-lg text-yellow-500 hover:bg-yellow-500/10 transition-colors"
+                  title={t('lessons.reviews') || 'Review'}
+                >
+                  <span className="material-symbols-outlined text-sm">star</span>
+                </Link>
                 <button
                   onClick={() => navigate(`/practice/reading/${card.id}`)}
                   className="px-4 py-1.5 bg-primary/10 text-primary hover:bg-primary hover:text-background-dark font-bold text-xs rounded transition-all"
@@ -205,6 +251,11 @@ export function SkillPracticePage() {
                   <span className="material-symbols-outlined text-xs">quiz</span> {card.questions}
                 </span>
               )}
+              {card.xpReward != null && (
+                <span className="px-2 py-0.5 bg-yellow-500/10 text-yellow-500 text-[10px] rounded flex items-center gap-1 font-bold border border-yellow-500/20">
+                  <span className="material-symbols-outlined text-[12px] fill-icon">star</span> {card.xpReward} XP
+                </span>
+              )}
             </div>
             <div className="flex items-center justify-between pt-2 border-t border-border-dark">
               <div className="flex items-center gap-1">
@@ -217,11 +268,18 @@ export function SkillPracticePage() {
                     <Link to={`${ROUTES.MANAGE_SKILLS(user.id)}/${card.id}`} className="p-2 rounded-lg text-gray-400 hover:bg-white/10 hover:text-primary transition-colors" title={t('quests.edit')}>
                       <span className="material-symbols-outlined text-sm">edit</span>
                     </Link>
-                    <button type="button" onClick={() => handleDeletePractice(card)} disabled={deletingId === card.id} className="p-2 rounded-lg text-gray-400 hover:bg-red-500/10 hover:text-red-400 transition-colors disabled:opacity-50" title={t('quests.delete')}>
+                    <button type="button" onClick={() => setItemToDelete(card)} disabled={deletingId === card.id} className="p-2 rounded-lg text-gray-400 hover:bg-red-500/10 hover:text-red-400 transition-colors disabled:opacity-50" title={t('quests.delete')}>
                       <span className="material-symbols-outlined text-sm">delete</span>
                     </button>
                   </>
                 )}
+                <Link
+                  to={ROUTES.LESSON_REVIEWS(card.id)}
+                  className="p-2 rounded-lg text-yellow-500 hover:bg-yellow-500/10 transition-colors"
+                  title={t('lessons.reviews') || 'Review'}
+                >
+                  <span className="material-symbols-outlined text-sm">star</span>
+                </Link>
                 <button
                   onClick={() => navigate(`/practice/listening/${card.id}`)}
                   className="px-4 py-1.5 bg-primary/10 text-primary hover:bg-primary hover:text-background-dark font-bold text-xs rounded transition-all"
@@ -283,6 +341,11 @@ export function SkillPracticePage() {
                   <span className="material-symbols-outlined text-xs">timer</span> {card.time}
                 </span>
               )}
+              {card.xpReward != null && (
+                <span className="px-2 py-0.5 bg-yellow-500/10 text-yellow-500 text-[10px] rounded flex items-center gap-1 font-bold border border-yellow-500/20">
+                  <span className="material-symbols-outlined text-[12px] fill-icon">star</span> {card.xpReward} XP
+                </span>
+              )}
             </div>
             <div className="flex items-center justify-between pt-2 border-t border-border-dark">
               <div className="flex items-center gap-1">
@@ -295,13 +358,20 @@ export function SkillPracticePage() {
                     <Link to={`${ROUTES.MANAGE_SKILLS(user.id)}/${card.id}`} className="p-2 rounded-lg text-gray-400 hover:bg-white/10 hover:text-primary transition-colors" title={t('quests.edit')}>
                       <span className="material-symbols-outlined text-sm">edit</span>
                     </Link>
-                    <button type="button" onClick={() => handleDeletePractice(card)} disabled={deletingId === card.id} className="p-2 rounded-lg text-gray-400 hover:bg-red-500/10 hover:text-red-400 transition-colors disabled:opacity-50" title={t('quests.delete')}>
+                    <button type="button" onClick={() => setItemToDelete(card)} disabled={deletingId === card.id} className="p-2 rounded-lg text-gray-400 hover:bg-red-500/10 hover:text-red-400 transition-colors disabled:opacity-50" title={t('quests.delete')}>
                       <span className="material-symbols-outlined text-sm">delete</span>
                     </button>
                   </>
                 )}
+                <Link
+                  to={ROUTES.LESSON_REVIEWS(card.id)}
+                  className="p-2 rounded-lg text-yellow-500 hover:bg-yellow-500/10 transition-colors"
+                  title={t('lessons.reviews') || 'Review'}
+                >
+                  <span className="material-symbols-outlined text-sm">star</span>
+                </Link>
                 <button
-                  onClick={() => navigate(`/lesson/writing/${card.id}`)}
+                  onClick={() => navigate(`/practice/writing/${card.id}`)}
                   className="px-4 py-1.5 bg-primary/10 text-primary hover:bg-primary hover:text-background-dark font-bold text-xs rounded transition-all"
                 >
                   {t('buttons.startWriting')}
@@ -323,7 +393,7 @@ export function SkillPracticePage() {
         <div className="space-y-4">
           <Link
             to={ROUTES.LESSON_HISTORY}
-            className="flex items-center justify-center gap-2 w-full py-3 bg-card-dark hover:bg-gray-700 text-gray-300 hover:text-white font-medium rounded-xl text-sm transition-all"
+            className="flex items-center justify-center gap-2 w-full py-2.5 bg-card-dark hover:bg-gray-700 text-gray-300 hover:text-white font-medium rounded-xl text-sm transition-all"
           >
             <span className="material-symbols-outlined text-xl">history</span>
             {t('lessons.viewHistory')}
@@ -331,12 +401,20 @@ export function SkillPracticePage() {
           {canAddPractice && user?.id != null && (
             <Link
               to={ROUTES.MANAGE_SKILLS(user.id)}
-              className="flex items-center justify-center gap-2 w-full py-3 bg-primary hover:bg-primary/90 text-background-dark font-semibold rounded-xl text-sm transition-all shadow-lg shadow-primary/25 border border-primary/30"
+              className="flex items-center justify-center gap-2 w-full py-2.5 bg-primary hover:bg-primary/90 text-background-dark font-semibold rounded-xl text-sm transition-all shadow-lg shadow-primary/25 border border-primary/30"
             >
               <span className="material-symbols-outlined text-xl">add_circle</span>
               {t('skills.addPractice')}
             </Link>
           )}
+
+          <Link
+            to="/practice/mock-test"
+            className="flex items-center justify-center gap-2 w-full py-2.5 bg-indigo-600 hover:bg-indigo-500 text-white font-black rounded-xl text-sm transition-all shadow-xl shadow-indigo-900/20 border border-indigo-400/30 group"
+          >
+            <span className="material-symbols-outlined text-xl group-hover:rotate-12 transition-transform">school</span>
+            {t('skills.mockTest')}
+          </Link>
           <div className="bg-card-dark rounded-xl border border-border-dark overflow-hidden">
             <div className="grid grid-cols-2 gap-1 p-1.5">
               {SKILL_TABS.map(({ to, icon, label }) => (
@@ -360,6 +438,16 @@ export function SkillPracticePage() {
               <span className="material-symbols-outlined text-sm">filter_list</span>
               {t('skills.filters')}
             </h4>
+            <div className="space-y-3">
+              <label className="block text-xs font-medium text-gray-400">{t('skills.filterTitle') || 'Tìm kiếm theo tên bài'}</label>
+              <input
+                type="text"
+                value={filterTitle}
+                onChange={(e) => setFilterTitle(e.target.value)}
+                placeholder={t('skills.filterTitlePlaceholder') || 'Nhập từ khóa...'}
+                className="w-full bg-background-dark border border-border-dark text-sm rounded-lg focus:ring-2 focus:ring-primary focus:border-primary px-3 py-2.5 text-white"
+              />
+            </div>
             <div className="space-y-3">
               <label className="block text-xs font-medium text-gray-400">{t('skills.filterLevel')}</label>
               <select
@@ -399,42 +487,6 @@ export function SkillPracticePage() {
               <button onClick={handleApplyFilters} type="button" className="flex-1 py-2.5 bg-primary text-white font-semibold text-sm rounded-lg hover:brightness-110 transition-all">
                 {t('buttons.save')}
               </button>
-            </div>
-          </div>
-        </div>
-        <div className="bg-card-dark rounded-xl border border-border-dark p-5">
-          <div className="flex justify-between items-center mb-4">
-            <h3 className="font-semibold text-sm text-white flex items-center gap-2">
-              <span className="material-symbols-outlined text-primary text-lg">flag</span>
-              {t('skills.goals')}
-            </h3>
-            <div className="flex gap-1.5">
-              <button className="size-8 flex items-center justify-center rounded-lg bg-white/5 hover:bg-white/10 text-gray-400 hover:text-white border border-border-dark transition-colors" type="button" title={t('buttons.edit')}>
-                <span className="material-symbols-outlined text-sm">edit</span>
-              </button>
-              <button className="size-8 flex items-center justify-center rounded-lg bg-primary/20 hover:bg-primary/30 text-primary border border-primary/30 transition-colors" type="button" title={t('buttons.add')}>
-                <span className="material-symbols-outlined text-sm">add</span>
-              </button>
-            </div>
-          </div>
-          <div className="space-y-5">
-            <div>
-              <div className="flex justify-between items-center mb-2">
-                <span className="text-xs font-medium text-gray-300">{t('skills.readingDaily')}</span>
-                <span className="text-xs font-bold text-primary">80%</span>
-              </div>
-              <div className="h-2 w-full bg-gray-700/80 rounded-full overflow-hidden">
-                <div className="h-full bg-primary rounded-full transition-all" style={{ width: '80%' }} />
-              </div>
-            </div>
-            <div>
-              <div className="flex justify-between items-center mb-2">
-                <span className="text-xs font-medium text-gray-300">{t('skills.vocabularyGoal')}</span>
-                <span className="text-xs font-bold text-orange-400">45%</span>
-              </div>
-              <div className="h-2 w-full bg-gray-700/80 rounded-full overflow-hidden">
-                <div className="h-full bg-orange-400 rounded-full transition-all" style={{ width: '45%' }} />
-              </div>
             </div>
           </div>
         </div>
@@ -505,13 +557,13 @@ export function SkillPracticePage() {
                   <span className="text-sm">{t(label)}</span>
                 </div>
                 <span className="text-sm font-bold">
-                  {key === 'reading' ? '1,240' : key === 'listening' ? '850' : '420'} XP
+                  {(skillStatsMap[key]?.totalXpEarned || 0).toLocaleString()} XP
                 </span>
               </div>
             ))}
             <div className="pt-4 border-t border-border-dark flex justify-between items-center text-xs text-gray-400">
-              <span>{t('skills.weeklyTime')}: <strong className="text-white">5h 20m</strong></span>
-              <span>{t('skills.done')}: <strong className="text-white">12/15</strong></span>
+              <span>{t('skills.weeklyTime')}: <strong className="text-white">{weeklyTimeStr}</strong></span>
+              <span>{t('skills.done')}: <strong className="text-white">{doneLessons}</strong></span>
             </div>
           </div>
         </div>
@@ -627,6 +679,21 @@ export function SkillPracticePage() {
           </div>
         </div>
       </aside>
+
+      <AlertModal
+        open={!!itemToDelete}
+        title={t('manageLessons.deleteConfirmTitle') || t('quests.delete')}
+        message={t('skills.confirmDeletePractice', { title: itemToDelete?.title || '' })}
+        confirmText={t('common.confirm')}
+        cancelText={t('common.cancel')}
+        onClose={() => setItemToDelete(null)}
+        onConfirm={() => {
+          if (itemToDelete) {
+            handleDeletePractice(itemToDelete, '')
+            setItemToDelete(null)
+          }
+        }}
+      />
     </main>
   )
 }

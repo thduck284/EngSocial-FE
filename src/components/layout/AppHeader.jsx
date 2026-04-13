@@ -8,8 +8,9 @@ import { LanguageSwitcher } from '../ui/common/LanguageSwitcher'
 import { NAV_ITEMS, ROUTES } from '../../constants'
 import { SOCKET_ENABLED, SOCKET_BASE_URL, SOCKET_FALLBACK_BASE_URL } from '../../constants/api'
 import { getAuthToken } from '../../utils/auth'
-import { notificationsService, conversationService } from '../../services'
+import { notificationsService, conversationService, communityService } from '../../services'
 import { LogoutConfirmModal } from './LogoutConfirmModal'
+import { PostDetailModal } from '../ui/post/PostDetailModal'
 
 const LogoIcon = () => (
   <div className="size-8">
@@ -38,6 +39,9 @@ export function AppHeader() {
   const [searchValue, setSearchValue] = useState(() => (location.pathname === ROUTES.SEARCH ? searchParams.get('q') || '' : ''))
   const notifButtonRef = useRef(null)
   const avatarRef = useRef(null)
+  const [selectedPost, setSelectedPost] = useState(null)
+  const [showPostModal, setShowPostModal] = useState(false)
+  const [postModalLoading, setPostModalLoading] = useState(false)
 
   const fetchUnreadCount = useCallback(() => {
     if (!user) return
@@ -130,6 +134,23 @@ export function AppHeader() {
     setLogoutConfirmOpen(true)
   }
 
+  const handleOpenPostModal = useCallback(async (postId) => {
+    if (!postId) return
+    setPostModalLoading(true)
+    try {
+      const res = await communityService.getPost(postId)
+      const p = res?.data?.post ?? res?.data
+      if (p) {
+        setSelectedPost(p)
+        setShowPostModal(true)
+      }
+    } catch (err) {
+      console.error('Failed to fetch post for modal', err)
+    } finally {
+      setPostModalLoading(false)
+    }
+  }, [])
+
   const confirmLogout = () => {
     setLogoutConfirmOpen(false)
     logout()
@@ -172,7 +193,7 @@ export function AppHeader() {
                   (to === ROUTES.WORDS_NOTES && (location.pathname.startsWith('/words-notes') || location.pathname.startsWith('/topic/'))) ||
                   (to === ROUTES.QUESTS &&
                     (location.pathname === '/quests' || /^\/mod\/[^/]+\/quests(\/|$)/.test(location.pathname))) ||
-                  (to === ROUTES.COMMUNITY && (location.pathname === '/community' || location.pathname === '/community/'))
+                  (to === ROUTES.COMMUNITY && (location.pathname.startsWith('/community')))
                     ? 'text-primary font-semibold border-b-2 border-primary pb-1'
                     : 'text-gray-400 hover:text-primary'
                 }`}
@@ -206,6 +227,7 @@ export function AppHeader() {
                 unreadCount={unreadCount}
                 onMarkAllRead={fetchUnreadCount}
                 onUnreadChange={fetchUnreadCount}
+                onOpenPostModal={handleOpenPostModal}
               />
             </div>
             <Link
@@ -282,6 +304,19 @@ export function AppHeader() {
       onCancel={() => setLogoutConfirmOpen(false)}
       onConfirm={confirmLogout}
     />
+    <PostDetailModal
+      open={showPostModal}
+      onClose={() => setShowPostModal(false)}
+      post={selectedPost}
+    />
+    {postModalLoading && (
+      <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/20 backdrop-blur-[2px]">
+        <div className="bg-card-dark p-4 rounded-xl shadow-2xl border border-border-dark flex items-center gap-3">
+          <span className="material-symbols-outlined animate-spin text-primary">progress_activity</span>
+          <span className="text-sm font-medium text-gray-200">Đang tải bài viết...</span>
+        </div>
+      </div>
+    )}
     </>
   )
 }

@@ -6,7 +6,8 @@ import { uploadService } from '../../../services/upload.service'
 import { DEFAULT_AVATAR } from '../../../constants/ui'
 import { useSharePostActions } from '../../../hooks/useSharePostActions'
 import { usePostComposerAddons } from '../../../hooks/usePostComposerAddons'
-import { getContentWithoutMentions, getMentionRanges, resolveMentionIds } from '../../../utils/postContent'
+import { resolveMentionIds, getContentWithoutMentions, getMentionRanges } from '../../../utils/postContent'
+import { showEngSuccessToast } from '../../../utils/showEngToast'
 import { PostShareComposerSection } from './PostShareComposerSection'
 import { PostShareMessengerGroupModal } from './PostShareMessengerGroupModal'
 
@@ -196,7 +197,10 @@ export function PostShareModal({ open, onClose, post, t, onRepostSuccess }) {
         mentions: mentions.length ? mentions : undefined,
       })
       const sharedSourceId = post.id || post._id
-      if (sharedSourceId) onRepostSuccess?.(sharedSourceId)
+      if (sharedSourceId) {
+        showEngSuccessToast(t('dashboard.shareSuccess') || 'Chia sẻ bài viết thành công.')
+        onRepostSuccess?.(sharedSourceId)
+      }
       onClose?.()
     } catch (e) {
       setError(

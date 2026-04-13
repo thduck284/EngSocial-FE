@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next'
 import { useAuth } from '../context/AuthContext'
 import { communityService, uploadService } from '../services'
 import { extractHashtags, extractMentionNames, getMentionRanges, resolveMentionIds } from '../utils/postContent'
+import { showEngSuccessToast } from '../utils/showEngToast'
 import { usePostComposerAddons } from './usePostComposerAddons'
 
 const DEFAULT_AVATAR = 'https://ui-avatars.com/api/?name=User&background=13b6ec&color=fff'
@@ -290,7 +291,10 @@ export function useCreatePostModal({
       }
       const res = await communityService.createPost(payload)
       const newPost = res?.data?.post ?? res?.data
-      if (newPost) onSuccess?.(newPost)
+      if (newPost) {
+        showEngSuccessToast(t('dashboard.postSuccess') || 'Đã đăng bài viết!')
+        onSuccess?.(newPost)
+      }
       setContent('')
       setImages([])
       setVideoUrl('')

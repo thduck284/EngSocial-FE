@@ -1,4 +1,4 @@
-import { Routes, Route, Navigate, useLocation } from 'react-router-dom'
+import { Routes, Route, Navigate, useLocation, useParams } from 'react-router-dom'
 import { AuthProvider, useAuth } from './context/AuthContext'
 import { ROUTES } from './constants'
 import { LoginPage } from './pages/LoginPage'
@@ -15,11 +15,15 @@ import { SkillPracticePage } from './pages/SkillPracticePage'
 import { ListeningLessonPage } from './pages/ListeningLessonPage'
 import { ReadingLessonPage } from './pages/ReadingLessonPage'
 import { ReadingLessonResultPage } from './pages/ReadingLessonResultPage'
+import { ListeningLessonResultPage } from './pages/ListeningLessonResultPage'
+import { WritingLessonResultPage } from './pages/WritingLessonResultPage'
 import { WritingLessonPage } from './pages/WritingLessonPage'
+import { PracticeMockTestPage } from './pages/PracticeMockTestPage'
 import { ProfilePage } from './pages/ProfilePage'
 import { UserProfilePage } from './pages/UserProfilePage'
 import { LessonsPage } from './pages/LessonsPage'
 import { LessonHistoryPage } from './pages/LessonHistoryPage'
+import { LessonReviewPage } from './pages/LessonReviewPage'
 import { QuestsPage } from './pages/QuestsPage'
 import { AchievementsPage } from './pages/AchievementsPage'
 import { ManageLessonsPage } from './pages/ManageLessonsPage'
@@ -60,10 +64,19 @@ function LegacyManageRedirect() {
   return <Navigate to={`${ROUTES.MANAGE_ROOT(user.id)}${suffix.startsWith('/') ? suffix : `/${suffix}`}`} replace />
 }
 
+/** /skills/:skill → /practice/:skill */
+function SkillRedirect() {
+  const { skill } = useParams()
+  return <Navigate to={`/practice/${skill}`} replace />
+}
+
 function App() {
+  const location = useLocation()
+  const background = location.state?.background
+
   return (
     <AuthProvider>
-      <Routes>
+      <Routes location={background || location}>
         {/* Auth - chỉ khi chưa đăng nhập; đã đăng nhập thì redirect về / */}
         <Route element={<GuestOnlyLayout />}>
           <Route path="/login" element={<LoginPage />} />
@@ -87,25 +100,34 @@ function App() {
           <Route path="community/group/:groupId" element={<CommunityPage />} />
           <Route path="community/group/:groupId/:tab" element={<CommunityPage />} />
           <Route path="community/my-groups" element={<CommunityPage />} />
+          <Route path="community/discover" element={<CommunityPage />} />
           <Route path="community/create" element={<GroupCreatePage />} />
 
-          <Route path="enter" element={<Navigate to="/skills/entertainment" replace />} />
-          <Route path="skills/entertainment" element={<EntertainmentLayout />}>
+          <Route path="enter" element={<Navigate to="/practice/entertainment" replace />} />
+          <Route path="practice/entertainment" element={<EntertainmentLayout />}>
             <Route index element={<EntertainmentHomePage />} />
           </Route>
-          <Route path="skills/entertainment/word-scramble" element={<EntertainmentWordScramblePage />} />
+          <Route path="practice/entertainment/word-scramble" element={<EntertainmentWordScramblePage />} />
           <Route path="lesson" element={<LessonsPage />} />
           <Route path="lesson/history" element={<LessonHistoryPage />} />
+          <Route path="lesson/:id/reviews" element={<LessonReviewPage />} />
           <Route path="lesson/reading/:id" element={<ReadingLessonPage />} />
           <Route path="lesson/reading/:id/result" element={<ReadingLessonResultPage />} />
           <Route path="lesson/listening/:id" element={<ListeningLessonPage />} />
+          <Route path="lesson/listening/:id/result" element={<ListeningLessonResultPage />} />
           <Route path="lesson/writing/:id" element={<WritingLessonPage />} />
-          <Route path="practice" element={<Navigate to="/skills/reading" replace />} />
-          <Route path="skills" element={<Navigate to="/skills/reading" replace />} />
-          <Route path="skills/:skill" element={<SkillPracticePage />} />
+          <Route path="lesson/writing/:id/result" element={<WritingLessonResultPage />} />
+          <Route path="practice" element={<Navigate to="/practice/reading" replace />} />
+          <Route path="practice/mock-test" element={<PracticeMockTestPage />} />
+          <Route path="practice/:skill" element={<SkillPracticePage />} />
           <Route path="practice/reading/:id" element={<ReadingLessonPage />} />
+          <Route path="practice/reading/:id/result" element={<ReadingLessonResultPage />} />
           <Route path="practice/listening/:id" element={<ListeningLessonPage />} />
+          <Route path="practice/listening/:id/result" element={<ListeningLessonResultPage />} />
           <Route path="practice/writing/:id" element={<WritingLessonPage />} />
+          <Route path="practice/writing/:id/result" element={<WritingLessonResultPage />} />
+          <Route path="skills" element={<Navigate to="/practice" replace />} />
+          <Route path="skills/:skill" element={<SkillRedirect />} />
           <Route path="lessons" element={<Navigate to="/lesson" replace />} />
 
           <Route path="quests" element={<QuestsPage />} />
@@ -165,6 +187,13 @@ function App() {
 
         <Route path="*" element={<Navigate to="/home" replace />} />
       </Routes>
+
+      {/* RENDER MODAL ON TOP OF BACKGROUND */}
+      {background && (
+        <Routes>
+          <Route path="post/photo/:postId" element={<PostPhotoPage />} />
+        </Routes>
+      )}
     </AuthProvider>
   )
 }

@@ -34,6 +34,10 @@ export function CommunityPage() {
     feedPosts,
     feedLoading,
     feedHasMore,
+    feedSort,
+    discoverGroups,
+    loadingDiscover,
+    loadDiscoverGroups,
     loadFeedPosts,
     loadMoreFeedPosts,
     leaveCommunityGroup,
@@ -49,8 +53,13 @@ export function CommunityPage() {
   const [joinRequestsRefreshKey, setJoinRequestsRefreshKey] = useState(0)
   const [createPostOpen, setCreatePostOpen] = useState(false)
   const [groupMembersModalOpen, setGroupMembersModalOpen] = useState(false)
+  const [visibleGroupsLimit, setVisibleGroupsLimit] = useState(6)
+  const [visibleDiscoverLimit, setVisibleDiscoverLimit] = useState(6)
+  const [visibleJoinedDiscoverLimit, setVisibleJoinedDiscoverLimit] = useState(6)
   const lastLoadedGroupIdRef = useRef(null)
   const groupFeedHeaderRef = useRef(null)
+  const feedInitialLoadRef = useRef(false)
+  const discoverInitialLoadRef = useRef(false)
   const normalizeTab = (raw) => {
     const v = (raw || '').toLowerCase()
     return ['about', 'posts', 'people', 'media', 'files'].includes(v) ? v : 'about'
@@ -112,12 +121,23 @@ export function CommunityPage() {
     // Group feed tab: /community/group-feed
     if (location.pathname.endsWith('/community/group-feed')) {
       setViewMode('feed')
-      if (!feedLoading && feedPosts.length === 0) {
+      if (!feedInitialLoadRef.current) {
+        feedInitialLoadRef.current = true
         loadFeedPosts(1)
       }
       return
     }
-  }, [location.pathname, groupId, tab, feedLoading, feedPosts.length, loadFeedPosts])
+
+    // Discover page: /community/discover
+    if (location.pathname.endsWith('/community/discover')) {
+      setViewMode('discover')
+      if (!discoverInitialLoadRef.current) {
+        discoverInitialLoadRef.current = true
+        loadDiscoverGroups()
+      }
+      return
+    }
+  }, [location.pathname, groupId, tab, loadGroupDetail, loadFeedPosts, loadDiscoverGroups])
 
   return (
     <main className="max-w-[1440px] mx-auto px-4 sm:px-6 lg:px-8 py-6">
@@ -210,60 +230,182 @@ export function CommunityPage() {
               }}
             />
           </>
-        ) : viewMode === 'list' ? (
-          <div className="md:col-span-9 lg:col-span-9 space-y-4">
-            <div className="bg-slate-900/80 border border-slate-800 rounded-xl p-4 flex items-center justify-between">
-              <div>
-                <h2 className="text-base font-bold">
-                  {t('groups.sidebar.joinedTitle')}
-                </h2>
-                <p className="text-xs text-slate-400">
-                  {t('groups.sidebar.viewAllSubtitle', {
-                    defaultValue: 'Tất cả các nhóm bạn đã tham gia',
-                  })}
-                </p>
+        ) : viewMode === 'list' || viewMode === 'discover' ? (
+          <div className="md:col-span-9 lg:col-span-9 space-y-8">
+            <div className="bg-slate-900/80 border border-slate-800 rounded-xl p-4 md:p-6 flex flex-col md:flex-row md:items-center justify-between gap-4">
+              <div className="flex items-center gap-3">
+                <div className="flex size-12 shrink-0 items-center justify-center rounded-xl bg-primary/15 border border-primary/30">
+                  <span className="material-symbols-outlined text-2xl text-primary" aria-hidden>
+                    {viewMode === 'discover' ? 'explore' : 'groups'}
+                  </span>
+                </div>
+                <div>
+                  <h2 className="text-lg md:text-xl font-bold text-slate-100 tracking-tight">
+                    {viewMode === 'discover'
+                      ? t('groups.sidebar.discover')
+                      : t('groups.sidebar.joinedTitle')}
+                  </h2>
+                  <p className="text-sm text-slate-400 mt-0.5">
+                    {viewMode === 'discover'
+                      ? t('groups.sidebar.discoverSubtitle', {
+                          defaultValue: 'Khám phá cộng đồng mới dựa trên sở thích và bạn bè',
+                        })
+                      : t('groups.sidebar.viewAllSubtitle', {
+                          defaultValue: 'Tất cả các nhóm bạn đã tham gia',
+                        })}
+                  </p>
+                </div>
               </div>
             </div>
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-              {groups.map((g) => {
-                const id = g.id || g._id
+
+            {(() => {
+              const items = viewMode === 'discover' ? discoverGroups : groups
+              const unjoined = viewMode === 'discover' 
+                ? items.filter(g => !groups.some(myG => String(myG.id ?? myG._id) === String(g.id ?? g._id)))
+                : items
+              const joined = viewMode === 'discover'
+                ? items.filter(g => groups.some(myG => String(myG.id ?? myG._id) === String(g.id ?? g._id)))
+                : []
+
+              const renderSection = (list, title, isJoinedSection = false) => {
+                if (list.length === 0) return null
+                
+                // Phân trang phía client: 6 nhóm 1 lần
+                const limit = isJoinedSection 
+                  ? visibleJoinedDiscoverLimit 
+                  : (viewMode === 'discover' ? visibleDiscoverLimit : visibleGroupsLimit)
+                
+                const setLimit = isJoinedSection
+                  ? setVisibleJoinedDiscoverLimit
+                  : (viewMode === 'discover' ? setVisibleDiscoverLimit : setVisibleGroupsLimit)
+
+                const visibleList = list.slice(0, limit)
+                const hasMore = list.length > limit
+
                 return (
-                  <button
-                    key={id || g.slug}
-                    type="button"
-                    onClick={() => {
-                      setViewMode('group')
-                      navigate(`/community/group/${id}/about`)
-                    }}
-                    className="bg-slate-900/80 border border-slate-800 rounded-xl p-4 text-left hover:border-primary/60 hover:bg-slate-900 transition-colors flex flex-col gap-3"
-                  >
-                    <div className="flex items-center gap-3">
-                      <div className="w-12 h-12 rounded-lg bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center text-white overflow-hidden">
-                        {g.icon ? (
-                          <img src={g.icon} alt={g.name} className="w-full h-full object-cover" />
-                        ) : (
-                          <span className="material-symbols-outlined">group</span>
-                        )}
+                  <div className="space-y-4">
+                    {title && (
+                      <div className="flex items-center gap-2 px-1">
+                        <div className="h-4 w-1 bg-primary rounded-full" />
+                        <h3 className="text-sm font-bold text-slate-400 uppercase tracking-wider">
+                          {title}
+                        </h3>
+                        <span className="text-xs text-slate-600">({list.length})</span>
                       </div>
-                      <div className="flex-1 min-w-0">
-                        <p className="font-semibold truncate">{g.name}</p>
-                        <p className="text-xs text-slate-400 truncate">
-                          {g.memberCount ?? 0} {t('groups.header.members', { defaultValue: 'thành viên' })}
-                        </p>
+                    )}
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                      {visibleList.map((g) => {
+                        const id = g.id || g._id
+                        const isActuallyJoined = isJoinedSection || groups.some((myG) => String(myG.id ?? myG._id) === String(id))
+                        return (
+                          <div
+                            key={id || g.slug}
+                            className="bg-slate-900/80 border border-slate-800 rounded-2xl p-5 hover:border-primary/40 hover:bg-slate-900/40 transition-all flex flex-col gap-4 relative group"
+                          >
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setViewMode('group')
+                                navigate(`/community/group/${id}/about`)
+                              }}
+                              className="absolute inset-0 z-0"
+                            />
+                            <div className="flex items-center gap-4 relative z-10 pointer-events-none">
+                              <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-blue-500/20 to-indigo-600/20 flex items-center justify-center border border-slate-700 overflow-hidden transform group-hover:scale-105 transition-transform">
+                                {g.icon ? (
+                                  <img src={g.icon} alt={g.name} className="w-full h-full object-cover" />
+                                ) : (
+                                  <span className="material-symbols-outlined text-3xl text-primary/80">
+                                    group
+                                  </span>
+                                )}
+                              </div>
+                              <div className="flex-1 min-w-0">
+                                <p className="font-bold text-slate-100 truncate group-hover:text-primary transition-colors">
+                                  {g.name}
+                                </p>
+                                <p className="text-xs text-slate-400 mt-0.5 flex items-center gap-1.5">
+                                  <span className="material-symbols-outlined text-sm">groups</span>
+                                  {g.memberCount ?? 0}{' '}
+                                  {t('groups.header.members', { defaultValue: 'thành viên' })}
+                                </p>
+                              </div>
+                            </div>
+                            <div className="text-sm text-slate-400 line-clamp-2 min-h-[40px] leading-relaxed relative z-10 pointer-events-none">
+                              {g.description || t('groups.sidebar.aboutEmpty')}
+                            </div>
+                            <div className="mt-auto pt-2 relative z-10 flex gap-2">
+                              {isActuallyJoined ? (
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    setViewMode('group')
+                                    navigate(`/community/group/${id}/about`)
+                                  }}
+                                  className="flex-1 py-2 rounded-xl bg-slate-800 border border-slate-700 text-xs font-bold text-slate-200 hover:bg-slate-700 transition-all"
+                                >
+                                  {t('groups.sidebar.openGroup', { defaultValue: 'Xem nhóm' })}
+                                </button>
+                              ) : (
+                                <button
+                                  type="button"
+                                  onClick={() => handleJoinGroup(id)}
+                                  className="flex-1 py-2 rounded-xl bg-primary text-[#111e22] text-xs font-bold hover:brightness-110 transition-all shadow-lg shadow-primary/20"
+                                >
+                                  {t('groups.header.join', { defaultValue: 'Tham gia' })}
+                                </button>
+                              )}
+                            </div>
+                          </div>
+                        )
+                      })}
+                    </div>
+                    {hasMore && (
+                      <div className="flex justify-center pt-4">
+                        <button
+                          type="button"
+                          onClick={() => setLimit(prev => prev + 6)}
+                          className="px-8 py-2.5 rounded-xl border border-slate-800 bg-slate-900/50 text-slate-300 text-sm font-bold hover:bg-slate-800 hover:text-white transition-all flex items-center gap-2"
+                        >
+                          {t('common.loadMore') || 'Xem thêm'}
+                          <span className="material-symbols-outlined text-lg">expand_more</span>
+                        </button>
                       </div>
-                    </div>
-                    <div className="mt-1 text-xs text-slate-500 line-clamp-2">
-                      {g.description}
-                    </div>
-                    <div className="mt-2">
-                      <span className="inline-flex items-center px-3 py-1 rounded-full bg-slate-800 text-[11px] text-slate-200">
-                        {t('groups.sidebar.openGroup', { defaultValue: 'Xem nhóm' })}
-                      </span>
-                    </div>
-                  </button>
+                    )}
+                  </div>
                 )
-              })}
-            </div>
+              }
+
+              return (
+                <div className="space-y-10">
+                  {viewMode === 'discover' ? (
+                    <>
+                      {renderSection(unjoined, t('groups.sidebar.suggestedForYou', { defaultValue: 'Gợi ý cho bạn' }))}
+                      {renderSection(joined, t('groups.sidebar.joinedCommunities', { defaultValue: 'Cộng đồng đã tham gia' }), true)}
+                    </>
+                  ) : (
+                    renderSection(groups, null)
+                  )}
+
+                  {items.length === 0 && (
+                    <div className="py-20 text-center bg-slate-900/40 border border-slate-800 border-dashed rounded-2xl">
+                      <span className="material-symbols-outlined text-5xl text-slate-700 mb-3">
+                        {viewMode === 'discover' ? 'explore_off' : 'group_off'}
+                      </span>
+                      <p className="text-slate-500 font-medium">
+                        {viewMode === 'discover'
+                          ? t('groups.sidebar.noDiscover', {
+                              defaultValue: 'Không tìm thấy nhóm gợi ý nào mới.',
+                            })
+                          : t('groups.sidebar.emptyGroups', {
+                              defaultValue: 'Bạn chưa tham gia nhóm nào.',
+                            })}
+                      </p>
+                    </div>
+                  )}
+                </div>
+              )
+            })()}
           </div>
         ) : (
           // Feed: all groups' posts (Your group feed)
@@ -273,21 +415,45 @@ export function CommunityPage() {
               tabIndex={-1}
               className="bg-slate-900/80 border border-slate-800 rounded-xl p-5 md:p-6 outline-none focus-visible:ring-2 focus-visible:ring-primary/60 focus-visible:ring-offset-2 focus-visible:ring-offset-[#0a0f12]"
             >
-              <div className="flex items-center gap-3">
-                <div className="flex size-12 shrink-0 items-center justify-center rounded-xl bg-primary/15 border border-primary/30">
-                  <span className="material-symbols-outlined text-2xl text-primary" aria-hidden>
-                    dynamic_feed
-                  </span>
+              <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                <div className="flex items-center gap-3">
+                  <div className="flex size-12 shrink-0 items-center justify-center rounded-xl bg-primary/15 border border-primary/30">
+                    <span className="material-symbols-outlined text-2xl text-primary" aria-hidden>
+                      dynamic_feed
+                    </span>
+                  </div>
+                  <div className="min-w-0">
+                    <h1 className="text-lg md:text-xl font-bold text-slate-100 tracking-tight">
+                      {t('groups.sidebar.myFeed')}
+                    </h1>
+                    <p className="text-sm text-slate-400 mt-0.5">
+                      {t('groups.sidebar.feedSubtitle', {
+                        defaultValue: 'Bài viết từ tất cả các nhóm bạn tham gia',
+                      })}
+                    </p>
+                  </div>
                 </div>
-                <div className="min-w-0">
-                  <h1 className="text-lg md:text-xl font-bold text-slate-100 tracking-tight">
-                    {t('groups.sidebar.myFeed')}
-                  </h1>
-                  <p className="text-sm text-slate-400 mt-0.5">
-                    {t('groups.sidebar.feedSubtitle', {
-                      defaultValue: 'Posts from all groups you have joined',
-                    })}
-                  </p>
+                <div className="flex items-center gap-2 p-1 bg-slate-950 rounded-lg border border-slate-800">
+                  <button
+                    onClick={() => loadFeedPosts(1, 'latest')}
+                    className={`px-4 py-1.5 rounded-md text-xs font-bold transition-all ${
+                      feedSort === 'latest'
+                        ? 'bg-primary/15 text-primary border border-primary/30'
+                        : 'text-slate-400 hover:text-slate-200'
+                    }`}
+                  >
+                    {t('dashboard.all') || 'Mới nhất'}
+                  </button>
+                  <button
+                    onClick={() => loadFeedPosts(1, 'popular')}
+                    className={`px-4 py-1.5 rounded-md text-xs font-bold transition-all ${
+                      feedSort === 'popular'
+                        ? 'bg-primary/15 text-primary border border-primary/30'
+                        : 'text-slate-400 hover:text-slate-200'
+                    }`}
+                  >
+                    {t('dashboard.popular') || 'Phổ biến'}
+                  </button>
                 </div>
               </div>
             </header>

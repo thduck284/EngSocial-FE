@@ -1,17 +1,22 @@
-import { Link, useParams } from 'react-router-dom'
+import { Link, useParams, useLocation } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { useListeningLesson } from '../hooks/useListeningLesson'
 import { useEffect, useState } from 'react'
+import { AlertModal } from '../components/ui/common/AlertModal'
 
 export function ListeningLessonPage() {
   const { t } = useTranslation()
   const { id } = useParams()
+  const location = useLocation()
 
   const [rightBarOpen, setRightBarOpen] = useState(false)
   useEffect(() => {
     // Default: keep right panel closed when entering/reloading a lesson.
     setRightBarOpen(false)
   }, [id])
+
+  const isPractice = location.pathname.startsWith('/practice/')
+  const backLink = isPractice ? '/practice/listening' : '/lesson?skill=listening'
 
   const {
     audioRef,
@@ -37,6 +42,7 @@ export function ListeningLessonPage() {
     progress,
     accentLabel,
     currentQuestion,
+    answers,
     selectedAnswer,
     setSelectedAnswer,
     noteTitle,
@@ -46,9 +52,13 @@ export function ListeningLessonPage() {
     noteSaving,
     noteSavedMessage,
     handleSaveNote,
-    completingLesson,
     completeMessage,
+    showConfirmModal,
+    setShowConfirmModal,
+    showIncompleteModal,
+    setShowIncompleteModal,
     handleComplete,
+    handleConfirmComplete,
     showHint,
     setShowHint,
     editingPage,
@@ -87,13 +97,14 @@ export function ListeningLessonPage() {
       <div className="flex flex-col items-center justify-center min-h-[60vh] text-gray-400">
         <span className="material-symbols-outlined text-5xl mb-4">error</span>
         <p>{t('listeningLesson.loadError')}</p>
-        <Link to="/lesson?skill=listening" className="mt-4 text-primary hover:underline">{t('listeningLesson.back')}</Link>
+        <Link to={backLink} className="mt-4 text-primary hover:underline">{t('listeningLesson.back')}</Link>
       </div>
     )
   }
 
   return (
-    <main className="max-w-[1600px] mx-auto px-6 py-6 flex flex-col lg:flex-row gap-6 min-h-[calc(100vh-64px)]">
+    <>
+      <main className="max-w-[1600px] mx-auto px-6 py-6 flex flex-col lg:flex-row gap-6 min-h-[calc(100vh-64px)]">
       {/* Left Sidebar - ~200px, can shrink */}
       <aside className="w-full lg:w-[300px] lg:min-w-[240px] lg:shrink lg:basis-[300px] space-y-6 overflow-y-auto pr-2 pb-6 custom-scrollbar">
         {/* Lesson Info Card */}
@@ -378,9 +389,9 @@ export function ListeningLessonPage() {
                 type="button"
                 onClick={handleComplete}
                 disabled={completingLesson}
-                className="h-9 px-4 inline-flex items-center justify-center rounded-lg text-sm font-semibold bg-primary/20 text-primary border border-primary/30 hover:bg-primary/30 transition-all disabled:opacity-60 disabled:cursor-not-allowed"
+                className="h-9 px-4 inline-flex items-center justify-center rounded-lg text-sm font-semibold bg-primary/20 text-primary border border-primary/30 hover:bg-primary/30 disabled:opacity-60 disabled:cursor-not-allowed"
               >
-                {completingLesson ? '...' : t('listeningLesson.complete')}
+                {completingLesson ? '...' : t('listeningLesson.submit')}
               </button>
             </div>
           </div>
@@ -434,22 +445,50 @@ export function ListeningLessonPage() {
                 {showHint && currentQ?.explanation && (
                   <p className="mt-3 p-3 rounded-lg bg-amber-500/10 border border-amber-500/20 text-xs text-amber-200/90 italic">{currentQ.explanation}</p>
                 )}
+
+                {/* Embedded Navigation */}
+                <div className="mt-8 pt-6 border-t border-border-dark flex flex-wrap justify-between items-center gap-3 min-w-0">
+                  <button
+                    type="button"
+                    onClick={handlePrevious}
+                    disabled={currentQuestion === 0}
+                    className="px-4 py-2 rounded-xl text-xs font-bold border border-border-dark text-gray-400 hover:bg-card-dark hover:text-white transition-all flex items-center gap-2 shrink-0 disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    <span className="material-symbols-outlined text-sm">arrow_back</span> {t('listeningLesson.previous')}
+                  </button>
+
+
+
+                  <div className="flex gap-2 shrink-0 items-center flex-wrap">
+                    {currentQuestion < totalQuestions - 1 ? (
+                      <button
+                        type="button"
+                        onClick={handleNext}
+                        className="px-5 py-2 rounded-xl text-xs font-bold bg-primary text-white hover:brightness-110 shadow-lg shadow-primary/20 transition-all flex items-center gap-2 whitespace-nowrap"
+                      >
+                        {t('listeningLesson.next')} <span className="material-symbols-outlined text-sm">arrow_forward</span>
+                      </button>
+                    ) : (
+                      <button
+                        type="button"
+                        onClick={handleComplete}
+                        className="px-5 py-2 rounded-xl text-xs font-bold bg-primary text-white hover:brightness-110 shadow-lg shadow-primary/20 transition-all whitespace-nowrap"
+                      >
+                        {t('listeningLesson.submit')}
+                      </button>
+                    )}
+                  </div>
+                </div>
+
                 </div>
               </div>
             </div>
           </div>
-          <div className="p-4 bg-background-dark border-t border-border-dark flex flex-wrap justify-between items-center gap-3 min-w-0">
-            <button
-              type="button"
-              onClick={handlePrevious}
-              disabled={currentQuestion === 0}
-              className="px-4 py-2 rounded-xl text-xs font-bold border border-border-dark text-gray-400 hover:bg-card-dark hover:text-white transition-all flex items-center gap-2 shrink-0 disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              <span className="material-symbols-outlined text-sm">arrow_back</span> {t('listeningLesson.previous')}
-            </button>
-
+          
+          {/* Navigation Footer for Pagination */}
+          <div className="p-4 bg-background-dark border-t border-border-dark flex flex-wrap justify-center items-center gap-3 min-w-0">
             {/* Pagination */}
-            <div className="flex items-center gap-1.5 flex-1 justify-center min-w-0 max-w-full overflow-x-auto">
+            <div className="flex items-center gap-1.5 justify-center min-w-0 max-w-full overflow-x-auto">
               <button
                 type="button"
                 onClick={() => handlePageChange(currentPage - 1)}
@@ -539,36 +578,6 @@ export function ListeningLessonPage() {
                 <span className="material-symbols-outlined text-sm">chevron_right</span>
               </button>
             </div>
-
-            <div className="flex gap-2 shrink-0 items-center flex-wrap">
-              {currentQuestion < totalQuestions - 1 && (
-                <button
-                  type="button"
-                  onClick={handleComplete}
-                  disabled={completingLesson}
-                  className="px-4 py-2 rounded-xl text-xs font-bold bg-primary/20 text-primary border border-primary/40 hover:bg-primary hover:text-white transition-all whitespace-nowrap disabled:opacity-60 disabled:cursor-not-allowed"
-                >
-                  {completingLesson ? '...' : t('listeningLesson.complete')}
-                </button>
-              )}
-              {currentQuestion < totalQuestions - 1 ? (
-                <button
-                  type="button"
-                  onClick={handleNext}
-                  className="px-5 py-2 rounded-xl text-xs font-bold bg-primary text-white hover:brightness-110 shadow-lg shadow-primary/20 transition-all flex items-center gap-2 whitespace-nowrap"
-                >
-                  {t('listeningLesson.next')} <span className="material-symbols-outlined text-sm">arrow_forward</span>
-                </button>
-              ) : (
-                <button
-                  type="button"
-                  onClick={handleComplete}
-                  className="px-5 py-2 rounded-xl text-xs font-bold bg-primary text-white hover:brightness-110 shadow-lg shadow-primary/20 transition-all whitespace-nowrap"
-                >
-                  {t('listeningLesson.submit')}
-                </button>
-              )}
-            </div>
           </div>
         </div>
       </div>
@@ -586,6 +595,40 @@ export function ListeningLessonPage() {
             <span className="material-symbols-outlined">chevron_right</span>
           </button>
         </div>
+
+        {/* Question Navigation Card */}
+        {questions.length > 0 && (
+          <div className="bg-card-dark rounded-2xl border border-border-dark shadow-xl overflow-hidden p-5">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="font-bold text-xs uppercase tracking-wider text-gray-400">{t('listeningLesson.questionNav') || 'Navigation'}</h3>
+              <span className="text-[10px] bg-primary/20 text-primary px-2 py-0.5 rounded-full font-bold">
+                {currentQuestion + 1} / {totalQuestions}
+              </span>
+            </div>
+            <div className="grid grid-cols-5 gap-2">
+              {questions.map((q, idx) => {
+                const isAnswered = answers[idx] != null && String(answers[idx]).trim() !== '';
+                const isCurrent = currentQuestion === idx;
+                return (
+                  <button
+                    key={idx}
+                    type="button"
+                    onClick={() => handlePageChange(idx + 1)}
+                    className={`h-9 rounded-lg text-xs font-bold transition-all flex items-center justify-center border ${
+                      isCurrent
+                        ? 'bg-primary text-white border-primary shadow-lg shadow-primary/20'
+                        : isAnswered
+                        ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/30 hover:bg-emerald-500/20'
+                        : 'bg-background-dark text-gray-400 border-border-dark hover:text-white hover:border-gray-500'
+                    }`}
+                  >
+                    {idx + 1}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        )}
         {/* Vocabulary Card */}
         {vocabularyList.length > 0 && (
         <div className="bg-card-dark rounded-2xl border border-border-dark shadow-xl overflow-hidden group">
@@ -646,66 +689,7 @@ export function ListeningLessonPage() {
         </div>
         )}
 
-        {/* Leaderboard Card */}
-        <div className="bg-card-dark rounded-2xl p-5 border border-border-dark shadow-xl">
-          <div className="flex items-center justify-between mb-5">
-            <h3 className="font-bold text-sm text-white">{t('listeningLesson.leaderboardTitle')}</h3>
-            <div className="flex items-center gap-1">
-              <span className="text-[10px] font-bold text-emerald-400">GLOBAL</span>
-              <span className="material-symbols-outlined text-yellow-500 text-sm">emoji_events</span>
-            </div>
-          </div>
-          <div className="space-y-4">
-            {leaderboard.map((user) => (
-              <div
-                key={user.rank}
-                className="flex items-center justify-between group p-2 rounded-xl hover:bg-background-dark transition-all border border-transparent hover:border-border-dark"
-              >
-                <div className="flex items-center gap-3">
-                  <div
-                    className={`w-5 text-center font-black text-xs ${
-                      user.rank === 1 ? 'text-yellow-500' : user.rank === 2 ? 'text-slate-400' : 'text-orange-400'
-                    }`}
-                  >
-                    {user.rank}
-                  </div>
-                  <div className="relative">
-                    <img
-                      alt={user.name}
-                      className={`w-9 h-9 rounded-full object-cover ${
-                        user.rank === 1 ? 'ring-2 ring-yellow-500/30' : 'border border-border-dark'
-                      }`}
-                      src="https://lh3.googleusercontent.com/aida-public/AB6AXuCoJVZd231Jj0nw9lqgafh4jkbW38dyp3wO7CD2w6ZgqlP4engdDDADo_ShgW2zb967D4cmMcs3McvEtFOp1PJtMbsgWDmx-iMw2emE6xCW7b3wEWTHwfXNoresSNSjToIirGen0V_IOVJDM8qR1cjUSxBytGiii5OWXxaivUDo5YVrPPZweVOkwew7tqhhmaRv-crwkmUkwhIWb-VSB_25TwEKRw1oru0tL2M3b528uhP-Il2eUmJ7ZIzw8fSRpkb5GHqvwqstCV4"
-                    />
-                    {user.rank === 1 && (
-                      <div className="absolute -top-1 -right-1 w-3.5 h-3.5 bg-yellow-500 rounded-full flex items-center justify-center border border-card-dark">
-                        <span className="material-symbols-outlined text-[8px] text-white fill-icon">grade</span>
-                      </div>
-                    )}
-                  </div>
-                  <div>
-                    <p className="text-xs font-bold text-white">{user.name}</p>
-                    <p className={`text-[9px] ${user.rank === 1 ? 'text-emerald-400 font-medium' : 'text-gray-400'}`}>
-                      {user.rank === 1 ? t('listeningLesson.xpToday') : t('listeningLesson.levelLearner', { level: 20 + user.rank })}
-                    </p>
-                  </div>
-                </div>
-                <div className="text-right">
-                  <p className={`text-xs font-black ${user.rank === 1 ? 'text-primary' : 'text-gray-400'}`}>
-                    {user.rank === 1 ? '4,280' : user.rank === 2 ? '3,950' : '3,820'}
-                  </p>
-                  <p className="text-[9px] text-gray-400 uppercase">XP</p>
-                </div>
-              </div>
-            ))}
-          </div>
-          <button
-            type="button"
-            className="w-full mt-5 py-2 rounded-lg border border-border-dark text-[10px] font-bold text-gray-400 hover:bg-background-dark hover:text-white transition-all uppercase tracking-widest"
-          >
-            {t('listeningLesson.viewFullLeaderboard')}
-          </button>
-        </div>
+
       </aside>
       ) : (
         <div className="hidden lg:flex fixed right-6 top-1/2 -translate-y-1/2 z-20">
@@ -720,5 +704,23 @@ export function ListeningLessonPage() {
         </div>
       )}
     </main>
+      <AlertModal
+        open={showIncompleteModal}
+        title=""
+        message={t('readingLesson.pleaseAnswerAll')}
+        confirmText="OK"
+        onClose={() => setShowIncompleteModal(false)}
+      />
+
+      <AlertModal
+        open={showConfirmModal}
+        title={t('listeningLesson.submit')}
+        message={t('writingLesson.confirmSubmit')}
+        confirmText={t('common.confirm')}
+        cancelText={t('common.cancel')}
+        onClose={() => setShowConfirmModal(false)}
+        onConfirm={handleConfirmComplete}
+      />
+    </>
   )
 }

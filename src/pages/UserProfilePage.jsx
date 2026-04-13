@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback, useRef, useMemo } from 'react'
 import { Link, useParams, useNavigate, useLocation } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { useAuth } from '../context/AuthContext'
-import { useDashboardSocket } from '../hooks'
+import { useDashboardSocket, useStudyGroups } from '../hooks'
 import { ROUTES } from '../constants'
 import { DEFAULT_AVATAR } from '../constants/ui'
 import { userService, friendsService } from '../services'
@@ -56,7 +56,9 @@ export function UserProfilePage() {
   const navigate = useNavigate()
   const location = useLocation()
   const { user: currentUser } = useAuth()
-  const { onlineUserIds } = useDashboardSocket(currentUser, () => {})
+  const [onlineUserIds, setOnlineUserIds] = useState(new Set())
+  const studyGroups = useStudyGroups(setOnlineUserIds)
+  useDashboardSocket(currentUser, studyGroups.setConversations, undefined, setOnlineUserIds)
 
   const [activeTab, setActiveTab] = useState('about')
   const [profile, setProfile] = useState(null)

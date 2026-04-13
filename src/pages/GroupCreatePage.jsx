@@ -4,6 +4,7 @@ import { useNavigate } from 'react-router-dom'
 import { groupService } from '../services/group.service'
 import { friendsService } from '../services/friends.service'
 import { uploadService } from '../services/upload.service'
+import { showEngSuccessToast } from '../utils/showEngToast'
 
 export function GroupCreatePage() {
   const navigate = useNavigate()
@@ -78,6 +79,7 @@ export function GroupCreatePage() {
         inviteUserIds: selectedMembers.map((m) => m.id),
       }
       await groupService.create(payload)
+      showEngSuccessToast(t('groupsCreate.createSuccess', { defaultValue: 'Tạo nhóm thành công!' }))
       navigate('/community')
     } finally {
       setSubmitting(false)
@@ -333,7 +335,7 @@ export function GroupCreatePage() {
               onChange={(e) => setMemberQuery(e.target.value)}
             />
             {memberQuery.trim() && (
-              <div className="absolute z-20 mt-2 w-full bg-slate-950 border border-slate-800 rounded-xl shadow-lg max-h-64 overflow-y-auto custom-scrollbar">
+              <div className="absolute z-20 bottom-full mb-2 w-full bg-slate-950 border border-slate-800 rounded-xl shadow-lg max-h-64 overflow-y-auto custom-scrollbar">
                 {loadingMembers ? (
                   <div className="px-4 py-3 text-xs text-slate-500">
                     {t('groupsCreate.inviteSearching', { defaultValue: 'Đang tìm kiếm...' })}
@@ -384,34 +386,37 @@ export function GroupCreatePage() {
               </div>
             )}
           </div>
+
           {selectedMembers.length > 0 && (
-            <div className="flex flex-wrap gap-2">
-              {selectedMembers.map((m) => (
-                <div
-                  key={m.id}
-                  className="flex items-center gap-2 bg-slate-900 pl-1.5 pr-2.5 py-1.5 rounded-full border border-slate-700"
-                >
-                  <div className="size-6 rounded-full overflow-hidden bg-slate-800">
-                    {m.avatar ? (
-                      <img
-                        src={m.avatar}
-                        alt={m.name}
-                        className="w-full h-full object-cover"
-                      />
-                    ) : null}
-                  </div>
-                  <span className="text-xs font-medium">{m.name}</span>
-                  <button
-                    type="button"
-                    className="text-slate-400 hover:text-white leading-none ml-1"
-                    onClick={() =>
-                      setSelectedMembers((prev) => prev.filter((x) => x.id !== m.id))
-                    }
+            <div className="max-h-32 overflow-y-auto custom-scrollbar pt-2 border-t border-slate-800/50 mt-2">
+              <div className="flex flex-wrap gap-2">
+                {selectedMembers.map((m) => (
+                  <div
+                    key={m.id}
+                    className="flex items-center gap-2 bg-slate-900 pl-1.5 pr-2.5 py-1.5 rounded-full border border-slate-700 hover:border-primary/50 transition-colors"
                   >
-                    <span className="material-symbols-outlined text-sm">close</span>
-                  </button>
-                </div>
-              ))}
+                    <div className="size-6 rounded-full overflow-hidden bg-slate-800">
+                      {m.avatar ? (
+                        <img
+                          src={m.avatar}
+                          alt={m.name}
+                          className="w-full h-full object-cover"
+                        />
+                      ) : null}
+                    </div>
+                    <span className="text-xs font-medium">{m.name}</span>
+                    <button
+                      type="button"
+                      className="text-slate-400 hover:text-white leading-none ml-1"
+                      onClick={() =>
+                        setSelectedMembers((prev) => prev.filter((x) => x.id !== m.id))
+                      }
+                    >
+                      <span className="material-symbols-outlined text-sm">close</span>
+                    </button>
+                  </div>
+                ))}
+              </div>
             </div>
           )}
         </section>

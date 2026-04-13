@@ -7,6 +7,7 @@ import {
   deleteCustomVocabWord,
   getCustomDeckNames,
 } from '../../utils/vocabularyUserStorage'
+import { AlertModal } from '../ui/common/AlertModal'
 import { CUSTOM_TOPIC_ID } from '../../utils/getVocabularyTopic'
 import { vocabPracticePath } from '../../utils/vocabularyCustomRoutes'
 import { VOCAB_WORD_TYPE_IDS } from '../../constants/vocabWordTypes'
@@ -22,6 +23,7 @@ export default function VocabularyMyWordsPanel() {
   const [example, setExample] = useState('')
   const [wordType, setWordType] = useState('')
   const [practiceDeck, setPracticeDeck] = useState('all')
+  const [itemToDelete, setItemToDelete] = useState(null)
 
   const refresh = () => setWords(getCustomVocabWords())
 
@@ -239,8 +241,7 @@ export default function VocabularyMyWordsPanel() {
                       <button
                         type="button"
                         onClick={() => {
-                          deleteCustomVocabWord(w.id)
-                          refresh()
+                          setItemToDelete(w)
                         }}
                         className="text-red-600 dark:text-red-400 text-sm hover:underline"
                       >
@@ -356,6 +357,21 @@ export default function VocabularyMyWordsPanel() {
           {t('vocabulary.pickActivity')}
         </p>
       </div>
+      <AlertModal
+        open={!!itemToDelete}
+        title={t('common.confirmDelete')}
+        message={t('vocabulary.deleteWordConfirm', { word: itemToDelete?.word || '' })}
+        confirmText={t('vocabulary.delete')}
+        cancelText={t('common.cancel')}
+        onClose={() => setItemToDelete(null)}
+        onConfirm={() => {
+          if (itemToDelete) {
+            deleteCustomVocabWord(itemToDelete.id)
+            refresh()
+            setItemToDelete(null)
+          }
+        }}
+      />
     </div>
   )
 }

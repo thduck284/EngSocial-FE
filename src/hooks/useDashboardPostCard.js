@@ -16,7 +16,6 @@ export function useDashboardPostCard({
   contentExpanded,
   maxContentPreview,
   setModalMentions,
-  setViewerPost,
   setIsSavedPost,
   isOwnPost,
   postActionLoading,
@@ -70,9 +69,8 @@ export function useDashboardPostCard({
   const sharedMentions = sharedPost ? normalizeMentions(sharedPost.mentions) : []
 
   useEffect(() => {
-    setViewerPost(post)
     setIsSavedPost(Boolean(post?.saved ?? post?.isSaved))
-  }, [postId, post, setViewerPost, setIsSavedPost])
+  }, [postId, post, setIsSavedPost])
 
   const handleLikeClick = () => {
     if (!postId || likeLoading || typeof onToggleLike !== 'function') return

@@ -42,21 +42,28 @@ export function SharedPostPreviewCard({
       </div>
       <div className="p-4">
         <div className="flex gap-3 mb-3">
-          <img
-            src={
-              sharedPost.author?.avatar ||
-              (sharedPost.author?.name
-                ? `https://ui-avatars.com/api/?name=${encodeURIComponent(
-                    sharedPost.author.name,
-                  )}&background=13b6ec&color=fff`
-                : DEFAULT_AVATAR)
-            }
-            alt=""
-            className="size-9 rounded-full object-cover bg-slate-300 shrink-0"
-          />
+          <Link to={sharedPost.author?.id ?? sharedPost.author?._id ? ROUTES.PROFILE_USER(sharedPost.author?.id ?? sharedPost.author?._id) : '#'}>
+            <img
+              src={
+                sharedPost.author?.avatar ||
+                (sharedPost.author?.name
+                  ? `https://ui-avatars.com/api/?name=${encodeURIComponent(
+                      sharedPost.author.name,
+                    )}&background=13b6ec&color=fff`
+                  : DEFAULT_AVATAR)
+              }
+              alt=""
+              className="size-9 rounded-full object-cover bg-slate-300 shrink-0 hover:opacity-80 transition-opacity"
+            />
+          </Link>
           <div>
             <p className="text-sm font-semibold text-slate-900 dark:text-slate-100 flex flex-wrap items-baseline gap-x-1">
-              <span className="text-sm">{sharedPost.author?.name || 'User'}</span>
+              <Link
+                to={sharedPost.author?.id ?? sharedPost.author?._id ? ROUTES.PROFILE_USER(sharedPost.author?.id ?? sharedPost.author?._id) : '#'}
+                className="text-sm hover:text-primary transition-colors"
+              >
+                {sharedPost.author?.name || 'User'}
+              </Link>
               {firstSharedMention && firstSharedMentionId && (
                 <>
                   <span className="text-sm font-medium text-slate-500 dark:text-slate-400">

@@ -3,6 +3,7 @@ import { Link, useParams } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { challengesService } from '../services'
 import { ROUTES } from '../constants'
+import { AlertModal } from '../components/ui/common/AlertModal'
 
 const PAGE_SIZE = 10
 
@@ -63,6 +64,7 @@ export function ManageChallengesListPage() {
   const [sortKey, setSortKey] = useState('title')
   const [sortDir, setSortDir] = useState('asc')
   const [page, setPage] = useState(1)
+  const [itemToDelete, setItemToDelete] = useState(null)
 
   const load = useCallback(() => {
     setError('')
@@ -173,16 +175,21 @@ export function ManageChallengesListPage() {
     setSearchQuery('')
   }
 
-  const onDelete = async (row) => {
-    const id = row?.id ?? row?._id
-    if (!id) return
-    if (!window.confirm(t('quests.confirmDelete', { title: row.title || id }))) return
+  const onDelete = (row) => {
+    setItemToDelete(row)
+  }
+
+  const handleConfirmDelete = async () => {
+    if (!itemToDelete) return
+    const id = itemToDelete.id ?? itemToDelete._id
     setDeletingId(String(id))
+    const oldItem = itemToDelete
+    setItemToDelete(null)
     try {
       await challengesService.delete(id)
       load()
     } catch {
-      /* optional toast */
+      setItemToDelete(oldItem)
     } finally {
       setDeletingId(null)
     }
@@ -407,6 +414,16 @@ export function ManageChallengesListPage() {
           </div>
         ) : null}
       </div>
+
+      <AlertModal
+        open={!!itemToDelete}
+        title={t('manageChallenges.deleteConfirmTitle')}
+        message={t('manageChallenges.confirmDelete', { title: itemToDelete?.title || '' })}
+        confirmText={t('common.confirm')}
+        cancelText={t('common.cancel')}
+        onClose={() => setItemToDelete(null)}
+        onConfirm={handleConfirmDelete}
+      />
     </div>
   )
 }

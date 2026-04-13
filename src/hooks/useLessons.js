@@ -11,6 +11,7 @@ export function useLessonsList() {
   const skillFilter = searchParams.get('skill') || 'all'
   const topicFilter = searchParams.get('topic') || 'all'
   const levelFilter = searchParams.get('level') || 'all'
+  const titleFilter = searchParams.get('title') || ''
 
   const [lessons, setLessons] = useState([])
   const [loading, setLoading] = useState(true)
@@ -29,6 +30,7 @@ export function useLessonsList() {
     if (skillFilter && skillFilter !== 'all') filters.skill = skillFilter
     if (topicFilter && topicFilter !== 'all') filters.topic = topicFilter
     if (levelFilter && levelFilter !== 'all') filters.level = levelFilter
+    if (titleFilter) filters.title = titleFilter
 
     setError(null)
     setLoading(true)
@@ -53,7 +55,7 @@ export function useLessonsList() {
         setError(err?.message || 'Failed to load lessons')
       })
       .finally(() => setLoading(false))
-  }, [skillFilter, topicFilter, levelFilter, page])
+  }, [skillFilter, topicFilter, levelFilter, titleFilter, page])
 
   useEffect(() => {
     const params = { status: 'completed', category: 'lesson', page: 1, limit: 200 }
@@ -67,7 +69,7 @@ export function useLessonsList() {
           if (Number.isFinite(progress)) return progress >= 100
           const score = Number(item?.score)
           const maxScore = Number(item?.maxScore)
-          return Number.isFinite(score) && Number.isFinite(maxScore) && maxScore > 0 && score >= maxScore
+          return Number.isFinite(score) && Number.isFinite(maxScore) && maxScore > 0 && score >= maxScore * 0.8
         }
         const ids = new Set(
           (Array.isArray(list) ? list : [])
@@ -83,34 +85,35 @@ export function useLessonsList() {
 
   const setSkill = (key) => {
     setPage(1)
-    const params = {}
-    if (key !== 'all') params.skill = key
-    if (topicFilter !== 'all') params.topic = topicFilter
-    if (levelFilter !== 'all') params.level = levelFilter
+    const params = Object.fromEntries(searchParams.entries())
+    if (key === 'all') delete params.skill; else params.skill = key;
     setSearchParams(params)
   }
 
   const setTopic = (key) => {
     setPage(1)
-    const params = {}
-    if (skillFilter !== 'all') params.skill = skillFilter
-    if (key !== 'all') params.topic = key
-    if (levelFilter !== 'all') params.level = levelFilter
+    const params = Object.fromEntries(searchParams.entries())
+    if (key === 'all') delete params.topic; else params.topic = key;
     setSearchParams(params)
   }
 
   const setLevel = (key) => {
     setPage(1)
-    const params = {}
-    if (skillFilter !== 'all') params.skill = skillFilter
-    if (topicFilter !== 'all') params.topic = topicFilter
-    if (key !== 'all') params.level = key
+    const params = Object.fromEntries(searchParams.entries())
+    if (key === 'all') delete params.level; else params.level = key;
+    setSearchParams(params)
+  }
+
+  const setTitle = (val) => {
+    setPage(1)
+    const params = Object.fromEntries(searchParams.entries())
+    if (!val) delete params.title; else params.title = val;
     setSearchParams(params)
   }
 
   const handleDeleteLesson = async (lesson, confirmMessage, onDone) => {
     if (!lesson?.id) return
-    if (!window.confirm(confirmMessage)) return
+    if (confirmMessage && !window.confirm(confirmMessage)) return
     setDeletingId(lesson.id)
     try {
       await lessonsService.delete(lesson.id)
@@ -136,6 +139,7 @@ export function useLessonsList() {
     setSkill,
     setTopic,
     setLevel,
+    setTitle,
     setLessons,
     handleDeleteLesson,
     deletingId,
@@ -165,8 +169,10 @@ export function useSkillPractices(skill, t) {
   })
   const [filterLevel, setFilterLevel] = useState('')
   const [filterTopic, setFilterTopic] = useState('')
+  const [filterTitle, setFilterTitle] = useState('')
   const [appliedLevel, setAppliedLevel] = useState('')
   const [appliedTopic, setAppliedTopic] = useState('')
+  const [appliedTitle, setAppliedTitle] = useState('')
   const [completedPracticeIds, setCompletedPracticeIds] = useState(new Set())
 
   useEffect(() => {
@@ -215,7 +221,7 @@ export function useSkillPractices(skill, t) {
           if (Number.isFinite(progress)) return progress >= 100
           const score = Number(item?.score)
           const maxScore = Number(item?.maxScore)
-          return Number.isFinite(score) && Number.isFinite(maxScore) && maxScore > 0 && score >= maxScore
+          return Number.isFinite(score) && Number.isFinite(maxScore) && maxScore > 0 && score >= maxScore * 0.8
         }
         const ids = new Set(
           (Array.isArray(list) ? list : [])
@@ -236,20 +242,23 @@ export function useSkillPractices(skill, t) {
   const handleApplyFilters = () => {
     setAppliedLevel(filterLevel)
     setAppliedTopic(filterTopic)
+    setAppliedTitle(filterTitle)
     setPage(1)
   }
 
   const handleResetFilters = () => {
     setFilterLevel('')
     setFilterTopic('')
+    setFilterTitle('')
     setAppliedLevel('')
     setAppliedTopic('')
+    setAppliedTitle('')
     setPage(1)
   }
 
-  const handleDeletePractice = async (card) => {
+  const handleDeletePractice = async (card, confirmMessage) => {
     if (!card?.id) return
-    if (!window.confirm(t('skills.confirmDeletePractice', { title: card.title }))) return
+    if (confirmMessage && !window.confirm(confirmMessage)) return
     setDeletingId(card.id)
     try {
       await lessonsService.delete(card.id)
@@ -266,6 +275,7 @@ export function useSkillPractices(skill, t) {
     const params = { skill, status: 'published', page, limit: 6 }
     if (appliedLevel) params.level = appliedLevel
     if (appliedTopic) params.topic = appliedTopic
+    if (appliedTitle) params.title = appliedTitle
     practicesService
       .getPractices(params)
       .then((res) => {
@@ -291,7 +301,7 @@ export function useSkillPractices(skill, t) {
         setPractices([])
       })
       .finally(() => setLoading(false))
-  }, [skill, page, appliedLevel, appliedTopic])
+  }, [skill, page, appliedLevel, appliedTopic, appliedTitle])
 
   const fallbackCards = rawData.cards
   const cards =
@@ -313,8 +323,11 @@ export function useSkillPractices(skill, t) {
     setFilterLevel,
     filterTopic,
     setFilterTopic,
+    filterTitle,
+    setFilterTitle,
     appliedLevel,
     appliedTopic,
+    appliedTitle,
     handleApplyFilters,
     handleResetFilters,
     handleDeletePractice,
