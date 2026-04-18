@@ -57,7 +57,6 @@ export function WritingLessonResultPage() {
     return (
       <div className="max-w-[1200px] mx-auto px-6 py-8">
         <p className="text-red-400 mb-4">{t('lessonResult.writingLoadError') || 'Unable to load writing result data.'}</p>
-        <Link to={ROUTES.LESSON} className="text-primary hover:underline">{t('lessonResult.backToList')}</Link>
       </div>
     )
   }
@@ -147,13 +146,6 @@ export function WritingLessonResultPage() {
                 {t('lessonResult.editWriting') || 'Edit Submission'}
               </button>
             )}
-            <Link
-              to={ROUTES.LESSON_HISTORY}
-              className="w-full cursor-pointer flex items-center justify-center rounded-xl h-11 bg-primary text-white text-xs font-bold shadow-lg shadow-primary/25 transition-all hover:brightness-110 active:scale-95"
-            >
-              <span className="material-symbols-outlined mr-2 text-sm">history</span>
-              {t('lessons.viewHistory')}
-            </Link>
           </div>
         </div>
       </aside>
@@ -209,122 +201,7 @@ export function WritingLessonResultPage() {
           </section>
         )}
 
-        {/* AI Comprehensive Report */}
-        {(aiFeedback || aiLoading) && (
-          <section className="bg-primary/5 border border-primary/20 rounded-2xl overflow-hidden shadow-lg animate-in fade-in slide-in-from-bottom-4 duration-700">
-            <div className="p-4 bg-primary/10 border-b border-primary/10 flex items-center justify-between">
-               <div className="flex items-center gap-3">
-                  <span className="material-symbols-outlined text-primary">psychology</span>
-                  <h3 className="text-primary font-extrabold text-sm tracking-tight uppercase">{t('writingLesson.aiReport') || 'AI COMPREHENSIVE REPORT'}</h3>
-                  {aiLoading && <span className="material-symbols-outlined animate-spin text-primary text-sm">progress_activity</span>}
-               </div>
-               <div className="flex items-center gap-4">
-                 <button
-                    onClick={handleAiGrade}
-                    disabled={aiLoading}
-                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-primary/10 border border-primary/20 text-[10px] font-bold text-primary uppercase tracking-wider hover:bg-primary/20 transition-all disabled:opacity-50"
-                 >
-                    <span className="material-symbols-outlined text-sm">{aiLoading ? 'sync' : 'refresh'}</span>
-                    {aiLoading ? (t('writingLesson.aiGrading') || 'Grading...') : (t('writingLesson.aiRegrade') || 'Regrade with AI')}
-                 </button>
-                 {aiScore > 0 && !aiLoading && (
-                   <div className="flex items-center gap-2 border-l border-primary/20 pl-4">
-                      <span className="text-[10px] font-bold text-gray-500 uppercase tracking-widest">AI SCORE</span>
-                      <span className="text-lg font-black text-primary bg-primary/20 px-3 py-1 rounded-lg border border-primary/30 shadow-[0_0_15px_rgba(19,182,236,0.2)]">
-                         {aiScore}
-                      </span>
-                   </div>
-                 )}
-               </div>
-            </div>
-            
-            <div className="p-6 space-y-8">
-              {/* Feedback Text */}
-              {!aiLoading && aiFeedback && (
-                <div>
-                  <p className="text-gray-400 text-sm leading-relaxed whitespace-pre-wrap font-medium">
-                    {aiFeedback}
-                  </p>
-                </div>
-              )}
-              {aiLoading && (
-                <div className="flex flex-col items-center justify-center py-12 gap-4">
-                   <div className="size-16 rounded-full border-4 border-primary/10 border-t-primary animate-spin" />
-                   <div className="text-center">
-                     <p className="text-white font-bold">{t('writingLesson.aiWaitTitle') || 'AI is evaluating your writing...'}</p>
-                     <p className="text-gray-500 text-xs mt-1">{t('writingLesson.aiWaitDesc') || 'This usually takes about 10-15 seconds.'}</p>
-                   </div>
-                </div>
-              )}
 
-              {/* Strengths & Improvements */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                {submission.aiStrengths?.length > 0 && (
-                  <div className="space-y-3">
-                    <h4 className="flex items-center gap-2 text-[11px] font-bold text-emerald-400 uppercase tracking-wider">
-                      <span className="material-symbols-outlined text-sm">thumb_up</span>
-                      {t('writingLesson.strengths') || 'Key Strengths'}
-                    </h4>
-                    <div className="flex flex-wrap gap-2">
-                      {submission.aiStrengths.map((s, i) => (
-                        <span key={i} className="px-3 py-1.5 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-300 text-xs font-medium">
-                          {s}
-                        </span>
-                      ))}
-                    </div>
-                  </div>
-                )}
-                {submission.aiImprovements?.length > 0 && (
-                  <div className="space-y-3">
-                    <h4 className="flex items-center gap-2 text-[11px] font-bold text-amber-400 uppercase tracking-wider">
-                      <span className="material-symbols-outlined text-sm">trending_up</span>
-                      {t('writingLesson.improvements') || 'Areas for Improvement'}
-                    </h4>
-                    <div className="flex flex-wrap gap-2">
-                      {submission.aiImprovements.map((s, i) => (
-                        <span key={i} className="px-3 py-1.5 rounded-xl bg-amber-500/10 border border-amber-500/20 text-amber-300 text-xs font-medium">
-                          {s}
-                        </span>
-                      ))}
-                    </div>
-                  </div>
-                )}
-              </div>
-
-              {/* Grammar Errors */}
-              {submission.aiGrammarErrors?.length > 0 && (
-                <div className="space-y-4">
-                  <h4 className="flex items-center gap-2 text-[11px] font-bold text-red-400 uppercase tracking-wider">
-                    <span className="material-symbols-outlined text-sm">spellcheck</span>
-                    {t('writingLesson.grammarFixes') || 'Grammar & Vocabulary Suggestions'}
-                  </h4>
-                  <div className="space-y-3">
-                    {submission.aiGrammarErrors.map((err, i) => (
-                      <div key={i} className="bg-background-dark/50 rounded-2xl p-5 border border-border-dark group/error transition-all hover:border-primary/30">
-                        <div className="flex flex-col md:flex-row gap-4">
-                          <div className="flex-1 space-y-2">
-                            <p className="text-[9px] font-bold text-gray-500 uppercase">{t('writingLesson.original') || 'Original'}</p>
-                            <p className="text-red-400/80 text-sm italic font-serif line-through decoration-red-500/40">&quot;{err.original}&quot;</p>
-                          </div>
-                          <div className="flex-1 space-y-2">
-                            <p className="text-[9px] font-bold text-emerald-500 uppercase">{t('writingLesson.correction') || 'Suggested'}</p>
-                            <p className="text-emerald-400 text-sm font-bold font-serif">&quot;{err.correction}&quot;</p>
-                          </div>
-                        </div>
-                        {err.explanation && (
-                          <div className="mt-4 pt-4 border-t border-white/5 flex gap-3">
-                            <span className="material-symbols-outlined text-primary text-sm shrink-0">info</span>
-                            <p className="text-[11px] text-gray-500 leading-relaxed italic">{err.explanation}</p>
-                          </div>
-                        )}
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
-            </div>
-          </section>
-        )}
 
         {/* Sample Answer */}
         {info.sampleAnswer && (

@@ -26,6 +26,7 @@ export { friendsService } from './friends.service.js'
 
 // Practices
 export { practicesService } from './practices.service.js'
+export { mockTestService } from './mockTest.service.js'
 
 // Raw (mock data từ BE)
 export { rawService } from './raw.service.js'

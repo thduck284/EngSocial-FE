@@ -19,6 +19,8 @@ export function ListeningLessonResultPage() {
   const [xpEarned, setXpEarned] = useState(0)
   const [questions, setQuestions] = useState([])
   const [answers, setAnswers] = useState([])
+  const [audioUrl, setAudioUrl] = useState('')
+  const [transcript, setTranscript] = useState('')
 
   useEffect(() => {
     if (!id) {
@@ -39,6 +41,8 @@ export function ListeningLessonResultPage() {
         const qList = content?.questions || []
         setLessonTitle(lessonContent?.title || content?.title || '')
         setMaxScore(qList.length || 10)
+        setAudioUrl(lessonContent?.audioUrl || content?.audioUrl || '')
+        setTranscript(lessonContent?.transcript || content?.transcript || '')
 
         const progressData = progress?.data ?? progress
         const status = progressData?.status
@@ -92,7 +96,6 @@ export function ListeningLessonResultPage() {
     return (
       <div className="max-w-[1200px] mx-auto px-6 py-8">
         <p className="text-red-400 mb-4">{t('lessonResult.loadError')}</p>
-        <Link to={ROUTES.LESSON} className="text-primary hover:underline">{t('lessonResult.backToList')}</Link>
       </div>
     )
   }
@@ -176,23 +179,58 @@ export function ListeningLessonResultPage() {
               <span className="material-symbols-outlined mr-2 text-sm">refresh</span>
               {t('lessonResult.retry')}
             </button>
-            <Link
-              to={ROUTES.LESSON}
-              className="w-full cursor-pointer flex items-center justify-center rounded-xl h-11 bg-primary text-white text-xs font-bold shadow-lg shadow-primary/25 transition-all hover:brightness-110 active:scale-95"
-            >
-              <span className="material-symbols-outlined mr-2 text-sm">view_list</span>
-              {t('lessonResult.backToList')}
-            </Link>
           </div>
         </div>
       </aside>
 
       {/* Nội dung chính */}
-      <div className="col-span-12 lg:col-span-9 space-y-5">
-        <h2 className="text-white text-xl font-black tracking-tight flex items-center gap-2 px-1">
-          <span className="material-symbols-outlined text-primary text-2xl">fact_check</span>
-          {t('lessonResult.questionDetails')}
-        </h2>
+      <div className="col-span-12 lg:col-span-9 space-y-6">
+        {/* Audio Player Section */}
+        {audioUrl && (
+          <section className="bg-card-dark rounded-3xl border border-border-dark overflow-hidden shadow-xl p-6 flex flex-col md:flex-row items-center gap-6">
+            <div className={`size-20 rounded-2xl bg-primary/10 flex items-center justify-center shrink-0`}>
+              <span className="material-symbols-outlined text-primary text-4xl animate-pulse">headset</span>
+            </div>
+            <div className="flex-1 w-full space-y-3">
+              <div>
+                <h3 className="text-white font-bold text-lg">{t('listeningLesson.audioTitle') || 'Listening Material'}</h3>
+                <p className="text-xs text-gray-500">{t('listeningLesson.audioSubtitle') || 'Listen again to improve your understanding'}</p>
+              </div>
+              <audio 
+                src={audioUrl} 
+                controls 
+                className="w-full h-10 rounded-lg custom-audio-player"
+              />
+            </div>
+          </section>
+        )}
+
+        {/* Transcript Section */}
+        {transcript && (
+          <section className="bg-card-dark rounded-3xl border border-border-dark overflow-hidden shadow-xl">
+            <details className="group">
+              <summary className="flex cursor-pointer items-center justify-between p-5 list-none hover:bg-white/5 transition-colors">
+                <div className="flex items-center gap-3">
+                  <div className="size-8 rounded-lg bg-primary/10 flex items-center justify-center">
+                    <span className="material-symbols-outlined text-primary text-xl">description</span>
+                  </div>
+                  <h3 className="text-white text-sm font-bold">{t('listeningLesson.transcript') || 'Transcript'}</h3>
+                </div>
+                <span className="material-symbols-outlined text-gray-500 transition-transform duration-300 group-open:rotate-180">expand_more</span>
+              </summary>
+              <div className="p-8 pt-2 text-gray-300 leading-relaxed text-sm whitespace-pre-wrap border-t border-border-dark/30 bg-background-dark/20 italic">
+                {transcript}
+              </div>
+            </details>
+          </section>
+        )}
+
+        <div className="flex items-center justify-between px-1 pt-4">
+          <h2 className="text-white text-xl font-black tracking-tight flex items-center gap-2">
+            <span className="material-symbols-outlined text-primary text-2xl">fact_check</span>
+            {t('lessonResult.questionDetails')}
+          </h2>
+        </div>
 
         <div className="flex flex-col gap-5">
           {questions.map((q, index) => {

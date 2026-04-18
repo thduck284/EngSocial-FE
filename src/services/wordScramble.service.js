@@ -27,4 +27,6 @@ export const wordScrambleService = {
   deleteWord: (id) => apiClient.delete(API_ENDPOINTS.WORD_SCRAMBLE.WORD(id)),
 
   deleteAllWords: () => apiClient.delete(API_ENDPOINTS.WORD_SCRAMBLE.WORDS_ALL),
+
+  getResults: (roomCode) => apiClient.get(API_ENDPOINTS.WORD_SCRAMBLE.RESULTS(roomCode)),
 }

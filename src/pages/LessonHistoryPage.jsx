@@ -29,8 +29,9 @@ export function LessonHistoryPage() {
       .getMyProgress(params)
       .then((res) => {
         const list = res?.data ?? []
+        const filteredList = Array.isArray(list) ? list.filter(item => !item.isMockTest) : []
         const pag = res?.meta?.pagination ?? null
-        setData(Array.isArray(list) ? list : [])
+        setData(filteredList)
         setPagination(pag)
       })
       .catch(() => {
@@ -136,25 +137,25 @@ export function LessonHistoryPage() {
 
         {!loading && data.length > 0 && (
           <div className="space-y-2">
-              {data.map((item) => {
-                const lesson = item.lesson
-                const isCompleted = item.status === 'completed'
-                const isUnderReview = item.status === 'under_review'
-                const isInProgress = item.status === 'in_progress'
-                const skill = lesson?.skill || ''
-                const id = lesson?.id
+            {data.map((item) => {
+              const lesson = item.lesson
+              const isCompleted = item.status === 'completed'
+              const isUnderReview = item.status === 'under_review'
+              const isInProgress = item.status === 'in_progress'
+              const skill = lesson?.skill || ''
+              const id = lesson?.id
 
-                let href = ROUTES.LESSON
-                if (id) {
-                  if (isCompleted || isUnderReview) {
-                    href = `/lesson/${skill}/${id}/result`
-                  } else {
-                    href = getLessonLink(lesson)
-                  }
+              let href = ROUTES.LESSON
+              if (id) {
+                if (isCompleted || isUnderReview) {
+                  href = `/lesson/${skill}/${id}/result`
+                } else {
+                  href = getLessonLink(lesson)
                 }
+              }
 
-                const title = lesson?.title || t('lessonHistory.unknownLesson')
-                const level = lesson?.level || ''
+              const title = lesson?.title || t('lessonHistory.unknownLesson')
+              const level = lesson?.level || ''
               return (
                 <div
                   key={item.id}
@@ -199,13 +200,12 @@ export function LessonHistoryPage() {
                     {/* View Result / Continue button */}
                     <Link
                       to={href}
-                      className={`px-4 py-2 w-full sm:w-auto text-center font-bold text-xs rounded-lg transition-all ${
-                        isCompleted 
-                          ? 'bg-emerald-500/10 text-emerald-500 hover:bg-emerald-500 hover:text-white' 
-                          : isUnderReview 
+                      className={`px-4 py-2 w-full sm:w-auto text-center font-bold text-xs rounded-lg transition-all ${isCompleted
+                          ? 'bg-emerald-500/10 text-emerald-500 hover:bg-emerald-500 hover:text-white'
+                          : isUnderReview
                             ? 'bg-amber-500/10 text-amber-500 hover:bg-amber-500 hover:text-white'
                             : 'bg-primary text-background-dark hover:brightness-110'
-                      }`}
+                        }`}
                     >
                       {isCompleted ? t('lessonResult.viewResult') || t('lessonHistory.viewResult') : isUnderReview ? (t('lessonHistory.viewSubmission') || 'View Submission') : t('lessonHistory.continue')}
                     </Link>
@@ -217,8 +217,8 @@ export function LessonHistoryPage() {
                         className="px-4 py-2 w-full sm:w-auto text-center bg-gray-700/50 text-gray-300 hover:bg-gray-700 hover:text-white font-bold text-xs rounded-lg transition-all border border-border-dark flex items-center justify-center gap-1.5"
                         title={t('lessonResult.retry')}
                       >
-                         <span className="material-symbols-outlined text-sm">refresh</span>
-                         {t('lessonResult.retry') || 'Retry'}
+                        <span className="material-symbols-outlined text-sm">refresh</span>
+                        {t('lessonResult.retry') || 'Retry'}
                       </Link>
                     )}
                   </div>
@@ -238,17 +238,16 @@ export function LessonHistoryPage() {
             >
               <span className="material-symbols-outlined">chevron_left</span>
             </button>
-            
+
             <div className="flex items-center gap-1.5">
               {Array.from({ length: totalPages }, (_, i) => i + 1).map((p) => (
                 <button
                   key={p}
                   onClick={() => { setPage(p); window.scrollTo(0, 0) }}
-                  className={`size-10 flex items-center justify-center rounded-xl text-xs font-black transition-all border ${
-                    currentPage === p 
-                      ? 'bg-primary border-primary text-background-dark shadow-lg shadow-primary/20' 
+                  className={`size-10 flex items-center justify-center rounded-xl text-xs font-black transition-all border ${currentPage === p
+                      ? 'bg-primary border-primary text-background-dark shadow-lg shadow-primary/20'
                       : 'bg-card-dark border-border-dark text-gray-500 hover:border-gray-600 hover:text-gray-300'
-                  }`}
+                    }`}
                 >
                   {p}
                 </button>

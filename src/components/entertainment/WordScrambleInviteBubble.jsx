@@ -50,13 +50,21 @@ export function WordScrambleInviteBubble({ lobby, onClose }) {
   const filtered = friends.filter(f => f.name.toLowerCase().includes(search.toLowerCase()))
 
   const handleInvite = (friend) => {
-    if (invitedIds.has(friend.id)) return
+    alert("Button clicked! Testing invite...")
+    if (invitedIds.has(friend.id)) {
+      alert("Already invited this friend.")
+      return
+    }
     
-    // Logic to "send" invite (mock or real if possible)
-    // For now, we simulate sending and record it
     setInvitedIds(prev => new Set([...prev, friend.id]))
     
-    // Optionally we could send a chat message if lobby is provided
+    if (typeof lobby?.inviteFriend === 'function') {
+      alert("Triggering lobby.inviteFriend()")
+      lobby.inviteFriend(friend.id, lobby.inviteUrl)
+    } else {
+      alert("ERROR: lobby.inviteFriend is not a function")
+    }
+    
     if (lobby?.sendChat) {
       lobby.sendChat(`📢 Invited ${friend.name} to the game!`)
     }

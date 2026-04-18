@@ -8,7 +8,7 @@ import { ChatbotButton } from '../ui/chatbot/ChatbotButton'
 const isLessonDoingPage = (pathname) =>
   /^\/(lesson|practice)\/(reading|listening|writing)\/[^/]+$/.test(pathname)
 
-const isWordScrambleFullScreen = (pathname) => pathname === ROUTES.SKILLS.ENTERTAINMENT_WORD_SCRAMBLE
+const isWordScrambleFullScreen = (pathname) => pathname === ROUTES.SKILLS.ENTERTAINMENT_WORD_SCRAMBLE || pathname.startsWith(`${ROUTES.SKILLS.ENTERTAINMENT_WORD_SCRAMBLE}/lobby/`) || pathname.startsWith(`${ROUTES.SKILLS.ENTERTAINMENT_WORD_SCRAMBLE}/roomId=`)
 
 export function DashboardLayout() {
   const location = useLocation()

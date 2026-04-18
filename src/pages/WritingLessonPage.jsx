@@ -5,6 +5,7 @@ import { lessonsService } from '../services'
 import { addVocabNote } from '../utils/vocabularyUserStorage'
 import { formatTime } from '../utils/dateTime'
 import { AlertModal } from '../components/ui/common/AlertModal'
+import { MockTestSidebar } from '../components/layout/MockTestSidebar'
 
 export function WritingLessonPage() {
   const { t } = useTranslation()
@@ -31,9 +32,26 @@ export function WritingLessonPage() {
   const [countdownSeconds, setCountdownSeconds] = useState(null)
   const lessonOpenedAtMs = useRef(null)
 
+  const [isMockTest, setIsMockTest] = useState(false)
+  
   useEffect(() => {
-    setRightBarOpen(false)
+    const data = localStorage.getItem('engsocial_mock_test')
+    if (data) {
+      const parsed = JSON.parse(data)
+      const isInTest = parsed.lessons.some(l => l.id === id)
+      if (isInTest) {
+        setIsMockTest(true)
+      } else {
+        setIsMockTest(false)
+      }
+    } else {
+      setIsMockTest(false)
+    }
   }, [id])
+
+  useEffect(() => {
+    setRightBarOpen(isMockTest)
+  }, [id, isMockTest])
 
   const handleSaveNote = () => {
     if (!id || (!noteTitle.trim() && !noteContent.trim())) return
@@ -68,6 +86,14 @@ export function WritingLessonPage() {
 
   useEffect(() => {
     setLoading(true)
+    // Reset all per-lesson state when id changes
+    setUserText('')
+    setSubmitMessage('')
+    setCompleteMessage('')
+    setShowConfirmSubmitModal(false)
+    setShowSuccessModal(false)
+    setShowIncompleteModal(false)
+    setShowSample(false)
     // Fetch content
     lessonsService
       .getWritingContent(id)
@@ -153,7 +179,8 @@ export function WritingLessonPage() {
 
   return (
     <main className="max-w-[1600px] mx-auto px-6 py-6 flex flex-col lg:flex-row gap-6 min-h-[calc(100vh-64px)]">
-      {/* Left Sidebar - ~200px, can shrink */}
+      {/* Left Sidebar - Hidden in Mock Test */}
+      {!isMockTest && (
       <aside className="w-full lg:w-[300px] lg:min-w-[240px] lg:shrink lg:basis-[300px] space-y-6 overflow-y-auto pr-2 pb-6 custom-scrollbar">
         <div className="bg-card-dark rounded-2xl p-6 border border-border-dark shadow-xl">
           <div className="flex justify-between items-start mb-4">
@@ -242,6 +269,7 @@ export function WritingLessonPage() {
           </p>
         </div>
       </aside>
+      )}
 
       {/* Main Content */}
       <div className="flex-1 min-w-0 flex flex-col gap-6 overflow-hidden">
@@ -254,19 +282,23 @@ export function WritingLessonPage() {
               {completeMessage && (
                 <span className="text-xs text-emerald-400 font-bold animate-pulse">{completeMessage}</span>
               )}
-              <div className={`h-9 inline-flex items-center gap-2 px-3 rounded-lg border font-mono font-bold text-sm ${(countdownSeconds ?? 1) <= 0 ? 'bg-red-500/20 text-red-400 border-red-500/30' : 'bg-red-500/10 text-red-400 border-red-500/20'}`}>
-                <span className="material-symbols-outlined text-base">timer</span>
-                <span>{countdownSeconds != null ? formatTime(Math.max(0, countdownSeconds)) : '--:--'}</span>
-                {(countdownSeconds ?? 1) <= 0 && <span className="text-[10px] ml-1">{t('writingLesson.timeUp')}</span>}
-              </div>
-              <button
-                type="button"
-                onClick={handleSubmit}
-                disabled={submitting}
-                className="h-9 px-4 inline-flex items-center justify-center rounded-lg text-sm font-semibold bg-primary/20 text-primary border border-primary/30 hover:bg-primary/30 disabled:opacity-60 disabled:cursor-not-allowed"
-              >
-                {submitting ? '...' : t('writingLesson.submit')}
-              </button>
+              {!isMockTest && (
+                <div className={`h-9 inline-flex items-center gap-2 px-3 rounded-lg border font-mono font-bold text-sm ${(countdownSeconds ?? 1) <= 0 ? 'bg-red-500/20 text-red-400 border-red-500/30' : 'bg-red-500/10 text-red-400 border-red-500/20'}`}>
+                  <span className="material-symbols-outlined text-base">timer</span>
+                  <span>{countdownSeconds != null ? formatTime(Math.max(0, countdownSeconds)) : '--:--'}</span>
+                  {(countdownSeconds ?? 1) <= 0 && <span className="text-[10px] ml-1">{t('writingLesson.timeUp')}</span>}
+                </div>
+              )}
+              {!isMockTest && (
+                <button
+                  type="button"
+                  onClick={handleSubmit}
+                  disabled={submitting}
+                  className="h-9 px-4 inline-flex items-center justify-center rounded-lg text-sm font-semibold bg-primary/20 text-primary border border-primary/30 hover:bg-primary/30 disabled:opacity-60 disabled:cursor-not-allowed"
+                >
+                  {submitting ? '...' : t('writingLesson.submit')}
+                </button>
+              )}
             </div>
           </div>
 
@@ -283,11 +315,13 @@ export function WritingLessonPage() {
             </div>
             <div className="flex items-center justify-between mb-4">
               <div className="flex items-center gap-2">
-                <div className={`h-9 inline-flex items-center gap-2 px-3 rounded-lg border font-mono font-bold text-sm ${(countdownSeconds ?? 1) <= 0 ? 'bg-red-500/20 text-red-400 border-red-500/30' : 'bg-red-500/10 text-red-400 border-red-500/20'}`}>
-                  <span className="material-symbols-outlined text-base">timer</span>
-                  <span>{countdownSeconds != null ? formatTime(Math.max(0, countdownSeconds)) : '--:--'}</span>
-                  {(countdownSeconds ?? 1) <= 0 && <span className="text-[10px] ml-1">{t('writingLesson.timeUp')}</span>}
-                </div>
+                {!isMockTest && (
+                  <div className={`h-9 inline-flex items-center gap-2 px-3 rounded-lg border font-mono font-bold text-sm ${(countdownSeconds ?? 1) <= 0 ? 'bg-red-500/20 text-red-400 border-red-500/30' : 'bg-red-500/10 text-red-400 border-red-500/20'}`}>
+                    <span className="material-symbols-outlined text-base">timer</span>
+                    <span>{countdownSeconds != null ? formatTime(Math.max(0, countdownSeconds)) : '--:--'}</span>
+                    {(countdownSeconds ?? 1) <= 0 && <span className="text-[10px] ml-1">{t('writingLesson.timeUp')}</span>}
+                  </div>
+                )}
               </div>
             </div>
             <textarea
@@ -327,22 +361,26 @@ export function WritingLessonPage() {
               >
                 {t('writingLesson.back')}
               </button>
-              <button
-                type="button"
-                onClick={handleSubmit}
-                disabled={submitting}
-                className="px-6 py-2.5 bg-primary hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed text-black font-bold rounded-xl text-sm transition-all"
-              >
-                {submitting ? t('writingLesson.submitting') : t('writingLesson.submit')}
-              </button>
+              {!isMockTest && (
+                <button
+                  type="button"
+                  onClick={handleSubmit}
+                  disabled={submitting}
+                  className="px-6 py-2.5 bg-primary hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed text-black font-bold rounded-xl text-sm transition-all"
+                >
+                  {submitting ? t('writingLesson.submitting') : t('writingLesson.submit')}
+                </button>
+              )}
             </div>
             {submitMessage && <p className="mt-3 text-sm text-gray-300">{submitMessage}</p>}
           </div>
         </div>
       </div>
 
-      {/* Right Sidebar - Toggleable */}
-      {rightBarOpen ? (
+      {/* Right Sidebar */}
+      {isMockTest ? (
+        <MockTestSidebar currentAnswers={wordCount > 0 ? { 0: userText } : null} currentLessonId={id} />
+      ) : rightBarOpen ? (
         <aside className="w-full lg:w-[300px] lg:min-w-[240px] lg:shrink lg:basis-[300px] space-y-6 overflow-y-auto custom-scrollbar pr-2 pb-6 relative">
           <div className="sticky top-0 z-10 flex justify-end mb-2">
             <button
@@ -399,7 +437,8 @@ export function WritingLessonPage() {
         confirmText={t('common.ok')}
         onClose={() => {
           setShowSuccessModal(false)
-          navigate(`/lesson/writing/${id}/result`)
+          const type = location.pathname.startsWith('/practice/') ? 'practice' : 'lesson'
+          navigate(`/${type}/writing/${id}/result`)
         }}
       />
 

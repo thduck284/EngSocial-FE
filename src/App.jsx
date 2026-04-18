@@ -1,5 +1,6 @@
 import { Routes, Route, Navigate, useLocation, useParams } from 'react-router-dom'
 import { AuthProvider, useAuth } from './context/AuthContext'
+import { Toaster } from 'react-hot-toast'
 import { ROUTES } from './constants'
 import { LoginPage } from './pages/LoginPage'
 import { RegisterPage } from './pages/RegisterPage'
@@ -11,6 +12,7 @@ import { PostPhotoPage } from './pages/PostPhotoPage'
 import { EntertainmentLayout } from './pages/EntertainmentLayout'
 import { EntertainmentHomePage } from './pages/EntertainmentHomePage'
 import { EntertainmentWordScramblePage } from './pages/EntertainmentWordScramblePage'
+import WordScrambleResultPage from './pages/WordScrambleResultPage'
 import { SkillPracticePage } from './pages/SkillPracticePage'
 import { ListeningLessonPage } from './pages/ListeningLessonPage'
 import { ReadingLessonPage } from './pages/ReadingLessonPage'
@@ -19,6 +21,7 @@ import { ListeningLessonResultPage } from './pages/ListeningLessonResultPage'
 import { WritingLessonResultPage } from './pages/WritingLessonResultPage'
 import { WritingLessonPage } from './pages/WritingLessonPage'
 import { PracticeMockTestPage } from './pages/PracticeMockTestPage'
+import { MockTestResultPage } from './pages/MockTestResultPage'
 import { ProfilePage } from './pages/ProfilePage'
 import { UserProfilePage } from './pages/UserProfilePage'
 import { LessonsPage } from './pages/LessonsPage'
@@ -52,6 +55,7 @@ import VocabularyDataPage from './pages/VocabularyDataPage'
 import LearnPage from './pages/LearnPage'
 import MatchGamePage from './pages/MatchGamePage'
 import TestPage from './pages/TestPage'
+import { GlobalGameInviteListener } from './components/GlobalGameInviteListener'
 
 /** /manage/* → /mod/:userId/* */
 function LegacyManageRedirect() {
@@ -76,6 +80,8 @@ function App() {
 
   return (
     <AuthProvider>
+      <Toaster position="top-center" reverseOrder={false} />
+      <GlobalGameInviteListener />
       <Routes location={background || location}>
         {/* Auth - chỉ khi chưa đăng nhập; đã đăng nhập thì redirect về / */}
         <Route element={<GuestOnlyLayout />}>
@@ -108,6 +114,9 @@ function App() {
             <Route index element={<EntertainmentHomePage />} />
           </Route>
           <Route path="practice/entertainment/word-scramble" element={<EntertainmentWordScramblePage />} />
+          <Route path="practice/entertainment/word-scramble/lobby/:lobbyCode" element={<EntertainmentWordScramblePage />} />
+          <Route path="practice/entertainment/word-scramble/roomId=:roomCode" element={<EntertainmentWordScramblePage />} />
+          <Route path="practice/entertainment/word-scramble/result/:roomCode" element={<WordScrambleResultPage />} />
           <Route path="lesson" element={<LessonsPage />} />
           <Route path="lesson/history" element={<LessonHistoryPage />} />
           <Route path="lesson/:id/reviews" element={<LessonReviewPage />} />
@@ -119,6 +128,7 @@ function App() {
           <Route path="lesson/writing/:id/result" element={<WritingLessonResultPage />} />
           <Route path="practice" element={<Navigate to="/practice/reading" replace />} />
           <Route path="practice/mock-test" element={<PracticeMockTestPage />} />
+          <Route path="practice/mock-test/result/:sessionId" element={<MockTestResultPage />} />
           <Route path="practice/:skill" element={<SkillPracticePage />} />
           <Route path="practice/reading/:id" element={<ReadingLessonPage />} />
           <Route path="practice/reading/:id/result" element={<ReadingLessonResultPage />} />
@@ -183,6 +193,7 @@ function App() {
           <Route path="entertainment" element={<StaffEntertainmentHomePage />} />
           <Route path="word-scramble" element={<ManageWordScramblePage />} />
           <Route path="achievements" element={<AchievementsPage embedded />} />
+          <Route path="mock-tests" element={<ManageLessonsListPage mode="mock-test" />} />
         </Route>
 
         <Route path="*" element={<Navigate to="/home" replace />} />

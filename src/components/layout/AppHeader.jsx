@@ -11,6 +11,7 @@ import { getAuthToken } from '../../utils/auth'
 import { notificationsService, conversationService, communityService } from '../../services'
 import { LogoutConfirmModal } from './LogoutConfirmModal'
 import { PostDetailModal } from '../ui/post/PostDetailModal'
+import { WordScrambleIncomingInviteModal } from '../entertainment/WordScrambleIncomingInviteModal'
 
 const LogoIcon = () => (
   <div className="size-8">
@@ -81,6 +82,8 @@ export function AppHeader() {
 
   const headerSocketRef = useRef(null)
   const headerTriedFallbackRef = useRef(false)
+
+  const [incomingInvite, setIncomingInvite] = useState(null)
 
   useEffect(() => {
     if (!SOCKET_ENABLED || !user) return

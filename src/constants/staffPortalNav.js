@@ -19,6 +19,14 @@ export function getStaffNavCore(userId) {
       descKey: 'staffDashboard.cardPracticeDesc',
       adminOnly: false,
     },
+    {
+      to: ROUTES.MANAGE_MOCK_TESTS(userId),
+      end: false,
+      icon: 'quiz',
+      labelKey: 'staffDashboard.navMockTest',
+      descKey: 'staffDashboard.cardMockTestDesc',
+      adminOnly: false,
+    },
   ]
 }
 

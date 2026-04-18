@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from 'react'
-import { Link, useSearchParams } from 'react-router-dom'
+import { Link, useSearchParams, useNavigate, useParams } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { ROUTES } from '../constants'
 import { useAuth } from '../context/AuthContext'
@@ -17,54 +17,42 @@ import { WordScrambleInviteBubble } from '../components/entertainment/WordScramb
 export function EntertainmentWordScramblePage() {
   const { t } = useTranslation()
   const { user, isAuthenticated } = useAuth()
+  const navigate = useNavigate()
+  const { lobbyCode } = useParams()
   const [searchParams, setSearchParams] = useSearchParams()
-  const [mode, setMode] = useState(/** @type {null | 'solo' | 'multi'} */ (null))
+  const [mode, setMode] = useState(/** @type {null | 'solo' | 'multi'} */(null))
   const [multiPastLobby, setMultiPastLobby] = useState(false)
-  const [playerCount, setPlayerCount] = useState(/** @type {null | number} */ (null))
-  const [pendingJoinCode, setPendingJoinCode] = useState(/** @type {null | string} */ (null))
-  const [difficulty, setDifficulty] = useState(/** @type {null | 'easy' | 'medium' | 'hard'} */ (null))
+  const [playerCount, setPlayerCount] = useState(/** @type {null | number} */(null))
+  const [pendingJoinCode, setPendingJoinCode] = useState(/** @type {null | string} */(null))
+  const [difficulty, setDifficulty] = useState(/** @type {null | 'easy' | 'medium' | 'hard'} */(null))
   const [isMatching, setIsMatching] = useState(false)
   const [inviteCopied, setInviteCopied] = useState(false)
   const [isInviteBubbleOpen, setIsInviteBubbleOpen] = useState(false)
-  const [activeRoomCode, setActiveRoomCode] = useState(/** @type {string | null} */ (null))
-  const [actualMatchedCount, setActualMatchedCount] = useState(/** @type {number | null} */ (null))
-  const [pendingQuickMatchCapacity, setPendingQuickMatchCapacity] = useState(/** @type {number | null} */ (null))
+  const [activeRoomCode, setActiveRoomCode] = useState(/** @type {string | null} */(null))
+  const [actualMatchedCount, setActualMatchedCount] = useState(/** @type {number | null} */(null))
+  const [pendingQuickMatchCapacity, setPendingQuickMatchCapacity] = useState(/** @type {number | null} */(null))
 
   const token = getAuthToken()
   const myUserId = user?.id ?? user?._id
 
-  const lobbyParam = searchParams.get('lobby')
 
-  const clearLobbyQuery = useCallback(() => {
-    setSearchParams(
-      (prev) => {
-        const p = new URLSearchParams(prev)
-        p.delete('lobby')
-        return p
-      },
-      { replace: true }
-    )
-  }, [setSearchParams])
 
   useEffect(() => {
-    if (!lobbyParam || !isAuthenticated) return
-    const code = lobbyParam.trim().toUpperCase()
+    if (!lobbyCode || !isAuthenticated) return
+    const code = lobbyCode.trim().toUpperCase()
     if (code.length < 4) return
-    // Unified matchmaking: lobby code is ignored, everyone uses the same queue flow.
-    setMode('multi-quick')
-    setPendingJoinCode(null)
+    setMode('multi-private')
+    setPendingJoinCode(code)
     setMultiPastLobby(false)
     setPlayerCount(null)
-    clearLobbyQuery()
-  }, [lobbyParam, isAuthenticated, clearLobbyQuery])
+  }, [lobbyCode, isAuthenticated])
 
   const onJoinedWithCapacity = useCallback(
     (n) => {
       setPlayerCount(n)
       setPendingJoinCode(null)
-      clearLobbyQuery()
     },
-    [clearLobbyQuery]
+    []
   )
 
   const lobbySocketEnabled =
@@ -87,7 +75,7 @@ export function EntertainmentWordScramblePage() {
       // Capture the actual players from the lobby before it disconnects
       const n = lobby.slots.filter(s => s != null).length || playerCount || 2
       setActualMatchedCount(n)
-      
+
       if (data?.roomCode) {
         setActiveRoomCode(data.roomCode)
       }
@@ -100,6 +88,13 @@ export function EntertainmentWordScramblePage() {
     onJoinedWithCapacity,
   })
 
+  // Khi host tạo phòng xong và có roomCode, navigate tới URL lobby nếu chưa ở đó
+  useEffect(() => {
+    if (mode === 'multi-private' && lobby.roomCode && !lobbyCode) {
+      navigate(`/practice/entertainment/word-scramble/lobby/${lobby.roomCode}`, { replace: true })
+    }
+  }, [mode, lobby.roomCode, lobbyCode, navigate])
+
   useEffect(() => {
     if (mode !== 'multi-quick') return
     if (!pendingQuickMatchCapacity) return
@@ -110,12 +105,10 @@ export function EntertainmentWordScramblePage() {
   }, [mode, pendingQuickMatchCapacity, lobby.connected, lobby])
 
   const handleModeSelect = (/** @type {'solo' | 'multi-quick' | 'multi-private'} */ m) => {
-    // No private/public split for matchmaking behavior.
-    setMode(m === 'multi-private' ? 'multi-quick' : m)
+    setMode(m)
     setMultiPastLobby(false)
     setPendingJoinCode(null)
     setActiveRoomCode(null)
-    clearLobbyQuery()
   }
 
   const resetAll = () => {
@@ -129,7 +122,9 @@ export function EntertainmentWordScramblePage() {
     setActualMatchedCount(null)
     setActiveRoomCode(null)
     setPendingQuickMatchCapacity(null)
-    clearLobbyQuery()
+    if (lobbyCode) {
+      navigate('/practice/entertainment/word-scramble', { replace: true })
+    }
   }
 
   const resetDifficultyOnly = () => setDifficulty(null)
@@ -138,10 +133,12 @@ export function EntertainmentWordScramblePage() {
     lobby.disconnectSocket()
     setPlayerCount(null)
     setPendingJoinCode(null)
-    clearLobbyQuery()
     setMultiPastLobby(false)
     setActiveRoomCode(null)
     setPendingQuickMatchCapacity(null)
+    if (lobbyCode) {
+      navigate('/practice/entertainment/word-scramble', { replace: true })
+    }
   }
 
   const isMulti = mode === 'multi-quick' || mode === 'multi-private'
@@ -201,9 +198,9 @@ export function EntertainmentWordScramblePage() {
                   </button>
 
                   {isInviteBubbleOpen && (
-                    <WordScrambleInviteBubble 
-                      lobby={lobby} 
-                      onClose={() => setIsInviteBubbleOpen(false)} 
+                    <WordScrambleInviteBubble
+                      lobby={lobby}
+                      onClose={() => setIsInviteBubbleOpen(false)}
                     />
                   )}
                 </div>
@@ -242,11 +239,10 @@ export function EntertainmentWordScramblePage() {
           onBack={() => {
             setMode(null)
             setMultiPastLobby(false)
-            clearLobbyQuery()
           }}
         />
       ) : isMatching ? (
-        <WordScrambleMatching 
+        <WordScrambleMatching
           onCancel={() => {
             setIsMatching(false)
             setPlayerCount(null)
@@ -255,7 +251,7 @@ export function EntertainmentWordScramblePage() {
           }}
         />
       ) : isMulti && (playerCount != null || pendingJoinCode) && !multiPastLobby ? (
-        <WordScrambleMultiLobby lobby={lobby} onBack={handleLobbyBack} />
+        <WordScrambleMultiLobby lobby={lobby} onBack={handleLobbyBack} onInviteClick={() => setIsInviteBubbleOpen(true)} />
       ) : difficulty == null && mode === 'solo' ? (
         <WordScrambleDifficultyPicker
           onSelect={setDifficulty}

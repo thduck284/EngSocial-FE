@@ -98,7 +98,6 @@ export function ReadingLessonResultPage() {
     return (
       <div className="max-w-[1200px] mx-auto px-6 py-8">
         <p className="text-red-400 mb-4">{t('lessonResult.loadError')}</p>
-        <Link to={ROUTES.LESSON} className="text-primary hover:underline">{t('lessonResult.backToList')}</Link>
       </div>
     )
   }
@@ -196,13 +195,6 @@ export function ReadingLessonResultPage() {
               <span className="material-symbols-outlined mr-2 text-sm group-hover:rotate-180 transition-transform">refresh</span>
               {t('lessonResult.retry')}
             </button>
-            <Link
-              to={ROUTES.LESSON}
-              className="w-full cursor-pointer flex items-center justify-center rounded-xl h-11 bg-primary text-white text-xs font-bold shadow-lg shadow-primary/25 transition-all hover:brightness-110 active:scale-95"
-            >
-              <span className="material-symbols-outlined mr-2 text-sm">view_list</span>
-              {t('lessonResult.backToList')}
-            </Link>
           </div>
         </div>
       </aside>

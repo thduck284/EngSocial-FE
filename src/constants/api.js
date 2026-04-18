@@ -102,6 +102,14 @@ export const API_ENDPOINTS = {
     FALLBACK: '/practices/fallback',
   },
 
+  MOCK_TESTS: {
+    ROOT: '/mock-tests',
+    RECORD: '/mock-tests/record',
+    MY_HISTORY: '/mock-tests/my-history',
+    SESSION: (id) => `/mock-tests/session/${id}`,
+    getUserResults: (userId) => `/mock-tests/user-results/${userId}`,
+  },
+
   /** Từ vựng: lịch sử truy cập / hình thức luyện (MongoDB, cần đăng nhập) */
   VOCABULARY: {
     RECENT: '/vocabulary/recent',
@@ -109,12 +117,13 @@ export const API_ENDPOINTS = {
   },
 
   /** Word Scramble — từ vựng game (next công khai; CRUD moderator/admin) */
-  WORD_SCRAMBLE: {
+    WORD_SCRAMBLE: {
     NEXT: '/word-scramble/next',
     WORDS: '/word-scramble/words',
     WORDS_ALL: '/word-scramble/words/all',
     WORDS_IMPORT_TSV: '/word-scramble/words/import-tsv',
     WORD: (id) => `/word-scramble/words/${id}`,
+    RESULTS: (roomCode) => `/word-scramble/results/${roomCode}`,
   },
 
   // Quests
@@ -234,12 +243,12 @@ export const API_ENDPOINTS = {
     LEADERBOARD: (id) => `/games/${id}/leaderboard`,
   },
 
-  // Chatbot
+  // Chatbot (BE: POST /chatbot/chat, không dùng .../messages cho gửi tin)
   CHATBOT: {
     CONVERSATIONS: '/chatbot/conversations',
     MESSAGES: (conversationId) => `/chatbot/conversations/${conversationId}/messages`,
-    SEND_MESSAGE: (conversationId) => `/chatbot/conversations/${conversationId}/messages`,
-    CREATE_CONVERSATION: '/chatbot/conversations',
+    SEND_CHAT: '/chatbot/chat',
+    SEND_CHAT_STREAM: '/chatbot/chat/stream',
   },
 
   // Leaderboard (backend: GET /api/leaderboard?type=weekly|monthly|all_time)
@@ -271,6 +280,8 @@ export const ROUTES = {
     ENTERTAINMENT: '/practice/entertainment',
     /** Xáo chữ từ vựng */
     ENTERTAINMENT_WORD_SCRAMBLE: '/practice/entertainment/word-scramble',
+    /** Kết quả Xáo chữ */
+    ENTERTAINMENT_WORD_SCRAMBLE_RESULT: (roomCode) => `/practice/entertainment/word-scramble/result/${roomCode}`,
   },
   /** @deprecated Dùng ROUTES.SKILLS.ENTERTAINMENT */
   ENTER: '/practice/entertainment',
@@ -280,6 +291,7 @@ export const ROUTES = {
   LESSON_REVIEWS: (id) => `/lesson/${id}/reviews`,
   LESSON_READING_RESULT: (id) => `/lesson/reading/${id}/result`,
   PRACTICE: '/practice',
+  MOCK_TEST_HISTORY: '/practice/mock-test/history',
   QUESTS: '/quests',
   ACHIEVEMENTS: '/achievements',
   LESSON_DETAIL: {
@@ -314,6 +326,7 @@ export const ROUTES = {
   MANAGE_WORD_SCRAMBLE: (userId) => `/mod/${encodeURIComponent(String(userId))}/word-scramble`,
   MANAGE_ENTERTAINMENT: (userId) => `/mod/${encodeURIComponent(String(userId))}/entertainment`,
   MANAGE_ACHIEVEMENTS: (userId) => `/mod/${encodeURIComponent(String(userId))}/achievements`,
+  MANAGE_MOCK_TESTS: (userId) => `/mod/${encodeURIComponent(String(userId))}/mock-tests`,
 }
 
 /** Phần path sau /mod/:userId (vd. `/lessons`); null nếu không phải route mod */

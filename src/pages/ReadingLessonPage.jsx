@@ -4,20 +4,41 @@ import { useTranslation } from 'react-i18next'
 import { useReadingLesson } from '../hooks/useReadingLesson'
 import { formatTime } from '../utils/dateTime'
 import { AlertModal } from '../components/ui/common/AlertModal'
+import { MockTestSidebar } from '../components/layout/MockTestSidebar'
 
 export function ReadingLessonPage() {
   const { t } = useTranslation()
   const { id } = useParams()
   const location = useLocation()
-  const [rightBarOpen, setRightBarOpen] = useState(false)
-
   const isPractice = location.pathname.startsWith('/practice/')
   const backLink = isPractice ? '/practice/reading' : '/lesson?skill=reading'
 
+  const [rightBarOpen, setRightBarOpen] = useState(false)
+
+  const [isMockTest, setIsMockTest] = useState(false)
+  
+  useEffect(() => {
+    const data = localStorage.getItem('engsocial_mock_test')
+    if (data) {
+      const parsed = JSON.parse(data)
+      const isInTest = parsed.lessons.some(l => l.id === id)
+      if (isInTest) {
+        setIsMockTest(true)
+      } else {
+        // If we are in /practice but the lesson is not part of the current mock test, 
+        // we might want to clear it or just not trigger mock test mode.
+        // For now, let's just not trigger it.
+        setIsMockTest(false)
+      }
+    } else {
+      setIsMockTest(false)
+    }
+  }, [id])
+
   // Default: keep right panel closed when entering/reloading a lesson.
   useEffect(() => {
-    setRightBarOpen(false)
-  }, [id])
+    setRightBarOpen(isMockTest) // Auto-open right bar in mock test
+  }, [id, isMockTest])
   const {
     content,
     loading,
@@ -47,6 +68,7 @@ export function ReadingLessonPage() {
     setShowHint,
     showIncompleteModal,
     closeIncompleteModal,
+    completingLesson,
     completeMessage,
     showConfirmModal,
     setShowConfirmModal,
@@ -73,6 +95,12 @@ export function ReadingLessonPage() {
     showNextPages,
   } = useReadingLesson(id, t)
 
+  useEffect(() => {
+    if (location.state?.questionIdx !== undefined && content) {
+      handlePageChange(location.state.questionIdx + 1)
+    }
+  }, [location.state?.questionIdx, content])
+
   if (loading) {
     return (
       <div className="flex justify-center items-center min-h-[60vh]">
@@ -93,7 +121,8 @@ export function ReadingLessonPage() {
   return (
     <>
       <main className="max-w-[1600px] mx-auto px-6 py-6 flex flex-col lg:flex-row gap-6 min-h-[calc(100vh-64px)]">
-      {/* Left Sidebar - ~200px, can shrink */}
+      {/* Left Sidebar - Hidden in Mock Test */}
+      {!isMockTest && (
       <aside className="w-full lg:w-[300px] lg:min-w-[240px] lg:shrink lg:basis-[300px] space-y-6 overflow-y-auto pr-2 pb-6 custom-scrollbar">
         {/* Lesson Info Card */}
         <div className="bg-card-dark rounded-2xl p-6 border border-border-dark shadow-xl">
@@ -177,6 +206,7 @@ export function ReadingLessonPage() {
           </p>
         </div>
       </aside>
+      )}
 
       {/* Main Content Area */}
       <div className="flex-1 min-w-0 flex flex-col gap-6 overflow-hidden">
@@ -308,30 +338,35 @@ export function ReadingLessonPage() {
                     {t('readingLesson.questionCount', { current: currentQuestion + 1, total: totalQuestions })}
                   </h3>
                 </div>
-                <div className="flex items-center gap-3">
-                  {completeMessage && <span className="text-xs text-emerald-400">{completeMessage}</span>}
-                  <button
-                    type="button"
-                    onClick={() => setShowHint((v) => !v)}
-                    title={t('readingLesson.hint')}
-                    className={`h-9 w-9 inline-flex items-center justify-center rounded-lg border transition-all ${showHint ? 'bg-amber-500/20 text-amber-400 border-amber-500/40' : 'border-border-dark text-gray-500 hover:text-amber-400 hover:border-amber-500/30'}`}
-                  >
-                    <span className="material-symbols-outlined text-lg">lightbulb</span>
-                  </button>
-                  <div className={`h-9 inline-flex items-center gap-2 px-3 rounded-lg border font-mono font-bold text-sm ${(countdownSeconds ?? 1) <= 0 ? 'bg-red-500/20 text-red-400 border-red-500/30' : 'bg-red-500/10 text-red-400 border-red-500/20'}`}>
-                    <span className="material-symbols-outlined text-base">timer</span>
-                    <span>{countdownSeconds != null ? formatTime(Math.max(0, countdownSeconds)) : '--:--'}</span>
-                    {(countdownSeconds ?? 1) <= 0 && <span className="text-[10px] ml-1">{t('readingLesson.timeUp')}</span>}
+                  <div className="flex items-center gap-3">
+                    {!isMockTest && (
+                      <button
+                        type="button"
+                        onClick={() => setShowHint((v) => !v)}
+                        title={t('readingLesson.hint')}
+                        className={`h-9 w-9 inline-flex items-center justify-center rounded-lg border transition-all ${showHint ? 'bg-amber-500/20 text-amber-400 border-amber-500/40' : 'border-border-dark text-gray-500 hover:text-amber-400 hover:border-amber-500/30'}`}
+                      >
+                        <span className="material-symbols-outlined text-lg">lightbulb</span>
+                      </button>
+                    )}
+                    {!isMockTest && (
+                      <div className={`h-9 inline-flex items-center gap-2 px-3 rounded-lg border font-mono font-bold text-sm ${(countdownSeconds ?? 1) <= 0 ? 'bg-red-500/20 text-red-400 border-red-500/30' : 'bg-red-500/10 text-red-400 border-red-500/20'}`}>
+                        <span className="material-symbols-outlined text-base">timer</span>
+                        <span>{countdownSeconds != null ? formatTime(Math.max(0, countdownSeconds)) : '--:--'}</span>
+                        {(countdownSeconds ?? 1) <= 0 && <span className="text-[10px] ml-1">{t('readingLesson.timeUp')}</span>}
+                      </div>
+                    )}
+                    {!isMockTest && (
+                      <button
+                        type="button"
+                        onClick={handleComplete}
+                        disabled={completingLesson}
+                        className="h-9 px-4 inline-flex items-center justify-center rounded-lg text-sm font-semibold bg-primary/20 text-primary border border-primary/30 hover:bg-primary/30 disabled:opacity-60 disabled:cursor-not-allowed"
+                      >
+                        {completingLesson ? '...' : t('readingLesson.submit')}
+                      </button>
+                    )}
                   </div>
-                  <button
-                    type="button"
-                    onClick={handleComplete}
-                    disabled={completingLesson}
-                    className="h-9 px-4 inline-flex items-center justify-center rounded-lg text-sm font-semibold bg-primary/20 text-primary border border-primary/30 hover:bg-primary/30 disabled:opacity-60 disabled:cursor-not-allowed"
-                  >
-                    {completingLesson ? '...' : t('readingLesson.submit')}
-                  </button>
-                </div>
               </div>
               <div className="mb-8">
                 <p className="text-base font-semibold text-white mb-6">{question?.question || t('readingLesson.chooseAnswer')}</p>
@@ -384,7 +419,7 @@ export function ReadingLessonPage() {
                       >
                         {t('readingLesson.next')} <span className="material-symbols-outlined text-sm">arrow_forward</span>
                       </button>
-                    ) : (
+                    ) : !isMockTest && (
                       <button
                         type="button"
                         onClick={handleSubmit}
@@ -497,9 +532,8 @@ export function ReadingLessonPage() {
         </div>
       </div>
 
-      {/* Right Sidebar - ~200px, can shrink */}
-      {rightBarOpen ? (
-      <aside className="w-full lg:w-[300px] lg:min-w-[240px] lg:shrink lg:basis-[300px] space-y-6 overflow-y-auto custom-scrollbar pr-2 pb-6 relative">
+        {rightBarOpen ? (
+      <aside className="w-full lg:w-[320px] lg:min-w-[280px] lg:shrink lg:basis-[320px] space-y-6 lg:overflow-visible pr-2 pb-6 relative">
         <div className="sticky top-0 z-10 flex justify-end mb-2">
           <button
             type="button"
@@ -511,94 +545,99 @@ export function ReadingLessonPage() {
           </button>
         </div>
 
-        {/* Question Navigation Card */}
-        {questions.length > 0 && (
-          <div className="bg-card-dark rounded-2xl border border-border-dark shadow-xl overflow-hidden p-5">
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="font-bold text-xs uppercase tracking-wider text-gray-400">{t('readingLesson.questionNav') || 'Navigation'}</h3>
-              <span className="text-[10px] bg-primary/20 text-primary px-2 py-0.5 rounded-full font-bold">
-                {currentQuestion + 1} / {totalQuestions}
-              </span>
-            </div>
-            <div className="grid grid-cols-5 gap-2">
-              {questions.map((q, idx) => {
-                const isAnswered = answers[idx] != null && String(answers[idx]).trim() !== '';
-                const isCurrent = currentQuestion === idx;
-                return (
-                  <button
-                    key={idx}
-                    type="button"
-                    onClick={() => handlePageChange(idx + 1)}
-                    className={`h-9 rounded-lg text-xs font-bold transition-all flex items-center justify-center border ${
-                      isCurrent
-                        ? 'bg-primary text-white border-primary shadow-lg shadow-primary/20'
-                        : isAnswered
-                        ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/30 hover:bg-emerald-500/20'
-                        : 'bg-background-dark text-gray-400 border-border-dark hover:text-white hover:border-gray-500'
-                    }`}
-                  >
-                    {idx + 1}
-                  </button>
-                );
-              })}
-            </div>
-          </div>
-        )}
-        {/* Vocabulary Card - one word at a time with prev/next */}
-        {vocabularyList.length > 0 && (
-          <div className="bg-card-dark rounded-2xl border border-border-dark shadow-xl overflow-hidden">
-            <div className="p-4 bg-background-dark border-b border-border-dark flex justify-between items-center">
-              <h3 className="font-bold text-xs uppercase tracking-wider text-gray-400">{t('readingLesson.vocabFromReading')}</h3>
-              <span className="text-[10px] bg-emerald-500/20 text-emerald-400 px-2 py-0.5 rounded-full font-bold">
-                {Math.min(vocabIndex + 1, vocabularyList.length)} / {vocabularyList.length}
-              </span>
-            </div>
-            <div className="p-5">
-              <div className="flex items-center justify-between gap-2 mb-4">
-                <button
-                  type="button"
-                  onClick={() => setVocabIndex((i) => Math.max(0, i - 1))}
-                  disabled={vocabIndex === 0}
-                  className="p-2 rounded-lg bg-background-dark border border-border-dark text-gray-400 hover:text-white disabled:opacity-40 disabled:cursor-not-allowed transition-all"
-                  title={t('readingLesson.prevWord')}
-                >
-                  <span className="material-symbols-outlined">chevron_left</span>
-                </button>
-                <div className="flex-1 text-center min-w-0">
-                  <h4 className="text-lg font-black text-primary truncate" title={vocabularyList[vocabIndex]?.word}>
-                    {vocabularyList[vocabIndex]?.word || '—'}
-                  </h4>
-                  <span className="text-[10px] font-medium text-gray-400">{vocabularyList[vocabIndex]?.phonetic || ''}</span>
+        {isMockTest ? (
+          <MockTestSidebar currentAnswers={answers} currentLessonId={id} />
+        ) : (
+          <div className="space-y-6">
+            {/* Question Navigation Card */}
+            {questions.length > 0 && (
+              <div className="bg-card-dark rounded-2xl border border-border-dark shadow-xl overflow-hidden p-5">
+                <div className="flex items-center justify-between mb-4">
+                  <h3 className="font-bold text-xs uppercase tracking-wider text-gray-400">{t('readingLesson.questionNav') || 'Navigation'}</h3>
+                  <span className="text-[10px] bg-primary/20 text-primary px-2 py-0.5 rounded-full font-bold">
+                    {currentQuestion + 1} / {totalQuestions}
+                  </span>
                 </div>
-                <button
-                  type="button"
-                  onClick={() => setVocabIndex((i) => Math.min(vocabularyList.length - 1, i + 1))}
-                  disabled={vocabIndex >= vocabularyList.length - 1}
-                  className="p-2 rounded-lg bg-background-dark border border-border-dark text-gray-400 hover:text-white disabled:opacity-40 disabled:cursor-not-allowed transition-all"
-                  title={t('readingLesson.nextWord')}
-                >
-                  <span className="material-symbols-outlined">chevron_right</span>
-                </button>
-              </div>
-              <div className="space-y-4">
-                <div>
-                  <span className="block text-[10px] font-bold text-gray-400 uppercase mb-1">{t('readingLesson.meaning')}</span>
-                  <p className="text-sm font-medium text-white">{vocabularyList[vocabIndex]?.meaning || vocabularyList[vocabIndex]?.meaningVi || '—'}</p>
+                <div className="grid grid-cols-5 gap-2">
+                  {questions.map((q, idx) => {
+                    const isAnswered = answers[idx] != null && String(answers[idx]).trim() !== '';
+                    const isCurrent = currentQuestion === idx;
+                    return (
+                      <button
+                        key={idx}
+                        type="button"
+                        onClick={() => handlePageChange(idx + 1)}
+                        className={`h-9 rounded-lg text-xs font-bold transition-all flex items-center justify-center border ${
+                          isCurrent
+                            ? 'bg-primary text-white border-primary shadow-lg shadow-primary/20'
+                            : isAnswered
+                            ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/30 hover:bg-emerald-500/20'
+                            : 'bg-background-dark text-gray-400 border-border-dark hover:text-white hover:border-gray-500'
+                        }`}
+                      >
+                        {idx + 1}
+                      </button>
+                    );
+                  })}
                 </div>
               </div>
-              <div className="flex gap-2 mt-5">
-                <button type="button" className="flex-1 py-2 rounded-lg bg-background-dark border border-border-dark text-[10px] font-bold hover:bg-gray-700 transition-colors">
-                  {t('readingLesson.known')}
-                </button>
-                <button type="button" className="flex-1 py-2 rounded-lg bg-primary text-white text-[10px] font-bold hover:brightness-110 transition-colors shadow-md">
-                  {t('readingLesson.saveFlashcard')}
-                </button>
+            )}
+
+            {/* Vocabulary Card */}
+            {vocabularyList.length > 0 && (
+              <div className="bg-card-dark rounded-2xl border border-border-dark shadow-xl overflow-hidden">
+                <div className="p-4 bg-background-dark border-b border-border-dark flex justify-between items-center">
+                  <h3 className="font-bold text-xs uppercase tracking-wider text-gray-400">{t('readingLesson.vocabFromReading')}</h3>
+                  <span className="text-[10px] bg-emerald-500/20 text-emerald-400 px-2 py-0.5 rounded-full font-bold">
+                    {Math.min(vocabIndex + 1, vocabularyList.length)} / {vocabularyList.length}
+                  </span>
+                </div>
+                <div className="p-5">
+                  <div className="flex items-center justify-between gap-2 mb-4">
+                    <button
+                      type="button"
+                      onClick={() => setVocabIndex((i) => Math.max(0, i - 1))}
+                      disabled={vocabIndex === 0}
+                      className="p-2 rounded-lg bg-background-dark border border-border-dark text-gray-400 hover:text-white disabled:opacity-40 disabled:cursor-not-allowed transition-all"
+                      title={t('readingLesson.prevWord')}
+                    >
+                      <span className="material-symbols-outlined">chevron_left</span>
+                    </button>
+                    <div className="flex-1 text-center min-w-0">
+                      <h4 className="text-lg font-black text-primary truncate" title={vocabularyList[vocabIndex]?.word}>
+                        {vocabularyList[vocabIndex]?.word || '—'}
+                      </h4>
+                      <span className="text-[10px] font-medium text-gray-400">{vocabularyList[vocabIndex]?.phonetic || ''}</span>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => setVocabIndex((i) => Math.min(vocabularyList.length - 1, i + 1))}
+                      disabled={vocabIndex >= vocabularyList.length - 1}
+                      className="p-2 rounded-lg bg-background-dark border border-border-dark text-gray-400 hover:text-white disabled:opacity-40 disabled:cursor-not-allowed transition-all"
+                      title={t('readingLesson.nextWord')}
+                    >
+                      <span className="material-symbols-outlined">chevron_right</span>
+                    </button>
+                  </div>
+                  <div className="space-y-4">
+                    <div>
+                      <span className="block text-[10px] font-bold text-gray-400 uppercase mb-1">{t('readingLesson.meaning')}</span>
+                      <p className="text-sm font-medium text-white">{vocabularyList[vocabIndex]?.meaning || vocabularyList[vocabIndex]?.meaningVi || '—'}</p>
+                    </div>
+                  </div>
+                  <div className="flex gap-2 mt-5">
+                    <button type="button" className="flex-1 py-2 rounded-lg bg-background-dark border border-border-dark text-[10px] font-bold hover:bg-gray-700 transition-colors">
+                      {t('readingLesson.known')}
+                    </button>
+                    <button type="button" className="flex-1 py-2 rounded-lg bg-primary text-white text-[10px] font-bold hover:brightness-110 transition-colors shadow-md">
+                      {t('readingLesson.saveFlashcard')}
+                    </button>
+                  </div>
+                </div>
               </div>
-            </div>
+            )}
           </div>
         )}
-
-
       </aside>
       ) : (
         <div className="hidden lg:flex fixed right-6 top-1/2 -translate-y-1/2 z-20">
