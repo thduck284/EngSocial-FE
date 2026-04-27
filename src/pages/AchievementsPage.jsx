@@ -8,9 +8,10 @@ import { useAchievementsCatalog } from '../hooks/useAchievementsCatalog'
 
 /** @param {{ embedded?: boolean }} props — embedded: trong khu /mod/:userId (không có AppHeader) */
 export function AchievementsPage({ embedded = false }) {
-  const { t } = useTranslation()
-  const { isModerator, isAdmin } = useAuth()
-  const canManage = isModerator || isAdmin
+  const { t, i18n } = useTranslation()
+  const { isModerator } = useAuth()
+  /** Trang /achievements: admin như user; quản catalog trong /mod/.../achievements (moderator). */
+  const canManage = isModerator
 
   const {
     categories,
@@ -26,11 +27,7 @@ export function AchievementsPage({ embedded = false }) {
 
     setActiveAchievementId,
 
-    addOpen,
-    setAddOpen,
-    addForm,
-    setAddForm,
-    addAchievementToActiveCategory,
+    addModalSuggestions,
 
     editOpen,
     setEditOpen,
@@ -41,7 +38,7 @@ export function AchievementsPage({ embedded = false }) {
 
     deleteActiveAchievement,
     goToAchievementLink,
-  } = useAchievementsCatalog()
+  } = useAchievementsCatalog(t, i18n.language)
 
   return (
     <main
@@ -117,20 +114,6 @@ export function AchievementsPage({ embedded = false }) {
               onSelectCategory={selectCategory}
             />
 
-            {canManage ? (
-              <button
-                type="button"
-                onClick={() => setAddOpen(true)}
-                className="w-full rounded-xl border border-emerald-400/30 bg-emerald-500/15 px-3 py-2.5 text-sm font-semibold text-emerald-100 hover:bg-emerald-500/20 hover:border-emerald-400/50 focus:outline-none focus:ring-2 focus:ring-emerald-400/60 transition-colors flex items-center justify-center gap-2"
-              >
-                <span className="material-symbols-outlined text-[18px]">
-                  add_circle
-                </span>
-                {t('achievementsPage.addAchievement', {
-                  defaultValue: 'Thêm achievement',
-                })}
-              </button>
-            ) : null}
           </div>
 
           <p className="text-[11px] text-slate-400 mb-2">
@@ -148,10 +131,11 @@ export function AchievementsPage({ embedded = false }) {
           />
         </section>
 
-        <section className="lg:col-span-6 bg-gradient-to-br from-slate-900 via-slate-950 to-black border border-slate-800/80 rounded-2xl p-5 h-full min-h-0 shadow-[0_24px_60px_rgba(15,23,42,0.9)] overflow-hidden">
+        <section className="lg:col-span-6 bg-gradient-to-br from-slate-900 via-slate-950 to-black border border-slate-800/80 rounded-2xl p-5 h-full min-h-0 shadow-[0_24px_60px_rgba(15,23,42,0.9)] overflow-y-auto overflow-x-hidden min-h-0 custom-scroll-thin">
           <AchievementDetails
             t={t}
             achievement={achievement}
+            category={!achievement ? activeCategory : undefined}
             onGoToLink={goToAchievementLink}
             onEdit={canManage ? openEditForAchievement : undefined}
             onDelete={canManage ? deleteActiveAchievement : undefined}
@@ -160,37 +144,24 @@ export function AchievementsPage({ embedded = false }) {
         </section>
       </div>
 
-      {canManage && (
-        <>
-          <AchievementFormModal
-            open={addOpen}
-            title={t('achievementsPage.addAchievement', {
-              defaultValue: 'Thêm achievement',
-            })}
-            subtitle={`Danh mục: ${activeCategory?.title || ''}`}
-            accent="emerald"
-            form={addForm}
-            setForm={setAddForm}
-            onClose={() => setAddOpen(false)}
-            onSubmit={addAchievementToActiveCategory}
-            submitText="Thêm"
-          />
-
-          <AchievementFormModal
-            open={editOpen}
-            title={t('achievementsPage.editAchievement', {
-              defaultValue: 'Chỉnh sửa achievement',
-            })}
-            subtitle={`Danh mục: ${activeCategory?.title || ''}`}
-            accent="amber"
-            form={editForm}
-            setForm={setEditForm}
-            onClose={() => setEditOpen(false)}
-            onSubmit={saveEditAchievement}
-            submitText="Lưu"
-          />
-        </>
-      )}
+      {canManage ? (
+        <AchievementFormModal
+          open={editOpen}
+          title={t('achievementsPage.editAchievement', {
+            defaultValue: 'Chỉnh sửa achievement',
+          })}
+          subtitle={`Danh mục: ${activeCategory?.title || ''}`}
+          accent="amber"
+          form={editForm}
+          setForm={setEditForm}
+          onClose={() => setEditOpen(false)}
+          onSubmit={saveEditAchievement}
+          submitText={t('achievementsPage.submitSave', { defaultValue: 'Lưu' })}
+          variant="edit"
+          locale={i18n.language}
+          suggestions={addModalSuggestions}
+        />
+      ) : null}
     </main>
   )
 }

@@ -5,7 +5,7 @@ import { useTranslation } from 'react-i18next'
 import { useAuth } from '../../context/AuthContext'
 import { formatPostTime } from '../../utils/dateTime'
 import { ROUTES, API_ENDPOINTS, buildApiUrl, POST_REACTION_TYPES, REACTION_TYPE_TO_EMOJI } from '../../constants'
-import { uploadService } from '../../services'
+import { uploadService, reportService } from '../../services'
 import { searchGiphy, hasGiphyKey } from '../../services/giphy.service'
 import { ReactionsModal } from '../ui/post/ReactionsModal'
 import { PostCommentsSectionBase } from '../ui/post/PostCommentsSectionBase'
@@ -19,6 +19,7 @@ import { usePostReactionPicker, useDashboardPostComments } from '../../hooks/use
 import { PostShareModal } from '../ui/post/PostShareModal'
 import { formatReactionCount, getPostReactionTotal } from '../../utils/post'
 import { AlertModal } from '../ui/common/AlertModal'
+import { ReportContentModal } from '../ui/common/ReportContentModal'
 import { getPostVisibilityLabel, normalizeMentions } from '../../utils/post'
 import { PostInteractionsModal } from '../ui/post/PostInteractionsModal'
 import { PostDetailModal } from '../ui/post/PostDetailModal'
@@ -62,6 +63,7 @@ export function DashboardPostCard({
   const [showInteractionsModal, setShowInteractionsModal] = useState(false)
   const [interactionsType, setInteractionsType] = useState('comments') // 'comments' | 'shares'
   const [showDetailModal, setShowDetailModal] = useState(false)
+  const [showReportModal, setShowReportModal] = useState(false)
   if (!post) return null
 
   const postId = post?.id ?? post?._id
@@ -200,6 +202,7 @@ export function DashboardPostCard({
     onDeletePost,
     isSavedPost,
     t,
+    onRequestReportPost: () => setShowReportModal(true),
   })
   const canSubmitEdit =
     editContent.trim().length > 0 ||
@@ -796,6 +799,19 @@ export function DashboardPostCard({
         onToggleLike={handleLikeClick}
         onUpdatePost={onUpdatePost}
         likeLoading={likeLoading}
+      />
+      <ReportContentModal
+        open={showReportModal}
+        titleKey="report.titlePost"
+        onClose={() => setShowReportModal(false)}
+        onSubmit={async ({ reason, details }) => {
+          await reportService.submitReport({
+            targetType: 'post',
+            targetId: String(postId),
+            reason,
+            details,
+          })
+        }}
       />
     </>
   )

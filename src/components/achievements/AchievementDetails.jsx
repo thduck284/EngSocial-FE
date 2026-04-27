@@ -1,12 +1,51 @@
+import { useTranslation } from 'react-i18next'
+import {
+  getAchievementHowToPreview,
+  getAchievementProgressState,
+  pickAchievementBadgeName,
+  pickAchievementName,
+} from '../../utils/achievementI18n.js'
+
 export function AchievementDetails({
   t,
   achievement,
+  category,
   onGoToLink,
   onEdit,
   onDelete,
   canManage = false,
 }) {
+  const { i18n, t: tHook } = useTranslation()
+  const lng = i18n.language
+  const tr = typeof t === 'function' ? t : tHook
+  const prog = achievement ? getAchievementProgressState(achievement, tr) : { show: false }
   if (!achievement) {
+    if (category?.title) {
+      const empty = !(category.items && category.items.length)
+      return (
+        <div className="space-y-4 h-full min-h-0 overflow-hidden">
+          <div>
+            <h3 className="text-xl font-bold text-white tracking-tight">
+              {category.title}
+            </h3>
+            {category.description ? (
+              <p className="mt-2 text-sm text-slate-300/90 leading-relaxed">
+                {category.description}
+              </p>
+            ) : null}
+          </div>
+          {empty ? (
+            <p className="text-slate-400 text-sm">
+              {t?.('achievementsPage.emptyCategory')}
+            </p>
+          ) : (
+            <p className="text-slate-400 text-sm">
+              {t?.('achievementsPage.noAchievementSelected')}
+            </p>
+          )}
+        </div>
+      )
+    }
     return (
       <div className="text-slate-400 text-sm">
         {t?.('achievementsPage.noAchievementSelected')}
@@ -15,18 +54,18 @@ export function AchievementDetails({
   }
 
   return (
-    <div className="space-y-4 h-full min-h-0 overflow-hidden">
+    <div className="space-y-4 min-h-0">
       <div className="flex items-start gap-3">
-        <div className="size-16 rounded-2xl bg-gradient-to-br from-amber-400/20 via-amber-500/5 to-transparent border border-amber-300/40 flex items-center justify-center shadow-[0_0_35px_rgba(250,204,21,0.45)]">
+        <div className="size-16 rounded-2xl bg-gradient-to-br from-amber-400/20 via-amber-500/5 to-transparent border border-amber-300/40 flex items-center justify-center shadow-[0_0_35px_rgba(250,204,21,0.45)] shrink-0">
           <span className="material-symbols-outlined text-3xl text-amber-300">
             {achievement.icon || 'emoji_events'}
           </span>
         </div>
-        <div className="min-w-0 flex-1">
+        <div className="min-w-0 flex-1 space-y-2">
           <h3 className="text-xl font-bold text-white tracking-tight">
-            {achievement.name}
+            {pickAchievementName(achievement, lng)}
           </h3>
-          <div className="mt-1 text-sm text-slate-300/90 flex flex-wrap items-center gap-2">
+          <div className="text-sm text-slate-300/90 flex flex-wrap items-center gap-2">
             {t?.('achievementsPage.rarityLabel', { defaultValue: 'Độ hiếm' }) ||
               'Độ hiếm'}
             :{' '}
@@ -38,6 +77,51 @@ export function AchievementDetails({
           </div>
         </div>
       </div>
+
+      {prog.show ? (
+        <div className="rounded-2xl border border-slate-800/80 bg-slate-950/80 p-4 w-full min-w-0">
+          <h4 className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-400 mb-2">
+            {t?.('achievementsPage.progressTitle', { defaultValue: 'Tiến độ' })}
+          </h4>
+          <div className="flex w-full min-w-0 flex-col gap-1.5">
+            <div className="flex w-full min-w-0 justify-between items-baseline gap-2 text-sm text-slate-200 leading-none">
+              <span className="tabular-nums truncate">
+                {tr?.('achievementsPage.progressFraction', {
+                  current: prog.current,
+                  goal: prog.goal,
+                  defaultValue: `${prog.current} / ${prog.goal}`,
+                })}
+              </span>
+              {prog.completed ? (
+                <span className="text-emerald-400 font-semibold inline-flex items-center gap-1 text-xs shrink-0 leading-none">
+                  <span className="material-symbols-outlined text-[18px] leading-none">check_circle</span>
+                  {tr?.('achievementsPage.progressComplete', { defaultValue: 'Hoàn thành' })}
+                </span>
+              ) : null}
+            </div>
+            <div
+              className="relative h-3 w-full min-w-0 overflow-hidden rounded-full bg-slate-800 ring-1 ring-inset ring-slate-950/80"
+              role="progressbar"
+              aria-valuenow={prog.rawProgress}
+              aria-valuemin={0}
+              aria-valuemax={prog.goal}
+            >
+              <div
+                className="absolute left-0 top-0 h-full rounded-full bg-gradient-to-r from-emerald-600 to-emerald-400 transition-[width] duration-300 ease-out"
+                style={{
+                  width: `${prog.percent}%`,
+                  minWidth: prog.percent > 0 ? '6px' : undefined,
+                }}
+              />
+            </div>
+            {prog.milestonesLine ? (
+              <p className="text-[11px] text-slate-500 leading-snug tabular-nums">
+                {prog.milestonesLine}
+              </p>
+            ) : null}
+          </div>
+        </div>
+      ) : null}
 
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
         {achievement.link?.to ? (
@@ -88,7 +172,7 @@ export function AchievementDetails({
           {t?.('achievementsPage.howTo', { defaultValue: 'Cách hoàn thành' })}
         </h4>
         <p className="text-base text-slate-100 leading-relaxed line-clamp-5">
-          {achievement.howTo}
+          {getAchievementHowToPreview(achievement, lng, t)}
         </p>
       </div>
 
@@ -117,24 +201,35 @@ export function AchievementDetails({
                     }) || 'Both'}
             </span>
           </p>
-          {achievement.badgeImage &&
-          (achievement.rewardType === 'badge' ||
-            achievement.rewardType === 'both') ? (
+          {(achievement.rewardType === 'badge' ||
+            achievement.rewardType === 'both') &&
+          (achievement.badgeImage ||
+            (achievement.badgeIcon &&
+              String(achievement.badgeIcon).trim())) ? (
             <div className="flex items-center gap-2">
               <span className="text-[11px] text-slate-400">
                 {t?.('achievementsPage.badgePreviewLabel', {
                   defaultValue: 'Badge:',
                 })}
               </span>
-              <img
-                src={
-                  typeof achievement.badgeImage === 'string'
-                    ? achievement.badgeImage
-                    : ''
-                }
-                alt={achievement.badgeName || 'badge'}
-                className="w-8 h-8 rounded-full border border-slate-700/80 object-cover"
-              />
+              {achievement.badgeImage &&
+              !String(achievement.badgeImage).startsWith('blob:') ? (
+                <img
+                  src={
+                    typeof achievement.badgeImage === 'string'
+                      ? achievement.badgeImage
+                      : ''
+                  }
+                  alt={pickAchievementBadgeName(achievement, lng) || 'badge'}
+                  className="w-8 h-8 rounded-full border border-slate-700/80 object-cover"
+                />
+              ) : achievement.badgeIcon ? (
+                <span className="inline-flex size-8 items-center justify-center rounded-full border border-amber-400/40 bg-amber-500/15 text-amber-200">
+                  <span className="material-symbols-outlined text-[22px]">
+                    {String(achievement.badgeIcon).trim() || 'military_tech'}
+                  </span>
+                </span>
+              ) : null}
             </div>
           ) : null}
         </div>

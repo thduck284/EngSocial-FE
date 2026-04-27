@@ -50,6 +50,12 @@ export { skillsService } from './skills.service.js'
 // Community
 export { communityService } from './community.service.js'
 
+// Reports (content moderation)
+export { reportService } from './report.service.js'
+
+// Admin API
+export { adminService } from './admin.service.js'
+
 // Notifications
 export { notificationsService } from './notifications.service.js'
 

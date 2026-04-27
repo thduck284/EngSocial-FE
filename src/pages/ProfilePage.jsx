@@ -12,6 +12,7 @@ import { ProfilePhotosGrid } from '../components/profile/ProfilePhotosGrid'
 import { ProfileVideosGrid } from '../components/profile/ProfileVideosGrid'
 import { ProfileSkillsTab } from '../components/profile/ProfileSkillsTab'
 import { useProfilePage, useProfilePhotos, useProfileVideos } from '../hooks/useProfile'
+import { useProfileAchievements } from '../hooks/useProfileAchievements'
 import { LogoutConfirmModal } from '../components/layout/LogoutConfirmModal'
 
 export function ProfilePage() {
@@ -19,7 +20,6 @@ export function ProfilePage() {
     t,
     navigate,
     user,
-    raw,
     profileSkillStats,
     profileFriends,
     sortedProfileFriends,
@@ -45,8 +45,6 @@ export function ProfilePage() {
     profilePostsLoading,
     profilePostsError,
     filteredFriends,
-    goalsDone,
-    goalsTotal,
     handleChange,
     handleSave,
     handleCancel,
@@ -57,6 +55,9 @@ export function ProfilePage() {
     handleSaveAvatar,
     setProfileTab,
   } = useProfilePage()
+
+  const { items: profileAchievementItems, loading: profileAchievementsLoading } =
+    useProfileAchievements()
 
   const [logoutConfirmOpen, setLogoutConfirmOpen] = useState(false)
   const activeOnlineCount = (sortedProfileFriends || []).filter(f => f.isOnline).length
@@ -154,9 +155,8 @@ export function ProfilePage() {
             <ProfileLeftStatsSection
               t={t}
               profileSkillStats={profileSkillStats}
-              raw={raw}
-              goalsDone={goalsDone}
-              goalsTotal={goalsTotal}
+              achievementItems={profileAchievementItems}
+              achievementsLoading={profileAchievementsLoading}
             />
           )}
           </div>
@@ -249,9 +249,8 @@ export function ProfilePage() {
         <ProfileBottomStatsSection
           t={t}
           profileSkillStats={profileSkillStats}
-          raw={raw}
-          goalsDone={goalsDone}
-          goalsTotal={goalsTotal}
+          achievementItems={profileAchievementItems}
+          achievementsLoading={profileAchievementsLoading}
         />
       )}
 

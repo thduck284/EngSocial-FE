@@ -39,7 +39,6 @@ export function WordScrambleMultiLobby({ lobby, onBack, onInviteClick }) {
     setReady,
     sendChat,
     startGame,
-    leaveRoom,
     inviteUrl,
   } = lobby
 
@@ -48,7 +47,6 @@ export function WordScrambleMultiLobby({ lobby, onBack, onInviteClick }) {
   }, [chatMessages.length])
 
   const handleBack = () => {
-    leaveRoom()
     onBack()
   }
 

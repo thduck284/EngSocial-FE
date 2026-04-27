@@ -5,13 +5,14 @@ import { useAuth } from '../context/AuthContext'
 import { useDashboardSocket, useStudyGroups } from '../hooks'
 import { ROUTES } from '../constants'
 import { DEFAULT_AVATAR } from '../constants/ui'
-import { userService, friendsService } from '../services'
+import { userService, friendsService, reportService } from '../services'
 import { useProfilePosts, useProfilePhotos, useProfileVideos } from '../hooks/useProfile'
 import { ProfilePostsList } from '../components/profile/ProfilePostsList'
 import { ProfilePhotosGrid } from '../components/profile/ProfilePhotosGrid'
 import { ProfileVideosGrid } from '../components/profile/ProfileVideosGrid'
 import { ProfileSkillsTab } from '../components/profile/ProfileSkillsTab'
 import { ProfileFriendsListModal } from '../components/profile/ProfileFriendsListModal'
+import { ReportContentModal } from '../components/ui/common/ReportContentModal'
 import { normalizeFriendsFromResponse, sortFriendsByOnlineAndLastActive } from '../utils/profile'
 
 function formatJoinedAt(createdAt) {
@@ -71,6 +72,7 @@ export function UserProfilePage() {
   const [myConnectedFriendIds, setMyConnectedFriendIds] = useState(null)
   const [myPendingSentUserIds, setMyPendingSentUserIds] = useState(null)
   const friendsMenuRef = useRef(null)
+  const [showReportUserModal, setShowReportUserModal] = useState(false)
 
   const viewerId = currentUser?.id || currentUser?._id
 
@@ -480,13 +482,16 @@ export function UserProfilePage() {
                   </span>
                 )}
               </div>
-              <button
-                type="button"
-                className="w-full text-gray-500 hover:text-red-400 py-2 text-xs flex items-center justify-center gap-1 transition-colors"
-              >
-                <span className="material-symbols-outlined text-sm">report</span>
-                {t('userProfile.report')}
-              </button>
+              {viewerId && userId && String(viewerId) !== String(userId) ? (
+                <button
+                  type="button"
+                  onClick={() => setShowReportUserModal(true)}
+                  className="w-full text-gray-500 hover:text-red-400 py-2 text-xs flex items-center justify-center gap-1 transition-colors"
+                >
+                  <span className="material-symbols-outlined text-sm">report</span>
+                  {t('userProfile.report')}
+                </button>
+              ) : null}
             </div>
           </div>
 
@@ -701,6 +706,19 @@ export function UserProfilePage() {
           </div>
         </div>
       </div>
+      <ReportContentModal
+        open={showReportUserModal}
+        titleKey="report.titleUser"
+        onClose={() => setShowReportUserModal(false)}
+        onSubmit={async ({ reason, details }) => {
+          await reportService.submitReport({
+            targetType: 'user',
+            targetId: String(userId),
+            reason,
+            details,
+          })
+        }}
+      />
     </main>
   )
 }

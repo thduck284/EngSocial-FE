@@ -19,8 +19,9 @@ export function SkillPracticePage() {
   const { pathname } = useLocation()
   const { t } = useTranslation()
   const navigate = useNavigate()
-  const { user, isModerator, isAdmin } = useAuth()
-  const canAddPractice = isModerator || isAdmin
+  const { user, isModerator } = useAuth()
+  /** Admin trên /practice như user; CRUD qua /mod (moderator). */
+  const canAddPractice = isModerator
 
   const [onlineUserIds, setOnlineUserIds] = useState(new Set())
   const studyGroups = useStudyGroups(setOnlineUserIds)

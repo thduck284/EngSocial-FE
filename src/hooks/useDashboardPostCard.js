@@ -37,6 +37,7 @@ export function useDashboardPostCard({
   onDeletePost,
   isSavedPost,
   t,
+  onRequestReportPost,
 }) {
   const normalizeDocs = (docs) =>
     (Array.isArray(docs) ? docs : []).map((d) =>
@@ -265,8 +266,7 @@ export function useDashboardPostCard({
 
   const handleReportPost = () => {
     if (!postId || isOwnPost || postActionLoading) return
-    // TODO: replace with backend report-post API when available
-    window.alert(t('dashboard.reportPostSoon') || 'Report submitted. Thank you!')
+    if (typeof onRequestReportPost === 'function') onRequestReportPost()
   }
 
   const handleToggleSavePost = () => {

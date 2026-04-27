@@ -32,7 +32,7 @@ function SortableTh({ columnKey, label, activeKey, sortDir, onSort, align, t }) 
   )
 }
 
-const TYPE_ORDER = { one_time: 0, daily: 1, weekly: 2, monthly: 3, special: 4 }
+const TYPE_ORDER = { one_time: 0, daily: 1, weekly: 2, special: 3 }
 
 function typeLabel(t, type) {
   const key = {
@@ -43,6 +43,24 @@ function typeLabel(t, type) {
     special: 'quests.oneTime',
   }[type]
   return key ? t(key) : type || '—'
+}
+
+/** Chuẩn hóa document PeriodicQuestPool cho bảng (title/type hiển thị). */
+function mapPeriodicPoolRow(raw, t) {
+  const id = raw.id ?? raw._id?.toString?.()
+  const periodType = raw.periodType || 'daily'
+  const periodLabel = typeLabel(t, periodType)
+  const title = `${periodLabel} · ${raw.category || '—'} · ${raw.skill || 'all'} (${raw.targetMin ?? '?'}–${raw.targetMax ?? '?'})`
+  return {
+    ...raw,
+    id,
+    type: periodType,
+    periodType,
+    title,
+    xpReward: raw.xpReward ?? 0,
+    status: raw.status || 'active',
+    description: '',
+  }
 }
 
 export function ManageQuestsListPage() {
@@ -69,10 +87,11 @@ export function ManageQuestsListPage() {
     setError('')
     setLoading(true)
     questsService
-      .getQuests({ status: 'all', limit: 500 })
+      .getPool()
       .then((res) => {
         const data = res?.data
-        setRows(Array.isArray(data) ? data : [])
+        const arr = Array.isArray(data) ? data : []
+        setRows(arr.map((d) => mapPeriodicPoolRow(d, t)))
       })
       .catch(() => {
         setRows([])
@@ -96,7 +115,21 @@ export function ManageQuestsListPage() {
     const q = searchQuery.trim().toLowerCase()
     if (q) {
       list = list.filter((r) => {
-        const hay = [r.title, r.description, r.type, r.status].filter(Boolean).join(' ').toLowerCase()
+        const hay = [
+          r.title,
+          r.description,
+          r.type,
+          r.status,
+          r.category,
+          r.skill,
+          r.periodType,
+          r.minScorePercent != null ? String(r.minScorePercent) : '',
+          r.targetMin != null ? String(r.targetMin) : '',
+          r.targetMax != null ? String(r.targetMax) : '',
+        ]
+          .filter(Boolean)
+          .join(' ')
+          .toLowerCase()
         return hay.includes(q)
       })
     }
@@ -179,7 +212,7 @@ export function ManageQuestsListPage() {
     const oldItem = itemToDelete
     setItemToDelete(null)
     try {
-      await questsService.delete(id)
+      await questsService.deletePool(String(id))
       load()
     } catch {
       setItemToDelete(oldItem)
@@ -247,7 +280,6 @@ export function ManageQuestsListPage() {
               style={{ backgroundImage: selectChevron }}
             >
               <option value="all">{t('manageWordScramble.all')}</option>
-              <option value="one_time">{t('manageQuests.typeOneTime')}</option>
               <option value="daily">{t('manageQuests.typeDaily')}</option>
               <option value="weekly">{t('manageQuests.typeWeekly')}</option>
             </select>

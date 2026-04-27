@@ -12,6 +12,14 @@ export const challengesService = {
     const query = q.toString()
     return apiClient.get(API_ENDPOINTS.CHALLENGES.LIST + (query ? `?${query}` : ''))
   },
+  /** Tiến độ user trên từng challenge (cần đăng nhập) */
+  getMine: async (params = {}) => {
+    const q = new URLSearchParams()
+    if (params.page != null) q.set('page', String(params.page))
+    if (params.limit != null) q.set('limit', String(params.limit))
+    const query = q.toString()
+    return apiClient.get(API_ENDPOINTS.CHALLENGES.ME + (query ? `?${query}` : ''))
+  },
   joinChallenge: async (id) => {
     return apiClient.post(API_ENDPOINTS.CHALLENGES.JOIN(id))
   },

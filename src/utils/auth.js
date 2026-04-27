@@ -1,3 +1,5 @@
+import { ROUTES } from '../constants'
+
 /**
  * Kiểm tra đăng nhập: có token trong localStorage hoặc sessionStorage.
  */
@@ -56,4 +58,17 @@ export function isModerator() {
  */
 export function isAdmin() {
   return getStoredUserRole() === 'admin'
+}
+
+/**
+ * Sau khi đăng nhập / đăng ký xong: admin & moderator vào dashboard quản trị;
+ * user thường dùng `fallbackPath` (vd. `/home` hoặc `location.state.from`).
+ */
+export function getPostLoginNavigatePath(fallbackPath) {
+  const u = getStoredUser()
+  const id = u?.id ?? u?._id
+  if (id == null || id === '') return fallbackPath
+  if (u?.role === 'admin') return ROUTES.MANAGE_ADMIN_OVERVIEW(id)
+  if (u?.role === 'moderator') return ROUTES.MANAGE_OVERVIEW(id)
+  return fallbackPath
 }

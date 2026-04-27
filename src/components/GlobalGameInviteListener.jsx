@@ -19,7 +19,6 @@ export function GlobalGameInviteListener() {
 
     function attachListeners(s) {
       s.on('wordScrambleLobby:inviteReceived', (data) => {
-        alert("Frontend GLOBAL listener caught: " + JSON.stringify(data))
         setIncomingInvite(data)
       })
     }

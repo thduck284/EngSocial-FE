@@ -130,15 +130,36 @@ export const API_ENDPOINTS = {
   QUESTS: {
     LIST: '/quests',
     DETAIL: (id) => `/quests/${id}`,
+    POOL: '/quests/pool',
+    POOL_DETAIL: (poolId) => `/quests/pool/${encodeURIComponent(String(poolId))}`,
+    MY_PROGRESS: '/quests/my/progress',
+    MY_PERIOD: '/quests/my/period',
   },
 
-  // Mock tạm (gọi từ lesson, practice, quest controller)
+  /** Legacy alias: dashboard/games; bạn bè & thông báo trỏ API thật (cần đăng nhập). */
   RAW: {
     DASHBOARD: '/lessons/dashboard',
     GAMES: '/practices/games',
-    FRIENDS: '/quests/friends',
-    NOTIFICATIONS: '/quests/notifications',
-    CHATBOT: '/quests/chatbot',
+    FRIENDS: '/friends',
+    NOTIFICATIONS: '/notifications',
+    CHATBOT: '/chatbot/conversations',
+  },
+
+  /** Báo cáo nội dung (bài viết, tin nhắn, nhóm, user) — một API chung */
+  REPORTS: {
+    CREATE: '/reports',
+  },
+
+  /** Quản trị (chỉ admin trừ khi BE cho phép khác) */
+  ADMIN: {
+    USERS: '/admin/users',
+    USER_DETAIL: (userId) => `/admin/users/${encodeURIComponent(userId)}`,
+    USER_ROLE: (userId) => `/admin/users/${encodeURIComponent(userId)}/role`,
+    USER_STATUS: (userId) => `/admin/users/${encodeURIComponent(userId)}/status`,
+    USER_PASSWORD: (userId) => `/admin/users/${encodeURIComponent(userId)}/password`,
+    REPORTS: '/admin/reports',
+    REPORT_STATUS: (reportId) => `/admin/reports/${encodeURIComponent(reportId)}/status`,
+    STATS: '/admin/stats',
   },
 
   // Community
@@ -228,6 +249,7 @@ export const API_ENDPOINTS = {
   // Challenges
   CHALLENGES: {
     LIST: '/challenges',
+    ME: '/challenges/me',
     DETAIL: (id) => `/challenges/${id}`,
     JOIN: (id) => `/challenges/${id}/join`,
     LEAVE: (id) => `/challenges/${id}/leave`,
@@ -293,6 +315,7 @@ export const ROUTES = {
   PRACTICE: '/practice',
   MOCK_TEST_HISTORY: '/practice/mock-test/history',
   QUESTS: '/quests',
+  CHALLENGE: '/challenge',
   ACHIEVEMENTS: '/achievements',
   LESSON_DETAIL: {
     LISTENING: (id) => `/lesson/listening/${id}`,
@@ -315,6 +338,7 @@ export const ROUTES = {
   /**
    * Khu mod/staff: /mod/:userId/... (userId = tài khoản đang đăng nhập).
    * URL cũ /manage/* redirect về /mod/:id/* trong App.
+   * Khu admin (chỉ role admin): /adminstrator/:userId/users | .../reports
    */
   MANAGE_ROOT: (userId) => `/mod/${encodeURIComponent(String(userId))}`,
   /** Trang tổng quan khu mod (dashboard thẻ chức năng) */
@@ -327,13 +351,23 @@ export const ROUTES = {
   MANAGE_ENTERTAINMENT: (userId) => `/mod/${encodeURIComponent(String(userId))}/entertainment`,
   MANAGE_ACHIEVEMENTS: (userId) => `/mod/${encodeURIComponent(String(userId))}/achievements`,
   MANAGE_MOCK_TESTS: (userId) => `/mod/${encodeURIComponent(String(userId))}/mock-tests`,
+  /** Admin console — URL /adminstrator/... */
+  MANAGE_ADMIN_OVERVIEW: (userId) => `/adminstrator/${encodeURIComponent(String(userId))}/overview`,
+  MANAGE_ADMIN_USERS: (userId) => `/adminstrator/${encodeURIComponent(String(userId))}/users`,
+  MANAGE_ADMIN_REPORTS: (userId) => `/adminstrator/${encodeURIComponent(String(userId))}/reports`,
 }
 
-/** Phần path sau /mod/:userId (vd. `/lessons`); null nếu không phải route mod */
+/** Phần path sau /mod/:userId hoặc /adminstrator/:userId (vd. `/lessons`, `/users`); null nếu không khớp */
+export function staffPortalPathTail(pathname) {
+  if (!pathname) return null
+  const m = pathname.match(/^\/(?:mod|adminstrator)\/[^/]+(\/.*)?$/)
+  if (!m) return null
+  return m[1] || '/'
+}
+
+/** @deprecated Dùng staffPortalPathTail */
 export function modPathTail(pathname) {
-  if (!pathname || !pathname.startsWith('/mod/')) return null
-  const tail = pathname.replace(/^\/mod\/[^/]+/, '')
-  return tail || '/'
+  return staffPortalPathTail(pathname)
 }
 
 // Navigation items (for AppHeader)

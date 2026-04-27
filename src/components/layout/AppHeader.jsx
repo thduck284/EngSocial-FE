@@ -30,7 +30,12 @@ export function AppHeader() {
   const [searchParams] = useSearchParams()
   const { t } = useTranslation()
   const { user, logout, isModerator, isAdmin } = useAuth()
-  const staffWorkTo = (isAdmin || isModerator) && user?.id != null ? ROUTES.MANAGE_OVERVIEW(user.id) : null
+  const staffWorkTo =
+    (isAdmin || isModerator) && user?.id != null
+      ? isAdmin
+        ? ROUTES.MANAGE_ADMIN_OVERVIEW(user.id)
+        : ROUTES.MANAGE_OVERVIEW(user.id)
+      : null
   const avatarUrl = user?.avatar || 'https://ui-avatars.com/api/?name=' + encodeURIComponent(user?.name || 'User') + '&background=13b6ec&color=fff'
   const [notifOpen, setNotifOpen] = useState(false)
   const [avatarOpen, setAvatarOpen] = useState(false)
@@ -195,7 +200,11 @@ export function AppHeader() {
                   (to === ROUTES.PRACTICE && (location.pathname === '/practice' || location.pathname.startsWith('/practice/') || location.pathname.startsWith('/skills') || location.pathname === '/enter')) ||
                   (to === ROUTES.WORDS_NOTES && (location.pathname.startsWith('/words-notes') || location.pathname.startsWith('/topic/'))) ||
                   (to === ROUTES.QUESTS &&
-                    (location.pathname === '/quests' || /^\/mod\/[^/]+\/quests(\/|$)/.test(location.pathname))) ||
+                    (
+                      location.pathname === '/quests'
+                      || location.pathname === '/challenge'
+                      || /^\/mod\/[^/]+\/quests(\/|$)/.test(location.pathname)
+                    )) ||
                   (to === ROUTES.COMMUNITY && (location.pathname.startsWith('/community')))
                     ? 'text-primary font-semibold border-b-2 border-primary pb-1'
                     : 'text-gray-400 hover:text-primary'

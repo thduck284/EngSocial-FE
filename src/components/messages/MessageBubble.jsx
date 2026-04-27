@@ -151,10 +151,6 @@ export function MessageBubble({
                           <span className="material-symbols-outlined text-lg">forward</span>
                           {t('messages.forward')}
                         </button>
-                        <button type="button" onClick={() => handleMessageAction('report', msg)} className="w-full px-4 py-2 text-left text-sm text-gray-200 hover:bg-white/5 flex items-center gap-2">
-                          <span className="material-symbols-outlined text-lg">flag</span>
-                          {t('messages.report')}
-                        </button>
                       </div>
                     )}
                   </div>

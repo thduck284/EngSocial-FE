@@ -15,6 +15,7 @@ import {
   AddMembersToGroupModal,
   ForwardMessageModal,
 } from '../components/messages'
+import { ReportContentModal } from '../components/ui/common/ReportContentModal'
 
 export function MessagesPage() {
   const [showGroupSettingsModal, setShowGroupSettingsModal] = useState(false)
@@ -111,6 +112,10 @@ export function MessagesPage() {
     handleForwardMessage,
     forwardingToId,
     conversations,
+    reportModal,
+    closeReportModal,
+    handleAnyReport,
+    submitReportModal,
   } = api
 
   const composerProps = {
@@ -173,7 +178,7 @@ export function MessagesPage() {
         onOpenDisappearing={(conv) => { navigate(ROUTES.MESSAGES_CONVERSATION(conv.id)); setHeaderActionPanel('disappearing') }}
         onDeleteMessages={(conv) => { navigate(ROUTES.MESSAGES_CONVERSATION(conv.id)); setShowDeleteAllConfirm(true) }}
         onBlock={(conv) => conv?.otherUserId && api.handleBlockDirect(conv.otherUserId)}
-        onReport={(conv) => {}}
+        onReport={handleAnyReport}
         onLeaveGroup={(conv) => { navigate(ROUTES.MESSAGES_CONVERSATION(conv.id)); setShowLeaveConfirm(true) }}
       />
 
@@ -251,7 +256,7 @@ export function MessagesPage() {
             onDeleteAll={() => setShowDeleteAllConfirm(true)}
             onBlock={() => selected?.otherUserId && api.handleBlockDirect(selected.otherUserId)}
             onUnblock={api.handleUnblockDirect}
-            onReport={() => {}}
+            onReport={handleAnyReport}
             headerActionPanel={headerActionPanel}
             setHeaderActionPanel={setHeaderActionPanel}
             panelSearchQuery={panelSearchQuery}
@@ -307,7 +312,7 @@ export function MessagesPage() {
           downloadAttachment={downloadAttachment}
           rightBarSearchInputRef={rightBarSearchInputRef}
           onBlock={() => selected?.otherUserId && api.handleBlockDirect(selected.otherUserId)}
-          onReport={() => {}}
+          onReport={handleAnyReport}
           onOpenGroupSettings={() => setShowGroupSettingsModal(true)}
           onUploadGroupAvatar={handleUploadGroupAvatar}
           onSaveGroupName={handleSaveGroupName}
@@ -390,6 +395,12 @@ export function MessagesPage() {
         currentConversationId={selectedId}
         onForward={handleForwardMessage}
         forwarding={forwardingToId}
+      />
+      <ReportContentModal
+        open={reportModal.open}
+        titleKey={reportModal.titleKey}
+        onClose={closeReportModal}
+        onSubmit={submitReportModal}
       />
     </main>
   )

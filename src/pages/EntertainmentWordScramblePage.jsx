@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { Link, useSearchParams, useNavigate, useParams } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { ROUTES } from '../constants'
@@ -13,6 +13,7 @@ import { WordScrambleMatching } from '../components/entertainment/WordScrambleMa
 import { WordScrambleMultiLobby } from '../components/entertainment/WordScrambleMultiLobby'
 import { WordScrambleGameArena } from '../components/entertainment/WordScrambleGameArena'
 import { WordScrambleInviteBubble } from '../components/entertainment/WordScrambleInviteBubble'
+import { AlertModal } from '../components/ui/common/AlertModal'
 
 export function EntertainmentWordScramblePage() {
   const { t } = useTranslation()
@@ -31,28 +32,25 @@ export function EntertainmentWordScramblePage() {
   const [activeRoomCode, setActiveRoomCode] = useState(/** @type {string | null} */(null))
   const [actualMatchedCount, setActualMatchedCount] = useState(/** @type {number | null} */(null))
   const [pendingQuickMatchCapacity, setPendingQuickMatchCapacity] = useState(/** @type {number | null} */(null))
+  const [leaveLobbyModalOpen, setLeaveLobbyModalOpen] = useState(false)
+  const pendingAfterLeaveRef = useRef(/** @type {(() => void) | null} */ (null))
+  const leaveLobbyModalOpenRef = useRef(false)
+  leaveLobbyModalOpenRef.current = leaveLobbyModalOpen
 
   const token = getAuthToken()
   const myUserId = user?.id ?? user?._id
 
-
-
-  useEffect(() => {
-    if (!lobbyCode || !isAuthenticated) return
-    const code = lobbyCode.trim().toUpperCase()
-    if (code.length < 4) return
-    setMode('multi-private')
-    setPendingJoinCode(code)
-    setMultiPastLobby(false)
-    setPlayerCount(null)
-  }, [lobbyCode, isAuthenticated])
-
   const onJoinedWithCapacity = useCallback(
     (n) => {
       setPlayerCount(n)
-      setPendingJoinCode(null)
+      // Vào phòng qua URL /lobby/:code — giữ pendingJoinCode = mã URL.
+      // Nếu clear pendingJoinCode, hook đổi joinCode null + capacity N → effect reset socket
+      // → emit create thay vì ở phòng → crash/reconnect liên tục.
+      if (!lobbyCode) {
+        setPendingJoinCode(null)
+      }
     },
-    []
+    [lobbyCode],
   )
 
   const lobbySocketEnabled =
@@ -67,13 +65,22 @@ export function EntertainmentWordScramblePage() {
     joinCode: pendingJoinCode,
     myUserId: myUserId != null ? String(myUserId) : null,
     onMatchingStarted: () => {
-      if (mode === 'multi-quick' || mode === 'multi-private') {
-        setIsMatching(true)
-      }
+      setIsMatching(true)
+    },
+    onMatchingEnded: () => {
+      setIsMatching(false)
     },
     onGameStarted: (data) => {
-      // Capture the actual players from the lobby before it disconnects
-      const n = lobby.slots.filter(s => s != null).length || playerCount || 2
+      // Không dùng `lobby` ở đây — callback nằm trong object truyền vào useWordScrambleLobby
+      // nên `const lobby = ...` chưa gán xong → TDZ ReferenceError.
+      const slots = data?.fullRoom?.slots
+      const fromRoom =
+        Array.isArray(slots) ? slots.filter((s) => s != null).length : 0
+      const n =
+        fromRoom ||
+        (Number.isFinite(Number(data?.matchCount)) ? Number(data.matchCount) : 0) ||
+        playerCount ||
+        2
       setActualMatchedCount(n)
 
       if (data?.roomCode) {
@@ -87,6 +94,38 @@ export function EntertainmentWordScramblePage() {
     },
     onJoinedWithCapacity,
   })
+
+  /** Phòng riêng: server bật lobby.isMatching trước khi ref callback kịp sync — phải OR với state trang */
+  const showMatchingUi = isMatching || lobby.isMatching
+
+  // Đồng bộ URL /lobby/:code — phải đặt sau `lobby` (tránh TDZ "lobby before initialization").
+  useEffect(() => {
+    if (!lobbyCode || !isAuthenticated) return
+    // Đã vào game sau started — không reset lobby (tránh nhảy về lobby + tắt socket game).
+    if (multiPastLobby) return
+
+    const code = lobbyCode.trim().toUpperCase()
+    if (code.length < 4) return
+    setMode('multi-private')
+
+    const myRoom = lobby.roomCode ? String(lobby.roomCode).toUpperCase() : ''
+    // Merge phòng: server state là mã phòng còn lại, URL vẫn mã cũ — đổi URL + pending, KHÔNG reset multiPastLobby/playerCount
+    if (lobby.connected && myRoom && myRoom !== code) {
+      setPendingJoinCode(myRoom)
+      navigate(`/practice/entertainment/word-scramble/lobby/${myRoom}`, { replace: true })
+      return
+    }
+
+    // Host vừa tạo phòng rồi replace URL — đừng set pendingJoinCode/clear playerCount
+    // vì đổi props hook sẽ disconnect socket, server xóa phòng → invite: room_not_found.
+    const alreadyInThisRoom =
+      lobby.connected && myRoom && myRoom === code
+    if (alreadyInThisRoom) return
+
+    setPendingJoinCode(code)
+    setMultiPastLobby(false)
+    setPlayerCount(null)
+  }, [lobbyCode, isAuthenticated, lobby.connected, lobby.roomCode, multiPastLobby, navigate])
 
   // Khi host tạo phòng xong và có roomCode, navigate tới URL lobby nếu chưa ở đó
   useEffect(() => {
@@ -129,20 +168,85 @@ export function EntertainmentWordScramblePage() {
 
   const resetDifficultyOnly = () => setDifficulty(null)
 
-  const handleLobbyBack = () => {
+  const isMulti = mode === 'multi-quick' || mode === 'multi-private'
+  const isInLobby = isMulti && (playerCount != null || pendingJoinCode) && !multiPastLobby
+
+  const clearLobbySessionState = useCallback(() => {
     lobby.disconnectSocket()
     setPlayerCount(null)
     setPendingJoinCode(null)
     setMultiPastLobby(false)
     setActiveRoomCode(null)
     setPendingQuickMatchCapacity(null)
+  }, [lobby])
+
+  const navigateLobbyListIfUrl = useCallback(() => {
     if (lobbyCode) {
       navigate('/practice/entertainment/word-scramble', { replace: true })
     }
-  }
+  }, [lobbyCode, navigate])
 
-  const isMulti = mode === 'multi-quick' || mode === 'multi-private'
-  const isInLobby = isMulti && (playerCount != null || pendingJoinCode) && !multiPastLobby
+  const requestLeaveLobby = useCallback((/** @type {(() => void) | null | undefined} */ afterLeave) => {
+    pendingAfterLeaveRef.current = typeof afterLeave === 'function' ? afterLeave : null
+    setLeaveLobbyModalOpen(true)
+  }, [])
+
+  const confirmLeaveLobby = useCallback(() => {
+    clearLobbySessionState()
+    const run = pendingAfterLeaveRef.current
+    pendingAfterLeaveRef.current = null
+    setLeaveLobbyModalOpen(false)
+    if (run) run()
+    else navigateLobbyListIfUrl()
+  }, [clearLobbySessionState, navigateLobbyListIfUrl])
+
+  const cancelLeaveLobby = useCallback(() => {
+    pendingAfterLeaveRef.current = null
+    setLeaveLobbyModalOpen(false)
+  }, [])
+
+  useEffect(() => {
+    if (!isInLobby) return undefined
+    const onBeforeUnload = (e) => {
+      e.preventDefault()
+      e.returnValue = ''
+    }
+    window.addEventListener('beforeunload', onBeforeUnload)
+    return () => window.removeEventListener('beforeunload', onBeforeUnload)
+  }, [isInLobby])
+
+  useEffect(() => {
+    if (!isInLobby) return undefined
+    const onDocClickCapture = (e) => {
+      if (leaveLobbyModalOpenRef.current) return
+      const t = e.target
+      if (!(t instanceof Element)) return
+      const el = t.closest('a[href]')
+      if (!el) return
+      if (e.defaultPrevented || e.button !== 0) return
+      if (e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return
+      const href = el.getAttribute('href')
+      if (!href || href.startsWith('#') || href.startsWith('mailto:') || href.startsWith('tel:')) return
+      let nextUrl
+      try {
+        nextUrl = new URL(href, window.location.origin)
+      } catch {
+        return
+      }
+      if (nextUrl.origin !== window.location.origin) return
+      const here = `${window.location.pathname}${window.location.search}`
+      const there = `${nextUrl.pathname}${nextUrl.search}`
+      if (there === here) return
+      e.preventDefault()
+      e.stopPropagation()
+      pendingAfterLeaveRef.current = () => {
+        navigate(there)
+      }
+      setLeaveLobbyModalOpen(true)
+    }
+    document.addEventListener('click', onDocClickCapture, true)
+    return () => document.removeEventListener('click', onDocClickCapture, true)
+  }, [isInLobby, navigate])
 
   const copyInvite = async () => {
     if (!lobby.inviteUrl) return
@@ -159,11 +263,12 @@ export function EntertainmentWordScramblePage() {
   }
 
   return (
+    <>
     <WordScrambleGameArena
       topBar={
         <>
           {isInLobby ? (
-            <button type="button" onClick={handleLobbyBack} className="ws-link-back px-1">
+            <button type="button" onClick={() => requestLeaveLobby()} className="ws-link-back px-1">
               <span className="material-symbols-outlined text-xl">arrow_back</span>
               <span className="hidden sm:inline">{t('enter.game.backPickPlayers')}</span>
             </button>
@@ -225,7 +330,7 @@ export function EntertainmentWordScramblePage() {
     >
       {mode == null ? (
         <WordScrambleModePicker onSelect={handleModeSelect} />
-      ) : isMulti && playerCount == null && !pendingJoinCode && !isMatching ? (
+      ) : isMulti && playerCount == null && !pendingJoinCode && !showMatchingUi ? (
         <WordScramblePlayerCountPicker
           onSelect={(n) => {
             setPlayerCount(n)
@@ -241,17 +346,21 @@ export function EntertainmentWordScramblePage() {
             setMultiPastLobby(false)
           }}
         />
-      ) : isMatching ? (
+      ) : showMatchingUi ? (
         <WordScrambleMatching
           onCancel={() => {
             setIsMatching(false)
-            setPlayerCount(null)
-            setPendingQuickMatchCapacity(null)
-            lobby.leaveRoom()
+            lobby.cancelStartMatching?.()
+            if (mode === 'multi-quick') {
+              setPlayerCount(null)
+              setPendingQuickMatchCapacity(null)
+              lobby.leaveRoom()
+            }
+            // multi-private: chỉ dừng poll + server xóa lastMatchRequest — không leaveRoom / không xóa playerCount
           }}
         />
       ) : isMulti && (playerCount != null || pendingJoinCode) && !multiPastLobby ? (
-        <WordScrambleMultiLobby lobby={lobby} onBack={handleLobbyBack} onInviteClick={() => setIsInviteBubbleOpen(true)} />
+        <WordScrambleMultiLobby lobby={lobby} onBack={() => requestLeaveLobby()} onInviteClick={() => setIsInviteBubbleOpen(true)} />
       ) : difficulty == null && mode === 'solo' ? (
         <WordScrambleDifficultyPicker
           onSelect={setDifficulty}
@@ -269,5 +378,15 @@ export function EntertainmentWordScramblePage() {
         />
       )}
     </WordScrambleGameArena>
+    <AlertModal
+      open={leaveLobbyModalOpen}
+      title={t('enter.game.leaveLobbyTitle')}
+      message={t('enter.game.leaveLobbyMessage')}
+      confirmText={t('enter.game.leaveLobbyConfirm')}
+      cancelText={t('enter.game.leaveLobbyCancel')}
+      onClose={cancelLeaveLobby}
+      onConfirm={confirmLeaveLobby}
+    />
+    </>
   )
 }

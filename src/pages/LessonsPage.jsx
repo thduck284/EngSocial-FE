@@ -12,8 +12,9 @@ import { AlertModal } from '../components/ui/common/AlertModal'
 
 export function LessonsPage() {
   const { t } = useTranslation()
-  const { isModerator, isAdmin, user } = useAuth()
-  const canAddLesson = isModerator || isAdmin
+  const { isModerator, user } = useAuth()
+  /** Admin trên /lesson chỉ xem & học như user; chỉnh sửa qua khu /mod (moderator). */
+  const canAddLesson = isModerator
 
   const {
     skillFilter,
