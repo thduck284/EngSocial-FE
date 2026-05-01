@@ -12,6 +12,7 @@ import { PostPhotoPage } from './pages/PostPhotoPage'
 import { EntertainmentLayout } from './pages/EntertainmentLayout'
 import { EntertainmentHomePage } from './pages/EntertainmentHomePage'
 import { EntertainmentWordScramblePage } from './pages/EntertainmentWordScramblePage'
+import { EntertainmentSnakeWordPage } from './pages/EntertainmentSnakeWordPage'
 import WordScrambleResultPage from './pages/WordScrambleResultPage'
 import { SkillPracticePage } from './pages/SkillPracticePage'
 import { ListeningLessonPage } from './pages/ListeningLessonPage'
@@ -25,6 +26,7 @@ import { MockTestResultPage } from './pages/MockTestResultPage'
 import { ProfilePage } from './pages/ProfilePage'
 import { UserProfilePage } from './pages/UserProfilePage'
 import { LessonsPage } from './pages/LessonsPage'
+import { LessonDetailPage } from './pages/LessonDetailPage'
 import { LessonHistoryPage } from './pages/LessonHistoryPage'
 import { LessonReviewPage } from './pages/LessonReviewPage'
 import { QuestsPage } from './pages/QuestsPage'
@@ -61,6 +63,7 @@ import LearnPage from './pages/LearnPage'
 import MatchGamePage from './pages/MatchGamePage'
 import TestPage from './pages/TestPage'
 import { GlobalGameInviteListener } from './components/GlobalGameInviteListener'
+import { AchievementUnlockedToast } from './components/achievements/AchievementUnlockedToast'
 
 /** /manage/* → /mod/:userId/* */
 function LegacyManageRedirect() {
@@ -108,6 +111,7 @@ function App() {
     <AuthProvider>
       <Toaster position="top-center" reverseOrder={false} />
       <GlobalGameInviteListener />
+      <AchievementUnlockedToast />
       <Routes location={background || location}>
         {/* Auth - chỉ khi chưa đăng nhập; đã đăng nhập thì redirect về / */}
         <Route element={<GuestOnlyLayout />}>
@@ -143,24 +147,37 @@ function App() {
           <Route path="practice/entertainment/word-scramble/lobby/:lobbyCode" element={<EntertainmentWordScramblePage />} />
           <Route path="practice/entertainment/word-scramble/roomId=:roomCode" element={<EntertainmentWordScramblePage />} />
           <Route path="practice/entertainment/word-scramble/result/:roomCode" element={<WordScrambleResultPage />} />
+          <Route path="practice/entertainment/snake-word" element={<EntertainmentSnakeWordPage />} />
+          <Route path="practice/entertainment/snake-word/lobby/:lobbyCode" element={<EntertainmentSnakeWordPage />} />
+          <Route path="practice/entertainment/snake-word/roomId=:roomCode" element={<EntertainmentSnakeWordPage />} />
+          {/* Reuse WordScrambleResultPage or create SnakeWordResultPage later */}
+          <Route path="practice/entertainment/snake-word/result/:roomCode" element={<WordScrambleResultPage />} />
           <Route path="lesson" element={<LessonsPage />} />
           <Route path="lesson/history" element={<LessonHistoryPage />} />
           <Route path="lesson/:id/reviews" element={<LessonReviewPage />} />
-          <Route path="lesson/reading/:id" element={<ReadingLessonPage />} />
+          
+          {/* Detail pages */}
+          <Route path="lesson/:skill/:id" element={<LessonDetailPage />} />
+          <Route path="practice/:skill/:id" element={<LessonDetailPage />} />
+
+          {/* Learning study pages */}
+          <Route path="lesson/reading/:id/study" element={<ReadingLessonPage />} />
           <Route path="lesson/reading/:id/result" element={<ReadingLessonResultPage />} />
-          <Route path="lesson/listening/:id" element={<ListeningLessonPage />} />
+          <Route path="lesson/listening/:id/study" element={<ListeningLessonPage />} />
           <Route path="lesson/listening/:id/result" element={<ListeningLessonResultPage />} />
-          <Route path="lesson/writing/:id" element={<WritingLessonPage />} />
+          <Route path="lesson/writing/:id/study" element={<WritingLessonPage />} />
           <Route path="lesson/writing/:id/result" element={<WritingLessonResultPage />} />
+
           <Route path="practice" element={<Navigate to="/practice/reading" replace />} />
           <Route path="practice/mock-test" element={<PracticeMockTestPage />} />
           <Route path="practice/mock-test/result/:sessionId" element={<MockTestResultPage />} />
           <Route path="practice/:skill" element={<SkillPracticePage />} />
-          <Route path="practice/reading/:id" element={<ReadingLessonPage />} />
+          
+          <Route path="practice/reading/:id/study" element={<ReadingLessonPage />} />
           <Route path="practice/reading/:id/result" element={<ReadingLessonResultPage />} />
-          <Route path="practice/listening/:id" element={<ListeningLessonPage />} />
+          <Route path="practice/listening/:id/study" element={<ListeningLessonPage />} />
           <Route path="practice/listening/:id/result" element={<ListeningLessonResultPage />} />
-          <Route path="practice/writing/:id" element={<WritingLessonPage />} />
+          <Route path="practice/writing/:id/study" element={<WritingLessonPage />} />
           <Route path="practice/writing/:id/result" element={<WritingLessonResultPage />} />
           <Route path="skills" element={<Navigate to="/practice" replace />} />
           <Route path="skills/:skill" element={<SkillRedirect />} />

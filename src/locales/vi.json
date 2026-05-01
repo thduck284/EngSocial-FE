@@ -18,7 +18,9 @@
     "ok": "Đồng ý",
     "close": "Đóng",
     "minutesShort": "phút",
-    "description": "Mô tả"
+    "description": "Mô tả",
+    "confirmExit": "Xác nhận rời khỏi",
+    "confirmExitMessage": "Bạn có chắc muốn rời khỏi bài học? Tiến độ hiện tại của bạn có thể không được lưu lại."
   },
   "report": {
     "titlePost": "Báo cáo bài viết",
@@ -422,7 +424,7 @@
     "clearFilters": "Xoá bộ lọc",
     "loadMoreReviews": "Xem thêm đánh giá",
     "starsHint": "Bạn thấy bài học này thế nào?",
-    "reviewsCount": "lượt",
+    "reviewsCount": "{{count}} đánh giá",
     "loadMorePosts": "Xem thêm bài viết",
     "noFriends": "Không tìm thấy bạn bè.",
     "noCommunities": "Không có nhóm/cộng đồng nào phù hợp.",
@@ -488,6 +490,8 @@
     "level": "Level",
     "learner": "Học viên",
     "viewFullProfile": "Xem hồ sơ đầy đủ",
+    "viewDetail": "Xem chi tiết",
+    "back": "Quay lại",
     "todayGoals": "Mục tiêu hôm nay",
     "completed": "hoàn thành",
     "ongoingChallenge": "Thử thách đang diễn ra",
@@ -522,6 +526,7 @@
     "featured": "FEATURED",
     "by": "Bởi",
     "team": "EngSocial Team",
+    "lessonDescriptionFallback": "Nâng cao kỹ năng của bạn với bài học chất lượng cao từ đội ngũ chuyên gia...",
     "learnNow": "Học ngay",
     "minutes": "phút",
     "quickSearch": "Tìm kiếm nhanh...",
@@ -656,6 +661,14 @@
     "noAchievementSelected": "Chọn một achievement để xem chi tiết.",
     "emptyList": "Chưa có achievement trong danh mục này.",
     "emptyCategory": "Danh mục này chưa có achievement từ hệ thống.",
+    "unlockedLabel": "🎉 Đã mở khóa thành tựu!",
+    "howTo": "Cách hoàn thành",
+    "rewardsTitle": "Nhận được gì",
+    "rewardTypeLabel": "Loại phần thưởng",
+    "rewardTypeExp": "EXP",
+    "rewardTypeBadge": "Badge",
+    "rewardTypeBoth": "Cả hai",
+    "noRewards": "Chưa có thông tin phần thưởng",
     "rewardXp": "Nhận {{count}} EXP",
     "rewardBadge": "Nhận huy hiệu: {{name}}",
     "confirmDelete": "Xóa achievement này?",
@@ -1204,6 +1217,8 @@
       "title": "Xáo chữ (Word Scramble)",
       "subtitle": "Sắp xếp lại các chữ cái để tạo thành từ đúng dựa trên nghĩa và ví dụ.",
       "listDesc": "Xáo chữ — chơi đơn hoặc nhiều người luân phiên trên cùng máy.",
+      "snakeTitle": "Rắn săn từ vựng (Snake Word)",
+      "snakeDesc": "Điều khiển rắn ăn đúng từ tiếng Anh tương ứng với nghĩa cho trước. Tránh ăn nhầm từ nhiễu!",
       "scrambledLabel": "TỪ BỊ XÁO TRỘN",
       "meaningLabel": "NGHĨA CỦA TỪ",
       "yourAnswer": "Câu trả lời của bạn",
@@ -1532,7 +1547,7 @@
     "yourReview": "Đánh giá của bạn",
     "helpfulReview": "Đánh giá hữu ích",
     "allStats": "Tất cả thống kê",
-    "reviewsCount": "lượt",
+    "reviewsCount": "{{count}} đánh giá",
     "questionsCount": "{{count}} câu hỏi"
   },
   "lesson": {
@@ -2170,5 +2185,12 @@
       "C1": "C1 Cao cấp",
       "C2": "C2 Thành thạo"
     }
+  },
+  "lessonDetail": {
+    "benefitsTitle": "Lợi ích bài học:",
+    "benefit1": "Cải thiện vốn từ vựng theo chủ đề",
+    "benefit2": "Nâng cao khả năng hiểu ngữ cảnh",
+    "benefit3": "Nhận phản hồi ngay lập tức",
+    "benefit4": "Tích lũy XP thăng hạng tuần"
   }
 }

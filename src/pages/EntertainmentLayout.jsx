@@ -6,7 +6,7 @@ import { DEFAULT_AVATAR } from '../constants/ui'
 import { useAuth } from '../context/AuthContext'
 import { useDashboardSocket, useDashboardFriends, useStudyGroups } from '../hooks'
 import { rawService } from '../services/raw.service'
-
+import { challengesService } from '../services/challenges.service'
 
 export function EntertainmentLayout() {
   const { pathname } = useLocation()
@@ -24,7 +24,7 @@ export function EntertainmentLayout() {
 
   const [rawData, setRawData] = useState({
     hotGames: [],
-    challenge: {},
+    challenge: null,
   })
 
   useEffect(() => {
@@ -35,18 +35,25 @@ export function EntertainmentLayout() {
         setRawData((prev) => ({ ...prev, hotGames: d.hotGames || [] }))
       })
       .catch(() => {})
-    rawService
-      .getDashboard()
+      
+    challengesService
+      .getChallenges({ status: 'active', limit: 1 })
       .then((res) => {
-        const d = res?.data || {}
-        if (d.challenge) setRawData((prev) => ({ ...prev, challenge: d.challenge }))
+        const activeChallenge = res?.data?.data?.[0] || null
+        if (activeChallenge) {
+          setRawData((prev) => ({ ...prev, challenge: activeChallenge }))
+        }
       })
       .catch(() => {})
   }, [])
 
-  const challenge = rawData.challenge?.title
-    ? rawData.challenge
-    : { title: t('enter.bannerTitle'), desc: t('enter.bannerPickGame'), time: '', btn: 'buttons.join' }
+  const challenge = rawData.challenge || { 
+    title: t('enter.bannerTitle'), 
+    description: t('enter.bannerPickGame'), 
+    endDate: null, 
+    btn: 'buttons.join',
+    type: '' 
+  }
 
   return (
     <main className="max-w-[1440px] mx-auto grid grid-cols-12 gap-6 p-6">
@@ -105,23 +112,24 @@ export function EntertainmentLayout() {
           <div className="relative z-10 flex items-center justify-between gap-4">
             <div className="space-y-2 min-w-0">
               <div className="flex flex-wrap items-center gap-2">
-                <span className="px-2 py-0.5 bg-primary text-background-dark text-[10px] font-bold rounded">
-                  {t('enter.weeklyChallenge')}
+                <span className="px-2 py-0.5 bg-primary text-background-dark text-[10px] font-bold rounded uppercase tracking-wider">
+                  {challenge.type ? `${challenge.type} Challenge` : t('enter.weeklyChallenge')}
                 </span>
-                {challenge.time ? (
+                {challenge.endDate ? (
                   <span className="text-xs text-primary flex items-center gap-1">
-                    <span className="material-symbols-outlined text-sm">schedule</span> {challenge.time}
+                    <span className="material-symbols-outlined text-sm">schedule</span> 
+                    {new Date(challenge.endDate).toLocaleDateString()}
                   </span>
                 ) : null}
               </div>
-              <h4 className="font-bold text-lg text-white">{challenge.title}</h4>
-              <p className="text-xs text-gray-300">{challenge.desc}</p>
-              <button
-                className="mt-2 px-6 py-2 bg-primary text-background-dark font-bold text-sm rounded-lg hover:brightness-110"
-                type="button"
+              <h4 className="font-bold text-lg text-white">{challenge.titleVi || challenge.title}</h4>
+              <p className="text-xs text-gray-300">{challenge.descriptionVi || challenge.description || challenge.desc}</p>
+              <Link
+                to={ROUTES.GAMIFICATION.CHALLENGES || '/gamification'}
+                className="mt-2 inline-block px-6 py-2 bg-primary text-background-dark font-bold text-sm rounded-lg hover:brightness-110 transition-all text-center"
               >
-                {t(challenge.btn)}
-              </button>
+                {t(challenge.btn || 'buttons.join')}
+              </Link>
             </div>
             <span className="material-symbols-outlined text-7xl text-primary/25 shrink-0 hidden sm:block">sports_esports</span>
           </div>

@@ -48,6 +48,7 @@ export const API_ENDPOINTS = {
     SKILLS_PROFILE: '/user/skills-profile',
     GOALS: '/user/goals',
     ACHIEVEMENTS: '/user/achievements',
+    SYNC_ACHIEVEMENT_STATS: '/user/achievement-stats/sync',
     BLOCK: (userId) => `/user/block/${userId}`,
     UNBLOCK: (userId) => `/user/block/${userId}`,
   },
@@ -134,6 +135,15 @@ export const API_ENDPOINTS = {
     POOL_DETAIL: (poolId) => `/quests/pool/${encodeURIComponent(String(poolId))}`,
     MY_PROGRESS: '/quests/my/progress',
     MY_PERIOD: '/quests/my/period',
+  },
+
+  // Achievements (CRUD moderator/admin)
+  ACHIEVEMENTS: {
+    LIST: '/achievements',
+    DETAIL: (id) => `/achievements/${id}`,
+    CREATE: '/achievements',
+    UPDATE: (id) => `/achievements/${id}`,
+    DELETE: (id) => `/achievements/${id}`,
   },
 
   /** Legacy alias: dashboard/games; bạn bè & thông báo trỏ API thật (cần đăng nhập). */
@@ -304,6 +314,10 @@ export const ROUTES = {
     ENTERTAINMENT_WORD_SCRAMBLE: '/practice/entertainment/word-scramble',
     /** Kết quả Xáo chữ */
     ENTERTAINMENT_WORD_SCRAMBLE_RESULT: (roomCode) => `/practice/entertainment/word-scramble/result/${roomCode}`,
+    /** Rắn săn từ */
+    ENTERTAINMENT_SNAKE_WORD: '/practice/entertainment/snake-word',
+    /** Kết quả Rắn săn từ */
+    ENTERTAINMENT_SNAKE_WORD_RESULT: (roomCode) => `/practice/entertainment/snake-word/result/${roomCode}`,
   },
   /** @deprecated Dùng ROUTES.SKILLS.ENTERTAINMENT */
   ENTER: '/practice/entertainment',

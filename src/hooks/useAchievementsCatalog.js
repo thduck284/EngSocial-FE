@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { ACHIEVEMENT_CATEGORY_DEFS } from '../constants/achievementsCatalog'
-import { userService } from '../services'
+import { userService, achievementsService } from '../services'
 import { getSuggestedAchievementsForCategory } from '../utils/achievementSuggestions'
 import {
   apiUsesPerMilestoneRewards,
@@ -96,7 +96,8 @@ function beAchievementToItem(a, t, idx, lng) {
   let bnEn = a.badgeNameEn || bnVi
   let badgeImage = a.badgeImage
   let badgeIcon = a.badgeIcon
-  if (perMilestone && activeRow) {
+  if (perMilestone && activeRow && !a.unlocked) {
+    // Not yet unlocked: show the reward for the NEXT milestone to aim for
     rewards = rewardsFromTargetRow(activeRow, t, lng)
     rewardType = activeRow.rewardType || 'exp'
     expAmount = Number(activeRow.xpReward || 0) || 0
@@ -104,6 +105,16 @@ function beAchievementToItem(a, t, idx, lng) {
     bnEn = String(activeRow.badgeNameEn || '').trim()
     badgeImage = activeRow.badgeImage
     badgeIcon = activeRow.badgeIcon
+  } else if (perMilestone && a.unlocked) {
+    // Already unlocked: the API service already resolved badge/rewardType to the
+    // highest earned milestone — just use them directly.
+    rewardType = a.rewardType || 'both'
+    expAmount = Number(a.xpReward || 0) || 0
+    bnVi = String(a.badgeName || '').trim()
+    bnEn = String(a.badgeNameEn || bnVi).trim()
+    badgeImage = a.badgeImage
+    badgeIcon = a.badgeIcon
+    rewards = buildRewardsFromBe(a, t, lng)
   }
   return {
     id: a.id,
@@ -126,7 +137,11 @@ function beAchievementToItem(a, t, idx, lng) {
     badgeNameEn: bnEn,
     badgeImage,
     badgeIcon,
-    link: undefined,
+    earnedBadges: a.earnedBadges || [], // NEW: list of all earned badges from BE
+    link: a.linkTo ? {
+      label: pickLang(a.linkLabel, a.linkLabelEn, lng) || t('achievementsPage.fieldLinkLabel'),
+      to: a.linkTo
+    } : undefined,
     order: a.order ?? idx,
     categoryId,
     unlocked: a.unlocked,
@@ -235,7 +250,7 @@ export function useAchievementsCatalog(t, language) {
   const rawBeAchievementsRef = useRef(null)
   const [beTick, setBeTick] = useState(0)
 
-  useEffect(() => {
+  const fetchBeAchievements = () => {
     let cancelled = false
     ;(async () => {
       try {
@@ -252,9 +267,18 @@ export function useAchievementsCatalog(t, language) {
         rawBeAchievementsRef.current = null
       }
     })()
-    return () => {
-      cancelled = true
-    }
+    return () => { cancelled = true }
+  }
+
+  useEffect(() => {
+    return fetchBeAchievements()
+  }, [])
+
+  // Re-fetch when a new achievement is unlocked via socket
+  useEffect(() => {
+    const handler = () => fetchBeAchievements()
+    window.addEventListener('achievement:unlocked', handler)
+    return () => window.removeEventListener('achievement:unlocked', handler)
   }, [])
 
   useEffect(() => {
@@ -417,7 +441,7 @@ export function useAchievementsCatalog(t, language) {
     setEditOpen(true)
   }
 
-  const saveEditAchievement = () => {
+  const saveEditAchievement = async () => {
     const id = String(editForm.id || '').trim()
     const baseVi = editForm.howToVi.trim()
     const baseEn = editForm.howToEn.trim()
@@ -591,23 +615,46 @@ export function useAchievementsCatalog(t, language) {
       requirement: nextRequirement,
     }
 
-    setCategories((prev) =>
-      prev.map((c) =>
-        c.id === activeCategoryId
-          ? {
-              ...c,
-              items: (c.items || []).map((x) =>
-                x.id === id ? { ...x, ...updated } : x
-              ),
-            }
-          : c
+    try {
+      // Prepare payload for backend
+      const payload = {
+        name: nameVi,
+        nameEn: nameEn,
+        icon: updated.icon,
+        rarity: updated.rarity,
+        description: baseVi,
+        descriptionEn: baseEn,
+        rewardType: updated.rewardType,
+        xpReward: updated.expAmount,
+        badgeName: updated.badgeNameVi,
+        badgeNameEn: updated.badgeNameEn,
+        badgeIcon: updated.badgeIcon,
+        requirement: updated.requirement,
+      }
+
+      await achievementsService.update(id, payload)
+
+      setCategories((prev) =>
+        prev.map((c) =>
+          c.id === activeCategoryId
+            ? {
+                ...c,
+                items: (c.items || []).map((x) =>
+                  x.id === id ? { ...x, ...updated } : x
+                ),
+              }
+            : c
+        )
       )
-    )
-    setActiveAchievementId(id)
-    setEditOpen(false)
+      setActiveAchievementId(id)
+      setEditOpen(false)
+    } catch (error) {
+      console.error('Failed to save achievement:', error)
+      alert(t('common.errorSave') || 'Không thể lưu thay đổi.')
+    }
   }
 
-  const deleteActiveAchievement = () => {
+  const deleteActiveAchievement = async () => {
     if (!achievement?.id) return
     const ok = window.confirm(t('achievementsPage.confirmDelete'))
     if (!ok) return
@@ -620,14 +667,21 @@ export function useAchievementsCatalog(t, language) {
       nextId = list[idx + 1]?.id || list[idx - 1]?.id || null
     }
 
-    setCategories((prev) =>
-      prev.map((c) =>
-        c.id === activeCategoryId
-          ? { ...c, items: (c.items || []).filter((x) => x.id !== toDeleteId) }
-          : c
+    try {
+      await achievementsService.delete(toDeleteId)
+
+      setCategories((prev) =>
+        prev.map((c) =>
+          c.id === activeCategoryId
+            ? { ...c, items: (c.items || []).filter((x) => x.id !== toDeleteId) }
+            : c
+        )
       )
-    )
-    setActiveAchievementId(nextId)
+      setActiveAchievementId(nextId)
+    } catch (error) {
+      console.error('Failed to delete achievement:', error)
+      alert(t('common.errorDelete') || 'Không thể xóa thành tích.')
+    }
   }
 
   const goToAchievementLink = (link) => {

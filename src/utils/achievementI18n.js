@@ -227,7 +227,8 @@ export function getAchievementMaxGoalFromItem(a) {
  * `completed` ưu tiên từ API (`a.completed`); không có thì suy từ progress >= goal.
  */
 export function getAchievementProgressState(a, t) {
-  const goal = getAchievementMaxGoalFromItem(a)
+  const activeRow = pickActiveMilestoneRow(a?.targets, a?.progress ?? 0)
+  const goal = activeRow ? activeRow._threshold : getAchievementMaxGoalFromItem(a)
   const p = normProgress(a?.progress)
   if (goal <= 0) {
     return { show: false, completed: !!a?.completed }

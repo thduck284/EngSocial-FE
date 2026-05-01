@@ -359,6 +359,13 @@ export function LessonsPage() {
                       <span className="flex items-center gap-1 text-[10px] text-yellow-500">
                         <span className="material-symbols-outlined text-xs fill-icon">star</span>
                         {(lesson.rating || 0).toFixed(1)}
+                        <span className="text-gray-400 ml-1">
+                          ({t('lessons.reviewsCount', { count: lesson.ratingCount || 0 })})
+                        </span>
+                      </span>
+                      <span className="flex items-center gap-1 text-[10px] text-gray-400">
+                        <span className="material-symbols-outlined text-xs">group</span>
+                        {lesson.completionCount?.toLocaleString() || 0} {t('dashboard.views')}
                       </span>
                     </div>
                   </div>
@@ -383,7 +390,7 @@ export function LessonsPage() {
                 </Link>
 
                 <Link to={getLessonLink(lesson)} className="px-4 py-2 bg-primary/10 text-primary group-hover:bg-primary group-hover:text-background-dark font-bold text-xs rounded-lg transition-all shrink-0">
-                  {t('buttons.start')}
+                  {t('dashboard.viewDetail')}
                 </Link>
               </div>
             ))}

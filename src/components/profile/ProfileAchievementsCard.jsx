@@ -5,6 +5,7 @@ import { ROUTES } from '../../constants'
 import {
   pickAchievementBadgeName,
   pickAchievementName,
+  pickLang,
 } from '../../utils/achievementI18n.js'
 
 function achievementHasBadgeReward(a) {
@@ -17,8 +18,36 @@ export function ProfileAchievementsCard({ t, items, loading }) {
   const lng = i18n.language
 
   const completedBadges = useMemo(() => {
-    return (items || []).filter((a) => a?.completed && achievementHasBadgeReward(a))
-  }, [items])
+    const list = []
+    ;(items || []).forEach((a) => {
+      if (!a?.unlocked) return
+      
+      // If the achievement has an earnedBadges list from BE, use all of them
+      if (Array.isArray(a.earnedBadges) && a.earnedBadges.length > 0) {
+        a.earnedBadges.forEach(b => {
+          list.push({
+            id: b.id || `${a.id}-${b.value}`,
+            badgeName: b.badgeName,
+            badgeNameEn: b.badgeNameEn,
+            badgeImage: b.badgeImage,
+            badgeIcon: b.badgeIcon,
+            achievementName: pickAchievementName(a, lng)
+          })
+        })
+      } else if (achievementHasBadgeReward(a)) {
+        // Fallback for simple achievements without milestones
+        list.push({
+          id: a.id,
+          badgeName: pickAchievementBadgeName(a, lng),
+          badgeNameEn: a.badgeNameEn,
+          badgeImage: a.badgeImage,
+          badgeIcon: a.badgeIcon,
+          achievementName: pickAchievementName(a, lng)
+        })
+      }
+    })
+    return list
+  }, [items, lng])
 
   return (
     <div className="bg-white dark:bg-card-dark rounded-2xl p-6 border border-slate-200 dark:border-border-dark">
@@ -42,16 +71,15 @@ export function ProfileAchievementsCard({ t, items, loading }) {
         </p>
       ) : (
         <ul className="flex flex-wrap gap-3 list-none p-0 m-0">
-          {completedBadges.map((a) => {
-            const tip =
-              pickAchievementBadgeName(a, lng) || pickAchievementName(a, lng) || ''
+          {completedBadges.map((badge) => {
+            const tip = pickLang(badge.badgeName, badge.badgeNameEn, lng) || badge.achievementName || ''
             const img =
-              a.badgeImage && !String(a.badgeImage).startsWith('blob:')
-                ? String(a.badgeImage)
+              badge.badgeImage && !String(badge.badgeImage).startsWith('blob:')
+                ? String(badge.badgeImage)
                 : ''
-            const icon = String(a.badgeIcon || '').trim() || 'military_tech'
+            const icon = String(badge.badgeIcon || '').trim() || 'military_tech'
             return (
-              <li key={a.id}>
+              <li key={badge.id}>
                 <Link
                   to={ROUTES.ACHIEVEMENTS}
                   title={tip}

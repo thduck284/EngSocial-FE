@@ -314,20 +314,18 @@ export function QuestsPage() {
     <main className="max-w-[1440px] mx-auto p-6 flex flex-col">
       <div className="flex gap-6 flex-1 min-h-0">
         <aside className="flex flex-col gap-3 shrink-0 w-40">
-          <button
-            type="button"
-            onClick={() => setTab(TAB_QUESTS)}
+          <Link
+            to="/quests"
             className={`px-4 py-2.5 rounded-xl text-sm font-semibold transition-colors text-left ${tab === TAB_QUESTS ? 'bg-primary text-background-dark' : 'bg-card-dark text-gray-400 hover:bg-white/10 hover:text-white'}`}
           >
             {t('quests.tabQuests')}
-          </button>
-          <button
-            type="button"
-            onClick={() => setTab(TAB_CHALLENGES)}
+          </Link>
+          <Link
+            to="/challenge"
             className={`px-4 py-2.5 rounded-xl text-sm font-semibold transition-colors text-left ${tab === TAB_CHALLENGES ? 'bg-primary text-background-dark' : 'bg-card-dark text-gray-400 hover:bg-white/10 hover:text-white'}`}
           >
             {t('quests.tabChallenges')}
-          </button>
+          </Link>
           <select
             value={filterType}
             onChange={(e) => setFilterType(e.target.value)}

@@ -80,6 +80,7 @@ export function DashboardPage() {
           suggestedGroups={raw.suggestedGroups}
           postsLoading={postsLoading}
           posts={posts}
+          featuredLessons={raw.featuredLessons}
           postsLoadingMore={postsLoadingMore}
           hasMorePosts={hasMorePosts}
           loadMorePosts={loadMorePosts}

@@ -62,7 +62,7 @@ export function MockTestSidebar({ currentAnswers, currentLessonId }) {
   if (!mockTestData) return null
 
   const handleNavigateToLesson = (lessonId, skill, questionIdx = 0) => {
-    navigate(`/practice/${skill}/${lessonId}`, { state: { questionIdx } })
+    navigate(`/practice/${skill}/${lessonId}/study`, { state: { questionIdx } })
   }
 
   const handleConfirmSubmit = async () => {
@@ -94,7 +94,7 @@ export function MockTestSidebar({ currentAnswers, currentLessonId }) {
       }))
 
       // 2. Record the overall Mock Test Session in the new model
-      await mockTestService.recordSession({
+      const res = await mockTestService.recordSession({
         lessons: lessons.map(l => ({
           lessonId: l.id || l._id,
           skill: l.skill,
@@ -102,12 +102,17 @@ export function MockTestSidebar({ currentAnswers, currentLessonId }) {
         }))
       })
 
-      localStorage.removeItem('engsocial_mock_test')
-      localStorage.removeItem('engsocial_mock_test_answers')
-      navigate('/practice/mock-test')
+      // localStorage.removeItem('engsocial_mock_test')
+      // localStorage.removeItem('engsocial_mock_test_answers')
+      
+      if (res?.data?._id) {
+        navigate(`/practice/mock-test/result/${res.data._id}`)
+      } else {
+        navigate('/practice/mock-test')
+      }
     } catch (err) {
       console.error('Mock test submission failed:', err)
-      alert(t('common.error'))
+      // alert(t('common.error'))
     } finally {
       setSubmitting(false)
     }

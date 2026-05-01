@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react'
-import { Link, useParams, useNavigate, useLocation } from 'react-router-dom'
+import { Link, useParams, useNavigate, useLocation, useBlocker } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { lessonsService } from '../services'
 import { addVocabNote } from '../utils/vocabularyUserStorage'
@@ -38,16 +38,12 @@ export function WritingLessonPage() {
     const data = localStorage.getItem('engsocial_mock_test')
     if (data) {
       const parsed = JSON.parse(data)
-      const isInTest = parsed.lessons.some(l => l.id === id)
-      if (isInTest) {
-        setIsMockTest(true)
-      } else {
-        setIsMockTest(false)
-      }
+      const isInTest = parsed.lessons.some(l => l.id === id || l.slug === id)
+      setIsMockTest(isInTest)
     } else {
       setIsMockTest(false)
     }
-  }, [id])
+  }, [id, content])
 
   useEffect(() => {
     setRightBarOpen(isMockTest)
@@ -116,6 +112,52 @@ export function WritingLessonPage() {
       })
       .catch((err) => console.error('Failed to load writing progress:', err))
   }, [id])
+
+  // Navigation Blocker
+  const [showExitConfirm, setShowExitConfirm] = useState(false)
+  const blocker = useBlocker(
+    ({ currentLocation, nextLocation }) => {
+      if (submitting) return false
+      if (currentLocation.pathname === nextLocation.pathname) return false
+      
+      const inMockTest = !!localStorage.getItem('engsocial_mock_test')
+
+      // Allow navigation between lessons if in Mock Test or going to result
+      if (nextLocation.pathname.includes('/result') || nextLocation.pathname.includes('/mock-test') || (inMockTest && nextLocation.pathname.includes('/study'))) {
+        return false
+      }
+      
+      return true
+    }
+  )
+
+  useEffect(() => {
+    if (blocker.state === 'blocked') {
+      setShowExitConfirm(true)
+    }
+  }, [blocker.state])
+
+  const handleConfirmExit = () => {
+    setShowExitConfirm(false)
+    blocker.proceed()
+  }
+
+  const handleCancelExit = () => {
+    setShowExitConfirm(false)
+    blocker.reset()
+  }
+
+  // Prevent browser close/refresh
+  useEffect(() => {
+    const handleBeforeUnload = (e) => {
+      if (!submitting) {
+        e.preventDefault()
+        e.returnValue = ''
+      }
+    }
+    window.addEventListener('beforeunload', handleBeforeUnload)
+    return () => window.removeEventListener('beforeunload', handleBeforeUnload)
+  }, [submitting])
 
   const info = content?.content || {}
   const wordLimit = info.wordLimit || { min: 100, max: 150 }
@@ -448,6 +490,17 @@ export function WritingLessonPage() {
         message={t('writingLesson.invalidWordCount')}
         confirmText="OK"
         onClose={() => setShowIncompleteModal(false)}
+      />
+
+      <AlertModal
+        open={showExitConfirm}
+        title={t('common.confirmExit') || 'Confirm Exit'}
+        message={t('common.confirmExitMessage') || 'Are you sure you want to leave? Your progress may not be saved.'}
+        confirmText={t('common.confirm') || 'Yes, leave'}
+        cancelText={t('common.cancel') || 'Cancel'}
+        onClose={handleCancelExit}
+        onConfirm={handleConfirmExit}
+        type="warning"
       />
     </main>
   )

@@ -13,7 +13,7 @@ export function useProfileAchievements() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
 
-  useEffect(() => {
+  const fetchAchievements = () => {
     let cancelled = false
     ;(async () => {
       try {
@@ -35,9 +35,21 @@ export function useProfileAchievements() {
         if (!cancelled) setLoading(false)
       }
     })()
-    return () => {
-      cancelled = true
+    return () => { cancelled = true }
+  }
+
+  useEffect(() => {
+    const cleanup = fetchAchievements()
+    return cleanup
+  }, [])
+
+  // Re-fetch when a new achievement is unlocked via socket
+  useEffect(() => {
+    const handler = () => {
+      fetchAchievements()
     }
+    window.addEventListener('achievement:unlocked', handler)
+    return () => window.removeEventListener('achievement:unlocked', handler)
   }, [])
 
   const items = useMemo(

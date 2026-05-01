@@ -1,4 +1,4 @@
-import { useRef, useEffect } from 'react'
+import React, { useRef, useEffect } from 'react'
 import { Link } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { ROUTES } from '../../constants'
@@ -27,9 +27,40 @@ export function DashboardMainFeed({
   feedTab = 'all',
   setFeedTab,
   friendsList = [],
+  featuredLessons = [],
 }) {
   const { t } = useTranslation()
   const loadMoreRef = useRef(null)
+
+  // Interleave posts and featured lessons
+  const combinedFeed = React.useMemo(() => {
+    const result = []
+    let postsCount = 0
+    let lessonIdx = 0
+
+    // Sequence of gaps: first gap is 4, then subsequent are 7-10
+    const getGap = (i) => {
+      if (i === 0) return 4 
+      return 7 + ([0, 3, 1, 2][i % 4])
+    }
+    let nextGap = getGap(lessonIdx)
+
+    posts.forEach((post) => {
+      result.push({ type: 'post', content: post })
+      postsCount++
+
+      if (postsCount === nextGap && featuredLessons.length > 0) {
+        result.push({
+          type: 'lesson',
+          content: featuredLessons[lessonIdx % featuredLessons.length],
+        })
+        lessonIdx++
+        postsCount = 0
+        nextGap = getGap(lessonIdx)
+      }
+    })
+    return result
+  }, [posts, featuredLessons])
 
   // Infinite scroll: load more when sentinel reaches viewport
   useEffect(() => {
@@ -45,6 +76,74 @@ export function DashboardMainFeed({
     observer.observe(el)
     return () => observer.disconnect()
   }, [loadMorePosts, hasMorePosts, postsLoadingMore])
+
+  const renderLessonCard = (lesson, isEnd = false) => {
+    if (!lesson) return null
+    const skill = lesson.skill || 'reading'
+    const category = lesson.category || 'lesson'
+    const slug = lesson.slug || lesson.id || lesson._id
+    const targetUrl = `/${category}/${skill}/${slug}`
+
+    return (
+      <Link
+        to={targetUrl}
+        className="block bg-gradient-to-br from-[#111e22] to-[#1a353d] dark:from-[#111e22] dark:to-[#1a353d] rounded-xl border border-primary/30 p-5 relative overflow-hidden group hover:border-primary/50 transition-colors"
+      >
+        <div className="relative z-10 flex gap-6">
+          <div
+            className="w-1/3 aspect-video rounded-lg bg-cover bg-center shrink-0 bg-slate-800"
+            style={{
+              backgroundImage: lesson.thumbnail ? `url('${lesson.thumbnail}')` : undefined,
+            }}
+          >
+            {!lesson.thumbnail && (
+              <div className="w-full h-full flex items-center justify-center">
+                <span className="material-symbols-outlined text-slate-600 text-3xl">school</span>
+              </div>
+            )}
+          </div>
+          <div className="flex-1 space-y-2 min-w-0">
+            <div className="flex items-center gap-2">
+              <span className="px-2 py-0.5 bg-primary text-[#111e22] text-[10px] font-bold rounded">
+                {t('dashboard.featured')}
+              </span>
+              <span className="text-xs text-primary font-medium">
+                {t('dashboard.by')} {t('dashboard.team')}
+              </span>
+              {lesson.level && (
+                <span className="px-1.5 py-0.5 bg-white/10 text-white text-[10px] font-medium rounded border border-white/20 uppercase">
+                  {lesson.level}
+                </span>
+              )}
+            </div>
+            <h4 className="font-bold text-lg leading-tight group-hover:text-primary transition-colors truncate">
+              {lesson.title}
+            </h4>
+            <p className="text-xs text-slate-400 dark:text-[#92bbc9] line-clamp-2">
+              {lesson.description || t('dashboard.lessonDescriptionFallback') || 'Nâng cao kỹ năng của bạn với bài học chất lượng cao từ đội ngũ chuyên gia...'}
+            </p>
+            <div className="flex items-center gap-4 pt-2">
+              <span className="px-4 py-1.5 bg-primary/10 text-primary border border-primary/20 font-bold text-xs rounded-lg group-hover:bg-primary group-hover:text-[#111e22] transition-all">
+                {t('dashboard.viewDetail')}
+              </span>
+              <span className="text-[10px] text-slate-400 dark:text-[#92bbc9] flex items-center gap-1">
+                <span className="material-symbols-outlined text-sm">schedule</span> {lesson.estimatedTime || 15} {t('dashboard.minutes')}
+              </span>
+              {lesson.skill && (
+                <span className="text-[10px] text-slate-400 dark:text-[#92bbc9] flex items-center gap-1">
+                  <span className="material-symbols-outlined text-sm">
+                    {lesson.skill === 'reading' ? 'menu_book' : lesson.skill === 'listening' ? 'headphones' : 'edit_note'}
+                  </span>
+                  {t(`skills.${lesson.skill}`) || lesson.skill}
+                </span>
+              )}
+            </div>
+          </div>
+        </div>
+        <div className="absolute top-0 right-0 w-32 h-32 bg-primary/5 rounded-full -translate-y-16 translate-x-16 blur-3xl" />
+      </Link>
+    )
+  }
 
   return (
     <section className="col-span-12 lg:col-span-6 space-y-6">
@@ -261,15 +360,20 @@ export function DashboardMainFeed({
         </div>
       ) : (
         <>
-          {posts.map((post, index) => (
-            <DashboardPostCard
-              key={post?.id ?? post?._id ?? `post-${index}`}
-              post={post}
-              useHomeCommunityStyle
-              onToggleLike={onPostReactionUpdate}
-              onUpdatePost={onPostUpdate}
-              onDeletePost={onPostDelete}
-            />
+          {combinedFeed.map((item, index) => (
+            <React.Fragment key={item.type === 'post' ? (item.content?.id ?? item.content?._id ?? `p-${index}`) : `l-${index}`}>
+              {item.type === 'post' ? (
+                <DashboardPostCard
+                  post={item.content}
+                  useHomeCommunityStyle
+                  onToggleLike={onPostReactionUpdate}
+                  onUpdatePost={onPostUpdate}
+                  onDeletePost={onPostDelete}
+                />
+              ) : (
+                renderLessonCard(item.content)
+              )}
+            </React.Fragment>
           ))}
           {hasMorePosts && <div ref={loadMoreRef} className="h-4 min-h-[1rem]" aria-hidden />}
           {postsLoadingMore && (
@@ -280,48 +384,6 @@ export function DashboardMainFeed({
           )}
         </>
       )}
-
-      <div className="flex items-center gap-4 py-2">
-        <div className="h-[1px] flex-1 bg-slate-200 dark:bg-[#325a67]" />
-        <span className="text-[10px] font-bold text-slate-500 dark:text-[#92bbc9] uppercase tracking-widest">
-          {t('dashboard.suggestedLessons')}
-        </span>
-        <div className="h-[1px] flex-1 bg-slate-200 dark:bg-[#325a67]" />
-      </div>
-      <Link
-        to="/lesson"
-        className="block bg-gradient-to-br from-[#111e22] to-[#1a353d] dark:from-[#111e22] dark:to-[#1a353d] rounded-xl border border-primary/30 p-5 relative overflow-hidden group hover:border-primary/50 transition-colors"
-      >
-        <div className="relative z-10 flex gap-6">
-          <div
-            className="w-1/3 aspect-video rounded-lg bg-cover bg-center shrink-0"
-            style={{
-              backgroundImage: `url('https://lh3.googleusercontent.com/aida-public/AB6AXuDKqQRcZ2qEUm_G9civhe_WEXiHigCQOkb56jFE6xSQfjLEgB0aZByKocBA4xPNZtFhRTG5TuqjG1kogq3KdZD8cfD6VINztDQdUM2TAwY9Yn8HNzzMjl5yzHc7Eo5SkMYsiTiC4t_f5lxm-nTX1rNn7IXUmFieoc2KhtrWo9kc6a9H8sw20XyDiswbiBiG62iFjYbKEQB7Q63k7DzND2sbrO4hI5jhmTwYkzUtLGuY2cCIhPb8rZ-OelYJqRfAU20NTYUtHW7CqXmW')`,
-            }}
-          />
-          <div className="flex-1 space-y-2 min-w-0">
-            <div className="flex items-center gap-2">
-              <span className="px-2 py-0.5 bg-primary text-[#111e22] text-[10px] font-bold rounded">{t('dashboard.featured')}</span>
-              <span className="text-xs text-primary font-medium">{t('dashboard.by')} {t('dashboard.team')}</span>
-            </div>
-            <h4 className="font-bold text-lg leading-tight group-hover:text-primary transition-colors">
-              Mastering Business English: Email Etiquette
-            </h4>
-            <p className="text-xs text-slate-400 dark:text-[#92bbc9] line-clamp-2">
-              Nâng tầm kỹ năng viết email chuyên nghiệp với bộ quy tắc giao tiếp công sở hiện đại...
-            </p>
-            <div className="flex items-center gap-4 pt-2">
-              <span className="px-4 py-1.5 bg-primary text-[#111e22] font-bold text-xs rounded-lg">
-                {t('dashboard.learnNow')}
-              </span>
-              <span className="text-[10px] text-slate-400 dark:text-[#92bbc9] flex items-center gap-1">
-                <span className="material-symbols-outlined text-sm">schedule</span> 15 {t('dashboard.minutes')}
-              </span>
-            </div>
-          </div>
-        </div>
-        <div className="absolute top-0 right-0 w-32 h-32 bg-primary/5 rounded-full -translate-y-16 translate-x-16 blur-3xl" />
-      </Link>
     </section>
   )
 }

@@ -11,10 +11,12 @@ import { AlertModal } from '../ui/common/AlertModal'
 import { CUSTOM_TOPIC_ID } from '../../utils/getVocabularyTopic'
 import { vocabPracticePath } from '../../utils/vocabularyCustomRoutes'
 import { VOCAB_WORD_TYPE_IDS } from '../../constants/vocabWordTypes'
+import { useAchievementSync } from '../../hooks/useAchievementSync'
 
 export default function VocabularyMyWordsPanel() {
   const { t } = useTranslation()
   const navigate = useNavigate()
+  const { sync } = useAchievementSync()
   const [words, setWords] = useState([])
   const [deck, setDeck] = useState('')
   const [word, setWord] = useState('')
@@ -29,7 +31,8 @@ export default function VocabularyMyWordsPanel() {
 
   useEffect(() => {
     refresh()
-  }, [])
+    sync()
+  }, [sync])
 
   const deckNames = useMemo(() => getCustomDeckNames(), [words])
 
@@ -85,6 +88,7 @@ export default function VocabularyMyWordsPanel() {
     setExample('')
     setWordType('')
     refresh()
+    sync()
   }
 
   const req = (
@@ -368,6 +372,7 @@ export default function VocabularyMyWordsPanel() {
           if (itemToDelete) {
             deleteCustomVocabWord(itemToDelete.id)
             refresh()
+            sync()
             setItemToDelete(null)
           }
         }}

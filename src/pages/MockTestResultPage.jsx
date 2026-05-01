@@ -23,6 +23,9 @@ export function MockTestResultPage() {
       const res = await mockTestService.getSessionDetail(sessionId)
       if (res?.data) {
         setSession(res.data)
+        // Cleanup active mock test session once results are loaded
+        localStorage.removeItem('engsocial_mock_test')
+        localStorage.removeItem('engsocial_mock_test_answers')
       } else {
         setError(true)
       }
@@ -167,7 +170,14 @@ export function MockTestResultPage() {
                     </div>
                   </div>
                   <div className="text-right">
-                    <div className="text-[10px] font-black text-white">{result.score ?? 0}/{result.maxScore}</div>
+                    <div className="text-[10px] font-black text-white">
+                      {isWriting 
+                        ? (result.score ?? result.submission?.aiScore ?? 0) 
+                        : (result.score ?? 0)
+                      }
+                      /
+                      {result.maxScore || (isWriting ? 100 : 0)}
+                    </div>
                     <div className="text-[9px] text-gray-500 font-bold uppercase tracking-tighter">{t('lessonResult.scoreLabel')}</div>
                   </div>
                 </div>

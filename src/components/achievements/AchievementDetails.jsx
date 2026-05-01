@@ -56,10 +56,24 @@ export function AchievementDetails({
   return (
     <div className="space-y-4 min-h-0">
       <div className="flex items-start gap-3">
-        <div className="size-16 rounded-2xl bg-gradient-to-br from-amber-400/20 via-amber-500/5 to-transparent border border-amber-300/40 flex items-center justify-center shadow-[0_0_35px_rgba(250,204,21,0.45)] shrink-0">
-          <span className="material-symbols-outlined text-3xl text-amber-300">
-            {achievement.icon || 'emoji_events'}
-          </span>
+        <div className="size-16 rounded-2xl bg-gradient-to-br from-amber-400/20 via-amber-500/5 to-transparent border border-amber-300/40 flex items-center justify-center shadow-[0_0_35px_rgba(250,204,21,0.45)] shrink-0 overflow-hidden">
+          {achievement.unlocked && (achievement.badgeImage || achievement.badgeIcon) ? (
+            achievement.badgeImage ? (
+              <img
+                src={achievement.badgeImage}
+                alt=""
+                className="w-full h-full object-cover"
+              />
+            ) : (
+              <span className="material-symbols-outlined text-4xl text-amber-300">
+                {achievement.badgeIcon || 'military_tech'}
+              </span>
+            )
+          ) : (
+            <span className="material-symbols-outlined text-3xl text-amber-300">
+              {achievement.icon || 'emoji_events'}
+            </span>
+          )}
         </div>
         <div className="min-w-0 flex-1 space-y-2">
           <h3 className="text-xl font-bold text-white tracking-tight">
@@ -171,86 +185,91 @@ export function AchievementDetails({
         <h4 className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-400 mb-2">
           {t?.('achievementsPage.howTo', { defaultValue: 'Cách hoàn thành' })}
         </h4>
-        <p className="text-base text-slate-100 leading-relaxed line-clamp-5">
+        <p className="text-base text-slate-100 leading-relaxed whitespace-pre-line line-clamp-5">
           {getAchievementHowToPreview(achievement, lng, t)}
         </p>
       </div>
 
       <div className="rounded-2xl border border-slate-800/80 bg-slate-950/80 p-4">
-        <h4 className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-400 mb-2">
-          {t?.('achievementsPage.rewardsTitle', {
-            defaultValue: 'Nhận được gì',
-          })}
+        <h4 className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-400 mb-3">
+          {t?.('achievementsPage.rewardsTitle', { defaultValue: 'Nhận được gì' })}
         </h4>
-        <div className="flex items-center justify-between gap-3 mb-2">
-          <p className="text-[11px] text-slate-400">
-            {t?.('achievementsPage.rewardTypeLabel', {
-              defaultValue: 'Loại phần thưởng',
-            }) || 'Loại phần thưởng'}
-            :{' '}
-            <span className="font-semibold text-slate-200">
-              {achievement.rewardType === 'exp'
-                ? t?.('achievementsPage.rewardTypeExp', { defaultValue: 'EXP' }) ||
-                  'EXP'
-                : achievement.rewardType === 'badge'
-                  ? t?.('achievementsPage.rewardTypeBadge', {
-                      defaultValue: 'Badge',
-                    }) || 'Badge'
-                  : t?.('achievementsPage.rewardTypeBoth', {
-                      defaultValue: 'Both',
-                    }) || 'Both'}
-            </span>
-          </p>
-          {(achievement.rewardType === 'badge' ||
-            achievement.rewardType === 'both') &&
-          (achievement.badgeImage ||
-            (achievement.badgeIcon &&
-              String(achievement.badgeIcon).trim())) ? (
-            <div className="flex items-center gap-2">
-              <span className="text-[11px] text-slate-400">
-                {t?.('achievementsPage.badgePreviewLabel', {
-                  defaultValue: 'Badge:',
-                })}
-              </span>
-              {achievement.badgeImage &&
-              !String(achievement.badgeImage).startsWith('blob:') ? (
-                <img
-                  src={
-                    typeof achievement.badgeImage === 'string'
-                      ? achievement.badgeImage
-                      : ''
-                  }
-                  alt={pickAchievementBadgeName(achievement, lng) || 'badge'}
-                  className="w-8 h-8 rounded-full border border-slate-700/80 object-cover"
-                />
-              ) : achievement.badgeIcon ? (
-                <span className="inline-flex size-8 items-center justify-center rounded-full border border-amber-400/40 bg-amber-500/15 text-amber-200">
-                  <span className="material-symbols-outlined text-[22px]">
-                    {String(achievement.badgeIcon).trim() || 'military_tech'}
-                  </span>
-                </span>
-              ) : null}
-            </div>
-          ) : null}
-        </div>
-        <ul className="space-y-2 text-base">
-          {(achievement.rewards || []).slice(0, 5).map((r) => (
-            <li key={r} className="flex items-center gap-2 text-sm text-emerald-100">
-              <span className="material-symbols-outlined text-[18px] text-emerald-400">
-                check_circle
-              </span>
-              <span>{r}</span>
-            </li>
-          ))}
-          {(achievement.rewards || []).length > 5 ? (
-            <li className="text-[12px] text-slate-400">
-              {t?.('achievementsPage.moreRewards', {
-                count: (achievement.rewards || []).length - 5,
-                defaultValue: `+${(achievement.rewards || []).length - 5} phần thưởng khác`,
+
+        {/* Per-milestone rewards breakdown */}
+        {Array.isArray(achievement.requirement?.milestones) && achievement.requirement.milestones.length > 0 ? (
+          <ul className="space-y-2">
+            {achievement.requirement.milestones
+              .slice()
+              .sort((a, b) => Number(a.value) - Number(b.value))
+              .map((m) => {
+                const mVal = Number(m.value)
+                const reached = (achievement.progress ?? 0) >= mVal
+                const rt = m.rewardType || 'exp'
+                const xp = Number(m.xpReward || 0)
+                const badgeName = lng && !String(lng).toLowerCase().startsWith('en')
+                  ? (m.badgeName || m.badgeNameEn || '')
+                  : (m.badgeNameEn || m.badgeName || '')
+                const label = lng && !String(lng).toLowerCase().startsWith('en')
+                  ? (m.vi || m.en || '')
+                  : (m.en || m.vi || '')
+                return (
+                  <li
+                    key={mVal}
+                    className={`rounded-xl border px-3 py-2 flex items-start gap-3 ${
+                      reached
+                        ? 'border-emerald-500/30 bg-emerald-500/10'
+                        : 'border-slate-700/60 bg-slate-900/50'
+                    }`}
+                  >
+                    <span className={`material-symbols-outlined text-[18px] mt-0.5 shrink-0 ${reached ? 'text-emerald-400' : 'text-slate-500'}`}>
+                      {reached ? 'check_circle' : 'radio_button_unchecked'}
+                    </span>
+                    <div className="flex-1 min-w-0">
+                      <p className={`text-sm font-medium ${reached ? 'text-emerald-100' : 'text-slate-400'}`}>
+                        {label || `${mVal} ${achievement.requirement?.type?.replace(/_/g, ' ') || ''}`}
+                      </p>
+                      <div className="flex flex-wrap gap-2 mt-1">
+                        {(rt === 'exp' || rt === 'both') && xp > 0 && (
+                          <span className={`text-[11px] px-1.5 py-0.5 rounded-full font-semibold ${reached ? 'bg-amber-500/20 text-amber-300' : 'bg-slate-800 text-slate-500'}`}>
+                            +{xp} XP
+                          </span>
+                        )}
+                        {(rt === 'badge' || rt === 'both') && badgeName && (
+                          <span className={`text-[11px] px-1.5 py-0.5 rounded-full font-semibold flex items-center gap-1 ${reached ? 'bg-amber-500/20 text-amber-300' : 'bg-slate-800 text-slate-500'}`}>
+                            <span className="material-symbols-outlined text-[12px]">
+                              {m.badgeIcon || 'military_tech'}
+                            </span>
+                            {badgeName}
+                          </span>
+                        )}
+                        {(rt === 'badge' || rt === 'both') && !badgeName && m.badgeIcon && (
+                          <span className={`text-[11px] px-1.5 py-0.5 rounded-full font-semibold flex items-center gap-1 ${reached ? 'bg-amber-500/20 text-amber-300' : 'bg-slate-800 text-slate-500'}`}>
+                            <span className="material-symbols-outlined text-[12px]">{m.badgeIcon}</span>
+                            Badge
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                  </li>
+                )
               })}
-            </li>
-          ) : null}
-        </ul>
+          </ul>
+        ) : (
+          /* Fallback: flat rewards list */
+          <ul className="space-y-2 text-base">
+            {(achievement.rewards || []).slice(0, 5).map((r) => (
+              <li key={r} className="flex items-center gap-2 text-sm text-emerald-100">
+                <span className="material-symbols-outlined text-[18px] text-emerald-400">check_circle</span>
+                <span>{r}</span>
+              </li>
+            ))}
+            {!(achievement.rewards?.length) && (
+              <li className="text-sm text-slate-500">
+                {t?.('achievementsPage.noRewards', { defaultValue: 'Chưa có thông tin phần thưởng' })}
+              </li>
+            )}
+          </ul>
+        )}
       </div>
     </div>
   )

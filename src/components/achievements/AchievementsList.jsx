@@ -44,9 +44,23 @@ export function AchievementsList({
           }`}
         >
           <div className="flex items-center gap-3 w-full min-w-0">
-            <span className="material-symbols-outlined text-xl text-emerald-300 shrink-0">
-              {a.icon || 'emoji_events'}
-            </span>
+            {a.unlocked && (a.badgeImage || a.badgeIcon) ? (
+              a.badgeImage ? (
+                <img
+                  src={a.badgeImage}
+                  alt=""
+                  className="size-8 rounded-full object-cover border border-amber-400/30 shrink-0"
+                />
+              ) : (
+                <span className="material-symbols-outlined text-xl text-amber-300 shrink-0">
+                  {a.badgeIcon || 'military_tech'}
+                </span>
+              )
+            ) : (
+              <span className="material-symbols-outlined text-xl text-emerald-300 shrink-0">
+                {a.icon || 'emoji_events'}
+              </span>
+            )}
             <div className="min-w-0 flex-1">
               <div className="text-sm font-semibold text-slate-50 truncate">
                 {pickAchievementName(a, lng)}

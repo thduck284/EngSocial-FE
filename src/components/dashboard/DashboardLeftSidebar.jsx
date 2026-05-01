@@ -170,25 +170,35 @@ export function DashboardLeftSidebar({
           className="mb-4"
         />
         <div className="space-y-4">
-          {raw.featuredLessons.map(({ title, icon, skill, level, to, learners }) => (
-            <Link key={title} to={to} className="block group">
-              <div className="flex justify-between items-start">
-                <h4 className="text-sm font-semibold group-hover:text-primary transition-colors">{title}</h4>
-                <span className="px-1.5 py-0.5 bg-orange-500/10 text-orange-500 text-[9px] font-bold rounded uppercase shrink-0 ml-2">
-                  {level}
-                </span>
-              </div>
-              <div className="flex items-center gap-3 mt-1 text-[10px] text-slate-500 dark:text-[#92bbc9]">
-                <span className="flex items-center gap-1">
-                  <span className="material-symbols-outlined text-sm">
-                    {icon === 'menu_book' ? 'menu_book' : icon === 'headset' ? 'headset' : 'edit_note'}
+          {raw.featuredLessons.map((lesson) => {
+            const skill = lesson.skill?.toLowerCase() || 'reading'
+            const category = lesson.category === 'practice' ? 'practice' : 'lesson'
+            const to = `/${category}/${skill}/${lesson.slug}`
+            const icon = skill === 'reading' ? 'menu_book' : skill === 'listening' ? 'headset' : 'edit_note'
+            const learners = lesson.completionCount || 0
+
+            return (
+              <Link key={lesson.id || lesson.slug} to={to} className="block group">
+                <div className="flex justify-between items-start">
+                  <h4 className="text-sm font-semibold group-hover:text-primary transition-colors line-clamp-2">
+                    {lesson.title}
+                  </h4>
+                  <span className="px-1.5 py-0.5 bg-orange-500/10 text-orange-500 text-[9px] font-bold rounded uppercase shrink-0 ml-2">
+                    {lesson.level}
                   </span>
-                  {t(`skills.${skill.toLowerCase()}`)}
-                </span>
-                <span>• {learners} {t('dashboard.views')}</span>
-              </div>
-            </Link>
-          ))}
+                </div>
+                <div className="flex items-center gap-3 mt-1 text-[10px] text-slate-500 dark:text-[#92bbc9]">
+                  <span className="flex items-center gap-1">
+                    <span className="material-symbols-outlined text-sm">
+                      {icon}
+                    </span>
+                    {t(`skills.${skill}`)}
+                  </span>
+                  <span>• {learners.toLocaleString()} {t('dashboard.views')}</span>
+                </div>
+              </Link>
+            )
+          })}
         </div>
         <Link
           to="/lesson"
@@ -198,21 +208,7 @@ export function DashboardLeftSidebar({
         </Link>
       </DashboardCard>
 
-      <div className="bg-primary/5 dark:bg-primary/10 rounded-xl p-5 border border-primary/20">
-        <h3 className="font-bold text-sm text-primary mb-3 flex items-center gap-2">
-          <span className="material-symbols-outlined text-lg fill-icon">emoji_events</span>
-          {t('dashboard.ongoingChallenge')}
-        </h3>
-        <div className="space-y-3">
-          <div className="text-xs">
-            <p className="font-semibold">Vua Từ Vựng Tuần 48</p>
-            <div className="flex items-center justify-between mt-1 text-[#92bbc9]">
-              <span>Kết thúc sau: 2 ngày</span>
-              <span>Top 5%</span>
-            </div>
-          </div>
-        </div>
-      </div>
+
     </aside>
   )
 }

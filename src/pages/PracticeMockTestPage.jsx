@@ -246,7 +246,7 @@ export function PracticeMockTestPage() {
     localStorage.setItem('engsocial_mock_test', JSON.stringify(mockTestData))
     localStorage.removeItem('engsocial_mock_test_answers')
     const first = selectedSet.lessons[0]
-    navigate(`/practice/${first.skill}/${first._id || first.id}`)
+    navigate(`/practice/${first.skill}/${first._id || first.id}/study`)
   }
 
   return (

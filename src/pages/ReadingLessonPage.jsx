@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { Link, useParams, useLocation } from 'react-router-dom'
+import { Link, useParams, useLocation, useBlocker } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { useReadingLesson } from '../hooks/useReadingLesson'
 import { formatTime } from '../utils/dateTime'
@@ -16,29 +16,7 @@ export function ReadingLessonPage() {
   const [rightBarOpen, setRightBarOpen] = useState(false)
 
   const [isMockTest, setIsMockTest] = useState(false)
-  
-  useEffect(() => {
-    const data = localStorage.getItem('engsocial_mock_test')
-    if (data) {
-      const parsed = JSON.parse(data)
-      const isInTest = parsed.lessons.some(l => l.id === id)
-      if (isInTest) {
-        setIsMockTest(true)
-      } else {
-        // If we are in /practice but the lesson is not part of the current mock test, 
-        // we might want to clear it or just not trigger mock test mode.
-        // For now, let's just not trigger it.
-        setIsMockTest(false)
-      }
-    } else {
-      setIsMockTest(false)
-    }
-  }, [id])
 
-  // Default: keep right panel closed when entering/reloading a lesson.
-  useEffect(() => {
-    setRightBarOpen(isMockTest) // Auto-open right bar in mock test
-  }, [id, isMockTest])
   const {
     content,
     loading,
@@ -96,10 +74,75 @@ export function ReadingLessonPage() {
   } = useReadingLesson(id, t)
 
   useEffect(() => {
+    const data = localStorage.getItem('engsocial_mock_test')
+    if (data) {
+      const parsed = JSON.parse(data)
+      // Check if current lesson ID or slug is in the mock test lessons
+      const isInTest = parsed.lessons.some(l => l.id === id || l.slug === id)
+      setIsMockTest(isInTest)
+    } else {
+      setIsMockTest(false)
+    }
+  }, [id, content])
+
+  // Default: keep right panel closed when entering/reloading a lesson.
+  useEffect(() => {
+    setRightBarOpen(isMockTest) // Auto-open right bar in mock test
+  }, [id, isMockTest])
+
+  useEffect(() => {
     if (location.state?.questionIdx !== undefined && content) {
       handlePageChange(location.state.questionIdx + 1)
     }
   }, [location.state?.questionIdx, content])
+
+  // Navigation Blocker
+  const [showExitConfirm, setShowExitConfirm] = useState(false)
+  const [blockedLocation, setBlockedLocation] = useState(null)
+
+  const blocker = useBlocker(
+    ({ currentLocation, nextLocation }) => {
+      if (completingLesson) return false
+      if (currentLocation.pathname === nextLocation.pathname) return false
+      
+      const inMockTest = !!localStorage.getItem('engsocial_mock_test')
+
+      // Allow navigation between lessons if in Mock Test or going to result
+      if (nextLocation.pathname.includes('/result') || nextLocation.pathname.includes('/mock-test') || (inMockTest && nextLocation.pathname.includes('/study'))) {
+        return false
+      }
+      
+      return true
+    }
+  )
+
+  useEffect(() => {
+    if (blocker.state === 'blocked') {
+      setShowExitConfirm(true)
+    }
+  }, [blocker.state])
+
+  const handleConfirmExit = () => {
+    setShowExitConfirm(false)
+    blocker.proceed()
+  }
+
+  const handleCancelExit = () => {
+    setShowExitConfirm(false)
+    blocker.reset()
+  }
+
+  // Prevent browser close/refresh
+  useEffect(() => {
+    const handleBeforeUnload = (e) => {
+      if (!completingLesson) {
+        e.preventDefault()
+        e.returnValue = ''
+      }
+    }
+    window.addEventListener('beforeunload', handleBeforeUnload)
+    return () => window.removeEventListener('beforeunload', handleBeforeUnload)
+  }, [completingLesson])
 
   if (loading) {
     return (
@@ -668,6 +711,17 @@ export function ReadingLessonPage() {
         cancelText={t('common.cancel')}
         onClose={() => setShowConfirmModal(false)}
         onConfirm={handleConfirmComplete}
+      />
+
+      <AlertModal
+        open={showExitConfirm}
+        title={t('common.confirmExit') || 'Confirm Exit'}
+        message={t('common.confirmExitMessage') || 'Are you sure you want to leave? Your progress may not be saved.'}
+        confirmText={t('common.confirm') || 'Yes, leave'}
+        cancelText={t('common.cancel') || 'Cancel'}
+        onClose={handleCancelExit}
+        onConfirm={handleConfirmExit}
+        type="warning"
       />
     </>
   )

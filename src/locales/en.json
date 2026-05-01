@@ -17,7 +17,9 @@
     "ok": "OK",
     "close": "Close",
     "minutesShort": "mins",
-    "description": "Description"
+    "description": "Description",
+    "confirmExit": "Confirm Exit",
+    "confirmExitMessage": "Are you sure you want to leave? Your progress may not be saved."
   },
   "report": {
     "titlePost": "Report post",
@@ -478,6 +480,8 @@
     "level": "Level",
     "learner": "Learner",
     "viewFullProfile": "View Full Profile",
+    "viewDetail": "View Detail",
+    "back": "Back",
     "todayGoals": "Today's Goals",
     "completed": "completed",
     "ongoingChallenge": "Ongoing Challenge",
@@ -512,6 +516,7 @@
     "featured": "FEATURED",
     "by": "By",
     "team": "EngSocial Team",
+    "lessonDescriptionFallback": "Improve your skills with high-quality lessons from our expert team...",
     "learnNow": "Learn Now",
     "minutes": "minutes",
     "quickSearch": "Quick search...",
@@ -646,6 +651,14 @@
     "noAchievementSelected": "Select an achievement to view details.",
     "emptyList": "No achievements in this category yet.",
     "emptyCategory": "This category has no system achievements yet.",
+    "unlockedLabel": "🎉 Achievement Unlocked!",
+    "howTo": "How to complete",
+    "rewardsTitle": "What you get",
+    "rewardTypeLabel": "Reward type",
+    "rewardTypeExp": "EXP",
+    "rewardTypeBadge": "Badge",
+    "rewardTypeBoth": "Both",
+    "noRewards": "No reward info available",
     "rewardXp": "Earn {{count}} XP",
     "rewardBadge": "Earn badge “{{name}}”",
     "confirmDelete": "Delete this achievement?",
@@ -1193,6 +1206,8 @@
       "title": "Word Scramble",
       "subtitle": "Rearrange the letters to form the correct word based on the meaning and example.",
       "listDesc": "Unscramble — solo or multiple players taking turns on one device.",
+      "snakeTitle": "Snake Word",
+      "snakeDesc": "Control the snake to eat the correct English word corresponding to the given meaning. Avoid distractor words!",
       "scrambledLabel": "SCRAMBLED WORD",
       "meaningLabel": "WORD MEANING",
       "yourAnswer": "Your answer",
@@ -1516,7 +1531,7 @@
     "yourReview": "Your review",
     "helpfulReview": "Helpful review",
     "allStats": "All stats",
-    "reviewsCount": "reviews",
+    "reviewsCount": "{{count}} reviews",
     "questionsCount": "{{count}} questions"
   },
   "lesson": {
@@ -2141,6 +2156,13 @@
       "C1": "C1 Advanced",
       "C2": "C2 Proficiency"
     }
+  },
+  "lessonDetail": {
+    "benefitsTitle": "Lesson Benefits:",
+    "benefit1": "Improve vocabulary by topic",
+    "benefit2": "Enhance contextual understanding",
+    "benefit3": "Receive immediate feedback",
+    "benefit4": "Accumulate XP for weekly ranking"
   }
 }
 

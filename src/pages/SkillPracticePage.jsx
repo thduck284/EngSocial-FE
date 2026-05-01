@@ -167,11 +167,21 @@ export function SkillPracticePage() {
                   <span className="material-symbols-outlined text-[12px] fill-icon">star</span> {card.xpReward} XP
                 </span>
               )}
+              <span className="px-2 py-0.5 bg-gray-700 text-gray-300 text-[10px] rounded flex items-center gap-1">
+                <span className="material-symbols-outlined text-xs">group</span> {card.completionCount?.toLocaleString() || 0} {t('dashboard.views')}
+              </span>
             </div>
             <div className="flex items-center justify-between pt-2 border-t border-border-dark">
-              <div className="flex items-center gap-1">
-                <span className="material-symbols-outlined text-yellow-500 text-sm fill-icon">star</span>
-                <span className="text-[10px] font-bold">{t('skills.ratingLabel')}: {card.rating}</span>
+              <div className="flex items-center gap-3">
+                <div className="flex items-center gap-1">
+                  <span className="material-symbols-outlined text-yellow-500 text-sm fill-icon">star</span>
+                  <span className="text-[10px] font-bold">
+                    {t('skills.ratingLabel')}: {card.rating} 
+                    <span className="text-gray-400 font-normal ml-1">
+                      ({t('lessons.reviewsCount', { count: card.ratingCount || 0 })})
+                    </span>
+                  </span>
+                </div>
               </div>
               <div className="flex items-center gap-2">
                 {canAddPractice && user?.id != null && card.id && (
@@ -192,10 +202,10 @@ export function SkillPracticePage() {
                   <span className="material-symbols-outlined text-sm">star</span>
                 </Link>
                 <button
-                  onClick={() => navigate(`/practice/reading/${card.id}`)}
+                  onClick={() => navigate(`/practice/reading/${card.slug || card.id}`)}
                   className="px-4 py-1.5 bg-primary/10 text-primary hover:bg-primary hover:text-background-dark font-bold text-xs rounded transition-all"
                 >
-                  {t('buttons.start')}
+                  {t('dashboard.viewDetail')}
                 </button>
               </div>
             </div>
@@ -257,11 +267,20 @@ export function SkillPracticePage() {
                   <span className="material-symbols-outlined text-[12px] fill-icon">star</span> {card.xpReward} XP
                 </span>
               )}
+              <span className="px-2 py-0.5 bg-gray-700 text-gray-300 text-[10px] rounded flex items-center gap-1">
+                <span className="material-symbols-outlined text-xs">group</span> {card.completionCount?.toLocaleString() || 0} {t('dashboard.views')}
+              </span>
             </div>
             <div className="flex items-center justify-between pt-2 border-t border-border-dark">
-              <div className="flex items-center gap-1">
-                <span className="material-symbols-outlined text-yellow-500 text-sm fill-icon">star</span>
-                <span className="text-[10px] font-bold">{t('skills.ratingLabel')}: {card.rating}</span>
+              <div className="flex items-center gap-3">
+                <div className="flex items-center gap-1">
+                  <span className="material-symbols-outlined text-yellow-500 text-sm fill-icon">star</span>
+                  <span className="text-[10px] font-bold">{t('skills.ratingLabel')}: {card.rating} 
+                    <span className="text-gray-400 font-normal ml-1">
+                      ({t('lessons.reviewsCount', { count: card.ratingCount || 0 })})
+                    </span>
+</span>
+                </div>
               </div>
               <div className="flex items-center gap-2">
                 {canAddPractice && user?.id != null && card.id && (
@@ -282,10 +301,10 @@ export function SkillPracticePage() {
                   <span className="material-symbols-outlined text-sm">star</span>
                 </Link>
                 <button
-                  onClick={() => navigate(`/practice/listening/${card.id}`)}
+                  onClick={() => navigate(`/practice/listening/${card.slug || card.id}`)}
                   className="px-4 py-1.5 bg-primary/10 text-primary hover:bg-primary hover:text-background-dark font-bold text-xs rounded transition-all"
                 >
-                  {t('buttons.startListening')}
+                  {t('dashboard.viewDetail')}
                 </button>
               </div>
             </div>
@@ -347,11 +366,20 @@ export function SkillPracticePage() {
                   <span className="material-symbols-outlined text-[12px] fill-icon">star</span> {card.xpReward} XP
                 </span>
               )}
+              <span className="px-2 py-0.5 bg-gray-700 text-gray-300 text-[10px] rounded flex items-center gap-1">
+                <span className="material-symbols-outlined text-xs">group</span> {card.completionCount?.toLocaleString() || 0} {t('dashboard.views')}
+              </span>
             </div>
             <div className="flex items-center justify-between pt-2 border-t border-border-dark">
-              <div className="flex items-center gap-1">
-                <span className="material-symbols-outlined text-yellow-500 text-sm fill-icon">star</span>
-                <span className="text-[10px] font-bold">{t('skills.ratingLabel')}: {card.rating}</span>
+              <div className="flex items-center gap-3">
+                <div className="flex items-center gap-1">
+                  <span className="material-symbols-outlined text-yellow-500 text-sm fill-icon">star</span>
+                  <span className="text-[10px] font-bold">{t('skills.ratingLabel')}: {card.rating} 
+                    <span className="text-gray-400 font-normal ml-1">
+                      ({t('lessons.reviewsCount', { count: card.ratingCount || 0 })})
+                    </span>
+</span>
+                </div>
               </div>
               <div className="flex items-center gap-2">
                 {canAddPractice && user?.id != null && card.id && (
@@ -372,10 +400,10 @@ export function SkillPracticePage() {
                   <span className="material-symbols-outlined text-sm">star</span>
                 </Link>
                 <button
-                  onClick={() => navigate(`/practice/writing/${card.id}`)}
+                  onClick={() => navigate(`/practice/writing/${card.slug || card.id}`)}
                   className="px-4 py-1.5 bg-primary/10 text-primary hover:bg-primary hover:text-background-dark font-bold text-xs rounded transition-all"
                 >
-                  {t('buttons.startWriting')}
+                  {t('dashboard.viewDetail')}
                 </button>
               </div>
             </div>
@@ -506,9 +534,12 @@ export function SkillPracticePage() {
               </div>
               <h4 className="font-bold text-lg text-white">{challenge.title}</h4>
               <p className="text-xs text-gray-300">{challenge.desc}</p>
-              <button className="mt-2 px-6 py-2 bg-primary text-background-dark font-bold text-sm rounded-lg hover:brightness-110" type="button">
+              <Link
+                to="/challenge"
+                className="mt-2 px-6 py-2 bg-primary text-background-dark font-bold text-sm rounded-lg hover:brightness-110 inline-block"
+              >
                 {t(challenge.btn)}
-              </button>
+              </Link>
             </div>
             <span className="material-symbols-outlined text-7xl text-primary/20">{challengeIcon}</span>
           </div>

@@ -8,12 +8,18 @@ import { ChatbotButton } from '../ui/chatbot/ChatbotButton'
 const isLessonDoingPage = (pathname) =>
   /^\/(lesson|practice)\/(reading|listening|writing)\/[^/]+$/.test(pathname)
 
-const isWordScrambleFullScreen = (pathname) => pathname === ROUTES.SKILLS.ENTERTAINMENT_WORD_SCRAMBLE || pathname.startsWith(`${ROUTES.SKILLS.ENTERTAINMENT_WORD_SCRAMBLE}/lobby/`) || pathname.startsWith(`${ROUTES.SKILLS.ENTERTAINMENT_WORD_SCRAMBLE}/roomId=`)
+const isFullScreenGame = (pathname) =>
+  pathname === ROUTES.SKILLS.ENTERTAINMENT_WORD_SCRAMBLE ||
+  pathname.startsWith(`${ROUTES.SKILLS.ENTERTAINMENT_WORD_SCRAMBLE}/lobby/`) ||
+  pathname.startsWith(`${ROUTES.SKILLS.ENTERTAINMENT_WORD_SCRAMBLE}/roomId=`) ||
+  pathname === ROUTES.SKILLS.ENTERTAINMENT_SNAKE_WORD ||
+  pathname.startsWith(`${ROUTES.SKILLS.ENTERTAINMENT_SNAKE_WORD}/lobby/`) ||
+  pathname.startsWith(`${ROUTES.SKILLS.ENTERTAINMENT_SNAKE_WORD}/roomId=`)
 
 export function DashboardLayout() {
   const location = useLocation()
   const { isAuthenticated } = useAuth()
-  const fullScreenGame = isWordScrambleFullScreen(location.pathname)
+  const fullScreenGame = isFullScreenGame(location.pathname)
   const hideChatbot = isLessonDoingPage(location.pathname) || fullScreenGame
 
   if (!isAuthenticated) {
@@ -22,7 +28,7 @@ export function DashboardLayout() {
 
   return (
     <div className="bg-background-dark text-white h-screen flex flex-col w-full min-w-0 overflow-hidden">
-      <AppHeader />
+      {!fullScreenGame && <AppHeader />}
       <div
         className={
           fullScreenGame

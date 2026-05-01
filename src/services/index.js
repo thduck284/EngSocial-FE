@@ -65,6 +65,9 @@ export { challengesService } from './challenges.service.js'
 // Leaderboard
 export { leaderboardService } from './leaderboard.service.js'
 
+// Achievements
+export { achievementsService } from './achievements.service.js'
+
 // Chatbot
 export { chatbotService } from './chatbot.service.js'
 
