@@ -27,7 +27,7 @@ export function DashboardLayout() {
   }
 
   return (
-    <div className="bg-background-dark text-white h-screen flex flex-col w-full min-w-0 overflow-hidden">
+    <div className="bg-background-light dark:bg-background-dark text-slate-900 dark:text-white h-screen flex flex-col w-full min-w-0 overflow-hidden">
       {!fullScreenGame && <AppHeader />}
       <div
         className={

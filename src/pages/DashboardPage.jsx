@@ -56,7 +56,7 @@ export function DashboardPage() {
 
   return (
     <main className="max-w-[1440px] mx-auto grid grid-cols-12 gap-6 p-6">
-      <div className="hidden lg:block lg:col-span-3 pr-2 lg:sticky lg:top-4 self-start max-h-[calc(100vh-64px)] overflow-y-auto space-y-6">
+      <div className="hidden lg:block lg:col-span-3 pr-2 lg:sticky lg:top-2 self-start max-h-[calc(100vh-64px)] overflow-y-auto space-y-6">
         <DashboardLeftSidebar
           displayAvatar={displayAvatar}
           displayName={displayName}
@@ -89,7 +89,7 @@ export function DashboardPage() {
           friendsList={displayedFriendsList}
         />
       </div>
-      <div className="hidden lg:block lg:col-span-3 lg:sticky lg:top-4 self-start max-h-[calc(100vh-64px)] overflow-y-auto space-y-6">
+      <div className="hidden lg:block lg:col-span-3 lg:sticky lg:top-2 self-start max-h-[calc(100vh-64px)] overflow-y-auto space-y-6">
         <DashboardRightSidebar
           friendSelectRef={friendSelectRef}
           friendSelectOpen={friendSelectOpen}

@@ -1,3 +1,4 @@
+import { useEffect } from 'react'
 import { Routes, Route, Navigate, useLocation, useParams } from 'react-router-dom'
 import { AuthProvider, useAuth } from './context/AuthContext'
 import { Toaster } from 'react-hot-toast'
@@ -62,6 +63,7 @@ import VocabularyDataPage from './pages/VocabularyDataPage'
 import LearnPage from './pages/LearnPage'
 import MatchGamePage from './pages/MatchGamePage'
 import TestPage from './pages/TestPage'
+import { SettingsPage } from './pages/SettingsPage'
 import { GlobalGameInviteListener } from './components/GlobalGameInviteListener'
 import { AchievementUnlockedToast } from './components/achievements/AchievementUnlockedToast'
 
@@ -106,6 +108,15 @@ function SkillRedirect() {
 function App() {
   const location = useLocation()
   const background = location.state?.background
+
+  useEffect(() => {
+    const savedTheme = localStorage.getItem('theme') || 'dark'
+    if (savedTheme === 'dark') {
+      document.documentElement.classList.add('dark')
+    } else {
+      document.documentElement.classList.remove('dark')
+    }
+  }, [])
 
   return (
     <AuthProvider>
@@ -215,6 +226,7 @@ function App() {
           <Route path="topic/:topicId/learn" element={<LearnPage />} />
           <Route path="topic/:topicId/match" element={<MatchGamePage />} />
           <Route path="topic/:topicId/test" element={<TestPage />} />
+          <Route path="settings" element={<SettingsPage />} />
         </Route>
 
         <Route path="/manage/*" element={<LegacyManageRedirect />} />

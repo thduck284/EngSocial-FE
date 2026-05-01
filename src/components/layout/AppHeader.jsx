@@ -166,17 +166,17 @@ export function AppHeader() {
 
   return (
     <>
-    <header className="sticky top-0 z-50 w-screen max-w-none ml-[calc(-50vw+50%)] bg-background-dark/80 backdrop-blur-md border-b border-border-dark px-4 md:px-10 py-3">
+    <header className="sticky top-0 z-50 w-screen max-w-none ml-[calc(-50vw+50%)] bg-white/80 dark:bg-background-dark/80 backdrop-blur-md border-b border-slate-200 dark:border-border-dark px-4 md:px-10 py-3">
       <div className="max-w-[1440px] mx-auto flex items-center justify-between gap-4">
         <div className="flex items-center gap-6 flex-1 min-w-0">
           <Link to={ROUTES.HOME} className="flex items-center gap-2 text-primary shrink-0">
             <LogoIcon />
             <span className="text-2xl font-bold tracking-tight hidden lg:block">EngSocial</span>
           </Link>
-          <div className="hidden md:flex flex-1 max-w-[320px] items-center bg-card-dark rounded-lg px-3 py-2 border border-border-dark">
-            <span className="material-symbols-outlined text-gray-400 text-xl shrink-0">search</span>
+          <div className="hidden md:flex flex-1 max-w-[320px] items-center bg-slate-100 dark:bg-card-dark rounded-lg px-3 py-2 border border-slate-200 dark:border-border-dark">
+            <span className="material-symbols-outlined text-gray-400 dark:text-gray-500 text-xl shrink-0">search</span>
             <input
-              className="bg-transparent border-none focus:ring-0 text-white placeholder-gray-400 w-full text-sm min-w-0"
+              className="bg-transparent border-none focus:ring-0 text-slate-900 dark:text-white placeholder-gray-400 w-full text-sm min-w-0"
               placeholder={t('header.searchPlaceholder')}
               type="text"
               value={searchValue}
@@ -207,7 +207,7 @@ export function AppHeader() {
                     )) ||
                   (to === ROUTES.COMMUNITY && (location.pathname.startsWith('/community')))
                     ? 'text-primary font-semibold border-b-2 border-primary pb-1'
-                    : 'text-gray-400 hover:text-primary'
+                    : 'text-slate-500 dark:text-gray-400 hover:text-primary'
                 }`}
               >
                 {t(label)}
@@ -223,11 +223,11 @@ export function AppHeader() {
                 ref={notifButtonRef}
                 type="button"
                 onClick={() => setNotifOpen((o) => !o)}
-                className="relative w-10 h-10 flex items-center justify-center rounded-xl bg-card-dark text-gray-300 hover:bg-gray-700 hover:text-primary transition-all border border-border-dark"
+                className="relative w-10 h-10 flex items-center justify-center rounded-xl bg-slate-100 dark:bg-card-dark text-slate-500 dark:text-gray-300 hover:bg-slate-200 dark:hover:bg-gray-700 hover:text-primary transition-all border border-slate-200 dark:border-border-dark"
               >
                 <span className="material-symbols-outlined">notifications</span>
                 {unreadCount > 0 && (
-                  <span className="absolute -top-0.5 -right-0.5 min-w-[18px] h-[18px] px-1 flex items-center justify-center bg-red-500 text-white text-[10px] font-bold rounded-full border-2 border-background-dark">
+                  <span className="absolute -top-0.5 -right-0.5 min-w-[18px] h-[18px] px-1 flex items-center justify-center bg-red-500 text-white text-[10px] font-bold rounded-full border-2 border-white dark:border-background-dark">
                     {unreadCount > 99 ? '99+' : unreadCount}
                   </span>
                 )}
@@ -247,12 +247,12 @@ export function AppHeader() {
               className={`relative w-10 h-10 flex items-center justify-center rounded-xl border transition-all shrink-0 ${
                 isOnMessagesSection
                   ? 'bg-primary/20 text-primary border-primary'
-                  : 'bg-card-dark text-gray-300 hover:bg-gray-700 hover:text-primary border-border-dark'
+                  : 'bg-slate-100 dark:bg-card-dark text-slate-500 dark:text-gray-300 hover:bg-slate-200 dark:hover:bg-gray-700 hover:text-primary border-slate-200 dark:border-border-dark'
               }`}
             >
               <span className="material-symbols-outlined">chat_bubble</span>
               {messagesUnreadCount > 0 && (
-                <span className="absolute -top-0.5 -right-0.5 min-w-[18px] h-[18px] px-1 flex items-center justify-center bg-red-500 text-white text-[10px] font-bold rounded-full border-2 border-background-dark">
+                <span className="absolute -top-0.5 -right-0.5 min-w-[18px] h-[18px] px-1 flex items-center justify-center bg-red-500 text-white text-[10px] font-bold rounded-full border-2 border-white dark:border-background-dark">
                   {messagesUnreadCount > 99 ? '99+' : messagesUnreadCount}
                 </span>
               )}
@@ -262,18 +262,18 @@ export function AppHeader() {
             <button
               type="button"
               onClick={(e) => { e.stopPropagation(); setAvatarOpen((o) => !o) }}
-              className="size-10 rounded-full overflow-hidden border-2 border-primary cursor-pointer focus:ring-2 focus:ring-primary/50 focus:ring-offset-2 focus:ring-offset-background-dark flex items-center justify-center shrink-0"
+              className="size-10 rounded-full overflow-hidden border-2 border-primary cursor-pointer focus:ring-2 focus:ring-primary/50 focus:ring-offset-2 focus:ring-offset-white dark:focus:ring-offset-background-dark flex items-center justify-center shrink-0"
               aria-expanded={avatarOpen}
               aria-haspopup="true"
             >
               <img src={avatarUrl} alt="" className="w-full h-full object-cover" />
             </button>
             {avatarOpen && (
-              <div className="absolute right-0 top-full mt-2 w-48 py-1 rounded-xl bg-card-dark border border-border-dark shadow-xl z-50">
+              <div className="absolute right-0 top-full mt-2 w-48 py-1 rounded-xl bg-white dark:bg-card-dark border border-slate-200 dark:border-border-dark shadow-xl z-50">
                 <Link
                   to={ROUTES.PROFILE}
                   onClick={() => setAvatarOpen(false)}
-                  className="flex items-center gap-2 px-4 py-2.5 text-sm text-gray-200 hover:bg-gray-700/50 hover:text-primary transition-colors"
+                  className="flex items-center gap-2 px-4 py-2.5 text-sm text-slate-600 dark:text-gray-200 hover:bg-slate-50 dark:hover:bg-gray-700/50 hover:text-primary transition-colors"
                 >
                   <span className="material-symbols-outlined text-lg">person</span>
                   {t('header.profile')}
@@ -282,7 +282,7 @@ export function AppHeader() {
                   <Link
                     to={staffWorkTo}
                     onClick={() => setAvatarOpen(false)}
-                    className="flex items-center gap-2 px-4 py-2.5 text-sm text-gray-200 hover:bg-gray-700/50 hover:text-primary transition-colors"
+                    className="flex items-center gap-2 px-4 py-2.5 text-sm text-slate-600 dark:text-gray-200 hover:bg-slate-50 dark:hover:bg-gray-700/50 hover:text-primary transition-colors"
                   >
                     <span className="material-symbols-outlined text-lg">dashboard</span>
                     {t('header.yourWork')}
@@ -291,16 +291,16 @@ export function AppHeader() {
                 <Link
                   to="/settings"
                   onClick={() => setAvatarOpen(false)}
-                  className="flex items-center gap-2 px-4 py-2.5 text-sm text-gray-200 hover:bg-gray-700/50 hover:text-primary transition-colors"
+                  className="flex items-center gap-2 px-4 py-2.5 text-sm text-slate-600 dark:text-gray-200 hover:bg-slate-50 dark:hover:bg-gray-700/50 hover:text-primary transition-colors"
                 >
                   <span className="material-symbols-outlined text-lg">settings</span>
                   {t('header.settings')}
                 </Link>
-                <div className="my-1 border-t border-border-dark" />
+                <div className="my-1 border-t border-slate-200 dark:border-border-dark" />
                 <button
                   type="button"
                   onClick={openLogoutConfirm}
-                  className="flex items-center gap-2 w-full px-4 py-2.5 text-sm text-red-400 hover:bg-red-500/10 transition-colors text-left"
+                  className="flex items-center gap-2 w-full px-4 py-2.5 text-sm text-red-500 hover:bg-red-50 dark:hover:bg-red-500/10 transition-colors text-left"
                 >
                   <span className="material-symbols-outlined text-lg">logout</span>
                   {t('header.logout')}

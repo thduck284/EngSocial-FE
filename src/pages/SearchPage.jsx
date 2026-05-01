@@ -149,67 +149,74 @@ export function SearchPage() {
   }
 
   return (
-    <main className="max-w-[1440px] mx-auto px-4 lg:px-10 py-6">
-      <div className="grid grid-cols-1 md:grid-cols-12 gap-6">
-        <aside className="hidden md:block md:col-span-3 pr-2 md:sticky md:top-4 self-start max-h-[calc(100vh-64px)] overflow-y-auto space-y-6">
+    <main className="max-w-[1440px] mx-auto px-6 lg:px-10 pt-2 pb-8">
+      <div className="grid grid-cols-1 md:grid-cols-12 gap-8">
+        <aside className="hidden md:block md:col-span-3 pr-2 md:sticky md:top-4 self-start max-h-[calc(100vh-64px)] overflow-y-auto space-y-8 no-scrollbar">
           {renderFilterSidebar()}
         </aside>
 
-        <div className="md:col-span-6 space-y-6">
-          <nav className="flex text-xs text-gray-400 gap-2">
-            <Link to={ROUTES.HOME} className="hover:text-primary">
+        <div className="md:col-span-6 space-y-8">
+          <nav className="flex items-center gap-3 text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 dark:text-gray-500">
+            <Link to={ROUTES.HOME} className="hover:text-primary transition-colors flex items-center gap-1.5">
+              <span className="material-symbols-outlined text-base">home</span>
               {t('header.home')}
             </Link>
-            <span>/</span>
-            <span className="text-gray-200">{t('search.breadcrumb')}</span>
+            <span className="text-slate-300 dark:text-gray-700">/</span>
+            <span className="text-slate-900 dark:text-gray-200">{t('search.breadcrumb')}</span>
           </nav>
 
-          <div className="space-y-4">
-            <h2 className="text-2xl font-bold text-white">
-              {t('search.resultsFor')}{' '}
-              <span className="text-primary">«{q || t('search.emptyQuery')}»</span>
-            </h2>
-            <div className="flex items-center gap-8 border-b border-border-dark overflow-x-auto">
+          <div className="space-y-6">
+            <div className="bg-white dark:bg-card-dark rounded-[2.5rem] border border-slate-200 dark:border-border-dark p-8 shadow-xl shadow-slate-200/50 dark:shadow-none relative overflow-hidden group">
+               <div className="absolute top-0 right-0 w-32 h-full bg-gradient-to-l from-primary/5 to-transparent pointer-events-none" />
+               <h2 className="text-3xl font-black text-slate-900 dark:text-white uppercase tracking-tight relative z-10">
+                {t('search.resultsFor')}{' '}
+                <span className="text-primary italic">«{q || t('search.emptyQuery')}»</span>
+              </h2>
+            </div>
+
+            <div className="flex items-center gap-10 border-b border-slate-100 dark:border-border-dark overflow-x-auto no-scrollbar px-2">
               <button
                 type="button"
                 onClick={() => setTab('posts')}
-                className={`pb-3 text-sm font-semibold flex items-center gap-2 transition-colors whitespace-nowrap ${
-                  tab === 'posts' ? 'text-primary border-b-2 border-primary' : 'text-gray-400 hover:text-gray-200'
+                className={`pb-4 text-[10px] font-black uppercase tracking-[0.2em] flex items-center gap-3 transition-all whitespace-nowrap relative group/tab ${
+                  tab === 'posts' ? 'text-primary' : 'text-slate-400 dark:text-gray-500 hover:text-slate-600 dark:hover:text-gray-300'
                 }`}
               >
-                {t('search.tabPosts')}{' '}
-                <span className="bg-primary/20 text-primary px-2 py-0.5 rounded-full text-[10px]">
+                {t('search.tabPosts')}
+                <span className={`px-2.5 py-1 rounded-lg text-[9px] font-black transition-colors ${tab === 'posts' ? 'bg-primary/10 text-primary' : 'bg-slate-100 dark:bg-white/5 text-slate-400 dark:text-gray-600 group-hover/tab:bg-slate-200 dark:group-hover/tab:bg-white/10'}`}>
                   {postsCount}
                 </span>
+                {tab === 'posts' && <div className="absolute bottom-0 left-0 right-0 h-1 bg-primary rounded-full shadow-[0_-4px_10px_rgba(19,182,236,0.5)]" />}
               </button>
               <button
                 type="button"
                 onClick={() => setTab('friends')}
-                className={`pb-3 text-sm font-medium flex items-center gap-2 transition-colors whitespace-nowrap ${
-                  tab === 'friends'
-                    ? 'text-primary border-b-2 border-primary'
-                    : 'text-gray-400 hover:text-gray-200'
+                className={`pb-4 text-[10px] font-black uppercase tracking-[0.2em] flex items-center gap-3 transition-all whitespace-nowrap relative group/tab ${
+                  tab === 'friends' ? 'text-primary' : 'text-slate-400 dark:text-gray-500 hover:text-slate-600 dark:hover:text-gray-300'
                 }`}
               >
                 {t('search.tabFriends')}
-                <span className="bg-primary/20 text-primary px-2 py-0.5 rounded-full text-[10px]">
+                <span className={`px-2.5 py-1 rounded-lg text-[9px] font-black transition-colors ${tab === 'friends' ? 'bg-primary/10 text-primary' : 'bg-slate-100 dark:bg-white/5 text-slate-400 dark:text-gray-600 group-hover/tab:bg-slate-200 dark:group-hover/tab:bg-white/10'}`}>
                   {friendsCount}
                 </span>
+                {tab === 'friends' && <div className="absolute bottom-0 left-0 right-0 h-1 bg-primary rounded-full shadow-[0_-4px_10px_rgba(19,182,236,0.5)]" />}
               </button>
               <button
                 type="button"
                 onClick={() => setTab('community')}
-                className={`pb-3 text-sm font-medium flex items-center gap-2 transition-colors whitespace-nowrap ${
-                  tab === 'community' ? 'text-primary border-b-2 border-primary' : 'text-gray-400 hover:text-gray-200'
+                className={`pb-4 text-[10px] font-black uppercase tracking-[0.2em] flex items-center gap-3 transition-all whitespace-nowrap relative group/tab ${
+                  tab === 'community' ? 'text-primary' : 'text-slate-400 dark:text-gray-500 hover:text-slate-600 dark:hover:text-gray-300'
                 }`}
               >
                 {t('search.tabCommunity')}
-                <span className="bg-primary/20 text-primary px-2 py-0.5 rounded-full text-[10px]">
+                <span className={`px-2.5 py-1 rounded-lg text-[9px] font-black transition-colors ${tab === 'community' ? 'bg-primary/10 text-primary' : 'bg-slate-100 dark:bg-white/5 text-slate-400 dark:text-gray-600 group-hover/tab:bg-slate-200 dark:group-hover/tab:bg-white/10'}`}>
                   {communityCount}
                 </span>
+                {tab === 'community' && <div className="absolute bottom-0 left-0 right-0 h-1 bg-primary rounded-full shadow-[0_-4px_10px_rgba(19,182,236,0.5)]" />}
               </button>
             </div>
           </div>
+
 
           {tab === 'posts' && (
             <SearchResultsPosts

@@ -220,7 +220,7 @@ export function WritingLessonPage() {
   }
 
   return (
-    <main className="max-w-[1600px] mx-auto px-6 py-6 flex flex-col lg:flex-row gap-6 min-h-[calc(100vh-64px)]">
+    <main className="max-w-[1600px] mx-auto px-6 pt-2 pb-6 flex flex-col lg:flex-row gap-6 min-h-[calc(100vh-64px)]">
       {/* Left Sidebar - Hidden in Mock Test */}
       {!isMockTest && (
       <aside className="w-full lg:w-[300px] lg:min-w-[240px] lg:shrink lg:basis-[300px] space-y-6 overflow-y-auto pr-2 pb-6 custom-scrollbar">

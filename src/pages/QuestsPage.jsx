@@ -312,37 +312,41 @@ export function QuestsPage() {
 
   return (
     <main className="max-w-[1440px] mx-auto p-6 flex flex-col">
-      <div className="flex gap-6 flex-1 min-h-0">
-        <aside className="flex flex-col gap-3 shrink-0 w-40">
+      <div className="flex flex-col lg:flex-row gap-6 flex-1 min-h-0">
+        <aside className="flex flex-col gap-3 shrink-0 lg:w-48">
           <Link
             to="/quests"
-            className={`px-4 py-2.5 rounded-xl text-sm font-semibold transition-colors text-left ${tab === TAB_QUESTS ? 'bg-primary text-background-dark' : 'bg-card-dark text-gray-400 hover:bg-white/10 hover:text-white'}`}
+            className={`px-4 py-3 rounded-xl text-sm font-bold transition-all shadow-sm text-left ${tab === TAB_QUESTS ? 'bg-primary text-white shadow-primary/20' : 'bg-white dark:bg-card-dark text-slate-500 dark:text-gray-400 hover:bg-slate-50 dark:hover:bg-white/10 hover:text-slate-900 dark:hover:text-white border border-slate-200 dark:border-border-dark'}`}
           >
             {t('quests.tabQuests')}
           </Link>
           <Link
             to="/challenge"
-            className={`px-4 py-2.5 rounded-xl text-sm font-semibold transition-colors text-left ${tab === TAB_CHALLENGES ? 'bg-primary text-background-dark' : 'bg-card-dark text-gray-400 hover:bg-white/10 hover:text-white'}`}
+            className={`px-4 py-3 rounded-xl text-sm font-bold transition-all shadow-sm text-left ${tab === TAB_CHALLENGES ? 'bg-primary text-white shadow-primary/20' : 'bg-white dark:bg-card-dark text-slate-500 dark:text-gray-400 hover:bg-slate-50 dark:hover:bg-white/10 hover:text-slate-900 dark:hover:text-white border border-slate-200 dark:border-border-dark'}`}
           >
             {t('quests.tabChallenges')}
           </Link>
-          <select
-            value={filterType}
-            onChange={(e) => setFilterType(e.target.value)}
-            className="mt-1 w-full min-w-[10rem] shrink-0 bg-card-dark border border-border-dark rounded-xl px-3 py-2 text-xs text-gray-300 outline-none focus:ring-2 focus:ring-primary"
-            style={{ width: '10rem' }}
-          >
-            {tab === TAB_QUESTS ? (
-              <>
-                <option value="all">{t('quests.filterAll')}</option>
-                <option value="daily">{t('quests.daily')}</option>
-                <option value="weekly">{t('quests.weekly')}</option>
-              </>
-            ) : (
-              <option value="all">{t('quests.challengeFilterAll')}</option>
-            )}
-          </select>
-          <p className="mt-1 text-[10px] text-gray-500 leading-snug">
+          <div className="relative mt-2">
+            <select
+              value={filterType}
+              onChange={(e) => setFilterType(e.target.value)}
+              className="w-full bg-white dark:bg-card-dark border border-slate-200 dark:border-border-dark rounded-xl px-3 py-2.5 text-xs text-slate-700 dark:text-gray-300 outline-none focus:ring-2 focus:ring-primary shadow-sm appearance-none"
+            >
+              {tab === TAB_QUESTS ? (
+                <>
+                  <option value="all">{t('quests.filterAll')}</option>
+                  <option value="daily">{t('quests.daily')}</option>
+                  <option value="weekly">{t('quests.weekly')}</option>
+                </>
+              ) : (
+                <option value="all">{t('quests.challengeFilterAll')}</option>
+              )}
+            </select>
+            <span className="material-symbols-outlined absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none text-lg">
+              expand_more
+            </span>
+          </div>
+          <p className="mt-2 text-[10px] text-slate-400 dark:text-gray-500 leading-relaxed px-1">
             {tab === TAB_QUESTS ? t('quests.filterTipQuests') : t('quests.filterTipChallenges')}
           </p>
         </aside>
@@ -354,13 +358,16 @@ export function QuestsPage() {
       )}
 
       {tab === TAB_QUESTS && !loading && quests.length > 0 && (
-        <div className="space-y-6">
+        <div className="space-y-8">
           {questsByType.map(({ type, list }) => (
             <section key={type}>
-              <h2 className="mb-3 text-xs font-semibold uppercase tracking-wide text-gray-400">
-                {t(TYPE_LABELS[type] || 'quests.daily')}
-              </h2>
-              <div className="flex gap-4 overflow-x-auto hide-scrollbar pb-1 flex-nowrap">
+              <div className="flex items-center gap-2 mb-4 px-1">
+                <div className="h-4 w-1 bg-primary rounded-full" />
+                <h2 className="text-xs font-black uppercase tracking-widest text-slate-500 dark:text-gray-400">
+                  {t(TYPE_LABELS[type] || 'quests.daily')}
+                </h2>
+              </div>
+              <div className="flex gap-6 overflow-x-auto hide-scrollbar pb-4 flex-nowrap">
                 {list.map((quest) => {
                   const { title: questTitle, description: questDescription } = buildPeriodicQuestDisplay(quest, t)
                   const progressPct = periodicQuestProgressPercent(
@@ -371,55 +378,55 @@ export function QuestsPage() {
                   return (
                   <div
                     key={quest.id || `${quest.type}-${quest.slotIndex}`}
-                    className={`bg-card-dark rounded-xl p-5 border transition-all flex-shrink-0 flex flex-col w-[360px] max-w-[360px] ${
+                    className={`bg-white dark:bg-card-dark rounded-2xl p-6 border transition-all flex-shrink-0 flex flex-col w-[340px] shadow-sm hover:shadow-md ${
                       isDone
-                        ? 'border-emerald-500/35 opacity-95 hover:border-emerald-500/50'
-                        : 'border-border-dark hover:border-primary/50'
+                        ? 'border-emerald-500/30 bg-emerald-50/30 dark:bg-emerald-500/5'
+                        : 'border-slate-200 dark:border-border-dark hover:border-primary/40'
                     }`}
-                    style={{ boxSizing: 'border-box' }}
                   >
-                    <div className="flex items-start justify-between gap-2 mb-3 min-h-[28px] shrink-0">
+                    <div className="flex items-start justify-between gap-2 mb-4 shrink-0">
                       <span
-                        style={{ width: '6rem', minWidth: '6rem', flexShrink: 0 }}
-                        className={`inline-block text-center px-2 py-1 text-[10px] font-bold rounded border ${
-                          TYPE_COLORS[quest.type] || 'bg-gray-600 text-gray-300'
+                        className={`inline-block text-center px-3 py-1 text-[10px] font-black rounded-lg border shadow-sm ${
+                          TYPE_COLORS[quest.type] || 'bg-slate-100 text-slate-500'
                         }`}
                       >
-                        {t(TYPE_LABELS[quest.type] || 'quests.daily')}
+                        {t(TYPE_LABELS[quest.type] || 'quests.daily').toUpperCase()}
                       </span>
                       <div className="flex flex-col items-end gap-1 shrink-0">
                         {isDone ? (
-                          <span className="inline-flex items-center gap-0.5 rounded-md border border-emerald-500/40 bg-emerald-500/15 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-emerald-300">
-                            <span className="material-symbols-outlined text-[12px]">check_circle</span>
+                          <span className="inline-flex items-center gap-1 rounded-lg border border-emerald-500/30 bg-emerald-500/10 px-2 py-1 text-[10px] font-black uppercase tracking-tight text-emerald-600 dark:text-emerald-400 shadow-sm">
+                            <span className="material-symbols-outlined text-[14px]">check_circle</span>
                             {t('quests.periodicDoneBadge')}
                           </span>
                         ) : null}
-                        <span className="flex items-center gap-1 text-yellow-500 text-sm font-bold">
+                        <span className="flex items-center gap-1 text-yellow-600 dark:text-yellow-500 text-sm font-black">
                           <span className="material-symbols-outlined text-base fill-icon">star</span>
                           +{quest.xpReward} XP
                         </span>
                       </div>
                     </div>
-                    <div className="flex items-center gap-2 mb-2">
-                      <span className="material-symbols-outlined text-primary text-xl">
-                        {quest.icon && quest.icon !== 'flag' ? quest.icon : periodicQuestCategoryIcon(quest)}
-                      </span>
-                      <h3 className="font-bold text-white">{questTitle}</h3>
+                    <div className="flex items-center gap-3 mb-2">
+                      <div className="size-10 rounded-xl bg-primary/10 flex items-center justify-center text-primary border border-primary/20">
+                        <span className="material-symbols-outlined text-2xl">
+                          {quest.icon && quest.icon !== 'flag' ? quest.icon : periodicQuestCategoryIcon(quest)}
+                        </span>
+                      </div>
+                      <h3 className="font-bold text-slate-900 dark:text-white leading-tight">{questTitle}</h3>
                     </div>
-                    <div className="mb-3 min-h-[32px]">
-                      {questDescription ? <p className="text-xs text-gray-400 line-clamp-2">{questDescription}</p> : null}
+                    <div className="mb-4 min-h-[40px]">
+                      {questDescription ? <p className="text-xs text-slate-500 dark:text-gray-400 line-clamp-2 leading-relaxed">{questDescription}</p> : null}
                     </div>
-                    <div className="mb-3">
-                      <div className="flex items-center justify-between gap-2 mb-1.5">
-                        <span className="text-[10px] font-medium uppercase tracking-wide text-gray-500">
+                    <div className="mb-4">
+                      <div className="flex items-center justify-between gap-2 mb-2">
+                        <span className="text-[10px] font-black uppercase tracking-widest text-slate-400">
                           {t('quests.progress')}
                         </span>
-                        <span className="text-xs font-semibold tabular-nums text-primary">
+                        <span className="text-xs font-black tabular-nums text-primary">
                           {t('quests.progressPercent', { percent: progressPct })}
                         </span>
                       </div>
                       <div
-                        className="h-2 w-full rounded-full bg-white/10 overflow-hidden"
+                        className="h-2.5 w-full rounded-full bg-slate-100 dark:bg-white/10 overflow-hidden shadow-inner"
                         role="progressbar"
                         aria-valuemin={0}
                         aria-valuemax={100}
@@ -427,27 +434,27 @@ export function QuestsPage() {
                         aria-label={t('quests.progress')}
                       >
                         <div
-                          className={`h-full rounded-full transition-[width] duration-300 ease-out ${
+                          className={`h-full rounded-full transition-all duration-500 ease-out shadow-sm ${
                             isDone ? 'bg-emerald-500' : 'bg-primary'
                           }`}
                           style={{ width: `${progressPct}%` }}
                         />
                       </div>
                     </div>
-                    <div className="flex items-center justify-between gap-2 pt-3 border-t border-border-dark">
-                      <div className="flex items-center gap-2 text-xs text-gray-300">
-                        <span className="material-symbols-outlined text-sm">
+                    <div className="flex items-center justify-between gap-2 pt-4 border-t border-slate-100 dark:border-border-dark mt-auto">
+                      <div className="flex items-center gap-2 text-[11px] font-bold text-slate-500 dark:text-gray-300">
+                        <span className="material-symbols-outlined text-base text-primary/70">
                           {periodicQuestCategoryIcon(quest)}
                         </span>
-                        <span>{formatTarget(quest, t, quest.userProgress ?? questProgressMap[quest.id])}</span>
+                        <span className="truncate">{formatTarget(quest, t, quest.userProgress ?? questProgressMap[quest.id])}</span>
                       </div>
-                      <div className="flex items-center gap-1 ml-auto">
+                      <div className="flex items-center gap-1 shrink-0">
                         <Link
                           to={getQuestJoinTo(quest)}
-                          className={`px-4 py-2 rounded-lg text-sm font-semibold transition-colors ${
+                          className={`px-5 py-2 rounded-xl text-xs font-black transition-all shadow-sm ${
                             isDone
-                              ? 'border border-emerald-500/40 bg-emerald-500/10 text-emerald-200 hover:bg-emerald-500/20'
-                              : 'bg-primary hover:bg-primary/90 text-background-dark'
+                              ? 'border border-emerald-500/30 bg-emerald-500/10 text-emerald-700 dark:text-emerald-200 hover:bg-emerald-500/20'
+                              : 'bg-primary hover:bg-primary/90 text-white shadow-primary/20'
                           }`}
                         >
                           {isDone ? t('quests.periodicDoneCta') : t('buttons.join')}
@@ -464,9 +471,11 @@ export function QuestsPage() {
       )}
 
       {tab === TAB_QUESTS && !loading && quests.length === 0 && (
-        <div className="text-center py-16 text-gray-400">
-          <span className="material-symbols-outlined text-5xl mb-4 block opacity-50">flag</span>
-          <p>{isAuthenticated ? t('quests.empty') : t('quests.periodicLoginHint')}</p>
+        <div className="text-center py-24 bg-white dark:bg-card-dark rounded-3xl border-2 border-dashed border-slate-200 dark:border-border-dark">
+          <div className="size-20 bg-slate-50 dark:bg-white/5 rounded-full flex items-center justify-center mx-auto mb-4">
+            <span className="material-symbols-outlined text-5xl text-slate-300 dark:opacity-50">flag</span>
+          </div>
+          <p className="text-slate-500 dark:text-gray-400 font-bold">{isAuthenticated ? t('quests.empty') : t('quests.periodicLoginHint')}</p>
         </div>
       )}
 
@@ -477,12 +486,15 @@ export function QuestsPage() {
       )}
 
       {tab === TAB_CHALLENGES && !challengesLoading && challenges.length > 0 && (
-        <div className="space-y-6">
+        <div className="space-y-8">
           <section>
-            <h2 className="mb-3 text-xs font-semibold uppercase tracking-wide text-gray-400">
-              {t('quests.sectionChallenges')}
-            </h2>
-            <div className="flex gap-4 overflow-x-auto hide-scrollbar pb-1 flex-nowrap">
+            <div className="flex items-center gap-2 mb-4 px-1">
+              <div className="h-4 w-1 bg-primary rounded-full" />
+              <h2 className="text-xs font-black uppercase tracking-widest text-slate-500 dark:text-gray-400">
+                {t('quests.sectionChallenges')}
+              </h2>
+            </div>
+            <div className="flex gap-6 overflow-x-auto hide-scrollbar pb-4 flex-nowrap">
               {challengesSorted.map((challenge) => {
                 const participation = challengeParticipationByChallengeId[String(challenge.id)]
                 const progressPct = challengeProgressPercent(challenge, participation)
@@ -492,45 +504,46 @@ export function QuestsPage() {
                 return (
                   <div
                     key={challenge.id}
-                    className="bg-card-dark rounded-xl p-5 border border-border-dark hover:border-primary/50 transition-all flex-shrink-0 flex flex-col w-[360px] max-w-[360px]"
-                    style={{ boxSizing: 'border-box' }}
+                    className="bg-white dark:bg-card-dark rounded-2xl p-6 border border-slate-200 dark:border-border-dark hover:border-primary/40 transition-all flex-shrink-0 flex flex-col w-[340px] shadow-sm hover:shadow-md"
                   >
-                    <div className="flex items-start justify-between gap-2 mb-3 min-h-[28px] shrink-0">
+                    <div className="flex items-start justify-between gap-2 mb-4 shrink-0">
                       <span
-                        className={`inline-flex items-center gap-1 max-w-[220px] px-2 py-1 text-[10px] font-bold leading-snug rounded border ${CHALLENGE_WINDOW_BADGE_CLASS}`}
+                        className={`inline-flex items-center gap-1.5 px-3 py-1 text-[10px] font-black rounded-lg border shadow-sm ${CHALLENGE_WINDOW_BADGE_CLASS.replace('text-emerald-200', 'text-emerald-700 dark:text-emerald-200').replace('bg-emerald-500/10', 'bg-emerald-50 dark:bg-emerald-500/10')}`}
                       >
-                        <span className="material-symbols-outlined text-sm shrink-0">event</span>
+                        <span className="material-symbols-outlined text-base shrink-0">event</span>
                         <span className="min-w-0">{windowLabel}</span>
                       </span>
-                      <span className="flex items-center gap-1 text-yellow-500 text-sm font-bold shrink-0">
+                      <span className="flex items-center gap-1 text-yellow-600 dark:text-yellow-500 text-sm font-black shrink-0">
                         <span className="material-symbols-outlined text-base fill-icon">star</span>
                         +{challenge.xpReward ?? 0} XP
                       </span>
                     </div>
-                    <div className="flex items-center gap-2 mb-2">
-                      <span className="material-symbols-outlined text-primary text-xl">
-                        {challenge.icon || 'emoji_events'}
-                      </span>
-                      <h3 className="font-bold text-white">{localeText.title}</h3>
+                    <div className="flex items-center gap-3 mb-2">
+                      <div className="size-10 rounded-xl bg-indigo-500/10 flex items-center justify-center text-indigo-500 border border-indigo-500/20">
+                        <span className="material-symbols-outlined text-2xl">
+                          {challenge.icon || 'emoji_events'}
+                        </span>
+                      </div>
+                      <h3 className="font-bold text-slate-900 dark:text-white leading-tight">{localeText.title}</h3>
                     </div>
-                    <div className="mb-3 min-h-[32px]">
+                    <div className="mb-4 min-h-[40px]">
                       {localeText.description && (
-                        <p className="text-xs text-gray-400 line-clamp-2">
+                        <p className="text-xs text-slate-500 dark:text-gray-400 line-clamp-2 leading-relaxed">
                           {localeText.description}
                         </p>
                       )}
                     </div>
-                    <div className="mb-3">
-                      <div className="flex items-center justify-between gap-2 mb-1.5">
-                        <span className="text-[10px] font-medium uppercase tracking-wide text-gray-500">
+                    <div className="mb-4">
+                      <div className="flex items-center justify-between gap-2 mb-2">
+                        <span className="text-[10px] font-black uppercase tracking-widest text-slate-400">
                           {t('quests.progress')}
                         </span>
-                        <span className="text-xs font-semibold tabular-nums text-primary">
+                        <span className="text-xs font-black tabular-nums text-primary">
                           {t('quests.progressPercent', { percent: progressPct })}
                         </span>
                       </div>
                       <div
-                        className="h-2 w-full rounded-full bg-white/10 overflow-hidden"
+                        className="h-2.5 w-full rounded-full bg-slate-100 dark:bg-white/10 overflow-hidden shadow-inner"
                         role="progressbar"
                         aria-valuemin={0}
                         aria-valuemax={100}
@@ -538,32 +551,32 @@ export function QuestsPage() {
                         aria-label={t('quests.progress')}
                       >
                         <div
-                          className="h-full rounded-full bg-primary transition-[width] duration-300 ease-out"
+                          className="h-full rounded-full bg-primary transition-all duration-500 ease-out shadow-sm"
                           style={{ width: `${progressPct}%` }}
                         />
                       </div>
                       {isAuthenticated && !participation ? (
-                        <p className="mt-1.5 text-[10px] text-gray-500 leading-snug">
+                        <p className="mt-2 text-[10px] text-slate-400 dark:text-gray-500 leading-relaxed italic">
                           {t('quests.challengeProgressJoinHint')}
                         </p>
                       ) : null}
                     </div>
-                    <div className="flex items-center justify-between gap-2 pt-3 border-t border-border-dark">
-                      <div className="flex flex-col gap-1 min-w-0 text-xs text-gray-300">
+                    <div className="flex items-center justify-between gap-2 pt-4 border-t border-slate-100 dark:border-border-dark mt-auto">
+                      <div className="flex flex-col gap-0.5 min-w-0 text-[11px] font-bold text-slate-600 dark:text-gray-300">
                         <div className="flex items-center gap-2">
-                          <span className="material-symbols-outlined text-sm shrink-0">
+                          <span className="material-symbols-outlined text-base text-indigo-500/70 shrink-0">
                             {challengeRequirementIcon(challenge)}
                           </span>
-                          <span className="min-w-0">{targetLine}</span>
+                          <span className="truncate">{targetLine}</span>
                         </div>
-                        <span className="text-[10px] text-gray-500 pl-7">
+                        <span className="text-[10px] text-slate-400 font-medium pl-6">
                           {t('quests.participantsCount', { count: challenge.participantCount ?? 0 })}
                         </span>
                       </div>
                       <div className="flex items-center gap-1 shrink-0">
                         <Link
                           to={getChallengeJoinTo(challenge)}
-                          className="px-4 py-2 rounded-lg bg-primary hover:bg-primary/90 text-background-dark text-sm font-semibold transition-colors"
+                          className="px-5 py-2 rounded-xl bg-primary hover:bg-primary/90 text-white text-xs font-black transition-all shadow-sm shadow-primary/20"
                         >
                           {t('buttons.join')}
                         </Link>
@@ -578,9 +591,11 @@ export function QuestsPage() {
       )}
 
       {tab === TAB_CHALLENGES && !challengesLoading && challenges.length === 0 && (
-        <div className="text-center py-16 text-gray-400">
-          <span className="material-symbols-outlined text-5xl mb-4 block opacity-50">emoji_events</span>
-          <p>{t('quests.challengesEmpty')}</p>
+        <div className="text-center py-24 bg-white dark:bg-card-dark rounded-3xl border-2 border-dashed border-slate-200 dark:border-border-dark">
+          <div className="size-20 bg-slate-50 dark:bg-white/5 rounded-full flex items-center justify-center mx-auto mb-4">
+            <span className="material-symbols-outlined text-5xl text-slate-300 dark:opacity-50">emoji_events</span>
+          </div>
+          <p className="text-slate-500 dark:text-gray-400 font-bold">{t('quests.challengesEmpty')}</p>
         </div>
       )}
         </div>
@@ -588,3 +603,4 @@ export function QuestsPage() {
     </main>
   )
 }
+

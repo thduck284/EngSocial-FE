@@ -109,11 +109,11 @@ export function ConversationSidebar({
           <button
             type="button"
             onClick={() => onCreateGroup?.()}
-            className="h-8 w-8 shrink-0 rounded-full flex items-center justify-center bg-card-dark text-gray-400 hover:bg-primary/20 hover:text-primary transition-colors -mr-5"
+            className="h-8 w-8 shrink-0 rounded-xl flex items-center justify-center bg-slate-100 dark:bg-card-dark text-slate-400 dark:text-gray-400 hover:bg-primary/10 hover:text-primary transition-all border border-slate-200 dark:border-white/5 active:scale-90"
             title={t('messages.createGroup')}
             aria-label={t('messages.createGroup')}
           >
-            <span className="material-symbols-outlined text-lg">add</span>
+            <span className="material-symbols-outlined text-lg">group_add</span>
           </button>
         </div>
       </div>

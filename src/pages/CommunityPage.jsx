@@ -232,20 +232,20 @@ export function CommunityPage() {
           </>
         ) : viewMode === 'list' || viewMode === 'discover' ? (
           <div className="md:col-span-9 lg:col-span-9 space-y-8">
-            <div className="bg-slate-900/80 border border-slate-800 rounded-xl p-4 md:p-6 flex flex-col md:flex-row md:items-center justify-between gap-4">
+            <div className="bg-white dark:bg-card-dark border border-slate-200 dark:border-border-dark rounded-2xl p-4 md:p-6 flex flex-col md:flex-row md:items-center justify-between gap-4 shadow-sm">
               <div className="flex items-center gap-3">
-                <div className="flex size-12 shrink-0 items-center justify-center rounded-xl bg-primary/15 border border-primary/30">
+                <div className="flex size-12 shrink-0 items-center justify-center rounded-xl bg-primary/10 border border-primary/20">
                   <span className="material-symbols-outlined text-2xl text-primary" aria-hidden>
                     {viewMode === 'discover' ? 'explore' : 'groups'}
                   </span>
                 </div>
                 <div>
-                  <h2 className="text-lg md:text-xl font-bold text-slate-100 tracking-tight">
+                  <h2 className="text-lg md:text-xl font-bold text-slate-900 dark:text-white tracking-tight">
                     {viewMode === 'discover'
                       ? t('groups.sidebar.discover')
                       : t('groups.sidebar.joinedTitle')}
                   </h2>
-                  <p className="text-sm text-slate-400 mt-0.5">
+                  <p className="text-sm text-slate-500 dark:text-gray-400 font-medium mt-0.5">
                     {viewMode === 'discover'
                       ? t('groups.sidebar.discoverSubtitle', {
                           defaultValue: 'Khám phá cộng đồng mới dựa trên sở thích và bạn bè',
@@ -287,10 +287,10 @@ export function CommunityPage() {
                     {title && (
                       <div className="flex items-center gap-2 px-1">
                         <div className="h-4 w-1 bg-primary rounded-full" />
-                        <h3 className="text-sm font-bold text-slate-400 uppercase tracking-wider">
+                        <h3 className="text-sm font-black text-slate-500 dark:text-gray-400 uppercase tracking-widest">
                           {title}
                         </h3>
-                        <span className="text-xs text-slate-600">({list.length})</span>
+                        <span className="text-xs text-slate-400">({list.length})</span>
                       </div>
                     )}
                     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -300,7 +300,7 @@ export function CommunityPage() {
                         return (
                           <div
                             key={id || g.slug}
-                            className="bg-slate-900/80 border border-slate-800 rounded-2xl p-5 hover:border-primary/40 hover:bg-slate-900/40 transition-all flex flex-col gap-4 relative group"
+                            className="bg-white dark:bg-card-dark border border-slate-200 dark:border-border-dark rounded-[2rem] p-6 hover:border-primary/40 hover:shadow-xl hover:-translate-y-1 transition-all flex flex-col gap-5 relative group shadow-sm"
                           >
                             <button
                               type="button"
@@ -311,7 +311,7 @@ export function CommunityPage() {
                               className="absolute inset-0 z-0"
                             />
                             <div className="flex items-center gap-4 relative z-10 pointer-events-none">
-                              <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-blue-500/20 to-indigo-600/20 flex items-center justify-center border border-slate-700 overflow-hidden transform group-hover:scale-105 transition-transform">
+                              <div className="w-14 h-14 rounded-2xl bg-slate-50 dark:bg-slate-800/50 flex items-center justify-center border border-slate-100 dark:border-slate-700 overflow-hidden transform group-hover:scale-105 transition-transform shadow-sm">
                                 {g.icon ? (
                                   <img src={g.icon} alt={g.name} className="w-full h-full object-cover" />
                                 ) : (
@@ -321,17 +321,17 @@ export function CommunityPage() {
                                 )}
                               </div>
                               <div className="flex-1 min-w-0">
-                                <p className="font-bold text-slate-100 truncate group-hover:text-primary transition-colors">
+                                <p className="font-bold text-slate-900 dark:text-slate-100 truncate group-hover:text-primary transition-colors">
                                   {g.name}
                                 </p>
-                                <p className="text-xs text-slate-400 mt-0.5 flex items-center gap-1.5">
-                                  <span className="material-symbols-outlined text-sm">groups</span>
+                                <p className="text-xs text-slate-500 dark:text-gray-400 mt-1 flex items-center gap-2 font-bold uppercase tracking-tighter">
+                                  <span className="material-symbols-outlined text-sm text-primary/60">groups</span>
                                   {g.memberCount ?? 0}{' '}
                                   {t('groups.header.members', { defaultValue: 'thành viên' })}
                                 </p>
                               </div>
                             </div>
-                            <div className="text-sm text-slate-400 line-clamp-2 min-h-[40px] leading-relaxed relative z-10 pointer-events-none">
+                            <div className="text-sm text-slate-600 dark:text-slate-400 line-clamp-2 min-h-[40px] leading-relaxed relative z-10 pointer-events-none">
                               {g.description || t('groups.sidebar.aboutEmpty')}
                             </div>
                             <div className="mt-auto pt-2 relative z-10 flex gap-2">
@@ -342,7 +342,7 @@ export function CommunityPage() {
                                     setViewMode('group')
                                     navigate(`/community/group/${id}/about`)
                                   }}
-                                  className="flex-1 py-2 rounded-xl bg-slate-800 border border-slate-700 text-xs font-bold text-slate-200 hover:bg-slate-700 transition-all"
+                                  className="flex-1 py-3 rounded-2xl bg-slate-100 dark:bg-white/5 border border-slate-200 dark:border-border-dark text-xs font-black uppercase tracking-wider text-slate-700 dark:text-slate-200 hover:bg-slate-200 dark:hover:bg-white/10 transition-all shadow-sm"
                                 >
                                   {t('groups.sidebar.openGroup', { defaultValue: 'Xem nhóm' })}
                                 </button>
@@ -350,7 +350,7 @@ export function CommunityPage() {
                                 <button
                                   type="button"
                                   onClick={() => handleJoinGroup(id)}
-                                  className="flex-1 py-2 rounded-xl bg-primary text-[#111e22] text-xs font-bold hover:brightness-110 transition-all shadow-lg shadow-primary/20"
+                                  className="flex-1 py-3 rounded-2xl bg-primary text-white text-xs font-black uppercase tracking-wider hover:brightness-110 transition-all shadow-lg shadow-primary/20"
                                 >
                                   {t('groups.header.join', { defaultValue: 'Tham gia' })}
                                 </button>
@@ -365,10 +365,10 @@ export function CommunityPage() {
                         <button
                           type="button"
                           onClick={() => setLimit(prev => prev + 6)}
-                          className="px-8 py-2.5 rounded-xl border border-slate-800 bg-slate-900/50 text-slate-300 text-sm font-bold hover:bg-slate-800 hover:text-white transition-all flex items-center gap-2"
+                          className="px-10 py-3 rounded-2xl border border-slate-200 dark:border-border-dark bg-white dark:bg-card-dark text-slate-600 dark:text-slate-300 text-sm font-black uppercase tracking-widest hover:bg-slate-50 dark:hover:bg-white/5 transition-all flex items-center gap-3 shadow-lg shadow-slate-200/50 dark:shadow-none group"
                         >
                           {t('common.loadMore') || 'Xem thêm'}
-                          <span className="material-symbols-outlined text-lg">expand_more</span>
+                          <span className="material-symbols-outlined text-xl group-hover:translate-y-0.5 transition-transform">expand_more</span>
                         </button>
                       </div>
                     )}
@@ -388,8 +388,8 @@ export function CommunityPage() {
                   )}
 
                   {items.length === 0 && (
-                    <div className="py-20 text-center bg-slate-900/40 border border-slate-800 border-dashed rounded-2xl">
-                      <span className="material-symbols-outlined text-5xl text-slate-700 mb-3">
+                    <div className="py-24 text-center bg-slate-50/50 dark:bg-card-dark/50 border-2 border-dashed border-slate-200 dark:border-border-dark rounded-[2.5rem]">
+                      <span className="material-symbols-outlined text-5xl text-slate-400 mb-3">
                         {viewMode === 'discover' ? 'explore_off' : 'group_off'}
                       </span>
                       <p className="text-slate-500 font-medium">
@@ -413,43 +413,43 @@ export function CommunityPage() {
             <header
               ref={groupFeedHeaderRef}
               tabIndex={-1}
-              className="bg-slate-900/80 border border-slate-800 rounded-xl p-5 md:p-6 outline-none focus-visible:ring-2 focus-visible:ring-primary/60 focus-visible:ring-offset-2 focus-visible:ring-offset-[#0a0f12]"
+              className="bg-white dark:bg-card-dark border border-slate-200 dark:border-border-dark rounded-2xl p-5 md:p-6 outline-none shadow-sm"
             >
               <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
                 <div className="flex items-center gap-3">
-                  <div className="flex size-12 shrink-0 items-center justify-center rounded-xl bg-primary/15 border border-primary/30">
+                  <div className="flex size-12 shrink-0 items-center justify-center rounded-xl bg-primary/10 border border-primary/20">
                     <span className="material-symbols-outlined text-2xl text-primary" aria-hidden>
                       dynamic_feed
                     </span>
                   </div>
                   <div className="min-w-0">
-                    <h1 className="text-lg md:text-xl font-bold text-slate-100 tracking-tight">
+                    <h1 className="text-lg md:text-xl font-bold text-slate-900 dark:text-white tracking-tight">
                       {t('groups.sidebar.myFeed')}
                     </h1>
-                    <p className="text-sm text-slate-400 mt-0.5">
+                    <p className="text-sm text-slate-500 dark:text-gray-400 font-medium mt-0.5">
                       {t('groups.sidebar.feedSubtitle', {
                         defaultValue: 'Bài viết từ tất cả các nhóm bạn tham gia',
                       })}
                     </p>
                   </div>
                 </div>
-                <div className="flex items-center gap-2 p-1 bg-slate-950 rounded-lg border border-slate-800">
+                <div className="flex items-center gap-1.5 p-1.5 bg-slate-100 dark:bg-background-dark rounded-xl border border-slate-200 dark:border-border-dark">
                   <button
                     onClick={() => loadFeedPosts(1, 'latest')}
-                    className={`px-4 py-1.5 rounded-md text-xs font-bold transition-all ${
+                    className={`px-5 py-2 rounded-lg text-xs font-black uppercase tracking-wider transition-all ${
                       feedSort === 'latest'
-                        ? 'bg-primary/15 text-primary border border-primary/30'
-                        : 'text-slate-400 hover:text-slate-200'
+                        ? 'bg-white dark:bg-card-dark text-primary shadow-md scale-[1.02]'
+                        : 'text-slate-500 dark:text-gray-400 hover:text-slate-700 dark:hover:text-white'
                     }`}
                   >
                     {t('dashboard.all') || 'Mới nhất'}
                   </button>
                   <button
                     onClick={() => loadFeedPosts(1, 'popular')}
-                    className={`px-4 py-1.5 rounded-md text-xs font-bold transition-all ${
+                    className={`px-5 py-2 rounded-lg text-xs font-black uppercase tracking-wider transition-all ${
                       feedSort === 'popular'
-                        ? 'bg-primary/15 text-primary border border-primary/30'
-                        : 'text-slate-400 hover:text-slate-200'
+                        ? 'bg-white dark:bg-card-dark text-primary shadow-md scale-[1.02]'
+                        : 'text-slate-500 dark:text-gray-400 hover:text-slate-700 dark:hover:text-white'
                     }`}
                   >
                     {t('dashboard.popular') || 'Phổ biến'}
@@ -472,6 +472,7 @@ export function CommunityPage() {
           </div>
         )}
       </div>
+
 
       <CommunityGroupMembersModal
         open={groupMembersModalOpen && viewMode === 'group'}

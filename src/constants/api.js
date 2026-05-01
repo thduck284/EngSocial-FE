@@ -369,6 +369,7 @@ export const ROUTES = {
   MANAGE_ADMIN_OVERVIEW: (userId) => `/adminstrator/${encodeURIComponent(String(userId))}/overview`,
   MANAGE_ADMIN_USERS: (userId) => `/adminstrator/${encodeURIComponent(String(userId))}/users`,
   MANAGE_ADMIN_REPORTS: (userId) => `/adminstrator/${encodeURIComponent(String(userId))}/reports`,
+  SETTINGS: '/settings',
 }
 
 /** Phần path sau /mod/:userId hoặc /adminstrator/:userId (vd. `/lessons`, `/users`); null nếu không khớp */

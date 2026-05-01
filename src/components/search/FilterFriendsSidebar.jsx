@@ -2,46 +2,53 @@ import { FRIEND_FILTER_OPTIONS } from '../../constants/search'
 
 export function FilterFriendsSidebar({ t, friendFilter, setFriendFilter, applyFilters, clearFilters }) {
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between mb-4">
-        <h2 className="text-lg font-bold flex items-center gap-2 text-white">
-          <span className="material-symbols-outlined text-primary">filter_list</span>
+    <div className="space-y-8 bg-white dark:bg-card-dark p-8 rounded-[2.5rem] border border-slate-200 dark:border-border-dark shadow-xl shadow-slate-200/50 dark:shadow-none">
+      <div className="flex items-center justify-between mb-2">
+        <h2 className="text-sm font-black uppercase tracking-[0.2em] flex items-center gap-3 text-slate-900 dark:text-white">
+          <span className="material-symbols-outlined text-primary text-xl">person_search</span>
           {t('search.filterFriendsTitle')}
         </h2>
       </div>
-      <div className="space-y-3">
-        <h3 className="text-xs font-semibold uppercase tracking-wider text-gray-500">{t('search.filterFriendsLabel')}</h3>
-        <div className="space-y-2">
+      <div className="space-y-5">
+        <h3 className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 dark:text-gray-500 flex items-center gap-2">
+          <span className="size-1 rounded-full bg-primary" />
+          {t('search.filterFriendsLabel')}
+        </h3>
+        <div className="space-y-4 px-1">
           {FRIEND_FILTER_OPTIONS.map(({ value, key }) => (
-            <label key={value} className="flex items-center gap-2 cursor-pointer group">
-              <input
-                type="radio"
-                name="friend-filter"
-                checked={friendFilter === value}
-                onChange={() => setFriendFilter(value)}
-                className="text-primary focus:ring-primary bg-card-dark border-border-dark"
-              />
-              <span className="text-sm text-gray-300 group-hover:text-primary transition-colors">{t(`search.${key}`)}</span>
+            <label key={value} className="flex items-center gap-3 cursor-pointer group">
+              <div className="relative flex items-center justify-center">
+                <input
+                  type="radio"
+                  name="friend-filter"
+                  checked={friendFilter === value}
+                  onChange={() => setFriendFilter(value)}
+                  className="peer appearance-none size-5 rounded-full border-2 border-slate-200 dark:border-white/10 checked:border-primary transition-all"
+                />
+                <div className="absolute size-2.5 rounded-full bg-primary scale-0 peer-checked:scale-100 transition-transform" />
+              </div>
+              <span className="text-xs font-bold text-slate-600 dark:text-gray-300 group-hover:text-primary transition-colors uppercase tracking-widest">{t(`search.${key}`)}</span>
             </label>
           ))}
         </div>
       </div>
-      <div className="flex flex-col gap-2 pt-4 border-t border-border-dark">
+      <div className="flex flex-col gap-3 pt-6 border-t border-slate-100 dark:border-white/5">
         <button
           type="button"
           onClick={applyFilters}
-          className="w-full bg-primary py-2 rounded-lg font-bold text-sm shadow-lg shadow-primary/20 hover:bg-primary/90 transition-all text-white"
+          className="w-full bg-primary hover:brightness-110 py-4 rounded-xl text-[10px] font-black uppercase tracking-widest text-white shadow-lg shadow-primary/20 transition-all active:scale-95"
         >
           {t('search.applyFilters')}
         </button>
         <button
           type="button"
           onClick={clearFilters}
-          className="w-full border border-border-dark py-2 rounded-lg font-medium text-sm hover:bg-card-dark transition-all text-gray-300"
+          className="w-full py-3.5 rounded-xl bg-slate-50 dark:bg-white/5 hover:bg-slate-100 dark:hover:bg-white/10 border border-slate-200 dark:border-white/10 text-[10px] font-black uppercase tracking-widest text-slate-500 dark:text-gray-400 transition-all active:scale-95 shadow-sm"
         >
           {t('search.clearFilters')}
         </button>
       </div>
     </div>
+
   )
 }

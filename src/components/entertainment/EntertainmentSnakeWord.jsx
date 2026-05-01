@@ -18,7 +18,8 @@ export const SNAKE_COLORS = [
 ]
 
 export function EntertainmentSnakeWord({ onExit }) {
-  const { t } = useTranslation()
+  const { t, i18n } = useTranslation()
+  const isVi = i18n.language?.startsWith('vi')
   const { user } = useAuth()
   const canvasRef = useRef(null)
   const containerRef = useRef(null)
@@ -321,11 +322,12 @@ export function EntertainmentSnakeWord({ onExit }) {
                   seg.y < -camY - 30 || seg.y > -camY + viewSize.height + 30) return
 
               const isHead = idx === 0
-              const radius = isHead ? 14 : 10
+              const growth = Math.min(5, (p.score || 0) / 200)
+              const radius = (isHead ? 14 : 10) + growth
               
               ctx.fillStyle = isHead ? skin.head : skin.body
               if (isHead) {
-                ctx.shadowBlur = 20
+                ctx.shadowBlur = 10 + growth * 2
                 ctx.shadowColor = skin.head
               } else {
                 ctx.shadowBlur = 0
@@ -339,23 +341,27 @@ export function EntertainmentSnakeWord({ onExit }) {
               // Draw eyes on the head
               if (isHead) {
                 const eyeAngle = p.angle || 0
+                const eyeOffset = radius * 0.55
+                const eyeSize = radius * 0.25
+                const pupilSize = radius * 0.12
+
                 ctx.fillStyle = 'white'
                 // Left
                 ctx.beginPath()
-                ctx.arc(seg.x + Math.cos(eyeAngle - 0.5) * 8, seg.y + Math.sin(eyeAngle - 0.5) * 8, 4, 0, Math.PI * 2)
+                ctx.arc(seg.x + Math.cos(eyeAngle - 0.5) * eyeOffset, seg.y + Math.sin(eyeAngle - 0.5) * eyeOffset, eyeSize, 0, Math.PI * 2)
                 ctx.fill()
                 // Right
                 ctx.beginPath()
-                ctx.arc(seg.x + Math.cos(eyeAngle + 0.5) * 8, seg.y + Math.sin(eyeAngle + 0.5) * 8, 4, 0, Math.PI * 2)
+                ctx.arc(seg.x + Math.cos(eyeAngle + 0.5) * eyeOffset, seg.y + Math.sin(eyeAngle + 0.5) * eyeOffset, eyeSize, 0, Math.PI * 2)
                 ctx.fill()
                 
                 // Pupils
                 ctx.fillStyle = 'black'
                 ctx.beginPath()
-                ctx.arc(seg.x + Math.cos(eyeAngle - 0.5) * 10, seg.y + Math.sin(eyeAngle - 0.5) * 10, 2, 0, Math.PI * 2)
+                ctx.arc(seg.x + Math.cos(eyeAngle - 0.5) * (eyeOffset + 2), seg.y + Math.sin(eyeAngle - 0.5) * (eyeOffset + 2), pupilSize, 0, Math.PI * 2)
                 ctx.fill()
                 ctx.beginPath()
-                ctx.arc(seg.x + Math.cos(eyeAngle + 0.5) * 10, seg.y + Math.sin(eyeAngle + 0.5) * 10, 2, 0, Math.PI * 2)
+                ctx.arc(seg.x + Math.cos(eyeAngle + 0.5) * (eyeOffset + 2), seg.y + Math.sin(eyeAngle + 0.5) * (eyeOffset + 2), pupilSize, 0, Math.PI * 2)
                 ctx.fill()
               }
             })
@@ -363,12 +369,13 @@ export function EntertainmentSnakeWord({ onExit }) {
 
             // Draw name for visible snakes
             const head = p.snake[0]
+            const nameRadius = (14 + Math.min(5, (p.score || 0) / 200))
             if (head && head.x >= -camX && head.x <= -camX + viewSize.width &&
                 head.y >= -camY && head.y <= -camY + viewSize.height) {
               ctx.fillStyle = isMe ? '#fff' : 'rgba(255, 255, 255, 0.7)'
               ctx.font = isMe ? 'bold 12px Inter' : '10px Inter'
               ctx.textAlign = 'center'
-              ctx.fillText(p.name || 'Player', head.x, head.y - 20)
+              ctx.fillText(p.name || 'Player', head.x, head.y - nameRadius - 10)
             }
           })
         }
@@ -438,7 +445,9 @@ export function EntertainmentSnakeWord({ onExit }) {
       <div className="absolute top-0 left-0 right-0 z-20 p-4 flex items-start justify-between pointer-events-none">
         <div className="flex flex-col gap-2 pointer-events-auto">
           <div className="bg-slate-900/80 backdrop-blur-xl border border-slate-700/50 p-4 rounded-2xl shadow-2xl">
-            <p className="text-[10px] uppercase tracking-[0.2em] text-cyan-400 font-black mb-1">Target Word</p>
+            <p className="text-[10px] uppercase tracking-[0.2em] text-cyan-400 font-black mb-1">
+              {isVi ? 'Từ cần tìm' : 'Target Word'}
+            </p>
             <h3 className="text-2xl sm:text-3xl font-black text-white leading-none">
               {myPlayer?.targetWord?.meaning || '...'}
             </h3>
@@ -466,7 +475,9 @@ export function EntertainmentSnakeWord({ onExit }) {
         <div className="flex flex-col items-end gap-4 pointer-events-auto">
             {/* Leaderboard */}
             <div className="bg-slate-900/60 backdrop-blur-md border border-white/5 p-4 rounded-2xl w-48 hidden sm:block shadow-2xl">
-                <p className="text-[9px] font-black uppercase tracking-[0.2em] text-slate-500 mb-3 border-b border-white/5 pb-2">Leaderboard</p>
+                <p className="text-[9px] font-black uppercase tracking-[0.2em] text-slate-500 mb-3 border-b border-white/5 pb-2">
+                  {isVi ? 'Bảng xếp hạng' : 'Leaderboard'}
+                </p>
                 <div className="space-y-2">
                     {[...(gameState?.players || [])].sort((a, b) => b.score - a.score).slice(0, 5).map((p, i) => (
                         <div key={p.userId} className="flex items-center gap-3 justify-between">
@@ -496,16 +507,20 @@ export function EntertainmentSnakeWord({ onExit }) {
               <span className="material-symbols-outlined text-rose-500 text-6xl -rotate-12">skull</span>
             </div>
           </div>
-          <h2 className="text-6xl sm:text-8xl font-black text-white mb-2 tracking-tighter">WASTED</h2>
+          <h2 className="text-6xl sm:text-8xl font-black text-white mb-2 tracking-tighter">
+            {isVi ? 'ĐÁNH BẠI' : 'WASTED'}
+          </h2>
           <div className="mb-12 space-y-1">
-            <p className="text-slate-500 uppercase text-xs font-black tracking-[0.3em]">Game Over Stats</p>
+            <p className="text-slate-500 uppercase text-xs font-black tracking-[0.3em]">
+              {isVi ? 'Kết quả trận đấu' : 'Game Over Stats'}
+            </p>
             <p className="text-5xl font-black text-cyan-400 drop-shadow-[0_0_15px_rgba(34,211,238,0.5)]">{finalScore}</p>
           </div>
           <button 
             onClick={handleRespawn}
             className="group relative px-12 py-5 bg-white text-slate-950 rounded-2xl font-black text-xl hover:scale-105 transition-all shadow-[0_0_40px_rgba(255,255,255,0.2)] active:scale-95"
           >
-            PLAY AGAIN
+            {isVi ? 'CHƠI LẠI' : 'PLAY AGAIN'}
           </button>
         </div>
       )}

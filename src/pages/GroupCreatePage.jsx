@@ -109,7 +109,7 @@ export function GroupCreatePage() {
         onSubmit={handleSubmit}
       >
         {/* Left column: Thông tin cơ bản */}
-        <section className="lg:col-span-5 bg-slate-900/90 border border-slate-800 rounded-xl p-6 lg:p-8 space-y-6 min-h-[480px]">
+        <section className="lg:col-span-5 bg-white dark:bg-card-dark border border-slate-200 dark:border-border-dark rounded-2xl p-6 lg:p-8 space-y-6 min-h-[480px] shadow-sm">
           <div className="flex items-center gap-3 mb-2">
             <span className="material-symbols-outlined text-primary">info</span>
             <h3 className="font-bold text-lg">
@@ -118,12 +118,12 @@ export function GroupCreatePage() {
           </div>
           <div className="space-y-6">
             <div className="flex flex-col gap-2">
-              <label className="text-sm font-medium text-slate-300">
+              <label className="text-sm font-bold text-slate-700 dark:text-slate-300">
                 {t('groupsCreate.fieldNameRequired', { defaultValue: 'Tên nhóm *' })}
               </label>
               <input
                 type="text"
-                className="w-full bg-slate-950 border border-slate-800 rounded-lg px-4 py-3 focus:ring-2 focus:ring-primary/30 focus:border-primary outline-none transition-all placeholder:text-slate-600 text-sm"
+                className="w-full bg-slate-50 dark:bg-background-dark border border-slate-200 dark:border-white/5 rounded-xl px-4 py-3 focus:ring-2 focus:ring-primary/30 focus:border-primary outline-none transition-all placeholder:text-slate-400 dark:placeholder:text-slate-600 text-sm text-slate-900 dark:text-white shadow-inner"
                 placeholder={t('groupsCreate.fieldNamePlaceholder', {
                   defaultValue: 'Ví dụ: English for Developers',
                 })}
@@ -134,12 +134,12 @@ export function GroupCreatePage() {
               />
             </div>
             <div className="flex flex-col gap-2">
-              <label className="text-sm font-medium text-slate-300">
+              <label className="text-sm font-bold text-slate-700 dark:text-slate-300">
                 {t('groupsCreate.fieldDescription', { defaultValue: 'Mô tả nhóm' })}
               </label>
               <textarea
                 rows={6}
-                className="w-full bg-slate-950 border border-slate-800 rounded-lg px-4 py-3 focus:ring-2 focus:ring-primary/30 focus:border-primary outline-none transition-all placeholder:text-slate-600 text-sm resize-none"
+                className="w-full bg-slate-50 dark:bg-background-dark border border-slate-200 dark:border-white/5 rounded-xl px-4 py-3 focus:ring-2 focus:ring-primary/30 focus:border-primary outline-none transition-all placeholder:text-slate-400 dark:placeholder:text-slate-600 text-sm resize-none text-slate-900 dark:text-white shadow-inner"
                 placeholder={t('groupsCreate.fieldDescriptionPlaceholder', {
                   defaultValue: 'Giới thiệu ngắn về mục tiêu và nội dung của nhóm...',
                 })}
@@ -150,11 +150,11 @@ export function GroupCreatePage() {
               />
             </div>
             <div className="flex flex-col gap-2">
-              <label className="text-sm font-medium text-slate-300">
+              <label className="text-sm font-bold text-slate-700 dark:text-slate-300">
                 {t('groupsCreate.fieldImage', { defaultValue: 'Ảnh nhóm' })}
               </label>
-              <div className="flex items-center gap-3 bg-slate-950 border border-slate-800 rounded-xl px-3 py-2.5">
-                <div className="size-10 rounded-full bg-slate-900 flex items-center justify-center overflow-hidden border border-slate-800">
+              <div className="flex items-center gap-3 bg-slate-50 dark:bg-background-dark border border-slate-200 dark:border-white/5 rounded-2xl px-3 py-2.5 shadow-inner">
+                <div className="size-10 rounded-full bg-slate-200 dark:bg-slate-900 flex items-center justify-center overflow-hidden border border-slate-300 dark:border-slate-800">
                   {form.icon ? (
                     <img
                       src={form.icon}
@@ -209,7 +209,7 @@ export function GroupCreatePage() {
         {/* Right column: Quyền riêng tư + Mời bạn bè */}
         <section className="lg:col-span-7 flex flex-col gap-6 min-h-[480px]">
           {/* Quyền riêng tư */}
-          <div className="bg-slate-900/90 border border-slate-800 rounded-xl p-6 lg:p-8 space-y-6">
+          <div className="bg-white dark:bg-card-dark border border-slate-200 dark:border-border-dark rounded-2xl p-6 lg:p-8 space-y-6 shadow-sm">
             <div className="flex items-center gap-3 mb-2">
               <span className="material-symbols-outlined text-primary">visibility</span>
               <h3 className="font-bold text-lg">
@@ -246,7 +246,7 @@ export function GroupCreatePage() {
                       setForm((p) => ({ ...p, contentVisibility: opt.id }))
                     }
                   />
-                  <div className="w-full p-5 flex flex-col gap-2 rounded-xl border border-slate-800 bg-slate-950 peer-checked:border-primary peer-checked:bg-primary/5 transition-all hover:border-slate-600">
+                  <div className="w-full p-5 flex flex-col gap-2 rounded-2xl border border-slate-100 dark:border-white/5 bg-slate-50 dark:bg-background-dark peer-checked:border-primary peer-checked:bg-primary/5 transition-all hover:border-primary/50 shadow-inner">
                     <div className="flex items-center justify-between">
                       <span className="material-symbols-outlined text-primary">
                         {opt.icon}
@@ -306,7 +306,7 @@ export function GroupCreatePage() {
           </div>
 
           {/* Mời bạn bè */}
-        <section className="bg-slate-900/90 border border-slate-800 rounded-xl p-6 lg:p-8 space-y-6">
+        <section className="bg-white dark:bg-card-dark border border-slate-200 dark:border-border-dark rounded-2xl p-6 lg:p-8 space-y-6 shadow-sm">
           <div className="flex items-center justify-between mb-2">
             <div className="flex items-center gap-3">
               <span className="material-symbols-outlined text-primary">person_add</span>
@@ -327,7 +327,7 @@ export function GroupCreatePage() {
             </span>
             <input
               type="text"
-              className="w-full bg-slate-950 border border-slate-800 rounded-lg pl-12 pr-4 py-3 focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none text-sm transition-all placeholder:text-slate-600"
+              className="w-full bg-slate-50 dark:bg-background-dark border border-slate-200 dark:border-white/5 rounded-xl pl-12 pr-4 py-3 focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none text-sm transition-all placeholder:text-slate-400 dark:placeholder:text-slate-600 text-slate-900 dark:text-white shadow-inner"
               placeholder={t('groupsCreate.inviteSearchPlaceholder', {
                 defaultValue: 'Tìm kiếm theo tên hoặc email...',
               })}
