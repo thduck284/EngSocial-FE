@@ -19,7 +19,10 @@
     "minutesShort": "mins",
     "description": "Description",
     "confirmExit": "Confirm Exit",
-    "confirmExitMessage": "Are you sure you want to leave? Your progress may not be saved."
+    "confirmExitMessage": "Are you sure you want to leave? Your progress may not be saved.",
+    "notification": "Notification",
+    "deleteSuccess": "Deleted successfully",
+    "deleteError": "Delete failed"
   },
   "report": {
     "titlePost": "Report post",
@@ -512,7 +515,8 @@
     "personalInfoTitle": "Personal info",
     "noPersonalInfo": "No personal info yet.",
     "noPhotos": "No photos yet.",
-    "noVideos": "No videos yet."
+    "noVideos": "No videos have been posted from posts.",
+    "noAchievements": "No achievements yet."
   },
   "dashboard": {
     "weeklyStats": "Weekly Stats",
@@ -860,7 +864,12 @@
       "leave": "Leave group",
       "leaveConfirm": "Are you sure you want to leave this group? You won't see the group's posts until you join again.",
       "leaveFailed": "Could not leave the group. Please try again.",
-      "viewAllMembers": "View all members"
+      "viewAllMembers": "View all members",
+      "tabAbout": "About",
+      "tabDiscussion": "Discussion",
+      "tabPeople": "People",
+      "tabMedia": "Media",
+      "tabFiles": "Files"
     },
     "main": {
       "postPlaceholder": "Write something for this group...",
@@ -874,7 +883,9 @@
       "sampleStats": "56 comments • 12 shares",
       "actionLike": "Like",
       "actionComment": "Comment",
-      "actionShare": "Share"
+      "actionShare": "Share",
+      "noMedia": "No photos shared yet.",
+      "noFiles": "No files shared yet."
     },
     "settingsModal": {
       "title": "Edit group",
@@ -1383,6 +1394,8 @@
     "toLevel": "to Level",
     "friends": "Friends ({{count}})",
     "noFriends": "No friends yet.",
+    "noPhotos": "No photos have been posted from posts.",
+    "noVideos": "No videos have been posted from posts.",
     "offline": "Offline",
     "searchFriends": "Search friends...",
     "skillStats": "Weekly Stats",

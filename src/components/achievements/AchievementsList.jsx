@@ -76,16 +76,16 @@ export function AchievementsList({
               </div>
 
               <div className="min-w-0 flex-1">
-                <div className={`text-sm font-bold uppercase tracking-tight truncate ${activeId === a.id ? 'text-primary' : 'text-slate-900 dark:text-white'}`}>
+                <div className={`text-xs font-bold uppercase tracking-tight truncate ${activeId === a.id ? 'text-primary' : 'text-slate-900 dark:text-white'}`}>
                   {pickAchievementName(a, lng)}
                 </div>
-                <div className="text-[11px] font-bold text-slate-400 dark:text-gray-500 uppercase tracking-widest truncate mt-0.5">
+                <div className="text-[10px] font-bold text-slate-400 dark:text-gray-500 uppercase tracking-widest truncate mt-0.5">
                   {getAchievementHowToPreview(a, lng, t)}
                 </div>
               </div>
 
               <span
-                className={`shrink-0 text-[10px] font-bold uppercase tracking-widest px-2 py-0.5 rounded-lg border-2 ${activeId === a.id ? 'border-primary/20 bg-primary/5 text-primary' : (RARITY_CLASS[(a.rarity || 'common').toLowerCase()] || RARITY_CLASS.common)} shadow-sm`}
+                className={`shrink-0 text-[9px] font-bold uppercase tracking-widest px-2 py-0.5 rounded-lg border-2 ${activeId === a.id ? 'border-primary/20 bg-primary/5 text-primary' : (RARITY_CLASS[(a.rarity || 'common').toLowerCase()] || RARITY_CLASS.common)} shadow-sm`}
               >
                 {t?.(`achievementsPage.rarity.${a.rarity}`, {
                   defaultValue: a.rarity,
@@ -95,7 +95,7 @@ export function AchievementsList({
 
             {prog.show && (
               <div className="w-full min-w-0 flex flex-col gap-1.5 mt-3 pt-3 border-t border-slate-100 dark:border-white/5 relative z-10">
-                <div className="flex w-full min-w-0 justify-between items-center text-[11px] font-bold uppercase tracking-[0.2em] text-slate-400 dark:text-gray-500">
+                <div className="flex w-full min-w-0 justify-between items-center text-[10px] font-bold uppercase tracking-[0.2em] text-slate-400 dark:text-gray-500">
                   <span className="tabular-nums">
                     {t?.('achievementsPage.progressFraction', {
                       current: prog.current,

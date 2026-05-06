@@ -48,6 +48,7 @@ export function AppHeader() {
   const [selectedPost, setSelectedPost] = useState(null)
   const [showPostModal, setShowPostModal] = useState(false)
   const [postModalLoading, setPostModalLoading] = useState(false)
+  const [isSearchFocused, setIsSearchFocused] = useState(false)
 
   const fetchUnreadCount = useCallback(() => {
     if (!user) return
@@ -125,6 +126,8 @@ export function AppHeader() {
   useEffect(() => {
     if (location.pathname === ROUTES.SEARCH) {
       setSearchValue(searchParams.get('q') || '')
+    } else {
+      setSearchValue('')
     }
   }, [location.pathname, searchParams])
 
@@ -173,13 +176,17 @@ export function AppHeader() {
             <LogoIcon />
             <span className="text-2xl font-bold tracking-tight hidden lg:block">EngSocial</span>
           </Link>
-          <div className="hidden md:flex flex-1 max-w-[320px] items-center bg-slate-100 dark:bg-card-dark rounded-lg px-3 py-2 border border-slate-200 dark:border-border-dark">
-            <span className="material-symbols-outlined text-gray-400 dark:text-gray-500 text-xl shrink-0">search</span>
+          <div className={`hidden md:flex flex-1 max-w-[320px] items-center bg-slate-100 dark:bg-card-dark rounded-lg px-3 py-2 border border-slate-200 dark:border-border-dark transition-all ${isSearchFocused ? 'ring-2 ring-primary/20 border-primary shadow-lg shadow-primary/5' : ''}`}>
+            {!isSearchFocused && !searchValue && (
+              <span className="material-symbols-outlined text-gray-400 dark:text-gray-500 text-xl shrink-0">search</span>
+            )}
             <input
-              className="bg-transparent border-none focus:ring-0 text-slate-900 dark:text-white placeholder-gray-400 w-full text-sm min-w-0"
+              className={`bg-transparent border-none focus:ring-0 text-slate-900 dark:text-white placeholder-gray-400 w-full text-sm min-w-0 ${isSearchFocused ? 'pl-1' : ''}`}
               placeholder={t('header.searchPlaceholder')}
               type="text"
               value={searchValue}
+              onFocus={() => setIsSearchFocused(true)}
+              onBlur={() => setIsSearchFocused(false)}
               onChange={(e) => setSearchValue(e.target.value)}
               onKeyDown={(e) => {
                 if (e.key === 'Enter') {

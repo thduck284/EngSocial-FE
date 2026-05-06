@@ -20,7 +20,10 @@
     "minutesShort": "phút",
     "description": "Mô tả",
     "confirmExit": "Xác nhận rời khỏi",
-    "confirmExitMessage": "Bạn có chắc muốn rời khỏi bài học? Tiến độ hiện tại của bạn có thể không được lưu lại."
+    "confirmExitMessage": "Bạn có chắc muốn rời khỏi bài học? Tiến độ hiện tại của bạn có thể không được lưu lại.",
+    "notification": "Thông báo",
+    "deleteSuccess": "Xóa thành công",
+    "deleteError": "Xóa thất bại"
   },
   "report": {
     "titlePost": "Báo cáo bài viết",
@@ -521,7 +524,8 @@
     "personalInfoTitle": "Thông tin cá nhân",
     "noPersonalInfo": "Chưa cập nhật thông tin cá nhân.",
     "noPhotos": "Chưa có ảnh nào.",
-    "noVideos": "Chưa có video nào."
+    "noVideos": "Chưa có video nào được đăng từ bài viết.",
+    "noAchievements": "Chưa có thành tích nào."
   },
   "dashboard": {
     "weeklyStats": "Thống kê tuần",
@@ -869,7 +873,12 @@
       "leave": "Rời nhóm",
       "leaveConfirm": "Bạn có chắc muốn rời nhóm này? Bạn sẽ không còn xem được bài viết trong nhóm cho đến khi tham gia lại.",
       "leaveFailed": "Không thể rời nhóm. Vui lòng thử lại.",
-      "viewAllMembers": "Xem tất cả thành viên"
+      "viewAllMembers": "Xem tất cả thành viên",
+      "tabAbout": "Giới thiệu",
+      "tabDiscussion": "Thảo luận",
+      "tabPeople": "Thành viên",
+      "tabMedia": "Media",
+      "tabFiles": "File"
     },
     "main": {
       "postPlaceholder": "Viết gì đó cho nhóm này...",
@@ -883,7 +892,9 @@
       "sampleStats": "56 bình luận • 12 chia sẻ",
       "actionLike": "Thích",
       "actionComment": "Bình luận",
-      "actionShare": "Chia sẻ"
+      "actionShare": "Chia sẻ",
+      "noMedia": "Chưa có ảnh nào được chia sẻ.",
+      "noFiles": "Chưa có file nào được chia sẻ."
     },
     "settingsModal": {
       "title": "Chỉnh sửa nhóm",
@@ -1398,6 +1409,8 @@
     "requestFailed": "Gửi lời mời thất bại.",
     "friends": "Bạn bè ({{count}})",
     "noFriends": "Bạn chưa có người bạn nào",
+    "noPhotos": "Chưa có ảnh nào được đăng từ bài viết.",
+    "noVideos": "Chưa có video nào được đăng từ bài viết.",
     "offline": "Ngoại tuyến",
     "searchFriends": "Tìm bạn bè...",
     "skillStats": "Thống kê tuần",

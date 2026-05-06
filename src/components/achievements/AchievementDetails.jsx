@@ -29,16 +29,16 @@ export function AchievementDetails({
             <span className="material-symbols-outlined text-4xl text-slate-200 dark:text-gray-700">emoji_events</span>
           </div>
           <div>
-            <h3 className="text-xl font-bold text-slate-900 dark:text-white uppercase tracking-tight mb-2">
+            <h3 className="text-lg font-bold text-slate-900 dark:text-white uppercase tracking-tight mb-2">
               {category.title}
             </h3>
             {category.description ? (
-              <p className="text-[11px] font-medium text-slate-500 dark:text-slate-400 leading-relaxed max-w-sm mx-auto italic">
+              <p className="text-[10px] font-medium text-slate-500 dark:text-slate-400 leading-relaxed max-w-sm mx-auto italic">
                 &quot;{category.description}&quot;
               </p>
             ) : null}
           </div>
-          <div className="mt-6 p-4 bg-primary/5 rounded-2xl border border-primary/10 text-primary font-bold text-[11px] uppercase tracking-widest shadow-sm">
+          <div className="mt-6 p-4 bg-primary/5 rounded-2xl border border-primary/10 text-primary font-bold text-[10px] uppercase tracking-widest shadow-sm">
             {empty && (t?.('achievementsPage.emptyCategory') || 'No achievements in this category yet.')}
           </div>
         </div>
@@ -77,7 +77,7 @@ export function AchievementDetails({
         </div>
         <div className="min-w-0 flex-1 space-y-2">
           <div className="flex flex-wrap gap-2.5">
-             <span className="inline-flex items-center rounded-lg bg-slate-50 dark:bg-background-dark/50 border border-slate-200 dark:border-white/10 px-3 py-1 text-[11px] font-bold uppercase tracking-widest text-slate-500 dark:text-gray-400 shadow-inner">
+             <span className="inline-flex items-center rounded-lg bg-slate-50 dark:bg-background-dark/50 border border-slate-200 dark:border-white/10 px-3 py-1 text-[10px] font-bold uppercase tracking-widest text-slate-500 dark:text-gray-400 shadow-inner">
               {t?.('achievementsPage.rarityLabel', { defaultValue: 'Rarity' })}
               :{' '}
               <span className={`ml-2 ${RARITY_CLASS[(achievement.rarity || 'common').toLowerCase()] || 'text-slate-900 dark:text-white'}`}>
@@ -87,13 +87,13 @@ export function AchievementDetails({
               </span>
             </span>
             {achievement.unlocked && (
-              <span className="inline-flex items-center gap-1.5 rounded-lg bg-emerald-500/10 border border-emerald-500/20 px-3 py-1 text-[11px] font-bold uppercase tracking-widest text-emerald-500 shadow-sm">
+              <span className="inline-flex items-center gap-1.5 rounded-lg bg-emerald-500/10 border border-emerald-500/20 px-3 py-1 text-[10px] font-bold uppercase tracking-widest text-emerald-500 shadow-sm">
                 <span className="material-symbols-outlined text-[14px]">verified</span>
                 {t?.('achievementsPage.progressComplete', { defaultValue: 'UNLOCKED' })}
               </span>
             )}
           </div>
-          <h3 className="text-xl font-bold text-slate-900 dark:text-white tracking-tight uppercase leading-tight">
+          <h3 className="text-lg font-bold text-slate-900 dark:text-white tracking-tight uppercase leading-tight">
             {pickAchievementName(achievement, lng)}
           </h3>
         </div>
@@ -111,12 +111,12 @@ export function AchievementDetails({
         <div className="rounded-[1.5rem] border border-slate-200 dark:border-border-dark bg-slate-50/50 dark:bg-background-dark/40 p-4 w-full min-w-0 shadow-inner relative overflow-hidden">
           <div className="absolute -right-8 -bottom-8 size-32 bg-primary/5 rounded-full blur-3xl" />
           <div className="flex items-center justify-between mb-5 relative z-10">
-            <h4 className="text-[11px] font-bold uppercase tracking-[0.2em] text-slate-400 dark:text-gray-500 flex items-center gap-2">
+            <h4 className="text-[10px] font-bold uppercase tracking-[0.2em] text-slate-400 dark:text-gray-500 flex items-center gap-2">
               <span className="material-symbols-outlined text-base text-primary">analytics</span>
               {t?.('achievementsPage.progressTitle', { defaultValue: 'CHALLENGE PROGRESS' })}
             </h4>
             {prog.completed && (
-              <div className="text-emerald-500 font-bold inline-flex items-center gap-1.5 text-[11px] uppercase tracking-widest bg-white dark:bg-card-dark px-3 py-1.5 rounded-lg border border-emerald-500/20 shadow-lg relative z-10">
+              <div className="text-emerald-500 font-bold inline-flex items-center gap-1.5 text-[10px] uppercase tracking-widest bg-white dark:bg-card-dark px-3 py-1.5 rounded-lg border border-emerald-500/20 shadow-lg relative z-10">
                 <span className="material-symbols-outlined text-base">check_circle</span>
                 {tr?.('achievementsPage.progressComplete', { defaultValue: 'MISSION COMPLETED' })}
               </div>
@@ -150,7 +150,7 @@ export function AchievementDetails({
               />
             </div>
             {prog.milestonesLine && (
-              <p className="text-[11px] font-bold text-slate-400 dark:text-gray-500 uppercase tracking-widest italic flex items-center gap-2">
+              <p className="text-[10px] font-bold text-slate-400 dark:text-gray-500 uppercase tracking-widest italic flex items-center gap-2">
                 <span className="size-1 rounded-full bg-primary" />
                 {prog.milestonesLine}
               </p>
@@ -161,18 +161,18 @@ export function AchievementDetails({
 
       {/* How to Complete Card */}
       <div className="rounded-[1.5rem] border border-slate-200 dark:border-border-dark bg-white dark:bg-card-dark p-4 shadow-xl shadow-slate-200/50 dark:shadow-none">
-        <h4 className="text-[11px] font-bold uppercase tracking-[0.2em] text-slate-400 dark:text-gray-500 mb-4 flex items-center gap-2">
+        <h4 className="text-[10px] font-bold uppercase tracking-[0.2em] text-slate-400 dark:text-gray-500 mb-4 flex items-center gap-2">
           <span className="material-symbols-outlined text-base text-primary">auto_stories</span>
           {t?.('achievementsPage.howTo', { defaultValue: 'HOW TO COMPLETE' })}
         </h4>
-        <p className="text-sm font-medium text-slate-700 dark:text-slate-200 leading-relaxed whitespace-pre-line bg-slate-50 dark:bg-background-dark/30 p-5 rounded-2xl border border-slate-100 dark:border-white/5 italic">
+        <p className="text-xs font-medium text-slate-700 dark:text-slate-200 leading-relaxed whitespace-pre-line bg-slate-50 dark:bg-background-dark/30 p-5 rounded-2xl border border-slate-100 dark:border-white/5 italic">
           &quot;{getAchievementHowToPreview(achievement, lng, t)}&quot;
         </p>
       </div>
 
       {/* Rewards Section */}
       <div className="rounded-[1.5rem] border border-slate-200 dark:border-border-dark bg-white dark:bg-card-dark p-4 shadow-xl shadow-slate-200/50 dark:shadow-none">
-        <h4 className="text-[11px] font-bold uppercase tracking-[0.2em] text-slate-400 dark:text-gray-500 mb-5 flex items-center gap-2">
+        <h4 className="text-[10px] font-bold uppercase tracking-[0.2em] text-slate-400 dark:text-gray-500 mb-5 flex items-center gap-2">
           <span className="material-symbols-outlined text-base text-amber-500">card_giftcard</span>
           {t?.('achievementsPage.rewardsTitle', { defaultValue: 'COLLECTIBLE REWARDS' })}
         </h4>
@@ -209,18 +209,18 @@ export function AchievementDetails({
                       </span>
                     </div>
                     <div className="flex-1 min-w-0">
-                      <p className={`text-sm font-bold uppercase tracking-tight ${reached ? 'text-emerald-600 dark:text-emerald-400' : 'text-slate-400 dark:text-gray-500'}`}>
+                      <p className={`text-xs font-bold uppercase tracking-tight ${reached ? 'text-emerald-600 dark:text-emerald-400' : 'text-slate-400 dark:text-gray-500'}`}>
                         {label || `${mVal} ${achievement.requirement?.type?.replace(/_/g, ' ') || ''}`}
                       </p>
                       <div className="flex flex-wrap gap-2 mt-2">
                         {(rt === 'exp' || rt === 'both') && xp > 0 && (
-                          <span className={`text-[11px] px-2.5 py-1 rounded-lg font-bold uppercase tracking-widest border-2 flex items-center gap-1.5 ${reached ? 'bg-amber-500/10 border-amber-500/20 text-amber-600 dark:text-amber-400 shadow-sm' : 'bg-slate-100 dark:bg-white/5 border-slate-200 dark:border-white/10 text-slate-400 dark:text-gray-600'}`}>
+                          <span className={`text-[10px] px-2.5 py-1 rounded-lg font-bold uppercase tracking-widest border-2 flex items-center gap-1.5 ${reached ? 'bg-amber-500/10 border-amber-500/20 text-amber-600 dark:text-amber-400 shadow-sm' : 'bg-slate-100 dark:bg-white/5 border-slate-200 dark:border-white/10 text-slate-400 dark:text-gray-600'}`}>
                             <span className="material-symbols-outlined text-sm">bolt</span>
                             +{xp} XP
                           </span>
                         )}
                         {(rt === 'badge' || rt === 'both') && badgeName && (
-                          <span className={`text-[11px] px-2.5 py-1 rounded-lg font-bold uppercase tracking-widest border-2 flex items-center gap-1.5 ${reached ? 'bg-amber-500/10 border-amber-500/20 text-amber-600 dark:text-amber-400 shadow-sm' : 'bg-slate-100 dark:bg-white/5 border-slate-200 dark:border-white/10 text-slate-400 dark:text-gray-600'}`}>
+                          <span className={`text-[10px] px-2.5 py-1 rounded-lg font-bold uppercase tracking-widest border-2 flex items-center gap-1.5 ${reached ? 'bg-amber-500/10 border-amber-500/20 text-amber-600 dark:text-amber-400 shadow-sm' : 'bg-slate-100 dark:bg-white/5 border-slate-200 dark:border-white/10 text-slate-400 dark:text-gray-600'}`}>
                             <span className="material-symbols-outlined text-sm">
                               {m.badgeIcon || 'military_tech'}
                             </span>
@@ -243,7 +243,7 @@ export function AchievementDetails({
               </div>
             ))}
             {!(achievement.rewards?.length) && (
-              <div className="col-span-full py-6 text-center bg-slate-50 dark:bg-background-dark/30 rounded-2xl border-2 border-dashed border-slate-200 dark:border-border-dark text-[11px] font-bold text-slate-400 dark:text-gray-600 uppercase tracking-widest">
+              <div className="col-span-full py-6 text-center bg-slate-50 dark:bg-background-dark/30 rounded-2xl border-2 border-dashed border-slate-200 dark:border-border-dark text-[10px] font-bold text-slate-400 dark:text-gray-600 uppercase tracking-widest">
                 {t?.('achievementsPage.noRewards', { defaultValue: 'No specific rewards data available' })}
               </div>
             )}
@@ -271,7 +271,7 @@ export function AchievementDetails({
             <button
               type="button"
               onClick={() => onEdit?.(achievement)}
-              className="w-full rounded-[1.5rem] border border-amber-400/20 bg-amber-400/10 px-3 py-2.5 text-[11px] font-bold text-amber-600 dark:text-amber-400 uppercase tracking-widest hover:bg-amber-400/20 transition-all flex items-center justify-center gap-2.5 active:scale-95 shadow-md shadow-amber-400/5"
+              className="w-full rounded-[1.5rem] border border-amber-400/20 bg-amber-400/10 px-3 py-2.5 text-[10px] font-bold text-amber-600 dark:text-amber-400 uppercase tracking-widest hover:bg-amber-400/20 transition-all flex items-center justify-center gap-2.5 active:scale-95 shadow-md shadow-amber-400/5"
             >
               <span className="material-symbols-outlined text-base">edit_note</span>
               {t?.('achievementsPage.edit', { defaultValue: 'EDIT' })}
@@ -279,7 +279,7 @@ export function AchievementDetails({
             <button
               type="button"
               onClick={onDelete}
-              className="w-full rounded-[1.5rem] border border-rose-400/20 bg-rose-400/10 px-3 py-2.5 text-[11px] font-bold text-rose-600 dark:text-rose-400 uppercase tracking-widest hover:bg-rose-400/20 transition-all flex items-center justify-center gap-2.5 active:scale-95 shadow-md shadow-rose-400/5"
+              className="w-full rounded-[1.5rem] border border-rose-400/20 bg-rose-400/10 px-3 py-2.5 text-[10px] font-bold text-rose-600 dark:text-rose-400 uppercase tracking-widest hover:bg-rose-400/20 transition-all flex items-center justify-center gap-2.5 active:scale-95 shadow-md shadow-rose-400/5"
             >
               <span className="material-symbols-outlined text-base">delete_forever</span>
               {t?.('achievementsPage.delete', { defaultValue: 'REMOVE' })}

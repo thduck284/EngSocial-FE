@@ -9,8 +9,15 @@ import {
 } from '../../utils/achievementI18n.js'
 
 function achievementHasBadgeReward(a) {
-  const rt = a?.rewardType || 'exp'
-  return rt === 'badge' || rt === 'both'
+  if (!a) return false
+  const rt = a.rewardType || 'exp'
+  const hasBadgeFlag = rt === 'badge' || rt === 'both'
+  const hasBadgeData = Boolean(
+    (a.badgeName && String(a.badgeName).trim()) || 
+    (a.badgeImage && String(a.badgeImage).trim()) || 
+    (a.badgeIcon && String(a.badgeIcon).trim())
+  )
+  return hasBadgeFlag || hasBadgeData
 }
 
 export function ProfileAchievementsCard({ t, items, loading }) {
@@ -106,7 +113,7 @@ export function ProfileAchievementsCard({ t, items, loading }) {
 
       <Link
         to={ROUTES.ACHIEVEMENTS}
-        className="mt-4 flex w-full items-center justify-center py-2 text-xs font-bold text-primary hover:bg-primary/10 rounded-lg transition-colors"
+        className="mt-4 flex w-full items-center justify-center py-2 text-[10px] font-bold text-primary hover:bg-primary/10 rounded-lg transition-colors"
       >
         {t('profile.seeAllBadges')}
       </Link>

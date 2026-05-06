@@ -109,24 +109,10 @@ export function ProfilePage() {
 
   return (
     <main className="max-w-[1440px] mx-auto px-6 lg:px-10 py-10">
-      {/* Breadcrumb */}
-      <nav className="mb-10 flex items-center gap-3 text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 dark:text-gray-500">
-        <Link to={ROUTES.HOME} className="hover:text-primary transition-colors flex items-center gap-1.5">
-          <span className="material-symbols-outlined text-base">home</span>
-          {t('header.home')}
-        </Link>
-        <span className="text-slate-300 dark:text-gray-700">/</span>
-        <span className="text-slate-900 dark:text-gray-200 font-black">{t('profile.title')}</span>
-      </nav>
-
       <div className="flex flex-col lg:flex-row gap-10 mb-12">
         {/* Left: Avatar + Level + Friends (+ optional stats when on Posts tab) */}
         <div className="lg:w-1/3 lg:shrink-0 space-y-10">
-          <div
-            className={`flex flex-col gap-10 ${
-              profileTab === 'posts' ? 'lg:sticky lg:top-24' : ''
-            }`}
-          >
+          <div className="flex flex-col gap-10">
             <ProfileAvatarCard
               t={t}
               displayName={displayName}
@@ -187,7 +173,7 @@ export function ProfilePage() {
                 key={id}
                 type="button"
                 onClick={() => handleTabChange(id)}
-                className={`flex-1 flex items-center justify-center gap-3 px-4 py-6 text-[10px] font-black uppercase tracking-widest transition-all relative group/tab ${
+                className={`flex-1 flex items-center justify-center gap-3 px-4 py-5 text-xs font-black uppercase tracking-widest transition-all relative group/tab ${
                   profileTab === id
                     ? 'text-primary'
                     : 'text-slate-400 dark:text-gray-500 hover:text-slate-600 dark:hover:text-gray-300'
@@ -263,7 +249,7 @@ export function ProfilePage() {
       <div className="flex items-center justify-center pt-12 border-t border-slate-100 dark:border-white/5">
         <button
           type="button"
-          className="flex items-center gap-3 px-8 py-4 rounded-[1.5rem] bg-rose-50 dark:bg-rose-500/5 border-2 border-rose-100 dark:border-rose-500/20 text-[10px] font-black uppercase tracking-widest text-rose-500 hover:bg-rose-500 hover:text-white dark:hover:bg-rose-500 transition-all active:scale-95 shadow-lg shadow-rose-500/5"
+          className="flex items-center gap-3 px-8 py-4 rounded-[1.5rem] bg-rose-50 dark:bg-rose-500/5 border-2 border-rose-100 dark:border-rose-500/20 text-xs font-black uppercase tracking-widest text-rose-500 hover:bg-rose-500 hover:text-white dark:hover:bg-rose-500 transition-all active:scale-95 shadow-lg shadow-rose-500/5"
           onClick={() => setLogoutConfirmOpen(true)}
         >
           <span className="material-symbols-outlined">logout</span>

@@ -14,21 +14,24 @@ export function useCommunityGroups() {
   const [postsLoading, setPostsLoading] = useState(false)
   const [postsHasMore, setPostsHasMore] = useState(false)
   const [postsPage, setPostsPage] = useState(1)
+  const [postsSearch, setPostsSearch] = useState('')
 
   const [feedPosts, setFeedPosts] = useState([])
   const [feedLoading, setFeedLoading] = useState(false)
   const [feedHasMore, setFeedHasMore] = useState(false)
   const [feedPage, setFeedPage] = useState(1)
   const [feedSort, setFeedSort] = useState('latest')
+  const [feedSearch, setFeedSearch] = useState('')
   
   const [discoverGroups, setDiscoverGroups] = useState([])
   const [loadingDiscover, setLoadingDiscover] = useState(false)
 
-  const loadGroupPosts = async (groupId, page = 1) => {
+  const loadGroupPosts = async (groupId, page = 1, search = '') => {
     if (!groupId) return
     setPostsLoading(true)
+    if (page === 1) setPostsSearch(search)
     try {
-      const res = await communityService.getPosts({ groupId, page, limit: 5 })
+      const res = await communityService.getPosts({ groupId, page, limit: 5, search })
       const raw = res?.data ?? res ?? {}
       let list = []
       if (Array.isArray(raw)) {
@@ -61,13 +64,16 @@ export function useCommunityGroups() {
     }
   }
 
-  const loadFeedPosts = async (page = 1, sort = 'latest') => {
+  const loadFeedPosts = async (page = 1, sort = 'latest', search = '') => {
     setFeedLoading(true)
+    if (page === 1) {
+      setFeedSort(sort)
+      setFeedSearch(search)
+    }
     try {
       // Tăng limit để tăng khả năng lấy được bài viết nhóm sau khi filter ở FE (hoặc nếu BE hỗ trợ scope: 'groups')
-      const res = await communityService.getPosts({ page, limit: 12, scope: 'groups', sort })
+      const res = await communityService.getPosts({ page, limit: 12, scope: 'groups', sort, search })
       const raw = res?.data ?? res ?? {}
-      if (page === 1) setFeedSort(sort)
       let list = []
       if (Array.isArray(raw)) {
         list = raw
@@ -100,7 +106,7 @@ export function useCommunityGroups() {
       // Nếu trang hiện tại không có bài viết nào phù hợp sau khi lọc,
       // nhưng BE vẫn báo còn trang tiếp theo, tự động load thêm trang mới.
       if (filteredList.length === 0 && hasNext && page < 5) { // Giới hạn page < 5 để tránh loop vô tận nếu dữ liệu rác nhiều
-        loadFeedPosts(page + 1)
+        loadFeedPosts(page + 1, sort, search)
       }
     } catch (err) {
       console.error('Community Feed Error:', err)
@@ -218,12 +224,12 @@ export function useCommunityGroups() {
     if (!activeGroup || postsLoading || !postsHasMore) return
     const gid = activeGroup.id || activeGroup._id
     if (!gid) return
-    loadGroupPosts(gid, postsPage + 1)
+    loadGroupPosts(gid, postsPage + 1, postsSearch)
   }
 
   const loadMoreFeedPosts = () => {
     if (feedLoading || !feedHasMore) return
-    loadFeedPosts(feedPage + 1, feedSort)
+    loadFeedPosts(feedPage + 1, feedSort, feedSearch)
   }
 
   const handlePostReactionUpdate = (postId, patch) => {
@@ -428,8 +434,11 @@ export function useCommunityGroups() {
     feedLoading,
     feedHasMore,
     feedSort,
+    feedSearch,
     loadFeedPosts,
     loadMoreFeedPosts,
+    postsSearch,
+    loadGroupPosts,
     discoverGroups,
     loadingDiscover,
     loadDiscoverGroups,

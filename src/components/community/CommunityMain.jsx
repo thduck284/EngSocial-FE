@@ -319,6 +319,139 @@ export function CommunityMain({
     )
   }
 
+  // Media tab: Show all images from posts
+  if (activeTab === 'media') {
+    const allImages = posts?.reduce((acc, post) => {
+      const media = post.media || []
+      const images = media.filter(m => {
+        const url = typeof m === 'string' ? m : m.url
+        return /\.(jpg|jpeg|png|webp|avif)$/i.test(url)
+      }).map(m => ({
+        url: typeof m === 'string' ? m : m.url,
+        postId: post.id || post._id,
+        post
+      }))
+      return [...acc, ...images]
+    }, []) || []
+
+    return (
+      <div className="bg-white dark:bg-card-dark rounded-2xl p-6 border border-slate-200 dark:border-border-dark shadow-sm">
+        <div className="flex items-center justify-between mb-6">
+          <h2 className="text-base font-black text-slate-900 dark:text-white uppercase tracking-wider">
+            {t('groups.header.tabMedia', { defaultValue: 'File phương tiện' })}
+            <span className="text-slate-400 dark:text-gray-500 font-bold ml-2">· {allImages.length}</span>
+          </h2>
+        </div>
+        {allImages.length === 0 ? (
+          <div className="py-20 text-center">
+            <span className="material-symbols-outlined text-5xl text-slate-300 dark:text-gray-600 mb-3">image_not_supported</span>
+            <p className="text-sm font-bold text-slate-500 dark:text-gray-400">{t('groups.main.noMedia', { defaultValue: 'Chưa có ảnh nào được chia sẻ.' })}</p>
+          </div>
+        ) : (
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
+            {allImages.map((img, idx) => (
+              <div 
+                key={`${img.postId}-${idx}`}
+                className="aspect-square rounded-xl overflow-hidden border border-slate-100 dark:border-white/5 cursor-pointer hover:brightness-90 transition-all group relative"
+                onClick={() => navigate(`/post/${img.postId}`)}
+              >
+                <img src={img.url} alt="" className="w-full h-full object-cover" />
+                <div className="absolute inset-0 bg-black/20 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                  <span className="material-symbols-outlined text-white">visibility</span>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+    )
+  }
+
+  // Files tab: Show videos, docs, gifs
+  if (activeTab === 'files') {
+    const allFiles = posts?.reduce((acc, post) => {
+      const media = post.media || []
+      const files = media.filter(m => {
+        const url = typeof m === 'string' ? m : m.url
+        return /\.(mp4|webm|ogg|gif|pdf|doc|docx|xls|xlsx|ppt|pptx|txt)$/i.test(url)
+      }).map(m => ({
+        url: typeof m === 'string' ? m : m.url,
+        postId: post.id || post._id,
+        name: (typeof m === 'string' ? m : m.url).split('/').pop().split('?')[0] || 'File',
+        post
+      }))
+      return [...acc, ...files]
+    }, []) || []
+
+    const getFileIcon = (url) => {
+      if (/\.(mp4|webm|ogg)$/i.test(url)) return 'movie'
+      if (/\.(gif)$/i.test(url)) return 'gif'
+      if (/\.(pdf)$/i.test(url)) return 'picture_as_pdf'
+      if (/\.(doc|docx)$/i.test(url)) return 'description'
+      if (/\.(xls|xlsx)$/i.test(url)) return 'table_view'
+      if (/\.(ppt|pptx)$/i.test(url)) return 'present_to_all'
+      return 'insert_drive_file'
+    }
+
+    const getFileColor = (url) => {
+      if (/\.(mp4|webm|ogg)$/i.test(url)) return 'text-purple-500 bg-purple-500/10'
+      if (/\.(gif)$/i.test(url)) return 'text-amber-500 bg-amber-500/10'
+      if (/\.(pdf)$/i.test(url)) return 'text-rose-500 bg-rose-500/10'
+      if (/\.(doc|docx)$/i.test(url)) return 'text-blue-500 bg-blue-500/10'
+      if (/\.(xls|xlsx)$/i.test(url)) return 'text-emerald-500 bg-emerald-500/10'
+      return 'text-slate-500 bg-slate-500/10'
+    }
+
+    return (
+      <div className="bg-white dark:bg-card-dark rounded-2xl p-6 border border-slate-200 dark:border-border-dark shadow-sm">
+        <div className="flex items-center justify-between mb-6">
+          <h2 className="text-base font-black text-slate-900 dark:text-white uppercase tracking-wider">
+            {t('groups.header.tabFiles', { defaultValue: 'File' })}
+            <span className="text-slate-400 dark:text-gray-500 font-bold ml-2">· {allFiles.length}</span>
+          </h2>
+        </div>
+        {allFiles.length === 0 ? (
+          <div className="py-20 text-center">
+            <span className="material-symbols-outlined text-5xl text-slate-300 dark:text-gray-600 mb-3">folder_open</span>
+            <p className="text-sm font-bold text-slate-500 dark:text-gray-400">{t('groups.main.noFiles', { defaultValue: 'Chưa có file nào được chia sẻ.' })}</p>
+          </div>
+        ) : (
+          <div className="space-y-2">
+            {allFiles.map((file, idx) => (
+              <div 
+                key={`${file.postId}-${idx}`}
+                className="flex items-center gap-4 p-3 rounded-xl border border-slate-100 dark:border-white/5 hover:bg-slate-50 dark:hover:bg-white/5 transition-all group cursor-pointer"
+                onClick={() => navigate(`/post/${file.postId}`)}
+              >
+                <div className={`size-12 rounded-xl flex items-center justify-center shrink-0 ${getFileColor(file.url)}`}>
+                  <span className="material-symbols-outlined text-2xl">{getFileIcon(file.url)}</span>
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-bold text-slate-900 dark:text-white truncate group-hover:text-primary transition-colors">
+                    {file.name}
+                  </p>
+                  <p className="text-[11px] font-medium text-slate-400 dark:text-gray-500 mt-0.5">
+                    {file.post?.author?.name || 'User'} · {file.post?.createdAt ? new Date(file.post.createdAt).toLocaleDateString() : ''}
+                  </p>
+                </div>
+                <button 
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation()
+                    window.open(file.url, '_blank')
+                  }}
+                  className="size-9 rounded-lg flex items-center justify-center text-slate-400 hover:bg-primary/10 hover:text-primary transition-all"
+                >
+                  <span className="material-symbols-outlined text-xl">download</span>
+                </button>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+    )
+  }
+
   return (
     <div className="space-y-6">
       {!hideComposer && (

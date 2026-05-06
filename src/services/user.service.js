@@ -21,8 +21,9 @@ export const userService = {
     return apiClient.upload(API_ENDPOINTS.USER.UPLOAD_AVATAR, formData)
   },
 
-  getStats: async () => {
-    return apiClient.get(API_ENDPOINTS.USER.STATS)
+  getStats: async (userId) => {
+    const url = userId ? `${API_ENDPOINTS.USER.STATS}?userId=${userId}` : API_ENDPOINTS.USER.STATS
+    return apiClient.get(url)
   },
 
   getSkillsProfile: async () => {
@@ -37,8 +38,9 @@ export const userService = {
     return apiClient.get(API_ENDPOINTS.USER.GOALS)
   },
 
-  getAchievements: async () => {
-    return apiClient.get(API_ENDPOINTS.USER.ACHIEVEMENTS)
+  getAchievements: async (userId) => {
+    const url = userId ? `/achievements?userId=${userId}` : API_ENDPOINTS.USER.ACHIEVEMENTS
+    return apiClient.get(url)
   },
   
   syncAchievementStats: (payload) => apiClient.put(API_ENDPOINTS.USER.SYNC_ACHIEVEMENT_STATS, payload),

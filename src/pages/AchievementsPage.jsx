@@ -48,7 +48,7 @@ export function AchievementsPage({ embedded = false }) {
           : 'max-w-[1440px] mx-auto px-6 lg:px-10 pt-2 pb-6 h-[calc(100vh-80px)] overflow-hidden flex flex-col'
       }
     >
-      <div className="mb-3 shrink-0 rounded-[1.5rem] border border-slate-200 dark:border-border-dark bg-white dark:bg-card-dark px-6 py-4 shadow-xl shadow-slate-200/50 dark:shadow-none relative overflow-hidden group">
+      <div className="mb-3 shrink-0 rounded-2xl border border-slate-200 dark:border-border-dark bg-white dark:bg-card-dark px-5 py-3 shadow-xl shadow-slate-200/50 dark:shadow-none relative overflow-hidden group">
         <div className="absolute top-0 right-0 w-64 h-full bg-gradient-to-l from-primary/5 dark:from-primary/10 to-transparent pointer-events-none" />
         
         <div className="flex items-start gap-6 relative z-10">
@@ -58,15 +58,15 @@ export function AchievementsPage({ embedded = false }) {
             </span>
           </div>
           <div className="min-w-0 flex-1 space-y-1">
-            <h1 className="text-xl font-bold text-slate-900 dark:text-white tracking-tight uppercase">
+            <h1 className="text-lg font-bold text-slate-900 dark:text-white tracking-tight uppercase">
               {t('header.achievements')}
             </h1>
-            <p className="text-[11px] font-medium text-slate-500 dark:text-slate-300/80 max-w-2xl">
+            <p className="text-[10px] font-medium text-slate-500 dark:text-slate-300/80 max-w-2xl">
               {t('achievementsPage.subtitle')}
             </p>
           </div>
           <div className="hidden md:flex flex-col items-end gap-2 text-right">
-            <span className="text-sm font-black text-slate-900 dark:text-white uppercase tracking-widest">
+            <span className="text-xs font-black text-slate-900 dark:text-white uppercase tracking-widest">
               {t('achievementsPage.categoryCount', {
                 count: (activeCategory?.items || []).length,
                 defaultValue: `${(activeCategory?.items || []).length} Achievements`,

@@ -1,4 +1,5 @@
 import { useEffect } from 'react'
+import { toast } from 'react-hot-toast'
 import { DEFAULT_AVATAR } from '../constants/ui'
 import { communityService } from '../services'
 import { getContentWithoutMentions } from '../utils/postContent'
@@ -142,7 +143,7 @@ export function useDashboardPostCard({
   const handleSaveEdit = () => {
     if (!postId || !isOwnPost || postActionLoading) return
     const nextContentRaw = editContent.trim()
-    const nextContent = getContentWithoutMentions(nextContentRaw).trim()
+    const nextContent = nextContentRaw
     const hasMedia =
       (Array.isArray(editImages) && editImages.length > 0) ||
       (typeof editVideoUrl === 'string' && editVideoUrl.trim()) ||
@@ -155,7 +156,7 @@ export function useDashboardPostCard({
     }
 
     const originalContentRaw = post?.content != null ? String(post.content).trim() : ''
-    const originalContent = getContentWithoutMentions(originalContentRaw).trim()
+    const originalContent = originalContentRaw
     const originalImages = Array.isArray(post?.images) ? post.images : []
     const originalVideo = typeof post?.video === 'string' ? post.video : ''
     const originalDocuments = normalizeDocs(post?.documents)
@@ -256,9 +257,12 @@ export function useDashboardPostCard({
     communityService
       .deletePost(postId)
       .then(() => {
+        toast.success(t('common.deleteSuccess') || 'Post deleted successfully')
         if (typeof onDeletePost === 'function') onDeletePost(postId)
       })
-      .catch(() => {})
+      .catch((err) => {
+        toast.error(err?.data?.message || t('common.deleteError') || 'Failed to delete post')
+      })
       .finally(() => {
         setPostActionLoading(false)
       })

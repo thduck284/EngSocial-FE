@@ -25,12 +25,12 @@ export function ProfileLeftStatsSection({
                 <span className={`material-symbols-outlined ${changeColor || 'text-primary'}`}>
                   {icon}
                 </span>
-                <span className="text-sm font-medium">{t(label)}</span>
+                <span className="text-xs font-medium">{t(label)}</span>
               </div>
-              <span className="font-bold text-sm">
+              <span className="font-bold text-xs">
                 {value}{' '}
                 {change && (
-                  <span className={`text-[10px] ml-1 ${changeColor}`}>{change}</span>
+                  <span className={`text-[9px] ml-1 ${changeColor}`}>{change}</span>
                 )}
               </span>
             </Link>

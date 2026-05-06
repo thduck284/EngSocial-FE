@@ -17,6 +17,7 @@ export function CommunityHeader({
   onJoinGroup,
   activeTab,
   onTabChange,
+  onSearch,
   myGroupMembership = null,
   onAcceptGroupInvite,
   onDeclineGroupInvite,
@@ -31,6 +32,8 @@ export function CommunityHeader({
   const [joinBusy, setJoinBusy] = useState(false)
   const [inviteActionBusy, setInviteActionBusy] = useState(false)
   const [withdrawJoinBusy, setWithdrawJoinBusy] = useState(false)
+  const [isSearchOpen, setIsSearchOpen] = useState(false)
+  const [groupSearchValue, setGroupSearchValue] = useState('')
   const joinedMenuRef = useRef(null)
   const totalMembers = activeGroup?.memberCount ?? activeMembers.length ?? 0
   const maxAvatars = 8
@@ -138,38 +141,28 @@ export function CommunityHeader({
               </button>
             )}
           </div>
-          <div className="text-xs text-slate-500 dark:text-gray-400 font-bold uppercase tracking-widest">
-            {loadingActive ? (
-              <div className="flex items-center gap-2">
-                <span className="material-symbols-outlined animate-spin text-base text-primary">progress_activity</span>
-                <span>{t('groups.header.loading')}</span>
-              </div>
-            ) : (
-              <p>{t('groups.header.activeNow')}</p>
-            )}
-          </div>
         </div>
-        <div className="flex flex-wrap items-center gap-3 relative z-30">
+        <div className="flex flex-wrap items-center gap-2 relative z-30">
           {/* Mời — chỉ khi đã là thành viên */}
           {isMemberOfActiveGroup ? (
             <button
               type="button"
               onClick={onOpenInvite}
-              className="px-6 py-2.5 rounded-xl bg-emerald-500 hover:bg-emerald-600 text-sm font-black flex items-center gap-2 text-white shadow-lg shadow-emerald-500/20 transition-all active:scale-95"
+              className="h-9 px-3 rounded-xl bg-emerald-500 hover:bg-emerald-600 text-xs font-black flex items-center gap-2 text-white shadow-lg shadow-emerald-500/20 transition-all active:scale-95"
             >
-              <span className="material-symbols-outlined text-lg">person_add</span>
+              <span className="material-symbols-outlined text-[18px]">person_add</span>
               {t('groups.header.invite')}
             </button>
           ) : null}
           {/* Chia sẻ */}
-          <button className="px-6 py-2.5 rounded-xl bg-slate-100 dark:bg-white/5 hover:bg-slate-200 dark:hover:bg-white/10 text-sm font-black flex items-center gap-2 text-slate-700 dark:text-slate-200 border border-slate-200 dark:border-white/10 transition-all active:scale-95">
-            <span className="material-symbols-outlined text-lg">share</span>
+          <button className="h-9 px-3 rounded-xl bg-slate-100 dark:bg-white/5 hover:bg-slate-200 dark:hover:bg-white/10 text-xs font-black flex items-center gap-2 text-slate-700 dark:text-slate-200 border border-slate-200 dark:border-white/10 transition-all active:scale-95">
+            <span className="material-symbols-outlined text-[18px]">share</span>
             {t('groups.header.share')}
           </button>
           {/* Đã tham gia / Tham gia nhóm — theo GET /groups/me */}
           {loadingMembership && activeGroup && !blockingJoinSlot ? (
             <div
-              className="h-10 min-w-[8rem] rounded-xl bg-slate-100 dark:bg-white/5 border border-slate-200 dark:border-white/10 animate-pulse"
+              className="h-9 min-w-[7rem] rounded-xl bg-slate-100 dark:bg-white/5 border border-slate-200 dark:border-white/10 animate-pulse"
               aria-hidden
             />
           ) : blockingJoinSlot ? null : isMemberOfActiveGroup ? (
@@ -177,24 +170,24 @@ export function CommunityHeader({
               <button
                 type="button"
                 onClick={() => setJoinedMenuOpen((v) => !v)}
-                className="px-6 py-2.5 rounded-xl bg-primary/10 text-primary hover:bg-primary/20 text-sm font-black flex items-center gap-2 transition-all active:scale-95"
+                className="h-9 px-3 rounded-xl bg-primary/10 text-primary hover:bg-primary/20 text-xs font-black flex items-center gap-2 transition-all active:scale-95"
               >
-                <span className="material-symbols-outlined text-lg">check_circle</span>
+                <span className="material-symbols-outlined text-[18px]">check_circle</span>
                 <span>{t('groups.header.joined')}</span>
-                <span className="material-symbols-outlined text-xl">expand_more</span>
+                <span className="material-symbols-outlined text-lg">expand_more</span>
               </button>
               {joinedMenuOpen && activeGroup && (
-                <div className="absolute right-0 top-full mt-2 w-48 rounded-2xl bg-white dark:bg-card-dark border border-slate-200 dark:border-border-dark shadow-2xl p-1.5 z-50 animate-in fade-in slide-in-from-top-2 duration-200">
+                <div className="absolute right-0 top-full mt-2 w-full min-w-[120px] rounded-2xl bg-white dark:bg-card-dark border border-slate-200 dark:border-border-dark shadow-2xl p-1 z-50 animate-in fade-in slide-in-from-top-2 duration-200">
                   <button
                     type="button"
-                    className="w-full flex items-center gap-3 px-4 py-3 hover:bg-rose-50 dark:hover:bg-rose-500/10 text-rose-600 dark:text-rose-400 font-black rounded-xl transition-all"
+                    className="w-full flex items-center gap-2.5 px-3 py-2 hover:bg-rose-50 dark:hover:bg-rose-500/10 text-rose-600 dark:text-rose-400 font-black rounded-xl transition-all"
                     onClick={() => {
                       setJoinedMenuOpen(false)
                       setLeaveModalOpen(true)
                     }}
                   >
-                    <span className="material-symbols-outlined text-xl">logout</span>
-                    <span className="text-xs uppercase tracking-widest">{t('groups.header.leave')}</span>
+                    <span className="material-symbols-outlined text-lg">logout</span>
+                    <span className="text-[10px] uppercase tracking-widest">{t('groups.header.leave')}</span>
                   </button>
                 </div>
               )}
@@ -218,9 +211,9 @@ export function CommunityHeader({
                   setJoinBusy(false)
                 }
               }}
-              className="px-6 py-2.5 rounded-xl bg-primary hover:brightness-110 text-sm font-black flex items-center gap-2 text-white shadow-lg shadow-primary/25 transition-all active:scale-95 disabled:opacity-50"
+              className="h-9 px-3 rounded-xl bg-primary hover:brightness-110 text-xs font-black flex items-center gap-2 text-white shadow-lg shadow-primary/25 transition-all active:scale-95 disabled:opacity-50"
             >
-              <span className="material-symbols-outlined text-lg">group_add</span>
+              <span className="material-symbols-outlined text-[18px]">group_add</span>
               <span>{joinBusy ? t('groups.header.joining') : t('groups.header.joinGroup')}</span>
             </button>
           ) : null}
@@ -334,14 +327,12 @@ export function CommunityHeader({
             throw err
           }
         }}
-      />
-      {/* Tabs dưới avatar giống Facebook: Giới thiệu, Bài viết, Mọi người, File phương tiện, File, Search icon */}
-      <div className="px-6 border-t border-slate-100 dark:border-border-dark">
-        <div className="flex items-center gap-8 overflow-x-auto custom-scrollbar no-scrollbar py-1">
+      />      <div className="px-6 border-t border-slate-100 dark:border-border-dark">
+        <div className="flex items-center w-full overflow-x-auto custom-scrollbar no-scrollbar py-1">
           <button
             type="button"
             onClick={() => onTabChange?.('about')}
-            className={`py-4 text-xs font-black uppercase tracking-widest transition-all relative group ${
+            className={`flex-1 py-4 text-[11px] font-black uppercase tracking-widest transition-all relative group ${
               activeTab === 'about'
                 ? 'text-primary'
                 : 'text-slate-500 dark:text-gray-400 hover:text-slate-900 dark:hover:text-white'
@@ -355,7 +346,7 @@ export function CommunityHeader({
           <button
             type="button"
             onClick={() => onTabChange?.('posts')}
-            className={`py-4 text-xs font-black uppercase tracking-widest transition-all relative group ${
+            className={`flex-1 py-4 text-[11px] font-black uppercase tracking-widest transition-all relative group ${
               activeTab === 'posts'
                 ? 'text-primary'
                 : 'text-slate-500 dark:text-gray-400 hover:text-slate-900 dark:hover:text-white'
@@ -369,7 +360,7 @@ export function CommunityHeader({
           <button
             type="button"
             onClick={() => onTabChange?.('people')}
-            className={`py-4 text-xs font-black uppercase tracking-widest transition-all relative group ${
+            className={`flex-1 py-4 text-[11px] font-black uppercase tracking-widest transition-all relative group ${
               activeTab === 'people'
                 ? 'text-primary'
                 : 'text-slate-500 dark:text-gray-400 hover:text-slate-900 dark:hover:text-white'
@@ -383,7 +374,7 @@ export function CommunityHeader({
           <button
             type="button"
             onClick={() => onTabChange?.('media')}
-            className={`py-4 text-xs font-black uppercase tracking-widest transition-all relative group ${
+            className={`flex-1 py-4 text-[11px] font-black uppercase tracking-widest transition-all relative group ${
               activeTab === 'media'
                 ? 'text-primary'
                 : 'text-slate-500 dark:text-gray-400 hover:text-slate-900 dark:hover:text-white'
@@ -397,7 +388,7 @@ export function CommunityHeader({
           <button
             type="button"
             onClick={() => onTabChange?.('files')}
-            className={`py-4 text-xs font-black uppercase tracking-widest transition-all relative group ${
+            className={`flex-1 py-4 text-[11px] font-black uppercase tracking-widest transition-all relative group ${
               activeTab === 'files'
                 ? 'text-primary'
                 : 'text-slate-500 dark:text-gray-400 hover:text-slate-900 dark:hover:text-white'
@@ -408,19 +399,47 @@ export function CommunityHeader({
               <div className="absolute bottom-0 left-0 right-0 h-1 bg-primary rounded-full" />
             )}
           </button>
-
-          <div className="ml-auto flex items-center">
-            <button
-              type="button"
-              className="size-10 flex items-center justify-center rounded-xl bg-slate-100 dark:bg-white/5 hover:bg-slate-200 dark:hover:bg-white/10 text-slate-600 dark:text-slate-300 transition-all active:scale-95"
-            >
-              <span className="material-symbols-outlined text-xl">search</span>
-            </button>
+          <div className="flex items-center ml-2 relative">
+            {isSearchOpen ? (
+              <div className="flex items-center bg-slate-100 dark:bg-white/5 rounded-xl border border-slate-200 dark:border-white/10 animate-in fade-in slide-in-from-right-4 duration-300">
+                <input
+                  autoFocus
+                  type="text"
+                  value={groupSearchValue}
+                  onChange={(e) => setGroupSearchValue(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') {
+                      e.preventDefault()
+                      onSearch?.(groupSearchValue)
+                    }
+                  }}
+                  placeholder={t('groups.sidebar.searchPlaceholder')}
+                  className="bg-transparent border-none outline-none px-3 py-1.5 text-xs text-slate-900 dark:text-white w-40 placeholder:text-slate-400"
+                />
+                <button
+                  type="button"
+                  onClick={() => {
+                    setIsSearchOpen(false)
+                    setGroupSearchValue('')
+                    onSearch?.('')
+                  }}
+                  className="pr-2 text-slate-400 hover:text-rose-500 transition-colors"
+                >
+                  <span className="material-symbols-outlined text-lg">close</span>
+                </button>
+              </div>
+            ) : (
+              <button
+                type="button"
+                onClick={() => setIsSearchOpen(true)}
+                className="size-9 flex items-center justify-center rounded-xl bg-slate-100 dark:bg-white/5 hover:bg-slate-200 dark:hover:bg-white/10 text-slate-600 dark:text-slate-300 transition-all active:scale-95"
+              >
+                <span className="material-symbols-outlined text-lg">search</span>
+              </button>
+            )}
           </div>
         </div>
       </div>
     </div>
-
-
   )
 }

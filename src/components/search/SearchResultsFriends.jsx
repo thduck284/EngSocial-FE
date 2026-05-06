@@ -48,19 +48,19 @@ export function SearchResultsFriends({
       {friendsResult.map((user) => (
         <div
           key={user.id}
-          className="bg-white dark:bg-card-dark rounded-[2rem] p-6 border border-slate-200 dark:border-border-dark flex items-center justify-between gap-6 shadow-lg shadow-slate-200/50 dark:shadow-none hover:border-primary/40 transition-all hover:-translate-y-0.5 group"
+          className="bg-white dark:bg-card-dark rounded-[1.5rem] p-4 border border-slate-200 dark:border-border-dark flex items-center justify-between gap-4 shadow-md shadow-slate-200/50 dark:shadow-none hover:border-primary/40 transition-all hover:-translate-y-0.5 group"
         >
-          <Link to={ROUTES.PROFILE_USER(user.id)} className="flex items-center gap-5 min-w-0 flex-1">
+          <Link to={ROUTES.PROFILE_USER(user.id)} className="flex items-center gap-4 min-w-0 flex-1">
             <div className="relative shrink-0">
                <img
                 src={user.avatar || DEFAULT_AVATAR}
                 alt=""
-                className="size-16 rounded-[1.25rem] object-cover bg-slate-100 dark:bg-slate-700 border-2 border-white dark:border-card-dark shadow-lg transition-transform group-hover:scale-105"
+                className="size-14 rounded-[1rem] object-cover bg-slate-100 dark:bg-slate-700 border-2 border-white dark:border-card-dark shadow-md transition-transform group-hover:scale-105"
               />
-              <div className="absolute -bottom-1 -right-1 size-5 bg-emerald-500 rounded-full border-2 border-white dark:border-card-dark shadow-sm" />
+              <div className="absolute -bottom-0.5 -right-0.5 size-4 bg-emerald-500 rounded-full border-2 border-white dark:border-card-dark shadow-sm" />
             </div>
             <div className="min-w-0">
-              <p className="text-lg font-black text-slate-900 dark:text-white truncate uppercase tracking-tight group-hover:text-primary transition-colors">{user.name}</p>
+              <p className="text-base font-black text-slate-900 dark:text-white truncate tracking-tight group-hover:text-primary transition-colors">{user.name}</p>
               <div className="flex items-center gap-3 mt-1.5">
                 <span className="text-[10px] font-black text-primary uppercase tracking-widest bg-primary/10 px-2 py-0.5 rounded-lg">Level {user.level ?? 1}</span>
                 <span className="text-[10px] font-black text-slate-400 dark:text-gray-500 uppercase tracking-widest">{user.totalXp ?? 0} XP</span>
@@ -69,8 +69,8 @@ export function SearchResultsFriends({
           </Link>
           <div className="shrink-0">
             {user.friendStatus === 'connected' && (
-              <div className="flex items-center gap-2 text-[10px] font-black text-emerald-500 uppercase tracking-widest px-5 py-2.5 rounded-xl bg-emerald-500/10 border border-emerald-500/20 shadow-sm">
-                <span className="material-symbols-outlined text-lg">how_to_reg</span>
+              <div className="flex items-center gap-2 text-[9px] font-black text-emerald-500 uppercase tracking-widest px-4 py-2 rounded-xl bg-emerald-500/10 border border-emerald-500/20 shadow-sm">
+                <span className="material-symbols-outlined text-base">how_to_reg</span>
                 {t('search.friendAdded')}
               </div>
             )}
@@ -78,15 +78,15 @@ export function SearchResultsFriends({
               <button
                 type="button"
                 onClick={() => handleCancelFriendRequest(user.friendshipId)}
-                className="flex items-center gap-2 text-[10px] font-black text-slate-400 hover:text-rose-500 uppercase tracking-widest px-5 py-2.5 rounded-xl bg-slate-50 dark:bg-white/5 hover:bg-rose-500/10 border border-slate-100 dark:border-white/10 hover:border-rose-500/20 transition-all active:scale-95 shadow-sm"
+                className="flex items-center gap-2 text-[9px] font-black text-slate-400 hover:text-rose-500 uppercase tracking-widest px-4 py-2 rounded-xl bg-slate-50 dark:bg-white/5 hover:bg-rose-500/10 border border-slate-100 dark:border-white/10 hover:border-rose-500/20 transition-all active:scale-95 shadow-sm"
               >
-                <span className="material-symbols-outlined text-lg">person_remove</span>
+                <span className="material-symbols-outlined text-base">person_remove</span>
                 {t('search.cancelRequest')}
               </button>
             )}
             {user.friendStatus === 'pending' && !user.pendingSentByMe && (
-              <div className="flex items-center gap-2 text-[10px] font-black text-amber-500 uppercase tracking-widest px-5 py-2.5 rounded-xl bg-amber-500/10 border border-amber-500/20 shadow-sm">
-                <span className="material-symbols-outlined text-lg">hourglass_empty</span>
+              <div className="flex items-center gap-2 text-[9px] font-black text-amber-500 uppercase tracking-widest px-4 py-2 rounded-xl bg-amber-500/10 border border-amber-500/20 shadow-sm">
+                <span className="material-symbols-outlined text-base">hourglass_empty</span>
                 {t('search.pendingRequest')}
               </div>
             )}
@@ -94,9 +94,9 @@ export function SearchResultsFriends({
               <button
                 type="button"
                 onClick={() => handleSendFriendRequest(user.id)}
-                className="flex items-center gap-2 text-[10px] font-black text-primary uppercase tracking-widest px-6 py-3 rounded-xl bg-primary/10 hover:bg-primary hover:text-white border border-primary/20 transition-all active:scale-95 shadow-sm"
+                className="flex items-center gap-2 text-[9px] font-black text-primary uppercase tracking-widest px-5 py-2.5 rounded-xl bg-primary/10 hover:bg-primary hover:text-white border border-primary/20 transition-all active:scale-95 shadow-sm"
               >
-                <span className="material-symbols-outlined text-lg">person_add</span>
+                <span className="material-symbols-outlined text-base">person_add</span>
                 {t('search.addFriend')}
               </button>
             )}

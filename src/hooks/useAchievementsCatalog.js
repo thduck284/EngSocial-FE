@@ -137,14 +137,14 @@ function beAchievementToItem(a, t, idx, lng) {
     badgeNameEn: bnEn,
     badgeImage,
     badgeIcon,
-    earnedBadges: a.earnedBadges || [], // NEW: list of all earned badges from BE
+    earnedBadges: a.earnedBadges || a.badges || [], // NEW: list of all earned badges from BE
     link: a.linkTo ? {
       label: pickLang(a.linkLabel, a.linkLabelEn, lng) || t('achievementsPage.fieldLinkLabel'),
       to: a.linkTo
     } : undefined,
     order: a.order ?? idx,
     categoryId,
-    unlocked: a.unlocked,
+    unlocked: a.unlocked ?? a.isUnlocked ?? a.completed ?? false,
     completed: a.completed != null ? !!a.completed : undefined,
     progress: a.progress,
     targets,

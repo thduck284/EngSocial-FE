@@ -162,6 +162,13 @@ export function CommunityPage() {
               navigate('/community/my-groups')
             }
           }}
+          onSearch={(q) => {
+            if (viewMode !== 'feed') {
+              setViewMode('feed')
+              navigate('/community/group-feed')
+            }
+            loadFeedPosts(1, feedSort, q)
+          }}
         />
 
         {viewMode === 'group' ? (
@@ -188,6 +195,16 @@ export function CommunityPage() {
                   const id = activeGroup?.id || activeGroup?._id || groupId
                   if (id) {
                     navigate(`/community/group/${id}/${normalized}`)
+                  }
+                }}
+                onSearch={(q) => {
+                  const gid = activeGroup?.id || activeGroup?._id || groupId
+                  if (gid) {
+                    if (groupTab !== 'posts') {
+                      setGroupTab('posts')
+                      navigate(`/community/group/${gid}/posts`)
+                    }
+                    loadGroupPosts(gid, 1, q)
                   }
                 }}
               />
@@ -240,12 +257,12 @@ export function CommunityPage() {
                   </span>
                 </div>
                 <div>
-                  <h2 className="text-lg md:text-xl font-bold text-slate-900 dark:text-white tracking-tight">
+                  <h2 className="text-base md:text-lg font-bold text-slate-900 dark:text-white tracking-tight">
                     {viewMode === 'discover'
                       ? t('groups.sidebar.discover')
                       : t('groups.sidebar.joinedTitle')}
                   </h2>
-                  <p className="text-sm text-slate-500 dark:text-gray-400 font-medium mt-0.5">
+                  <p className="text-[12px] text-slate-500 dark:text-gray-400 font-medium mt-0.5">
                     {viewMode === 'discover'
                       ? t('groups.sidebar.discoverSubtitle', {
                           defaultValue: 'Khám phá cộng đồng mới dựa trên sở thích và bạn bè',
@@ -300,7 +317,7 @@ export function CommunityPage() {
                         return (
                           <div
                             key={id || g.slug}
-                            className="bg-white dark:bg-card-dark border border-slate-200 dark:border-border-dark rounded-[2rem] p-6 hover:border-primary/40 hover:shadow-xl hover:-translate-y-1 transition-all flex flex-col gap-5 relative group shadow-sm"
+                            className="bg-white dark:bg-card-dark border border-slate-200 dark:border-border-dark rounded-[1.5rem] p-4 md:p-5 hover:border-primary/40 hover:shadow-xl hover:-translate-y-1 transition-all flex flex-col gap-4 relative group shadow-sm"
                           >
                             <button
                               type="button"
@@ -321,20 +338,20 @@ export function CommunityPage() {
                                 )}
                               </div>
                               <div className="flex-1 min-w-0">
-                                <p className="font-bold text-slate-900 dark:text-slate-100 truncate group-hover:text-primary transition-colors">
+                                <p className="font-bold text-slate-900 dark:text-slate-100 truncate group-hover:text-primary transition-colors text-sm">
                                   {g.name}
                                 </p>
-                                <p className="text-xs text-slate-500 dark:text-gray-400 mt-1 flex items-center gap-2 font-bold uppercase tracking-tighter">
-                                  <span className="material-symbols-outlined text-sm text-primary/60">groups</span>
+                                <p className="text-[10px] text-slate-500 dark:text-gray-400 mt-0.5 flex items-center gap-1.5 font-bold uppercase tracking-tight">
+                                  <span className="material-symbols-outlined text-[14px] text-primary/60">groups</span>
                                   {g.memberCount ?? 0}{' '}
                                   {t('groups.header.members')}
                                 </p>
                               </div>
                             </div>
-                            <div className="text-sm text-slate-600 dark:text-slate-400 line-clamp-2 min-h-[40px] leading-relaxed relative z-10 pointer-events-none">
+                            <div className="text-xs text-slate-600 dark:text-slate-400 line-clamp-2 min-h-[32px] leading-relaxed relative z-10 pointer-events-none">
                               {g.description || t('groups.sidebar.aboutEmpty')}
                             </div>
-                            <div className="mt-auto pt-2 relative z-10 flex gap-2">
+                            <div className="mt-auto pt-1 relative z-10 flex gap-2">
                               {isActuallyJoined ? (
                                 <button
                                   type="button"
@@ -342,7 +359,7 @@ export function CommunityPage() {
                                     setViewMode('group')
                                     navigate(`/community/group/${id}/about`)
                                   }}
-                                  className="flex-1 py-3 rounded-2xl bg-slate-100 dark:bg-white/5 border border-slate-200 dark:border-border-dark text-xs font-black uppercase tracking-wider text-slate-700 dark:text-slate-200 hover:bg-slate-200 dark:hover:bg-white/10 transition-all shadow-sm"
+                                  className="flex-1 h-9 rounded-xl bg-slate-100 dark:bg-white/5 border border-slate-200 dark:border-border-dark text-[10px] font-black uppercase tracking-widest text-slate-700 dark:text-slate-200 hover:bg-slate-200 dark:hover:bg-white/10 transition-all shadow-sm"
                                 >
                                   {t('groups.sidebar.openGroup')}
                                 </button>
@@ -350,7 +367,7 @@ export function CommunityPage() {
                                 <button
                                   type="button"
                                   onClick={() => handleJoinGroup(id)}
-                                  className="flex-1 py-3 rounded-2xl bg-primary text-white text-xs font-black uppercase tracking-wider hover:brightness-110 transition-all shadow-lg shadow-primary/20"
+                                  className="flex-1 h-9 rounded-xl bg-primary text-white text-[10px] font-black uppercase tracking-widest hover:brightness-110 transition-all shadow-lg shadow-primary/20"
                                 >
                                   {t('groups.header.join')}
                                 </button>
@@ -423,22 +440,22 @@ export function CommunityPage() {
                     </span>
                   </div>
                   <div className="min-w-0">
-                    <h1 className="text-lg md:text-xl font-bold text-slate-900 dark:text-white tracking-tight">
+                    <h1 className="text-base md:text-lg font-bold text-slate-900 dark:text-white tracking-tight">
                       {t('groups.sidebar.myFeed')}
                     </h1>
-                    <p className="text-sm text-slate-500 dark:text-gray-400 font-medium mt-0.5">
+                    <p className="text-[12px] text-slate-500 dark:text-gray-400 font-medium mt-0.5">
                       {t('groups.sidebar.feedSubtitle', {
                         defaultValue: 'Bài viết từ tất cả các nhóm bạn tham gia',
                       })}
                     </p>
                   </div>
                 </div>
-                <div className="flex items-center gap-1.5 p-1.5 bg-slate-100 dark:bg-background-dark rounded-xl border border-slate-200 dark:border-border-dark">
+                <div className="flex items-center gap-1 p-1 bg-slate-100 dark:bg-background-dark rounded-xl border border-slate-200 dark:border-border-dark">
                   <button
                     onClick={() => loadFeedPosts(1, 'latest')}
-                    className={`px-5 py-2 rounded-lg text-xs font-black uppercase tracking-wider transition-all ${
+                    className={`px-4 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all ${
                       feedSort === 'latest'
-                        ? 'bg-white dark:bg-card-dark text-primary shadow-md scale-[1.02]'
+                        ? 'bg-white dark:bg-card-dark text-primary shadow-sm scale-[1.02]'
                         : 'text-slate-500 dark:text-gray-400 hover:text-slate-700 dark:hover:text-white'
                     }`}
                   >
@@ -446,9 +463,9 @@ export function CommunityPage() {
                   </button>
                   <button
                     onClick={() => loadFeedPosts(1, 'popular')}
-                    className={`px-5 py-2 rounded-lg text-xs font-black uppercase tracking-wider transition-all ${
+                    className={`px-4 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all ${
                       feedSort === 'popular'
-                        ? 'bg-white dark:bg-card-dark text-primary shadow-md scale-[1.02]'
+                        ? 'bg-white dark:bg-card-dark text-primary shadow-sm scale-[1.02]'
                         : 'text-slate-500 dark:text-gray-400 hover:text-slate-700 dark:hover:text-white'
                     }`}
                   >

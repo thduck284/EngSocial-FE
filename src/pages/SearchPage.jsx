@@ -166,53 +166,53 @@ export function SearchPage() {
           </nav>
 
           <div className="space-y-6">
-            <div className="bg-white dark:bg-card-dark rounded-[2.5rem] border border-slate-200 dark:border-border-dark p-8 shadow-xl shadow-slate-200/50 dark:shadow-none relative overflow-hidden group">
-               <div className="absolute top-0 right-0 w-32 h-full bg-gradient-to-l from-primary/5 to-transparent pointer-events-none" />
-               <h2 className="text-3xl font-black text-slate-900 dark:text-white uppercase tracking-tight relative z-10">
+            <div className="bg-white dark:bg-card-dark rounded-[2rem] border border-slate-200 dark:border-border-dark p-5 shadow-lg shadow-slate-200/50 dark:shadow-none relative overflow-hidden group">
+               <div className="absolute top-0 right-0 w-24 h-full bg-gradient-to-l from-primary/5 to-transparent pointer-events-none" />
+               <h2 className="text-2xl font-black text-slate-900 dark:text-white uppercase tracking-tight relative z-10">
                 {t('search.resultsFor')}{' '}
                 <span className="text-primary italic">«{q || t('search.emptyQuery')}»</span>
               </h2>
             </div>
 
-            <div className="flex items-center gap-10 border-b border-slate-100 dark:border-border-dark overflow-x-auto no-scrollbar px-2">
+            <div className="flex items-center gap-6 border-b border-slate-100 dark:border-border-dark overflow-x-auto no-scrollbar px-2">
               <button
                 type="button"
                 onClick={() => setTab('posts')}
-                className={`pb-4 text-[10px] font-black uppercase tracking-[0.2em] flex items-center gap-3 transition-all whitespace-nowrap relative group/tab ${
+                className={`pb-3 text-[10px] font-black uppercase tracking-[0.2em] flex items-center gap-2 transition-all whitespace-nowrap relative group/tab ${
                   tab === 'posts' ? 'text-primary' : 'text-slate-400 dark:text-gray-500 hover:text-slate-600 dark:hover:text-gray-300'
                 }`}
               >
                 {t('search.tabPosts')}
-                <span className={`px-2.5 py-1 rounded-lg text-[9px] font-black transition-colors ${tab === 'posts' ? 'bg-primary/10 text-primary' : 'bg-slate-100 dark:bg-white/5 text-slate-400 dark:text-gray-600 group-hover/tab:bg-slate-200 dark:group-hover/tab:bg-white/10'}`}>
+                <span className={`px-2 py-0.5 rounded-lg text-[9px] font-black transition-colors ${tab === 'posts' ? 'bg-primary/10 text-primary' : 'bg-slate-100 dark:bg-white/5 text-slate-400 dark:text-gray-600 group-hover/tab:bg-slate-200 dark:group-hover/tab:bg-white/10'}`}>
                   {postsCount}
                 </span>
-                {tab === 'posts' && <div className="absolute bottom-0 left-0 right-0 h-1 bg-primary rounded-full shadow-[0_-4px_10px_rgba(19,182,236,0.5)]" />}
+                {tab === 'posts' && <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-primary rounded-full shadow-[0_-4px_10px_rgba(19,182,236,0.5)]" />}
               </button>
               <button
                 type="button"
                 onClick={() => setTab('friends')}
-                className={`pb-4 text-[10px] font-black uppercase tracking-[0.2em] flex items-center gap-3 transition-all whitespace-nowrap relative group/tab ${
+                className={`pb-3 text-[10px] font-black uppercase tracking-[0.2em] flex items-center gap-2 transition-all whitespace-nowrap relative group/tab ${
                   tab === 'friends' ? 'text-primary' : 'text-slate-400 dark:text-gray-500 hover:text-slate-600 dark:hover:text-gray-300'
                 }`}
               >
                 {t('search.tabFriends')}
-                <span className={`px-2.5 py-1 rounded-lg text-[9px] font-black transition-colors ${tab === 'friends' ? 'bg-primary/10 text-primary' : 'bg-slate-100 dark:bg-white/5 text-slate-400 dark:text-gray-600 group-hover/tab:bg-slate-200 dark:group-hover/tab:bg-white/10'}`}>
+                <span className={`px-2 py-0.5 rounded-lg text-[9px] font-black transition-colors ${tab === 'friends' ? 'bg-primary/10 text-primary' : 'bg-slate-100 dark:bg-white/5 text-slate-400 dark:text-gray-600 group-hover/tab:bg-slate-200 dark:group-hover/tab:bg-white/10'}`}>
                   {friendsCount}
                 </span>
-                {tab === 'friends' && <div className="absolute bottom-0 left-0 right-0 h-1 bg-primary rounded-full shadow-[0_-4px_10px_rgba(19,182,236,0.5)]" />}
+                {tab === 'friends' && <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-primary rounded-full shadow-[0_-4px_10px_rgba(19,182,236,0.5)]" />}
               </button>
               <button
                 type="button"
                 onClick={() => setTab('community')}
-                className={`pb-4 text-[10px] font-black uppercase tracking-[0.2em] flex items-center gap-3 transition-all whitespace-nowrap relative group/tab ${
+                className={`pb-3 text-[10px] font-black uppercase tracking-[0.2em] flex items-center gap-2 transition-all whitespace-nowrap relative group/tab ${
                   tab === 'community' ? 'text-primary' : 'text-slate-400 dark:text-gray-500 hover:text-slate-600 dark:hover:text-gray-300'
                 }`}
               >
                 {t('search.tabCommunity')}
-                <span className={`px-2.5 py-1 rounded-lg text-[9px] font-black transition-colors ${tab === 'community' ? 'bg-primary/10 text-primary' : 'bg-slate-100 dark:bg-white/5 text-slate-400 dark:text-gray-600 group-hover/tab:bg-slate-200 dark:group-hover/tab:bg-white/10'}`}>
+                <span className={`px-2 py-0.5 rounded-lg text-[9px] font-black transition-colors ${tab === 'community' ? 'bg-primary/10 text-primary' : 'bg-slate-100 dark:bg-white/5 text-slate-400 dark:text-gray-600 group-hover/tab:bg-slate-200 dark:group-hover/tab:bg-white/10'}`}>
                   {communityCount}
                 </span>
-                {tab === 'community' && <div className="absolute bottom-0 left-0 right-0 h-1 bg-primary rounded-full shadow-[0_-4px_10px_rgba(19,182,236,0.5)]" />}
+                {tab === 'community' && <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-primary rounded-full shadow-[0_-4px_10px_rgba(19,182,236,0.5)]" />}
               </button>
             </div>
           </div>

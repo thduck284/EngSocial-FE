@@ -71,11 +71,11 @@ export function SearchResultsCommunity({
           <li key={String(id)}>
             <Link
               to={`/community/group/${id}/about`}
-              className="flex gap-6 p-6 rounded-[2rem] border border-slate-200 dark:border-border-dark bg-white dark:bg-card-dark shadow-lg shadow-slate-200/50 dark:shadow-none hover:border-primary/40 transition-all hover:-translate-y-0.5 group text-left relative overflow-hidden"
+              className="flex gap-4 p-4 rounded-[1.5rem] border border-slate-200 dark:border-border-dark bg-white dark:bg-card-dark shadow-md shadow-slate-200/50 dark:shadow-none hover:border-primary/40 transition-all hover:-translate-y-0.5 group text-left relative overflow-hidden"
             >
               <div className="absolute top-0 right-0 w-24 h-full bg-gradient-to-l from-primary/5 to-transparent pointer-events-none" />
               
-              <div className="size-20 rounded-[1.25rem] overflow-hidden border-2 border-white dark:border-card-dark shrink-0 bg-slate-100 dark:bg-slate-800 shadow-lg transition-transform group-hover:scale-105 relative z-10">
+              <div className="size-16 rounded-[1rem] overflow-hidden border-2 border-white dark:border-card-dark shrink-0 bg-slate-100 dark:bg-slate-800 shadow-md transition-transform group-hover:scale-105 relative z-10">
                 {g.icon ? (
                   <img src={g.icon} alt="" className="w-full h-full object-cover" />
                 ) : (
@@ -86,11 +86,11 @@ export function SearchResultsCommunity({
               </div>
               <div className="min-w-0 flex-1 relative z-10">
                 <div className="flex items-center gap-3 mb-2">
-                  <span className="text-[10px] font-black text-primary uppercase tracking-widest bg-primary/10 px-3 py-1 rounded-lg">
+                  <span className="text-[9px] font-black text-primary uppercase tracking-widest bg-primary/10 px-2.5 py-1 rounded-lg">
                     {groupTypeLabel(g, t)}
                   </span>
                 </div>
-                <p className="text-xl font-black text-slate-900 dark:text-white truncate uppercase tracking-tight group-hover:text-primary transition-colors">{g.name || t('groups.header.placeholder')}</p>
+                <p className="text-lg font-black text-slate-900 dark:text-white truncate tracking-tight group-hover:text-primary transition-colors">{g.name || t('groups.header.placeholder')}</p>
                 {g.description ? (
                   <p className="text-sm font-medium text-slate-500 dark:text-gray-400 mt-2 line-clamp-1 italic">&quot;{g.description}&quot;</p>
                 ) : null}
@@ -101,8 +101,8 @@ export function SearchResultsCommunity({
                   </div>
                 </div>
               </div>
-              <div className="size-10 rounded-full bg-slate-50 dark:bg-white/5 flex items-center justify-center text-slate-300 dark:text-gray-600 group-hover:bg-primary group-hover:text-white transition-all self-center shadow-inner">
-                <span className="material-symbols-outlined text-2xl">chevron_right</span>
+              <div className="size-8 rounded-full bg-slate-50 dark:bg-white/5 flex items-center justify-center text-slate-300 dark:text-gray-600 group-hover:bg-primary group-hover:text-white transition-all self-center shadow-inner">
+                <span className="material-symbols-outlined text-xl">chevron_right</span>
               </div>
             </Link>
           </li>
