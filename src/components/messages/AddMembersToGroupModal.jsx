@@ -78,26 +78,26 @@ export function AddMembersToGroupModal({ t, open, onClose, selected, currentUser
         onClick={(e) => e.stopPropagation()}
       >
         <div className="p-5 border-b border-white/5">
-          <h3 className="text-lg font-semibold text-white">{t('messages.addMember')}</h3>
+          <h3 className="text-lg font-semibold text-slate-900 dark:text-white">{t('messages.addMember')}</h3>
         </div>
         <div className="p-5 flex-1 overflow-y-auto">
           {maxCanAdd <= 0 ? (
-            <p className="text-sm text-gray-500 py-4">{t('messages.groupMaxMembersReached')}</p>
+            <p className="text-sm text-slate-400 dark:text-gray-500 py-4">{t('messages.groupMaxMembersReached')}</p>
           ) : (
             <>
-              <p className="text-xs text-gray-400 mb-2">{t('messages.selectMembers')}</p>
+              <p className="text-xs text-slate-500 dark:text-gray-400 mb-2">{t('messages.selectMembers')}</p>
               {loading ? (
-                <div className="flex justify-center py-8 text-gray-500">
+                <div className="flex justify-center py-8 text-slate-400 dark:text-gray-500">
                   <span className="material-symbols-outlined animate-spin text-2xl">progress_activity</span>
                 </div>
               ) : friends.length === 0 ? (
-                <p className="text-sm text-gray-500 py-4">{t('messages.noFriendsToAddToGroup')}</p>
+                <p className="text-sm text-slate-400 dark:text-gray-500 py-4">{t('messages.noFriendsToAddToGroup')}</p>
               ) : (
                 <>
-                  <p className="text-xs text-gray-500 mb-2">
+                  <p className="text-xs text-slate-400 dark:text-gray-500 mb-2">
                     {t('messages.membersSelected', { count: selectedIds.size, max: maxSelect })}
                   </p>
-                  <ul className="space-y-1 max-h-48 overflow-y-auto rounded-xl border border-border-dark bg-card-dark/50 p-2">
+                  <ul className="space-y-1 max-h-48 overflow-y-auto rounded-xl border border-slate-200 dark:border-border-dark bg-card-dark/50 p-2">
                     {friends.map((friend) => {
                       const id = friend.id ?? friend._id
                       const sid = String(id)
@@ -139,7 +139,7 @@ export function AddMembersToGroupModal({ t, open, onClose, selected, currentUser
           <button
             type="button"
             onClick={onClose}
-            className="px-4 py-2 rounded-xl bg-white/10 text-white hover:bg-white/20 text-sm font-medium"
+            className="px-4 py-2 rounded-xl bg-white/10 text-slate-900 dark:text-white hover:bg-white/20 text-sm font-medium"
           >
             {t('common.cancel')}
           </button>

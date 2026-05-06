@@ -67,7 +67,7 @@ export function ReactionDetailModal({
               ))}
             </div>
           ) : (
-            <p className="text-center text-gray-500 text-sm py-8">{t('messages.clickTypeToSee')}</p>
+            <p className="text-center text-slate-400 dark:text-gray-500 text-sm py-8">{t('messages.clickTypeToSee')}</p>
           )}
         </div>
       </div>

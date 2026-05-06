@@ -83,7 +83,7 @@ export function LessonDetailPage() {
                 <span className="flex items-center gap-1">
                   <span className="material-symbols-outlined text-yellow-500 text-lg fill-icon">star</span>
                   <span className="font-bold text-slate-900 dark:text-white">{lesson.rating || '0.0'}</span>
-                  <span>({lesson.ratingCount || 0} {t('search.reviewsCount')})</span>
+                  <span>({t('lessons.reviewsCount', { count: lesson.ratingCount || 0 })})</span>
                 </span>
                 <span>•</span>
                 <span className="flex items-center gap-1">

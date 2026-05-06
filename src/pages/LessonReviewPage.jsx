@@ -319,7 +319,7 @@ export function LessonReviewPage() {
                     <div key={s} className="space-y-1 group">
                       <div className="flex justify-between text-[9px] font-black uppercase text-gray-500 tracking-wider">
                         <span className="group-hover:text-gray-300 transition-colors">{s} {t('common.stars') || 'Stars'}</span>
-                        <span className="group-hover:text-primary transition-colors">{count} {t('lessons.reviewsCount') || 'Reviews'}</span>
+                        <span className="group-hover:text-primary transition-colors">{t('lessons.reviewsCount', { count: count || 0 })}</span>
                       </div>
                       <div className="h-1.5 bg-background-dark rounded-full overflow-hidden border border-border-dark flex items-center p-[1px]">
                         <div 

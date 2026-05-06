@@ -159,7 +159,7 @@ export function SkillPracticePage() {
               <span className="material-symbols-outlined text-white text-5xl drop-shadow-lg scale-75 group-hover:scale-100 transition-transform duration-300">{overlayIcon}</span>
             </div>
             <div className="absolute top-3 left-3 flex items-center gap-2">
-              <div className="px-3 py-1 bg-black/60 backdrop-blur-md rounded-xl text-[10px] font-black uppercase tracking-widest text-white flex items-center gap-1.5 shadow-lg border border-white/10">
+              <div className="px-2 py-1 bg-black/60 backdrop-blur-md rounded-lg text-[10px] font-bold text-white flex items-center gap-1 shadow-lg border border-white/10">
                 <span className="material-symbols-outlined text-xs text-primary">{typeIcon}</span>
                 {typeLabel}
               </div>
@@ -171,71 +171,71 @@ export function SkillPracticePage() {
             )}
           </div>
 
-          <div className="p-6 flex flex-col flex-1">
-            <div className="flex justify-between items-start gap-3 mb-4">
-              <h5 className="font-black text-base text-slate-900 dark:text-white group-hover:text-primary transition-colors line-clamp-2 leading-tight uppercase tracking-tight">
+          <div className="p-3 flex flex-col flex-1">
+            <div className="flex justify-between items-start gap-3 mb-2">
+              <h5 className="font-bold text-sm text-slate-900 dark:text-white group-hover:text-primary transition-colors line-clamp-2 leading-tight">
                 {card.title}
               </h5>
-              <span className={`px-2 py-0.5 ${card.levelColor} text-[10px] font-black rounded-lg shadow-sm uppercase tracking-tighter shrink-0 mt-1`}>
+              <span className={`px-2 py-0.5 ${card.levelColor} text-[10px] font-bold rounded shadow-sm shrink-0 mt-0.5`}>
                 {card.level}
               </span>
             </div>
 
             {isListeningType && card.accent && (
-              <div className="flex items-center gap-2 mb-4">
-                <span className={`px-2.5 py-1 ${card.accentClass} text-[10px] font-black rounded-xl border shadow-sm uppercase tracking-wider`}>
+              <div className="flex items-center gap-2 mb-3">
+                <span className={`px-2.5 py-1 ${card.accentClass} text-[10px] font-bold rounded-lg border shadow-sm`}>
                   {card.accent}
                 </span>
               </div>
             )}
             
             {isWritingType && card.type && (
-              <div className="flex items-center gap-2 mb-4">
-                <span className={`px-2.5 py-1 ${card.typeClass} text-[10px] font-black rounded-xl border shadow-sm uppercase tracking-wider`}>
+              <div className="flex items-center gap-2 mb-3">
+                <span className={`px-2.5 py-1 ${card.typeClass} text-[10px] font-bold rounded-lg border shadow-sm`}>
                   {card.type}
                 </span>
               </div>
             )}
 
-            <p className="text-xs text-slate-500 dark:text-gray-400 line-clamp-2 leading-relaxed mb-6 font-medium">
+            <p className="text-xs text-slate-500 dark:text-gray-400 line-clamp-2 leading-relaxed mb-4 font-medium">
               {card.desc}
             </p>
 
-            <div className="flex flex-wrap gap-2 mb-6 mt-auto">
+            <div className="flex flex-wrap gap-2 mb-4 mt-auto">
               {card.topic && (
-                <div className="px-2.5 py-1 bg-slate-50 dark:bg-white/5 text-slate-600 dark:text-gray-400 text-[10px] font-black rounded-xl flex items-center gap-1.5 border border-slate-100 dark:border-white/5 uppercase tracking-tighter">
+                <div className="px-2 py-0.5 bg-slate-50 dark:bg-white/5 text-slate-600 dark:text-gray-400 text-[10px] rounded flex items-center gap-1 border border-slate-100 dark:border-white/5">
                   <span className="material-symbols-outlined text-xs">category</span> {card.topic}
                 </div>
               )}
               {card.time && (
-                <div className="px-2.5 py-1 bg-slate-50 dark:bg-white/5 text-slate-600 dark:text-gray-400 text-[10px] font-black rounded-xl flex items-center gap-1.5 border border-slate-100 dark:border-white/5 uppercase tracking-tighter">
+                <div className="px-2 py-0.5 bg-slate-50 dark:bg-white/5 text-slate-600 dark:text-gray-400 text-[10px] rounded flex items-center gap-1 border border-slate-100 dark:border-white/5">
                   <span className="material-symbols-outlined text-xs">timer</span> {card.time}
                 </div>
               )}
               {(isReadingType || isListeningType) && card.questions && (
-                <div className="px-2.5 py-1 bg-slate-50 dark:bg-white/5 text-slate-600 dark:text-gray-400 text-[10px] font-black rounded-xl flex items-center gap-1.5 border border-slate-100 dark:border-white/5 uppercase tracking-tighter">
+                <div className="px-2 py-0.5 bg-slate-50 dark:bg-white/5 text-slate-600 dark:text-gray-400 text-[10px] rounded flex items-center gap-1 border border-slate-100 dark:border-white/5">
                   <span className="material-symbols-outlined text-xs">quiz</span> {card.questions}
                 </div>
               )}
               {isWritingType && card.length && (
-                <div className="px-2.5 py-1 bg-slate-50 dark:bg-white/5 text-slate-600 dark:text-gray-400 text-[10px] font-black rounded-xl flex items-center gap-1.5 border border-slate-100 dark:border-white/5 uppercase tracking-tighter">
+                <div className="px-2 py-0.5 bg-slate-50 dark:bg-white/5 text-slate-600 dark:text-gray-400 text-[10px] rounded flex items-center gap-1 border border-slate-100 dark:border-white/5">
                   <span className="material-symbols-outlined text-xs">straighten</span> {card.length}
                 </div>
               )}
               {card.xpReward != null && (
-                <div className="px-2.5 py-1 bg-yellow-50 dark:bg-yellow-500/10 text-yellow-600 dark:text-yellow-500 text-[10px] font-black rounded-xl flex items-center gap-1.5 border border-yellow-200/50 dark:border-yellow-500/20 shadow-sm uppercase tracking-tighter">
-                  <span className="material-symbols-outlined text-xs fill-icon">star</span> {card.xpReward} XP
+                <div className="px-2 py-0.5 bg-yellow-50 dark:bg-yellow-500/10 text-yellow-600 dark:text-yellow-500 text-[10px] rounded flex items-center gap-1 font-bold border border-yellow-200/50 dark:border-yellow-500/20">
+                  <span className="material-symbols-outlined text-[12px] fill-icon">star</span> {card.xpReward} XP
                 </div>
               )}
             </div>
 
-            <div className="flex items-center justify-between pt-5 border-t border-slate-100 dark:border-white/5">
+            <div className="flex items-center justify-between pt-4 border-t border-slate-100 dark:border-white/5">
               <div className="flex items-center gap-1">
                 <span className="material-symbols-outlined text-yellow-500 text-base fill-icon">star</span>
-                <span className="text-[11px] font-black text-slate-700 dark:text-slate-300">
+                <span className="text-[11px] font-bold text-slate-700 dark:text-slate-300">
                   {card.rating} 
-                  <span className="text-slate-400 dark:text-gray-500 font-bold ml-1 tracking-tighter">
-                    ({card.ratingCount || 0})
+                  <span className="text-slate-400 dark:text-gray-500 font-medium ml-1">
+                    ({t('lessons.reviewsCount', { count: card.ratingCount || 0 })})
                   </span>
                 </span>
               </div>
@@ -259,7 +259,7 @@ export function SkillPracticePage() {
                 </Link>
                 <button
                   onClick={() => navigate(detailUrl)}
-                  className="ml-2 px-5 py-2 bg-primary text-white font-black text-[10px] uppercase tracking-widest rounded-xl transition-all shadow-lg shadow-primary/25 hover:brightness-110 active:scale-95"
+                  className="ml-2 px-4 py-2 bg-primary text-white font-bold text-xs rounded-lg transition-all shadow-sm hover:brightness-110"
                 >
                   {t('dashboard.viewDetail')}
                 </button>

@@ -35,13 +35,13 @@ export function CommunityLeftSidebar({
             placeholder={t('groups.sidebar.searchPlaceholder')}
           />
         </div>
-        <nav className="space-y-1.5 text-sm">
+        <nav className="space-y-1 text-sm">
           <button
             type="button"
             onClick={() => navigate('/community/group-feed')}
-            className={`w-full flex items-center gap-4 p-3.5 rounded-2xl transition-all group ${
+            className={`w-full flex items-center gap-4 py-2.5 px-3 rounded-xl transition-all group ${
               isMyFeedActive
-                ? 'bg-primary text-white shadow-lg shadow-primary/25 font-black uppercase tracking-wider scale-[1.02]'
+                ? 'bg-primary text-white shadow-md font-bold uppercase tracking-wider scale-[1.02]'
                 : 'hover:bg-slate-50 dark:hover:bg-white/5 text-slate-600 dark:text-gray-400 font-bold'
             }`}
           >
@@ -57,9 +57,9 @@ export function CommunityLeftSidebar({
           <button
             type="button"
             onClick={() => navigate('/community/discover')}
-            className={`w-full flex items-center gap-4 p-3.5 rounded-2xl transition-all group ${
+            className={`w-full flex items-center gap-4 py-2.5 px-3 rounded-xl transition-all group ${
               isDiscoverActive
-                ? 'bg-primary text-white shadow-lg shadow-primary/25 font-black uppercase tracking-wider scale-[1.02]'
+                ? 'bg-primary text-white shadow-md font-bold uppercase tracking-wider scale-[1.02]'
                 : 'hover:bg-slate-50 dark:hover:bg-white/5 text-slate-600 dark:text-gray-400 font-bold'
             }`}
           >
@@ -75,9 +75,9 @@ export function CommunityLeftSidebar({
           <button
             type="button"
             onClick={onShowYourGroups}
-            className={`w-full flex items-center gap-4 p-3.5 rounded-2xl transition-all group ${
+            className={`w-full flex items-center gap-4 py-2.5 px-3 rounded-xl transition-all group ${
               isYourGroupsActive
-                ? 'bg-primary text-white shadow-lg shadow-primary/25 font-black uppercase tracking-wider scale-[1.02]'
+                ? 'bg-primary text-white shadow-md font-bold uppercase tracking-wider scale-[1.02]'
                 : 'hover:bg-slate-50 dark:hover:bg-white/5 text-slate-600 dark:text-gray-400 font-bold'
             }`}
           >
@@ -94,7 +94,7 @@ export function CommunityLeftSidebar({
         <button
           type="button"
           onClick={() => navigate('/community/create')}
-          className="w-full mt-8 py-4 bg-primary hover:bg-primary/90 text-white rounded-2xl font-bold text-xs uppercase tracking-widest transition-all shadow-xl shadow-primary/25 flex items-center justify-center gap-3 active:scale-95"
+          className="w-full mt-4 py-2.5 bg-primary hover:bg-primary/90 text-white rounded-xl font-bold text-xs uppercase tracking-wider transition-all shadow-md shadow-primary/25 flex items-center justify-center gap-2 active:scale-95"
         >
           <span className="material-symbols-outlined text-lg">add_circle</span>
           {t('groups.sidebar.create')}

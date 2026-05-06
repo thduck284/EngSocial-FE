@@ -26,7 +26,7 @@ export function MessageBubble({
   if (msg.isSystem) {
     return (
       <div className="flex justify-center py-2 w-full" data-message-id={msg.id}>
-        <span className="text-xs text-gray-400 bg-card-dark/60 px-3 py-1.5 rounded-full max-w-[90%] text-center">
+        <span className="text-xs text-slate-500 dark:text-gray-400 bg-card-dark/60 px-3 py-1.5 rounded-full max-w-[90%] text-center">
           {msg.text}
         </span>
       </div>
@@ -112,7 +112,7 @@ export function MessageBubble({
                     {msg.fromMe && <span className="text-xs font-medium text-gray-300 min-w-[1ch]">{totalCount}</span>}
                     <div className="flex items-center -space-x-2">
                       {emojiList.map((emoji) => (
-                        <span key={emoji} className="w-6 h-6 rounded-full bg-background-dark border-2 border-border-dark flex items-center justify-center text-sm flex-shrink-0">
+                        <span key={emoji} className="w-6 h-6 rounded-full bg-slate-50 dark:bg-background-dark border-2 border-slate-200 dark:border-border-dark flex items-center justify-center text-sm flex-shrink-0">
                           {emoji}
                         </span>
                       ))}
@@ -126,11 +126,11 @@ export function MessageBubble({
               {msg.fromMe ? (
                 <>
                   <div className="relative">
-                    <button type="button" onClick={() => setOpenMessageMenuId(isMenuOpen ? null : msg.id)} className="p-1 rounded-full hover:bg-white/10 text-gray-400 hover:text-white transition-colors" title={t('messages.moreOptions')}>
+                    <button type="button" onClick={() => setOpenMessageMenuId(isMenuOpen ? null : msg.id)} className="p-1 rounded-full hover:bg-white/10 text-slate-500 dark:text-gray-400 hover:text-slate-900 dark:hover:text-white transition-colors" title={t('messages.moreOptions')}>
                       <span className="material-symbols-outlined text-lg">more_vert</span>
                     </button>
                     {isMenuOpen && (
-                      <div className="absolute top-full mt-0.5 py-1 min-w-[180px] bg-card-dark border border-border-dark rounded-xl shadow-xl z-20 right-0">
+                      <div className="absolute top-full mt-0.5 py-1 min-w-[180px] bg-white dark:bg-card-dark border border-slate-200 dark:border-border-dark rounded-xl shadow-xl z-20 right-0">
                         <button type="button" onClick={() => handleMessageAction('deleteForMe', msg)} className="w-full px-4 py-2 text-left text-sm text-gray-200 hover:bg-white/5 flex items-center gap-2">
                           <span className="material-symbols-outlined text-lg">delete_outline</span>
                           {t('messages.deleteForMe')}
@@ -155,11 +155,11 @@ export function MessageBubble({
                     )}
                   </div>
                   <div className="relative">
-                    <button type="button" onClick={() => setOpenReactionPickerId(openReactionPickerId === msg.id ? null : msg.id)} className="p-1 rounded-full hover:bg-white/10 text-gray-400 hover:text-white transition-colors" title={t('messages.messageReaction')}>
+                    <button type="button" onClick={() => setOpenReactionPickerId(openReactionPickerId === msg.id ? null : msg.id)} className="p-1 rounded-full hover:bg-white/10 text-slate-500 dark:text-gray-400 hover:text-slate-900 dark:hover:text-white transition-colors" title={t('messages.messageReaction')}>
                       <span className="material-symbols-outlined text-lg">mood</span>
                     </button>
                     {openReactionPickerId === msg.id && (
-                      <div className="absolute bottom-full right-0 mb-1 py-1.5 px-2 rounded-xl bg-card-dark border border-border-dark shadow-xl z-20 flex items-center gap-0.5">
+                      <div className="absolute bottom-full right-0 mb-1 py-1.5 px-2 rounded-xl bg-white dark:bg-card-dark border border-slate-200 dark:border-border-dark shadow-xl z-20 flex items-center gap-0.5">
                         {MESSAGE_REACTION_EMOJIS.map((emoji) => (
                           <button key={emoji} type="button" onClick={() => handleReaction(msg, emoji)} className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-white/10 text-xl">
                             {emoji}
@@ -172,11 +172,11 @@ export function MessageBubble({
               ) : (
                 <>
                   <div className="relative">
-                    <button type="button" onClick={() => setOpenReactionPickerId(openReactionPickerId === msg.id ? null : msg.id)} className="p-1 rounded-full hover:bg-white/10 text-gray-400 hover:text-white transition-colors" title={t('messages.messageReaction')}>
+                    <button type="button" onClick={() => setOpenReactionPickerId(openReactionPickerId === msg.id ? null : msg.id)} className="p-1 rounded-full hover:bg-white/10 text-slate-500 dark:text-gray-400 hover:text-slate-900 dark:hover:text-white transition-colors" title={t('messages.messageReaction')}>
                       <span className="material-symbols-outlined text-lg">mood</span>
                     </button>
                     {openReactionPickerId === msg.id && (
-                      <div className="absolute bottom-full left-0 mb-1 py-1.5 px-2 rounded-xl bg-card-dark border border-border-dark shadow-xl z-20 flex items-center gap-0.5">
+                      <div className="absolute bottom-full left-0 mb-1 py-1.5 px-2 rounded-xl bg-white dark:bg-card-dark border border-slate-200 dark:border-border-dark shadow-xl z-20 flex items-center gap-0.5">
                         {MESSAGE_REACTION_EMOJIS.map((emoji) => (
                           <button key={emoji} type="button" onClick={() => handleReaction(msg, emoji)} className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-white/10 text-xl">
                             {emoji}
@@ -186,11 +186,11 @@ export function MessageBubble({
                     )}
                   </div>
                   <div className="relative">
-                    <button type="button" onClick={() => setOpenMessageMenuId(isMenuOpen ? null : msg.id)} className="p-1 rounded-full hover:bg-white/10 text-gray-400 hover:text-white transition-colors" title={t('messages.moreOptions')}>
+                    <button type="button" onClick={() => setOpenMessageMenuId(isMenuOpen ? null : msg.id)} className="p-1 rounded-full hover:bg-white/10 text-slate-500 dark:text-gray-400 hover:text-slate-900 dark:hover:text-white transition-colors" title={t('messages.moreOptions')}>
                       <span className="material-symbols-outlined text-lg">more_vert</span>
                     </button>
                     {isMenuOpen && (
-                      <div className="absolute top-full mt-0.5 py-1 min-w-[180px] bg-card-dark border border-border-dark rounded-xl shadow-xl z-20 left-0">
+                      <div className="absolute top-full mt-0.5 py-1 min-w-[180px] bg-white dark:bg-card-dark border border-slate-200 dark:border-border-dark rounded-xl shadow-xl z-20 left-0">
                         <button type="button" onClick={() => handleMessageAction('deleteForMe', msg)} className="w-full px-4 py-2 text-left text-sm text-gray-200 hover:bg-white/5 flex items-center gap-2">
                           <span className="material-symbols-outlined text-lg">delete_outline</span>
                           {t('messages.deleteForMe')}
@@ -213,7 +213,7 @@ export function MessageBubble({
           <div className={`flex items-center gap-2 min-h-0 w-fit max-w-full ${msg.fromMe ? 'flex-row justify-end' : 'flex-row-reverse justify-start'}`}>
             <div className="flex flex-col items-end gap-0.5 shrink-0">
               <div className="flex items-center gap-1">
-                <span className="text-[10px] text-gray-500">{msg.time}</span>
+                <span className="text-[10px] text-slate-400 dark:text-gray-500">{msg.time}</span>
                 {msg.fromMe && (
                   <span className={`material-symbols-outlined text-[12px] text-white/90 ${msg.read ? 'fill' : ''}`} title={msg.read ? t('messages.read') : t('messages.sent')}>
                     {msg.read ? 'done_all' : 'done'}
@@ -224,7 +224,7 @@ export function MessageBubble({
                 <img
                   src={selected?.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(selected?.name || '')}&background=13b6ec&color=fff`}
                   alt=""
-                  className="w-5 h-5 rounded-full object-cover border border-border-dark"
+                  className="w-5 h-5 rounded-full object-cover border border-slate-200 dark:border-border-dark"
                   title={t('messages.seen')}
                 />
               )}
@@ -235,7 +235,7 @@ export function MessageBubble({
                       key={m.userId}
                       src={m.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(m.name || '')}&background=13b6ec&color=fff`}
                       alt=""
-                      className="w-5 h-5 rounded-full object-cover border border-border-dark shrink-0"
+                      className="w-5 h-5 rounded-full object-cover border border-slate-200 dark:border-border-dark shrink-0"
                       title={m.name || ''}
                     />
                   ))}

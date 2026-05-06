@@ -251,7 +251,7 @@ export function GroupCreatePage() {
                       <span className="material-symbols-outlined text-primary">
                         {opt.icon}
                       </span>
-                      <div className="w-4 h-4 rounded-full border-2 border-slate-700 peer-checked:border-primary flex items-center justify-center">
+                      <div className="w-4 h-4 rounded-full border-2 border-slate-300 dark:border-slate-700 peer-checked:border-primary flex items-center justify-center">
                         <div className="w-2 h-2 rounded-full bg-primary opacity-0 peer-checked:opacity-100" />
                       </div>
                     </div>
@@ -275,12 +275,12 @@ export function GroupCreatePage() {
                     setForm((p) => ({ ...p, searchable: !p.searchable }))
                   }
                 />
-                <div className="w-full p-5 flex flex-col gap-2 rounded-xl border border-slate-800 bg-slate-950 peer-checked:border-primary peer-checked:bg-primary/5 transition-all hover:border-slate-600">
+                <div className="w-full p-5 flex flex-col gap-2 rounded-2xl border border-slate-100 dark:border-white/5 bg-slate-50 dark:bg-background-dark peer-checked:border-primary peer-checked:bg-primary/5 transition-all hover:border-primary/50 shadow-inner">
                   <div className="flex items-center justify-between">
                     <span className="material-symbols-outlined text-primary">
-                      mail
+                      search
                     </span>
-                    <div className="w-4 h-4 rounded-md border-2 border-slate-700 peer-checked:border-primary flex items-center justify-center">
+                    <div className="w-4 h-4 rounded-md border-2 border-slate-300 dark:border-slate-700 peer-checked:border-primary flex items-center justify-center">
                       <span className="material-symbols-outlined text-[13px] text-primary opacity-0 peer-checked:opacity-100">
                         check
                       </span>
@@ -335,7 +335,7 @@ export function GroupCreatePage() {
               onChange={(e) => setMemberQuery(e.target.value)}
             />
             {memberQuery.trim() && (
-              <div className="absolute z-20 bottom-full mb-2 w-full bg-slate-950 border border-slate-800 rounded-xl shadow-lg max-h-64 overflow-y-auto custom-scrollbar">
+              <div className="absolute z-20 bottom-full mb-2 w-full bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl shadow-lg max-h-64 overflow-y-auto custom-scrollbar">
                 {loadingMembers ? (
                   <div className="px-4 py-3 text-xs text-slate-500">
                     {t('groupsCreate.inviteSearching', { defaultValue: 'Đang tìm kiếm...' })}
@@ -358,9 +358,9 @@ export function GroupCreatePage() {
                           if (already) return
                           setSelectedMembers((prev) => [...prev, m])
                         }}
-                        className="w-full flex items-center gap-3 px-4 py-2.5 hover:bg-slate-800 text-left disabled:opacity-60 disabled:cursor-not-allowed"
+                        className="w-full flex items-center gap-3 px-4 py-2.5 hover:bg-slate-50 dark:hover:bg-slate-800 text-left disabled:opacity-60 disabled:cursor-not-allowed transition-colors"
                       >
-                        <div className="size-8 rounded-full overflow-hidden bg-slate-800 shrink-0">
+                        <div className="size-8 rounded-full overflow-hidden bg-slate-200 dark:bg-slate-800 shrink-0">
                           {m.avatar ? (
                             <img
                               src={m.avatar}
@@ -393,9 +393,9 @@ export function GroupCreatePage() {
                 {selectedMembers.map((m) => (
                   <div
                     key={m.id}
-                    className="flex items-center gap-2 bg-slate-900 pl-1.5 pr-2.5 py-1.5 rounded-full border border-slate-700 hover:border-primary/50 transition-colors"
+                    className="flex items-center gap-2 bg-slate-50 dark:bg-slate-900 pl-1.5 pr-2.5 py-1.5 rounded-full border border-slate-200 dark:border-slate-700 hover:border-primary/50 transition-colors"
                   >
-                    <div className="size-6 rounded-full overflow-hidden bg-slate-800">
+                    <div className="size-6 rounded-full overflow-hidden bg-slate-200 dark:bg-slate-800">
                       {m.avatar ? (
                         <img
                           src={m.avatar}
@@ -404,10 +404,10 @@ export function GroupCreatePage() {
                         />
                       ) : null}
                     </div>
-                    <span className="text-xs font-medium">{m.name}</span>
+                    <span className="text-xs font-medium text-slate-700 dark:text-slate-300">{m.name}</span>
                     <button
                       type="button"
-                      className="text-slate-400 hover:text-white leading-none ml-1"
+                      className="text-slate-400 hover:text-slate-600 dark:hover:text-white leading-none ml-1"
                       onClick={() =>
                         setSelectedMembers((prev) => prev.filter((x) => x.id !== m.id))
                       }
@@ -426,7 +426,7 @@ export function GroupCreatePage() {
       <div className="mt-4 flex items-center justify-end gap-4 shrink-0">
         <button
           type="button"
-            className="px-8 py-3 rounded-xl font-bold text-sm text-slate-400 hover:text-white hover:bg-slate-900 transition-all"
+            className="px-8 py-3 rounded-xl font-bold text-sm text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-900 transition-all"
           onClick={() => navigate('/community')}
           >
           {t('groupsCreate.cancel', { defaultValue: 'Hủy bỏ' })}

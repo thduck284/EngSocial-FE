@@ -41,6 +41,7 @@ export function useCreatePostModal({
   const [posting, setPosting] = useState(false)
   const [uploading, setUploading] = useState(false)
   const [error, setError] = useState('')
+  const [violationResult, setViolationResult] = useState(null)
   const [showMentionDropdown, setShowMentionDropdown] = useState(false)
   const [mentionQuery, setMentionQuery] = useState('')
 
@@ -266,6 +267,7 @@ export function useCreatePostModal({
     if (posting) return
     setPosting(true)
     setError('')
+    setViolationResult(null)
     try {
       const tags = extractHashtags(text)
       const mentions = resolveMentionIds(text, friendsForMention)
@@ -301,7 +303,13 @@ export function useCreatePostModal({
       setDocuments([])
       onClose?.()
     } catch (err) {
-      setError(err?.message || t('dashboard.postFailed') || 'Đăng bài thất bại.')
+      if (err?.status === 422 && err?.data?.data) {
+        // Nội dung vi phạm: lưu kết quả kiểm duyệt để hiển thị UI
+        setViolationResult(err.data.data)
+        setError(err?.message || 'Nội dung vi phạm tiêu chuẩn cộng đồng.')
+      } else {
+        setError(err?.message || t('dashboard.postFailed') || 'Đăng bài thất bại.')
+      }
     } finally {
       setPosting(false)
     }
@@ -314,6 +322,7 @@ export function useCreatePostModal({
       setVideoUrl('')
       setDocuments([])
       setError('')
+      setViolationResult(null)
       addons.setShowGifPicker(false)
       addons.setShowEmojiPicker(false)
       setShowMentionDropdown(false)
@@ -334,6 +343,7 @@ export function useCreatePostModal({
       posting,
       uploading,
       error,
+      violationResult,
       showMentionDropdown,
       mentionCandidates,
     },

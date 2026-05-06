@@ -35,10 +35,10 @@ const PRACTICE_LABEL_KEYS = {
 }
 
 function sidebarLinkClass(isActive) {
-  return `w-full flex items-center gap-4 px-5 py-4 rounded-2xl transition-all text-left group ${
+  return `w-full flex items-center gap-4 px-4 py-3 rounded-xl transition-all text-left group ${
     isActive
-      ? 'bg-primary/10 text-primary font-black uppercase tracking-widest border-2 border-primary/20 shadow-lg shadow-primary/5'
-      : 'hover:bg-slate-50 dark:hover:bg-white/5 text-slate-500 dark:text-gray-400 font-bold uppercase tracking-widest border-2 border-transparent'
+      ? 'bg-primary/10 text-primary font-bold border-2 border-primary/20 shadow-sm'
+      : 'hover:bg-slate-50 dark:hover:bg-white/5 text-slate-600 dark:text-gray-400 font-medium border-2 border-transparent'
   }`
 }
 
@@ -147,10 +147,10 @@ export function WordsNotesLayout() {
               to={item.to}
               end
               className={({ isActive }) =>
-                `shrink-0 px-6 py-3 rounded-[1.25rem] text-[10px] font-black uppercase tracking-widest transition-all ${
+                `shrink-0 px-5 py-2.5 rounded-xl text-sm font-medium transition-all ${
                   isActive
-                    ? 'bg-primary text-white shadow-xl shadow-primary/30'
-                    : 'bg-white dark:bg-card-dark text-slate-500 dark:text-gray-400 border-2 border-slate-100 dark:border-border-dark'
+                    ? 'bg-primary text-white shadow-md'
+                    : 'bg-white dark:bg-card-dark text-slate-600 dark:text-gray-400 border border-slate-200 dark:border-border-dark hover:bg-slate-50'
                 }`
               }
             >
@@ -168,9 +168,9 @@ export function WordsNotesLayout() {
             <div className="space-y-8 md:sticky md:top-8 md:self-start w-full md:max-h-[calc(100vh-6rem)] md:overflow-y-auto no-scrollbar">
               <div className="bg-white dark:bg-card-dark border border-slate-200 dark:border-border-dark rounded-[2.5rem] p-8 shadow-xl shadow-slate-200/50 dark:shadow-none relative overflow-hidden">
                 <div className="absolute top-0 right-0 w-32 h-32 bg-primary/5 rounded-full -mr-16 -mt-16 blur-3xl" />
-                <h1 className="text-2xl font-black text-slate-900 dark:text-white mb-2 uppercase tracking-tight relative z-10">{t('vocabulary.pageTitle')}</h1>
-                <p className="text-[10px] font-bold text-slate-400 dark:text-gray-500 mb-8 uppercase tracking-widest relative z-10">{t('vocabulary.pageSubtitle')}</p>
-                <nav className="space-y-2 text-[10px] relative z-10" aria-label="Words and notes sections">
+                <h1 className="text-xl font-bold text-slate-900 dark:text-white mb-1 relative z-10">{t('vocabulary.pageTitle')}</h1>
+                <p className="text-xs text-slate-500 dark:text-gray-400 mb-6 relative z-10">{t('vocabulary.pageSubtitle')}</p>
+                <nav className="space-y-2 text-sm relative z-10" aria-label="Words and notes sections">
                   {links.map((item) => (
                     <NavLink key={item.path} to={item.to} end className={({ isActive }) => sidebarLinkClass(isActive)}>
                       {({ isActive }) => (

@@ -182,9 +182,9 @@ export function MessagesPage() {
         onLeaveGroup={(conv) => { navigate(ROUTES.MESSAGES_CONVERSATION(conv.id)); setShowLeaveConfirm(true) }}
       />
 
-      <section className="flex-1 flex flex-col min-h-0 min-w-0 bg-background-dark relative w-full">
+      <section className="flex-1 flex flex-col min-h-0 min-w-0 bg-slate-50 dark:bg-background-dark relative w-full">
         {withUserLoading && withUserId ? (
-          <div className="flex-1 flex items-center justify-center text-gray-400">
+          <div className="flex-1 flex items-center justify-center text-slate-500 dark:text-gray-400">
             <span className="material-symbols-outlined animate-spin text-4xl">progress_activity</span>
             <span className="ml-3">{t('messages.loadingConversation')}</span>
           </div>
@@ -274,9 +274,9 @@ export function MessagesPage() {
           />
           </div>
         ) : (
-          <div className="flex-1 flex flex-col items-center justify-center text-center px-6 text-gray-400">
+          <div className="flex-1 flex flex-col items-center justify-center text-center px-6 text-slate-500 dark:text-gray-400">
             <span className="material-symbols-outlined text-6xl mb-4 opacity-50">chat_bubble</span>
-            <h3 className="text-lg font-semibold text-white mb-2">{t('messages.chooseConversation')}</h3>
+            <h3 className="text-lg font-semibold text-slate-900 dark:text-white mb-2">{t('messages.chooseConversation')}</h3>
             <p className="text-sm max-w-sm">{t('messages.chooseConversationHint')}</p>
           </div>
         )}

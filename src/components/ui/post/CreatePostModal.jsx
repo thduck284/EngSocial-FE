@@ -42,6 +42,7 @@ export function CreatePostModal({
     posting,
     uploading,
     error,
+    violationResult,
     showMentionDropdown,
     mentionCandidates,
   } = state
@@ -260,7 +261,66 @@ export function CreatePostModal({
               {t('dashboard.uploading')}
             </p>
           )}
-          {error && (
+
+          {/* Việc kiểm duyệt nội dung vi phạm */}
+          {violationResult && (
+            <div className="mt-3 rounded-xl border border-red-300 dark:border-red-700 bg-red-50 dark:bg-red-900/20 p-4 space-y-3">
+              {/* Tiêu đề */}
+              <div className="flex items-center gap-2">
+                <span className="material-symbols-outlined text-red-500 text-xl">gpp_bad</span>
+                <p className="font-bold text-red-600 dark:text-red-400 text-sm">
+                  Nội dung vi phạm tiêu chuẩn cộng đồng
+                </p>
+              </div>
+
+              {/* Thanh xác suất vi phạm */}
+              <div>
+                <div className="flex justify-between items-center mb-1">
+                  <span className="text-xs text-slate-500 dark:text-slate-400">Xác suất vi phạm</span>
+                  <span className="text-xs font-bold text-red-500">{(violationResult.violation_score ?? 0).toFixed(1)}%</span>
+                </div>
+                <div className="h-2 rounded-full bg-slate-200 dark:bg-slate-700 overflow-hidden">
+                  <div
+                    className="h-full rounded-full bg-gradient-to-r from-yellow-400 to-red-500 transition-all duration-700"
+                    style={{ width: `${Math.min(violationResult.violation_score ?? 0, 100)}%` }}
+                  />
+                </div>
+              </div>
+
+              {/* Độ tự tin */}
+              <div className="flex items-center gap-2 text-xs text-slate-500 dark:text-slate-400">
+                <span className="material-symbols-outlined text-base text-slate-400">psychology</span>
+                Độ tự tin AI:&nbsp;
+                <span className="font-semibold text-slate-700 dark:text-slate-200">{(violationResult.confidence ?? 0).toFixed(1)}%</span>
+              </div>
+
+              {/* Từ khóa */}
+              {violationResult.keywords?.length > 0 && (
+                <div>
+                  <p className="text-xs text-slate-500 dark:text-slate-400 mb-1.5">
+                    Từ khóa vi phạm phát hiện:
+                  </p>
+                  <div className="flex flex-wrap gap-1.5">
+                    {violationResult.keywords.map((kw, i) => (
+                      <span
+                        key={i}
+                        className="px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 dark:bg-red-900/40 text-red-600 dark:text-red-400 border border-red-200 dark:border-red-700"
+                      >
+                        {kw}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Hướng dẫn */}
+              <p className="text-xs text-slate-500 dark:text-slate-400 pt-1 border-t border-red-200 dark:border-red-800">
+                ⚠️ Vui lòng chỉnh sửa nội dung và thử lại.
+              </p>
+            </div>
+          )}
+
+          {error && !violationResult && (
             <p className="text-sm text-red-500 mt-2">{error}</p>
           )}
         </div>

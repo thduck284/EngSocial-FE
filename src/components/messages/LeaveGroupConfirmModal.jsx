@@ -16,13 +16,13 @@ export function LeaveGroupConfirmModal({
   return (
     <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm" onClick={busy ? undefined : onClose}>
       <div className="bg-[#1e2630] rounded-2xl shadow-2xl w-full max-w-sm p-6 border border-white/5" onClick={(e) => e.stopPropagation()}>
-        <p className="text-white text-sm mb-6">{t(messageKey)}</p>
+        <p className="text-slate-900 dark:text-white text-sm mb-6">{t(messageKey)}</p>
         <div className="flex justify-end gap-2">
           <button
             type="button"
             disabled={busy}
             onClick={onClose}
-            className="px-4 py-2 rounded-xl bg-white/10 text-white hover:bg-white/20 text-sm font-medium disabled:opacity-50"
+            className="px-4 py-2 rounded-xl bg-white/10 text-slate-900 dark:text-white hover:bg-white/20 text-sm font-medium disabled:opacity-50"
           >
             {t('common.cancel')}
           </button>

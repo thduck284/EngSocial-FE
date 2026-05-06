@@ -175,7 +175,7 @@ export function ProfilePage() {
 
         {/* Right: Tabs + content */}
         <div className="lg:flex-1 min-w-0 bg-white dark:bg-card-dark rounded-[2.5rem] border border-slate-200 dark:border-border-dark overflow-hidden shadow-2xl shadow-slate-200/50 dark:shadow-none flex flex-col">
-          <nav className="flex px-8 border-b border-slate-100 dark:border-white/5 overflow-x-auto no-scrollbar">
+          <nav className="flex w-full border-b border-slate-100 dark:border-white/5 overflow-x-auto no-scrollbar">
             {[
               { id: 'personalInfo', key: 'tabPersonalInfo', icon: 'person' },
               { id: 'skills', key: 'mySkills', icon: 'psychology' },
@@ -187,7 +187,7 @@ export function ProfilePage() {
                 key={id}
                 type="button"
                 onClick={() => handleTabChange(id)}
-                className={`shrink-0 flex items-center gap-3 px-6 py-6 text-[10px] font-black uppercase tracking-widest transition-all relative group/tab ${
+                className={`flex-1 flex items-center justify-center gap-3 px-4 py-6 text-[10px] font-black uppercase tracking-widest transition-all relative group/tab ${
                   profileTab === id
                     ? 'text-primary'
                     : 'text-slate-400 dark:text-gray-500 hover:text-slate-600 dark:hover:text-gray-300'

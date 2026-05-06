@@ -230,12 +230,12 @@ export function ReadingLessonResultPage() {
                   <span className="material-symbols-outlined text-slate-300 dark:text-gray-700 text-3xl transition-transform duration-500 group-open:rotate-180">expand_more</span>
                 </div>
               </summary>
-              <div className="p-10 pt-4 text-slate-700 dark:text-slate-300 leading-relaxed text-lg font-medium space-y-6 border-t-2 border-slate-100 dark:border-white/5 bg-slate-50/50 dark:bg-background-dark/20 selection:bg-primary/20">
+              <div className="p-10 pt-4 text-slate-700 dark:text-slate-300 leading-snug text-lg font-medium space-y-2 border-t-2 border-slate-100 dark:border-white/5 bg-slate-50/50 dark:bg-background-dark/20 selection:bg-primary/20">
                 {(passageLang === 'vi' && translationVi ? translationVi : passageText)
                   .split('\n\n')
                   .filter(Boolean)
                   .map((p, i) => (
-                    <p key={i} className={passageLang === 'vi' ? 'italic text-slate-500 dark:text-gray-400 opacity-90' : ''}>{p}</p>
+                    <p key={i} className={`mb-4 last:mb-0 ${passageLang === 'vi' ? 'italic text-slate-500 dark:text-gray-400 opacity-90' : ''}`}>{p}</p>
                   ))}
               </div>
             </details>

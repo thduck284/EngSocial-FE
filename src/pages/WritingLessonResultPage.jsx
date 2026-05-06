@@ -163,7 +163,7 @@ export function WritingLessonResultPage() {
              <h3 className="text-slate-900 dark:text-white font-black text-lg uppercase tracking-tight">{t('writingLesson.prompt')}</h3>
           </div>
           <div className="p-10">
-            <p className="text-slate-600 dark:text-slate-300 text-lg font-medium leading-relaxed whitespace-pre-wrap selection:bg-primary/20">{info.prompt}</p>
+            <p className="text-slate-600 dark:text-slate-300 text-lg font-medium leading-snug whitespace-pre-wrap selection:bg-primary/20">{info.prompt}</p>
           </div>
         </section>
 
@@ -181,7 +181,7 @@ export function WritingLessonResultPage() {
              </span>
           </div>
           <div className="p-12 bg-slate-50/30 dark:bg-background-dark/10">
-            <div className="text-slate-800 dark:text-slate-200 text-xl leading-relaxed whitespace-pre-wrap font-serif selection:bg-emerald-500/20">
+            <div className="text-slate-800 dark:text-slate-200 text-xl leading-snug whitespace-pre-wrap font-serif selection:bg-emerald-500/20">
               {submission.content || '—'}
             </div>
             {submission.submittedAt && (
@@ -205,7 +205,7 @@ export function WritingLessonResultPage() {
                <h3 className="text-emerald-500 font-black text-lg uppercase tracking-tight">{t('writingLesson.modFeedback') || "Teacher's Feedback"}</h3>
             </div>
             <div className="p-10">
-              <div className="text-emerald-600 dark:text-emerald-400 text-lg leading-relaxed whitespace-pre-wrap italic font-bold border-l-8 border-emerald-500/20 pl-8">
+              <div className="text-emerald-600 dark:text-emerald-400 text-lg leading-snug whitespace-pre-wrap italic font-bold border-l-8 border-emerald-500/20 pl-8">
                 {feedback}
               </div>
             </div>
@@ -225,7 +225,7 @@ export function WritingLessonResultPage() {
                 </div>
                 <span className="material-symbols-outlined text-slate-300 dark:text-gray-700 text-3xl transition-transform duration-500 group-open/details:rotate-180">expand_more</span>
               </summary>
-              <div className="p-10 pt-4 text-slate-500 dark:text-gray-400 leading-relaxed text-lg font-medium border-t-2 border-slate-100 dark:border-white/5 bg-slate-50/50 dark:bg-background-dark/20 italic selection:bg-amber-500/20">
+              <div className="p-10 pt-4 text-slate-500 dark:text-gray-400 leading-snug text-lg font-medium border-t-2 border-slate-100 dark:border-white/5 bg-slate-50/50 dark:bg-background-dark/20 italic selection:bg-amber-500/20">
                 {info.sampleAnswer}
               </div>
             </details>

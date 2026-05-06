@@ -225,7 +225,7 @@ export function ListeningLessonResultPage() {
                 </div>
                 <span className="material-symbols-outlined text-slate-300 dark:text-gray-700 text-3xl transition-transform duration-500 group-open/trans:rotate-180">expand_more</span>
               </summary>
-              <div className="p-10 pt-4 text-slate-600 dark:text-gray-300 leading-relaxed text-lg font-medium whitespace-pre-wrap border-t-2 border-slate-100 dark:border-white/5 bg-slate-50/50 dark:bg-background-dark/20 italic selection:bg-primary/20">
+              <div className="p-10 pt-4 text-slate-600 dark:text-gray-300 leading-snug text-lg font-medium whitespace-pre-wrap border-t-2 border-slate-100 dark:border-white/5 bg-slate-50/50 dark:bg-background-dark/20 italic selection:bg-primary/20">
                 {transcript}
               </div>
             </details>

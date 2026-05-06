@@ -153,7 +153,7 @@ export function ReadingLessonPage() {
   }
   if (!content) {
     return (
-      <div className="flex flex-col items-center justify-center min-h-[60vh] text-gray-400">
+      <div className="flex flex-col items-center justify-center min-h-[60vh] text-slate-500 dark:text-gray-400">
         <span className="material-symbols-outlined text-5xl mb-4">error</span>
         <p>{t('readingLesson.loadError')}</p>
         <Link to={backLink} className="mt-4 text-primary hover:underline">{t('readingLesson.back')}</Link>
@@ -163,37 +163,37 @@ export function ReadingLessonPage() {
 
   return (
     <>
-      <main className="max-w-[1600px] mx-auto px-6 pt-4 pb-10 flex flex-col lg:flex-row gap-10 min-h-[calc(100vh-64px)]">
+      <main className="max-w-[1600px] mx-auto px-6 pt-4 pb-10 flex flex-col lg:flex-row gap-8 min-h-[calc(100vh-64px)]">
       {/* Left Sidebar - Hidden in Mock Test */}
       {!isMockTest && (
-      <aside className="w-full lg:w-80 lg:shrink-0 space-y-10 overflow-y-auto no-scrollbar pb-10">
+      <aside className="w-full lg:w-72 lg:shrink-0 space-y-6 overflow-y-auto no-scrollbar pb-10">
         {/* Lesson Info Card */}
-        <div className="bg-white dark:bg-card-dark rounded-[2.5rem] p-8 border border-slate-200 dark:border-border-dark shadow-2xl shadow-slate-200/50 dark:shadow-none relative overflow-hidden">
+        <div className="bg-white dark:bg-card-dark rounded-3xl p-6 border border-slate-200 dark:border-border-dark shadow-xl shadow-slate-200/50 dark:shadow-none relative overflow-hidden">
           <div className="absolute top-0 right-0 w-32 h-32 bg-primary/5 rounded-full -mr-16 -mt-16 blur-3xl" />
           <div className="flex justify-between items-start mb-6 relative z-10">
-            <span className="bg-primary text-white text-[10px] font-black px-3 py-1.5 rounded-full uppercase tracking-widest shadow-lg shadow-primary/20">
+            <span className="bg-primary text-white text-[9px] font-black px-2.5 py-1 rounded-full uppercase tracking-widest shadow-lg shadow-primary/20">
               {t('readingLesson.level')} {mockReadingContent.level}
             </span>
-            <div className="flex items-center text-amber-500 bg-amber-500/10 px-3 py-1.5 rounded-full border border-amber-500/20 shadow-sm">
-              <span className="material-symbols-outlined text-sm mr-1.5">star</span>
-              <span className="text-[10px] font-black uppercase tracking-widest">{mockReadingContent.xpReward} XP</span>
+            <div className="flex items-center text-amber-500 bg-amber-500/10 px-2.5 py-1 rounded-full border border-amber-500/20 shadow-sm">
+              <span className="material-symbols-outlined text-sm mr-1">star</span>
+              <span className="text-[9px] font-black uppercase tracking-widest">{mockReadingContent.xpReward} XP</span>
             </div>
           </div>
-          <h2 className="text-xl font-black mb-6 text-slate-900 dark:text-white leading-tight uppercase tracking-tight relative z-10">{mockReadingContent.title}</h2>
+          <h2 className="text-lg font-black mb-5 text-slate-900 dark:text-white leading-tight uppercase tracking-tight relative z-10">{mockReadingContent.title}</h2>
           <div className="space-y-4 relative z-10">
             {[
               { icon: 'topic', text: mockReadingContent.topic },
               { icon: 'schedule', text: mockReadingContent.time },
               { icon: 'quiz', text: t('readingLesson.questionCountShort', { count: totalQuestions }) },
             ].map((item, idx) => (
-              <div key={idx} className="flex items-center gap-4 text-[10px] font-black uppercase tracking-widest text-slate-500 dark:text-gray-400 bg-slate-50 dark:bg-white/5 p-3 rounded-2xl border border-slate-100 dark:border-white/5 transition-all hover:translate-x-1">
-                <span className="material-symbols-outlined text-lg text-primary">{item.icon}</span>
+              <div key={idx} className="flex items-center gap-3 text-[9px] font-black uppercase tracking-widest text-slate-500 dark:text-gray-400 bg-slate-50 dark:bg-white/5 p-2.5 rounded-xl border border-slate-100 dark:border-white/5 transition-all hover:translate-x-1">
+                <span className="material-symbols-outlined text-base text-primary">{item.icon}</span>
                 <span>{item.text}</span>
               </div>
             ))}
           </div>
-          <div className="mt-8 pt-8 border-t border-slate-100 dark:border-white/5 relative z-10">
-            <div className="flex justify-between text-[10px] font-black uppercase tracking-[0.2em] mb-3">
+          <div className="mt-6 pt-6 border-t border-slate-100 dark:border-white/5 relative z-10">
+            <div className="flex justify-between text-[9px] font-black uppercase tracking-[0.2em] mb-2.5">
               <span className="text-slate-400 dark:text-gray-500">{t('readingLesson.progress')}</span>
               <span className="text-primary">{Math.round(progress)}%</span>
             </div>
@@ -207,10 +207,10 @@ export function ReadingLessonPage() {
         </div>
 
         {/* Notes Card */}
-        <div className="bg-white dark:bg-card-dark rounded-[2.5rem] p-8 border border-slate-200 dark:border-border-dark shadow-2xl shadow-slate-200/50 dark:shadow-none">
-          <div className="flex items-center gap-3 mb-6">
-            <span className="material-symbols-outlined text-primary text-2xl">note_alt</span>
-            <h3 className="text-xs font-black uppercase tracking-[0.2em] text-slate-900 dark:text-white">{t('readingLesson.notebook')}</h3>
+        <div className="bg-white dark:bg-card-dark rounded-3xl p-6 border border-slate-200 dark:border-border-dark shadow-xl shadow-slate-200/50 dark:shadow-none">
+          <div className="flex items-center gap-2.5 mb-5">
+            <span className="material-symbols-outlined text-primary text-xl">note_alt</span>
+            <h3 className="text-[9px] font-black uppercase tracking-[0.2em] text-slate-900 dark:text-white">{t('readingLesson.notebook')}</h3>
           </div>
           <div className="space-y-4">
             <input
@@ -227,12 +227,12 @@ export function ReadingLessonPage() {
               placeholder={t('readingLesson.notePlaceholder')}
               rows={4}
             />
-            {noteSavedMessage && <p className="text-[10px] font-black text-emerald-500 uppercase tracking-widest animate-pulse px-2">{noteSavedMessage}</p>}
+            {noteSavedMessage && <p className="text-[9px] font-black text-emerald-500 uppercase tracking-widest animate-pulse px-2">{noteSavedMessage}</p>}
             <button
               type="button"
               onClick={handleSaveNote}
               disabled={noteSaving}
-              className="w-full py-4 bg-slate-900 dark:bg-white/10 hover:bg-slate-800 dark:hover:bg-white/20 text-white rounded-2xl text-[10px] font-black uppercase tracking-[0.2em] transition-all disabled:opacity-50 shadow-xl shadow-slate-900/10"
+              className="w-full py-3.5 bg-slate-900 dark:bg-white/10 hover:bg-slate-800 dark:hover:bg-white/20 text-slate-900 dark:text-white rounded-xl text-[9px] font-black uppercase tracking-[0.2em] transition-all disabled:opacity-50 shadow-lg shadow-slate-900/10"
             >
               {noteSaving ? '...' : t('readingLesson.saveNote')}
             </button>
@@ -240,13 +240,13 @@ export function ReadingLessonPage() {
         </div>
 
         {/* Study Tip Card */}
-        <div className="bg-primary/5 dark:bg-primary/10 border-2 border-primary/20 rounded-[2rem] p-8 relative overflow-hidden">
+        <div className="bg-primary/5 dark:bg-primary/10 border border-primary/20 rounded-2xl p-6 relative overflow-hidden">
           <div className="absolute -top-4 -right-4 size-20 bg-primary/10 rounded-full blur-2xl" />
-          <div className="flex items-center gap-3 mb-4 relative z-10">
-            <span className="material-symbols-outlined text-primary text-2xl">lightbulb</span>
-            <h3 className="text-xs font-black uppercase tracking-[0.2em] text-primary">{t('readingLesson.tipTitle')}</h3>
+          <div className="flex items-center gap-2.5 mb-3.5 relative z-10">
+            <span className="material-symbols-outlined text-primary text-xl">lightbulb</span>
+            <h3 className="text-[9px] font-black uppercase tracking-[0.2em] text-primary">{t('readingLesson.tipTitle')}</h3>
           </div>
-          <p className="text-[11px] font-bold leading-relaxed text-slate-600 dark:text-gray-400 italic relative z-10">
+          <p className="text-[10px] font-bold leading-relaxed text-slate-600 dark:text-gray-400 italic relative z-10">
             &quot;{t('readingLesson.tipText')}&quot;
           </p>
         </div>
@@ -309,31 +309,32 @@ export function ReadingLessonPage() {
                   ? mockReadingContent.translationVi
                   : mockReadingContent.text || ''
                 )
-                  .split(/\r?\n/)
-                  .map((paragraph, idx) => (
-                    <p key={idx} className="text-slate-800 dark:text-slate-200 leading-relaxed mb-6 text-lg font-medium selection:bg-primary/30">
-                      {paragraph.trim() ? (
-                        paragraph.split(/\s+/).filter(Boolean).map((word, wordIdx) => {
-                          const wordClean = word.replace(/[.,!?;:]/g, '')
-                          const isHighlighted = highlightOn && vocabularyList.some(
-                            (v) => v.word && wordClean.toLowerCase() === v.word.toLowerCase()
-                          )
-                          return (
-                            <span
-                              key={wordIdx}
-                              className={
-                                isHighlighted
-                                  ? 'bg-primary/20 dark:bg-primary/30 border-b-2 border-primary px-1 cursor-pointer text-slate-900 dark:text-white font-black hover:bg-primary/40 transition-all rounded-sm'
-                                  : ''
-                              }
-                            >
-                              {word}{' '}
-                            </span>
-                          )
-                        })
-                      ) : (
-                        <span className="block h-4" />
-                      )}
+                  .split(/\n\n+/)
+                  .map((paragraph, pIdx) => (
+                    <p key={pIdx} className="text-slate-800 dark:text-slate-200 leading-snug mb-4 text-lg font-medium selection:bg-primary/30">
+                      {paragraph.split(/\n/).map((line, lIdx) => (
+                        <span key={lIdx} className={lIdx > 0 ? 'block mt-1' : ''}>
+                          {line.split(/\s+/).filter(Boolean).map((word, wordIdx) => {
+                            const wordClean = word.replace(/[.,!?;:]/g, '')
+                            const isHighlighted = highlightOn && vocabularyList.some(
+                              (v) => v.word && wordClean.toLowerCase() === v.word.toLowerCase()
+                            )
+                            return (
+                              <span
+                                key={wordIdx}
+                                className={
+                                  isHighlighted
+                                    ? 'bg-primary/20 dark:bg-primary/30 border-b-2 border-primary px-1 cursor-pointer text-slate-900 dark:text-white font-black hover:bg-primary/40 transition-all rounded-sm'
+                                    : 'cursor-pointer hover:bg-primary/10 transition-colors'
+                                }
+                                onClick={() => handleWordClick(wordClean)}
+                              >
+                                {word}{' '}
+                              </span>
+                            )
+                          })}
+                        </span>
+                      ))}
                     </p>
                   ))}
               </div>
@@ -580,12 +581,12 @@ export function ReadingLessonPage() {
       </div>
 
         {rightBarOpen ? (
-          <aside className="w-full lg:w-[360px] lg:shrink-0 space-y-10 lg:overflow-visible relative pb-10">
+          <aside className="w-full lg:w-[300px] lg:shrink-0 space-y-6 lg:overflow-visible relative pb-10">
             <div className="sticky top-0 z-10 flex justify-end mb-4">
               <button
                 type="button"
                 onClick={() => setRightBarOpen(false)}
-                className="size-12 rounded-2xl bg-white dark:bg-card-dark border-2 border-slate-100 dark:border-white/10 text-slate-400 dark:text-gray-500 hover:text-primary hover:border-primary transition-all shadow-xl active:scale-95"
+                className="size-10 rounded-xl bg-white dark:bg-card-dark border border-slate-100 dark:border-white/10 text-slate-400 dark:text-gray-500 hover:text-primary hover:border-primary transition-all shadow-lg active:scale-95"
                 title={t('readingLesson.closeRightBar')}
               >
                 <span className="material-symbols-outlined">chevron_right</span>
@@ -598,17 +599,17 @@ export function ReadingLessonPage() {
               <div className="space-y-10">
                 {/* Question Navigation Card */}
                 {questions.length > 0 && (
-                  <div className="bg-white dark:bg-card-dark rounded-[2.5rem] border border-slate-200 dark:border-border-dark shadow-2xl shadow-slate-200/50 dark:shadow-none overflow-hidden p-8">
+                  <div className="bg-white dark:bg-card-dark rounded-3xl border border-slate-200 dark:border-border-dark shadow-xl shadow-slate-200/50 dark:shadow-none overflow-hidden p-6">
                     <div className="flex items-center justify-between mb-8">
-                      <h3 className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-900 dark:text-white flex items-center gap-2">
-                        <span className="size-2 rounded-full bg-primary" />
+                      <h3 className="text-[9px] font-black uppercase tracking-[0.2em] text-slate-900 dark:text-white flex items-center gap-2">
+                        <span className="size-1.5 rounded-full bg-primary" />
                         {t('readingLesson.questionNav') || 'Navigation'}
                       </h3>
-                      <span className="text-[10px] font-black uppercase tracking-widest text-primary bg-primary/10 px-3 py-1 rounded-full border border-primary/20">
+                      <span className="text-[9px] font-black uppercase tracking-widest text-primary bg-primary/10 px-2.5 py-0.5 rounded-full border border-primary/20">
                         {currentQuestion + 1} / {totalQuestions}
                       </span>
                     </div>
-                    <div className="grid grid-cols-5 gap-3">
+                    <div className="grid grid-cols-5 gap-2">
                       {questions.map((q, idx) => {
                         const isAnswered = answers[idx] != null && String(answers[idx]).trim() !== '';
                         const isCurrent = currentQuestion === idx;
@@ -617,7 +618,7 @@ export function ReadingLessonPage() {
                             key={idx}
                             type="button"
                             onClick={() => handlePageChange(idx + 1)}
-                            className={`h-11 rounded-xl text-[10px] font-black transition-all flex items-center justify-center border-2 uppercase tracking-widest active:scale-90 ${
+                            className={`h-9 rounded-lg text-[9px] font-black transition-all flex items-center justify-center border uppercase tracking-widest active:scale-90 ${
                               isCurrent
                                 ? 'bg-primary text-white border-primary shadow-lg shadow-primary/30 scale-105'
                                 : isAnswered
@@ -635,53 +636,45 @@ export function ReadingLessonPage() {
 
                 {/* Vocabulary Card */}
                 {vocabularyList.length > 0 && (
-                  <div className="bg-white dark:bg-card-dark rounded-[2.5rem] border border-slate-200 dark:border-border-dark shadow-2xl shadow-slate-200/50 dark:shadow-none overflow-hidden">
-                    <div className="p-6 bg-slate-50 dark:bg-background-dark/30 border-b-2 border-slate-100 dark:border-white/5 flex justify-between items-center">
-                      <h3 className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-900 dark:text-white">{t('readingLesson.vocabFromReading')}</h3>
-                      <span className="text-[10px] font-black text-emerald-500 uppercase tracking-widest bg-emerald-500/10 px-3 py-1 rounded-full border border-emerald-500/20">
+                  <div className="bg-white dark:bg-card-dark rounded-3xl border border-slate-200 dark:border-border-dark shadow-xl shadow-slate-200/50 dark:shadow-none overflow-hidden">
+                    <div className="p-4 bg-slate-50 dark:bg-background-dark/30 border-b border-slate-100 dark:border-white/5 flex justify-between items-center">
+                      <h3 className="text-[9px] font-black uppercase tracking-[0.2em] text-slate-900 dark:text-white">{t('readingLesson.vocabFromReading')}</h3>
+                      <span className="text-[9px] font-black text-emerald-500 uppercase tracking-widest bg-emerald-500/10 px-2.5 py-0.5 rounded-full border border-emerald-500/20">
                         {Math.min(vocabIndex + 1, vocabularyList.length)} / {vocabularyList.length}
                       </span>
                     </div>
-                    <div className="p-8">
-                      <div className="flex items-center justify-between gap-4 mb-8">
+                    <div className="p-6">
+                      <div className="flex items-center justify-between gap-4 mb-6">
                         <button
                           type="button"
                           onClick={() => setVocabIndex((i) => Math.max(0, i - 1))}
                           disabled={vocabIndex === 0}
-                          className="size-11 rounded-xl bg-slate-100 dark:bg-white/5 text-slate-400 hover:text-primary hover:bg-primary/10 disabled:opacity-20 transition-all flex items-center justify-center"
+                          className="size-9 rounded-lg bg-slate-100 dark:bg-white/5 text-slate-400 hover:text-primary hover:bg-primary/10 disabled:opacity-20 transition-all flex items-center justify-center"
                           title={t('readingLesson.prevWord')}
                         >
-                          <span className="material-symbols-outlined">chevron_left</span>
+                          <span className="material-symbols-outlined text-xl">chevron_left</span>
                         </button>
                         <div className="flex-1 text-center min-w-0">
-                          <h4 className="text-2xl font-black text-primary truncate uppercase tracking-tight" title={vocabularyList[vocabIndex]?.word}>
+                          <h4 className="text-xl font-black text-primary truncate uppercase tracking-tight" title={vocabularyList[vocabIndex]?.word}>
                             {vocabularyList[vocabIndex]?.word || '—'}
                           </h4>
-                          <span className="text-[10px] font-black text-slate-400 dark:text-gray-600 uppercase tracking-[0.2em] mt-1 block">{vocabularyList[vocabIndex]?.phonetic || ''}</span>
+                          <span className="text-[9px] font-black text-slate-400 dark:text-gray-600 uppercase tracking-[0.2em] mt-0.5 block">{vocabularyList[vocabIndex]?.phonetic || ''}</span>
                         </div>
                         <button
                           type="button"
                           onClick={() => setVocabIndex((i) => Math.min(vocabularyList.length - 1, i + 1))}
                           disabled={vocabIndex >= vocabularyList.length - 1}
-                          className="size-11 rounded-xl bg-slate-100 dark:bg-white/5 text-slate-400 hover:text-primary hover:bg-primary/10 disabled:opacity-20 transition-all flex items-center justify-center"
+                          className="size-9 rounded-lg bg-slate-100 dark:bg-white/5 text-slate-400 hover:text-primary hover:bg-primary/10 disabled:opacity-20 transition-all flex items-center justify-center"
                           title={t('readingLesson.nextWord')}
                         >
-                          <span className="material-symbols-outlined">chevron_right</span>
+                          <span className="material-symbols-outlined text-xl">chevron_right</span>
                         </button>
                       </div>
-                      <div className="space-y-6 bg-slate-50 dark:bg-white/5 p-6 rounded-3xl border border-slate-100 dark:border-white/5">
+                      <div className="space-y-4 bg-slate-50 dark:bg-white/5 p-4 rounded-2xl border border-slate-100 dark:border-white/5">
                         <div>
-                          <span className="block text-[10px] font-black text-slate-400 dark:text-gray-500 uppercase tracking-[0.2em] mb-2">{t('readingLesson.meaning')}</span>
-                          <p className="text-sm font-bold text-slate-700 dark:text-white leading-relaxed">{vocabularyList[vocabIndex]?.meaning || vocabularyList[vocabIndex]?.meaningVi || '—'}</p>
+                          <span className="block text-[9px] font-black text-slate-400 dark:text-gray-500 uppercase tracking-[0.2em] mb-1.5">{t('readingLesson.meaning')}</span>
+                          <p className="text-xs font-bold text-slate-700 dark:text-white leading-relaxed">{vocabularyList[vocabIndex]?.meaning || vocabularyList[vocabIndex]?.meaningVi || '—'}</p>
                         </div>
-                      </div>
-                      <div className="flex gap-4 mt-8">
-                        <button type="button" className="flex-1 py-4 rounded-2xl bg-slate-100 dark:bg-white/10 hover:bg-slate-200 dark:hover:bg-white/20 text-[10px] font-black uppercase tracking-widest text-slate-500 dark:text-gray-400 transition-all active:scale-95">
-                          {t('readingLesson.known')}
-                        </button>
-                        <button type="button" className="flex-1 py-4 rounded-2xl bg-primary text-white text-[10px] font-black uppercase tracking-widest hover:brightness-110 shadow-xl shadow-primary/20 transition-all active:scale-95">
-                          {t('readingLesson.saveFlashcard')}
-                        </button>
                       </div>
                     </div>
                   </div>
@@ -694,7 +687,7 @@ export function ReadingLessonPage() {
             <button
               type="button"
               onClick={() => setRightBarOpen(true)}
-              className="size-12 rounded-l-2xl bg-white dark:bg-card-dark border-2 border-slate-100 dark:border-white/10 border-r-0 text-slate-400 dark:text-gray-500 hover:text-primary hover:border-primary transition-all shadow-xl active:scale-95"
+              className="size-10 rounded-l-xl bg-white dark:bg-card-dark border border-slate-100 dark:border-white/10 border-r-0 text-slate-400 dark:text-gray-500 hover:text-primary hover:border-primary transition-all shadow-lg active:scale-95"
               title={t('readingLesson.openRightBar')}
             >
               <span className="material-symbols-outlined">chevron_left</span>

@@ -52,23 +52,23 @@ export function ConversationSidebar({
   const closeMenu = () => setOpenConvMenuId(null)
 
   return (
-    <aside className="w-full md:w-[280px] lg:w-[340px] flex-shrink-0 min-h-0 border-r border-border-dark flex flex-col bg-background-dark overflow-hidden">
+    <aside className="w-full md:w-[280px] lg:w-[340px] flex-shrink-0 min-h-0 border-r border-slate-200 dark:border-border-dark flex flex-col bg-slate-50 dark:bg-background-dark overflow-hidden">
       <div className="p-5 space-y-4">
         <div className="flex items-center justify-between">
-          <h2 className="text-xl font-bold text-white">{t('messages.title')}</h2>
+          <h2 className="text-xl font-bold text-slate-900 dark:text-white">{t('messages.title')}</h2>
           <button
             type="button"
-            className="p-1.5 rounded-lg hover:bg-card-dark text-gray-400 hover:text-white transition-colors"
+            className="p-1.5 rounded-lg hover:bg-slate-100 dark:hover:bg-card-dark text-slate-500 dark:text-gray-400 hover:text-slate-900 dark:hover:text-white transition-colors"
             title={t('messages.newChat')}
           >
             <span className="material-symbols-outlined text-xl">edit_square</span>
           </button>
         </div>
         <div className="relative">
-          <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-sm">search</span>
+          <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-slate-500 dark:text-gray-400 text-sm">search</span>
           <input
             type="text"
-            className="w-full bg-card-dark border border-border-dark rounded-xl py-2 pl-10 pr-4 text-sm text-white placeholder-gray-500 focus:ring-2 focus:ring-primary outline-none"
+            className="w-full bg-white dark:bg-card-dark border border-slate-200 dark:border-border-dark rounded-xl py-2 pl-10 pr-4 text-sm text-slate-900 dark:text-white placeholder-gray-500 focus:ring-2 focus:ring-primary outline-none"
             placeholder={t('messages.searchConversations')}
             value={searchConversations}
             onChange={(e) => setSearchConversations(e.target.value)}
@@ -120,11 +120,11 @@ export function ConversationSidebar({
       <div className="flex-1 overflow-y-auto px-2 space-y-1 min-h-0">
         {showFriendsSection && (
           <div className="mb-3">
-            <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider px-2 py-1.5">
+            <p className="text-xs font-semibold text-slate-400 dark:text-gray-500 uppercase tracking-wider px-2 py-1.5">
               {t('messages.searchFriends')}
             </p>
             {friendsSearchLoading ? (
-              <div className="flex justify-center py-4 text-gray-500">
+              <div className="flex justify-center py-4 text-slate-400 dark:text-gray-500">
                 <span className="material-symbols-outlined animate-spin text-xl">progress_activity</span>
               </div>
             ) : (
@@ -133,7 +133,7 @@ export function ConversationSidebar({
                   key={friend.id}
                   type="button"
                   onClick={() => onSelectFriendToChat?.(friend.id)}
-                  className="w-full flex items-center gap-3 p-3 rounded-xl text-left hover:bg-card-dark transition-colors"
+                  className="w-full flex items-center gap-3 p-3 rounded-xl text-left hover:bg-slate-100 dark:hover:bg-card-dark transition-colors"
                 >
                   <img
                     src={friend.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(friend.name || '')}&background=13b6ec&color=fff`}
@@ -141,14 +141,14 @@ export function ConversationSidebar({
                     className="w-10 h-10 rounded-full object-cover"
                   />
                   <span className="text-sm font-medium text-gray-200 truncate">{friend.name || 'User'}</span>
-                  <span className="material-symbols-outlined text-lg text-gray-500 shrink-0">chat</span>
+                  <span className="material-symbols-outlined text-lg text-slate-400 dark:text-gray-500 shrink-0">chat</span>
                 </button>
               ))
             )}
           </div>
         )}
         {conversationsLoading ? (
-          <div className="flex justify-center py-8 text-gray-500">
+          <div className="flex justify-center py-8 text-slate-400 dark:text-gray-500">
             <span className="material-symbols-outlined animate-spin text-2xl">progress_activity</span>
           </div>
         ) : (
@@ -170,7 +170,7 @@ export function ConversationSidebar({
                   <div className="relative flex-shrink-0">
                     {conv.isGroup && !conv.avatar ? (
                       <div className="w-12 h-12 rounded-full bg-amber-400/90 flex items-center justify-center shrink-0">
-                        <i className="fa-solid fa-people-group text-xl text-white" aria-hidden />
+                        <i className="fa-solid fa-people-group text-xl text-slate-900 dark:text-white" aria-hidden />
                       </div>
                     ) : (
                       <img
@@ -187,11 +187,11 @@ export function ConversationSidebar({
                     <div className="flex justify-between items-center gap-1.5 mb-0.5">
                       <span className={`flex items-center gap-1.5 min-w-0 flex-1 ${conv.unread ? 'font-bold text-white' : 'font-medium text-gray-300'}`}>
                         {conv.isGroup && (
-                          <i className="fa-solid fa-people-group text-base text-gray-400 shrink-0" aria-hidden />
+                          <i className="fa-solid fa-people-group text-base text-slate-500 dark:text-gray-400 shrink-0" aria-hidden />
                         )}
                         <span className="truncate">{conv.name}</span>
                       </span>
-                      <span className="text-xs text-gray-500 shrink-0">{conv.time || ''}</span>
+                      <span className="text-xs text-slate-400 dark:text-gray-500 shrink-0">{conv.time || ''}</span>
                     </div>
                     <div className="flex justify-between items-center gap-2 min-w-0">
                       <p className={`text-sm truncate min-w-0 flex-1 ${conv.unread ? 'font-semibold text-gray-200' : 'text-gray-500'}`}>
@@ -204,7 +204,7 @@ export function ConversationSidebar({
                         <img
                           src={conv.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(conv.name || '')}&background=13b6ec&color=fff`}
                           alt=""
-                          className="w-5 h-5 rounded-full object-cover shrink-0 border border-border-dark"
+                          className="w-5 h-5 rounded-full object-cover shrink-0 border border-slate-200 dark:border-border-dark"
                           title={t('messages.seen')}
                         />
                       )}
@@ -220,46 +220,46 @@ export function ConversationSidebar({
                   <span className="material-symbols-outlined text-xl">more_vert</span>
                 </button>
                 {openConvMenuId === conv.id && (
-                  <div className="absolute right-2 top-full mt-1 py-1 min-w-[200px] rounded-xl bg-card-dark border border-border-dark shadow-xl z-30">
+                  <div className="absolute right-2 top-full mt-1 py-1 min-w-[200px] rounded-xl bg-white dark:bg-card-dark border border-slate-200 dark:border-border-dark shadow-xl z-30">
                     {!conv.isGroup && onViewProfile && (
-                      <button type="button" onClick={() => { onViewProfile(conv); closeMenu() }} className="w-full px-4 py-2.5 text-left text-sm text-white hover:bg-white/10 flex items-center gap-3">
+                      <button type="button" onClick={() => { onViewProfile(conv); closeMenu() }} className="w-full px-4 py-2.5 text-left text-sm text-slate-900 dark:text-white hover:bg-white/10 flex items-center gap-3">
                         <span className="material-symbols-outlined text-lg">person</span>
                         {t('messages.viewProfile')}
                       </button>
                     )}
                     {onOpenMute && (
-                      <button type="button" onClick={() => { onOpenMute(conv); closeMenu() }} className="w-full px-4 py-2.5 text-left text-sm text-white hover:bg-white/10 flex items-center gap-3">
+                      <button type="button" onClick={() => { onOpenMute(conv); closeMenu() }} className="w-full px-4 py-2.5 text-left text-sm text-slate-900 dark:text-white hover:bg-white/10 flex items-center gap-3">
                         <span className="material-symbols-outlined text-lg">{conv.muted ? 'notifications' : 'notifications_off'}</span>
                         {t('messages.muteNotifications')}
                       </button>
                     )}
                     {onOpenDisappearing && (
-                      <button type="button" onClick={() => { onOpenDisappearing(conv); closeMenu() }} className="w-full px-4 py-2.5 text-left text-sm text-white hover:bg-white/10 flex items-center gap-3">
+                      <button type="button" onClick={() => { onOpenDisappearing(conv); closeMenu() }} className="w-full px-4 py-2.5 text-left text-sm text-slate-900 dark:text-white hover:bg-white/10 flex items-center gap-3">
                         <span className="material-symbols-outlined text-lg">timer</span>
                         {t('messages.disappearingMessages')}
                       </button>
                     )}
-                    <div className="border-t border-border-dark my-1" />
+                    <div className="border-t border-slate-200 dark:border-border-dark my-1" />
                     {onDeleteMessages && (
-                      <button type="button" onClick={() => { onDeleteMessages(conv); closeMenu() }} className="w-full px-4 py-2.5 text-left text-sm text-white hover:bg-white/10 flex items-center gap-3">
+                      <button type="button" onClick={() => { onDeleteMessages(conv); closeMenu() }} className="w-full px-4 py-2.5 text-left text-sm text-slate-900 dark:text-white hover:bg-white/10 flex items-center gap-3">
                         <span className="material-symbols-outlined text-lg">delete</span>
                         {t('messages.deleteAllMessages')}
                       </button>
                     )}
                     {conv.isGroup && onLeaveGroup && (
-                      <button type="button" onClick={() => { onLeaveGroup(conv); closeMenu() }} className="w-full px-4 py-2.5 text-left text-sm text-white hover:bg-white/10 flex items-center gap-3">
+                      <button type="button" onClick={() => { onLeaveGroup(conv); closeMenu() }} className="w-full px-4 py-2.5 text-left text-sm text-slate-900 dark:text-white hover:bg-white/10 flex items-center gap-3">
                         <span className="material-symbols-outlined text-lg">exit_to_app</span>
                         {t('messages.leaveGroup')}
                       </button>
                     )}
                     {!conv.isGroup && onBlock && (
-                      <button type="button" onClick={() => { onBlock(conv); closeMenu() }} className="w-full px-4 py-2.5 text-left text-sm text-white hover:bg-white/10 flex items-center gap-3">
+                      <button type="button" onClick={() => { onBlock(conv); closeMenu() }} className="w-full px-4 py-2.5 text-left text-sm text-slate-900 dark:text-white hover:bg-white/10 flex items-center gap-3">
                         <span className="material-symbols-outlined text-lg">block</span>
                         {t('messages.block')}
                       </button>
                     )}
                     {onReport && (
-                      <button type="button" onClick={() => { onReport(conv); closeMenu() }} className="w-full px-4 py-2.5 text-left text-sm text-white hover:bg-white/10 flex items-center gap-3">
+                      <button type="button" onClick={() => { onReport(conv); closeMenu() }} className="w-full px-4 py-2.5 text-left text-sm text-slate-900 dark:text-white hover:bg-white/10 flex items-center gap-3">
                         <span className="material-symbols-outlined text-lg">flag</span>
                         {t('messages.report')}
                       </button>

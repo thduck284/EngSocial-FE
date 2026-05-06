@@ -551,7 +551,7 @@ export function UserProfilePage() {
 
         {/* Right: Tabs & Content */}
         <div className="lg:col-span-8 lg:flex-1 min-w-0 bg-white dark:bg-card-dark rounded-[2.5rem] border border-slate-200 dark:border-border-dark overflow-hidden shadow-2xl shadow-slate-200/50 dark:shadow-none flex flex-col">
-          <nav className="flex px-8 border-b border-slate-100 dark:border-white/5 overflow-x-auto no-scrollbar">
+          <nav className="flex w-full border-b border-slate-100 dark:border-white/5 overflow-x-auto no-scrollbar">
             {[
               { key: 'about', label: 'userProfile.tabAbout', icon: 'info' },
               { key: 'personalInfo', label: 'userProfile.tabPersonalInfo', icon: 'badge' },
@@ -573,7 +573,7 @@ export function UserProfilePage() {
                   navigate(`/profile/${userId}/${key}`)
                 }
               }}
-              className={`shrink-0 flex items-center gap-3 px-6 py-6 text-[10px] font-black uppercase tracking-widest transition-all relative group/tab ${
+              className={`flex-1 flex items-center justify-center gap-3 px-4 py-6 text-[10px] font-black uppercase tracking-widest transition-all relative group/tab ${
                 activeTab === key
                   ? 'text-primary'
                   : 'text-slate-400 dark:text-gray-500 hover:text-slate-600 dark:hover:text-gray-300'

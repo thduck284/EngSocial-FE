@@ -327,7 +327,7 @@ export function CommunityPage() {
                                 <p className="text-xs text-slate-500 dark:text-gray-400 mt-1 flex items-center gap-2 font-bold uppercase tracking-tighter">
                                   <span className="material-symbols-outlined text-sm text-primary/60">groups</span>
                                   {g.memberCount ?? 0}{' '}
-                                  {t('groups.header.members', { defaultValue: 'thành viên' })}
+                                  {t('groups.header.members')}
                                 </p>
                               </div>
                             </div>
@@ -344,7 +344,7 @@ export function CommunityPage() {
                                   }}
                                   className="flex-1 py-3 rounded-2xl bg-slate-100 dark:bg-white/5 border border-slate-200 dark:border-border-dark text-xs font-black uppercase tracking-wider text-slate-700 dark:text-slate-200 hover:bg-slate-200 dark:hover:bg-white/10 transition-all shadow-sm"
                                 >
-                                  {t('groups.sidebar.openGroup', { defaultValue: 'Xem nhóm' })}
+                                  {t('groups.sidebar.openGroup')}
                                 </button>
                               ) : (
                                 <button
@@ -352,7 +352,7 @@ export function CommunityPage() {
                                   onClick={() => handleJoinGroup(id)}
                                   className="flex-1 py-3 rounded-2xl bg-primary text-white text-xs font-black uppercase tracking-wider hover:brightness-110 transition-all shadow-lg shadow-primary/20"
                                 >
-                                  {t('groups.header.join', { defaultValue: 'Tham gia' })}
+                                  {t('groups.header.join')}
                                 </button>
                               )}
                             </div>
@@ -367,7 +367,7 @@ export function CommunityPage() {
                           onClick={() => setLimit(prev => prev + 6)}
                           className="px-10 py-3 rounded-2xl border border-slate-200 dark:border-border-dark bg-white dark:bg-card-dark text-slate-600 dark:text-slate-300 text-sm font-black uppercase tracking-widest hover:bg-slate-50 dark:hover:bg-white/5 transition-all flex items-center gap-3 shadow-lg shadow-slate-200/50 dark:shadow-none group"
                         >
-                          {t('common.loadMore') || 'Xem thêm'}
+                          {t('common.showMore')}
                           <span className="material-symbols-outlined text-xl group-hover:translate-y-0.5 transition-transform">expand_more</span>
                         </button>
                       </div>
@@ -380,8 +380,8 @@ export function CommunityPage() {
                 <div className="space-y-10">
                   {viewMode === 'discover' ? (
                     <>
-                      {renderSection(unjoined, t('groups.sidebar.suggestedForYou', { defaultValue: 'Gợi ý cho bạn' }))}
-                      {renderSection(joined, t('groups.sidebar.joinedCommunities', { defaultValue: 'Cộng đồng đã tham gia' }), true)}
+                      {renderSection(unjoined, t('groups.sidebar.suggestedForYou'))}
+                      {renderSection(joined, t('groups.sidebar.joinedCommunities'), true)}
                     </>
                   ) : (
                     renderSection(groups, null)

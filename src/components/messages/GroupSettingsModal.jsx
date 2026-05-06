@@ -201,11 +201,11 @@ export function GroupSettingsModal({ t, open, onClose, selected, currentUserId, 
         onClick={(e) => e.stopPropagation()}
       >
         <div className="p-5 border-b border-white/5">
-          <h3 className="text-lg font-semibold text-white">{t('messages.groupSettings')}</h3>
+          <h3 className="text-lg font-semibold text-slate-900 dark:text-white">{t('messages.groupSettings')}</h3>
         </div>
 
         <div className="flex flex-1 min-h-0">
-          <div className="w-44 shrink-0 border-r border-border-dark py-2 flex flex-col gap-0.5">
+          <div className="w-44 shrink-0 border-r border-slate-200 dark:border-border-dark py-2 flex flex-col gap-0.5">
             {tabs.map((tab) => (
               <button
                 key={tab.id}
@@ -225,7 +225,7 @@ export function GroupSettingsModal({ t, open, onClose, selected, currentUserId, 
           {activeTab === TAB_INFO && (
             <div className="space-y-5">
               <div>
-                <label className="block text-xs font-medium text-gray-400 mb-1">{t('messages.groupName')}</label>
+                <label className="block text-xs font-medium text-slate-500 dark:text-gray-400 mb-1">{t('messages.groupName')}</label>
                 <input
                   type="text"
                   value={name}
@@ -241,19 +241,19 @@ export function GroupSettingsModal({ t, open, onClose, selected, currentUserId, 
                 />
               </div>
               <div className="flex items-start gap-4">
-                <label className="text-xs font-medium text-gray-400 shrink-0">{t('messages.groupAvatar')}</label>
+                <label className="text-xs font-medium text-slate-500 dark:text-gray-400 shrink-0">{t('messages.groupAvatar')}</label>
                 <div className="flex items-center gap-3">
-                  <div className="relative w-20 h-20 rounded-full overflow-hidden border-2 border-dashed border-border-dark bg-card-dark flex items-center justify-center shrink-0">
+                  <div className="relative w-20 h-20 rounded-full overflow-hidden border-2 border-dashed border-slate-200 dark:border-border-dark bg-white dark:bg-card-dark flex items-center justify-center shrink-0">
                     {avatarPreview ? (
                       <img src={avatarPreview} alt="" className="w-full h-full object-cover" />
                     ) : selected?.avatar ? (
                       <img src={selected.avatar} alt="" className="w-full h-full object-cover" />
                     ) : (
-                      <span className="material-symbols-outlined text-4xl text-gray-500">add_photo_alternate</span>
+                      <span className="material-symbols-outlined text-4xl text-slate-400 dark:text-gray-500">add_photo_alternate</span>
                     )}
                     {avatarUploading && (
                       <span className="absolute inset-0 bg-black/50 flex items-center justify-center">
-                        <span className="material-symbols-outlined animate-spin text-2xl text-white">progress_activity</span>
+                        <span className="material-symbols-outlined animate-spin text-2xl text-slate-900 dark:text-white">progress_activity</span>
                       </span>
                     )}
                   </div>
@@ -274,7 +274,7 @@ export function GroupSettingsModal({ t, open, onClose, selected, currentUserId, 
                 </div>
               </div>
               <div>
-                <label className="block text-xs font-medium text-gray-400 mb-1">{t('messages.maxMembersLabel')}</label>
+                <label className="block text-xs font-medium text-slate-500 dark:text-gray-400 mb-1">{t('messages.maxMembersLabel')}</label>
                 {canEditMaxMembers ? (
                   <>
                     <input
@@ -283,9 +283,9 @@ export function GroupSettingsModal({ t, open, onClose, selected, currentUserId, 
                       max={MAX_MEMBERS_CAP}
                       value={maxMembers}
                       onChange={(e) => setMaxMembers(Number(e.target.value) || memberCount)}
-                      className="w-full max-w-[140px] bg-card-dark border border-border-dark rounded-xl py-2.5 px-4 text-sm text-white focus:ring-2 focus:ring-primary outline-none"
+                      className="w-full max-w-[140px] bg-white dark:bg-card-dark border border-slate-200 dark:border-border-dark rounded-xl py-2.5 px-4 text-sm text-slate-900 dark:text-white focus:ring-2 focus:ring-primary outline-none"
                     />
-                    <p className="text-xs text-gray-500 mt-1">
+                    <p className="text-xs text-slate-400 dark:text-gray-500 mt-1">
                       {t('messages.memberCount', { count: memberCount })} · {t('messages.maxMembersCap', { max: MAX_MEMBERS_CAP })}
                     </p>
                   </>
@@ -302,7 +302,7 @@ export function GroupSettingsModal({ t, open, onClose, selected, currentUserId, 
             <div className="space-y-4">
               {isHost ? (
                 <>
-                  <p className="text-xs text-gray-400">{t('messages.permissionsAdminTitle')}</p>
+                  <p className="text-xs text-slate-500 dark:text-gray-400">{t('messages.permissionsAdminTitle')}</p>
                   <div className="space-y-2">
                     <label className="flex items-center gap-3 p-2 rounded-lg hover:bg-white/5 cursor-pointer">
                       <input
@@ -350,7 +350,7 @@ export function GroupSettingsModal({ t, open, onClose, selected, currentUserId, 
                       <span className="text-sm text-gray-200">{t('messages.permAdminCanBlockUser')}</span>
                     </label>
                   </div>
-                  <p className="text-xs text-gray-400 pt-2">{t('messages.permissionsUserTitle')}</p>
+                  <p className="text-xs text-slate-500 dark:text-gray-400 pt-2">{t('messages.permissionsUserTitle')}</p>
                   <div className="space-y-2">
                     <label className="flex items-center gap-3 p-2 rounded-lg hover:bg-white/5 cursor-pointer">
                       <input
@@ -374,7 +374,7 @@ export function GroupSettingsModal({ t, open, onClose, selected, currentUserId, 
                 </>
               ) : canEditUserPermissions ? (
                 <>
-                  <p className="text-xs text-gray-400">{t('messages.permissionsUserTitle')}</p>
+                  <p className="text-xs text-slate-500 dark:text-gray-400">{t('messages.permissionsUserTitle')}</p>
                   <div className="space-y-2">
                     <label className="flex items-center gap-3 p-2 rounded-lg hover:bg-white/5 cursor-pointer">
                       <input
@@ -397,30 +397,30 @@ export function GroupSettingsModal({ t, open, onClose, selected, currentUserId, 
                   </div>
                 </>
               ) : (
-                <p className="text-sm text-gray-500">{t('messages.noPermissionToEditGroup')}</p>
+                <p className="text-sm text-slate-400 dark:text-gray-500">{t('messages.noPermissionToEditGroup')}</p>
               )}
             </div>
           )}
 
           {activeTab === TAB_BLOCK && (
             <div className="space-y-4">
-              <p className="text-xs text-gray-400">{t('messages.groupSettingsBlockHint')}</p>
+              <p className="text-xs text-slate-500 dark:text-gray-400">{t('messages.groupSettingsBlockHint')}</p>
               {canBlock && membersCanBlock.length > 0 && (
                 <div>
-                  <p className="text-xs font-medium text-gray-400 mb-2">{t('messages.groupSettingsSelectMemberToBlock')}</p>
+                  <p className="text-xs font-medium text-slate-500 dark:text-gray-400 mb-2">{t('messages.groupSettingsSelectMemberToBlock')}</p>
                   <div className="relative">
-                    <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 text-lg">search</span>
+                    <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 dark:text-gray-500 text-lg">search</span>
                     <input
                       type="text"
                       value={blockSearchQuery}
                       onChange={(e) => setBlockSearchQuery(e.target.value)}
                       placeholder={t('messages.searchInChat')}
-                      className="w-full bg-card-dark border border-border-dark rounded-xl py-2.5 pl-10 pr-4 text-sm text-white placeholder-gray-500 focus:ring-2 focus:ring-primary outline-none"
+                      className="w-full bg-white dark:bg-card-dark border border-slate-200 dark:border-border-dark rounded-xl py-2.5 pl-10 pr-4 text-sm text-slate-900 dark:text-white placeholder-gray-500 focus:ring-2 focus:ring-primary outline-none"
                     />
                   </div>
-                  <ul className="mt-2 space-y-1 max-h-40 overflow-y-auto rounded-xl border border-border-dark bg-card-dark/50 p-2">
+                  <ul className="mt-2 space-y-1 max-h-40 overflow-y-auto rounded-xl border border-slate-200 dark:border-border-dark bg-card-dark/50 p-2">
                     {membersCanBlockFiltered.length === 0 ? (
-                      <li className="py-4 text-center text-sm text-gray-500">
+                      <li className="py-4 text-center text-sm text-slate-400 dark:text-gray-500">
                         {blockSearchLower ? t('messages.noSearchResults') : t('messages.groupSettingsBlockedListEmpty')}
                       </li>
                     ) : (
@@ -449,14 +449,14 @@ export function GroupSettingsModal({ t, open, onClose, selected, currentUserId, 
                 </div>
               )}
               <div>
-                <p className="text-xs font-medium text-gray-400 mb-2">{t('messages.groupSettingsTabBlock')}</p>
+                <p className="text-xs font-medium text-slate-500 dark:text-gray-400 mb-2">{t('messages.groupSettingsTabBlock')}</p>
                 {blockedMembers.length === 0 ? (
-                  <div className="rounded-xl border border-border-dark bg-card-dark/50 p-6 text-center">
-                    <span className="material-symbols-outlined text-4xl text-gray-500 mb-2">block</span>
-                    <p className="text-sm text-gray-500">{t('messages.groupSettingsBlockedListEmpty')}</p>
+                  <div className="rounded-xl border border-slate-200 dark:border-border-dark bg-card-dark/50 p-6 text-center">
+                    <span className="material-symbols-outlined text-4xl text-slate-400 dark:text-gray-500 mb-2">block</span>
+                    <p className="text-sm text-slate-400 dark:text-gray-500">{t('messages.groupSettingsBlockedListEmpty')}</p>
                   </div>
                 ) : (
-                  <ul className="space-y-1 max-h-48 overflow-y-auto rounded-xl border border-border-dark bg-card-dark/50 p-2">
+                  <ul className="space-y-1 max-h-48 overflow-y-auto rounded-xl border border-slate-200 dark:border-border-dark bg-card-dark/50 p-2">
                     {blockedMembers.map((m) => (
                       <li key={m.userId} className="flex items-center justify-between gap-2 p-2 rounded-lg hover:bg-white/5">
                         <div className="flex items-center gap-3 min-w-0">
@@ -487,7 +487,7 @@ export function GroupSettingsModal({ t, open, onClose, selected, currentUserId, 
                 )}
               </div>
               {!canBlock && (
-                <p className="text-sm text-gray-500">{t('messages.noPermissionToEditGroup')}</p>
+                <p className="text-sm text-slate-400 dark:text-gray-500">{t('messages.noPermissionToEditGroup')}</p>
               )}
             </div>
           )}
@@ -500,7 +500,7 @@ export function GroupSettingsModal({ t, open, onClose, selected, currentUserId, 
           <button
             type="button"
             onClick={onClose}
-            className="px-4 py-2 rounded-xl bg-white/10 text-white hover:bg-white/20 text-sm font-medium"
+            className="px-4 py-2 rounded-xl bg-white/10 text-slate-900 dark:text-white hover:bg-white/20 text-sm font-medium"
           >
             {t('common.cancel')}
           </button>

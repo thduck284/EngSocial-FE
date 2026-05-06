@@ -132,7 +132,7 @@ export function CommunityHeader({
                 type="button"
                 onClick={() => onOpenGroupMembersModal?.()}
                 className="size-10 rounded-full border-2 border-white dark:border-card-dark bg-slate-100 dark:bg-white/5 flex items-center justify-center text-xs font-black text-slate-600 dark:text-slate-200 min-w-10 hover:bg-slate-200 dark:hover:bg-white/10 transition-all cursor-pointer shadow-sm"
-                title={t('groups.header.viewAllMembers', { defaultValue: 'Xem tất cả thành viên' })}
+                title={t('groups.header.viewAllMembers')}
               >
                 +{remainingOverAvatars}
               </button>
@@ -145,7 +145,7 @@ export function CommunityHeader({
                 <span>{t('groups.header.loading')}</span>
               </div>
             ) : (
-              <p>{t('groups.header.activeNow', { defaultValue: 'Đang hoạt động' })}</p>
+              <p>{t('groups.header.activeNow')}</p>
             )}
           </div>
         </div>

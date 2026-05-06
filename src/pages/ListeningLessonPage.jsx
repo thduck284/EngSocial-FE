@@ -161,7 +161,7 @@ export function ListeningLessonPage() {
   }
   if (!content) {
     return (
-      <div className="flex flex-col items-center justify-center min-h-[60vh] text-gray-400">
+      <div className="flex flex-col items-center justify-center min-h-[60vh] text-slate-500 dark:text-gray-400">
         <span className="material-symbols-outlined text-5xl mb-4">error</span>
         <p>{t('listeningLesson.loadError')}</p>
         <Link to={backLink} className="mt-4 text-primary hover:underline">{t('listeningLesson.back')}</Link>
@@ -176,7 +176,7 @@ export function ListeningLessonPage() {
       {!isMockTest && (
       <aside className="w-full lg:w-[300px] lg:min-w-[240px] lg:shrink lg:basis-[300px] space-y-6 overflow-y-auto pr-2 pb-6 custom-scrollbar">
         {/* Lesson Info Card */}
-        <div className="bg-card-dark rounded-2xl p-6 border border-border-dark shadow-xl">
+        <div className="bg-white dark:bg-card-dark rounded-2xl p-6 border border-slate-200 dark:border-border-dark shadow-xl">
           <div className="flex justify-between items-start mb-4">
             <span className="bg-primary/20 text-primary text-xs font-bold px-2 py-1 rounded">
               {t('listeningLesson.level')} {content?.level || 'A1'}
@@ -186,27 +186,27 @@ export function ListeningLessonPage() {
               <span className="text-xs font-bold">{content?.xpReward ?? 50} XP</span>
             </div>
           </div>
-          <h2 className="text-lg font-bold mb-4 text-white leading-tight">{content?.title || ''}</h2>
+          <h2 className="text-lg font-bold mb-4 text-slate-900 dark:text-white leading-tight">{content?.title || ''}</h2>
           <div className="space-y-3">
-            <div className="flex items-center gap-3 text-sm text-gray-400">
+            <div className="flex items-center gap-3 text-sm text-slate-500 dark:text-gray-400">
               <span className="material-symbols-outlined text-lg text-primary">topic</span>
               <span>{content?.topic || '—'}</span>
             </div>
-            <div className="flex items-center gap-3 text-sm text-gray-400">
+            <div className="flex items-center gap-3 text-sm text-slate-500 dark:text-gray-400">
               <span className="material-symbols-outlined text-lg text-primary">schedule</span>
               <span>{content?.time || (content?.estimatedTime ? `${content.estimatedTime}m` : '—')}</span>
             </div>
-            <div className="flex items-center gap-3 text-sm text-gray-400">
+            <div className="flex items-center gap-3 text-sm text-slate-500 dark:text-gray-400">
               <span className="material-symbols-outlined text-lg text-primary">quiz</span>
               <span>{t('listeningLesson.questionCountShort', { count: totalQuestions })}</span>
             </div>
           </div>
-          <div className="mt-6 pt-6 border-t border-border-dark">
+          <div className="mt-6 pt-6 border-t border-slate-200 dark:border-border-dark">
             <div className="flex justify-between text-xs font-bold mb-2">
-              <span className="text-gray-400">{t('listeningLesson.progress')}</span>
+              <span className="text-slate-500 dark:text-gray-400">{t('listeningLesson.progress')}</span>
               <span className="text-primary">{Math.round(progress)}%</span>
             </div>
-            <div className="w-full bg-background-dark rounded-full h-2">
+            <div className="w-full bg-slate-50 dark:bg-background-dark rounded-full h-2">
               <div
                 className="bg-primary h-2 rounded-full shadow-[0_0_10px_rgba(19,182,236,0.4)] transition-all duration-1000"
                 style={{ width: `${progress}%` }}
@@ -216,7 +216,7 @@ export function ListeningLessonPage() {
         </div>
 
         {/* Notes Card */}
-        <div className="bg-card-dark rounded-2xl p-5 border border-border-dark shadow-lg">
+        <div className="bg-white dark:bg-card-dark rounded-2xl p-5 border border-slate-200 dark:border-border-dark shadow-lg">
           <div className="flex items-center gap-2 mb-4">
             <span className="material-symbols-outlined text-primary">note_alt</span>
             <h3 className="font-bold text-sm">{t('listeningLesson.notebook')}</h3>
@@ -225,13 +225,13 @@ export function ListeningLessonPage() {
             type="text"
             value={noteTitle}
             onChange={(e) => setNoteTitle(e.target.value)}
-            className="w-full bg-background-dark border border-border-dark rounded-xl p-3 text-sm focus:ring-primary focus:border-primary placeholder:text-gray-500 text-white mb-3"
+            className="w-full bg-slate-50 dark:bg-background-dark border border-slate-200 dark:border-border-dark rounded-xl p-3 text-sm focus:ring-primary focus:border-primary placeholder:text-gray-500 text-slate-900 dark:text-white mb-3"
             placeholder={t('listeningLesson.noteTitlePlaceholder')}
           />
           <textarea
             value={noteContent}
             onChange={(e) => setNoteContent(e.target.value)}
-            className="w-full bg-background-dark border border-border-dark rounded-xl p-3 text-sm focus:ring-primary focus:border-primary placeholder:text-gray-500 text-white"
+            className="w-full bg-slate-50 dark:bg-background-dark border border-slate-200 dark:border-border-dark rounded-xl p-3 text-sm focus:ring-primary focus:border-primary placeholder:text-gray-500 text-slate-900 dark:text-white"
             placeholder={t('listeningLesson.notePlaceholder')}
             rows={3}
           />
@@ -240,7 +240,7 @@ export function ListeningLessonPage() {
             type="button"
             onClick={handleSaveNote}
             disabled={noteSaving}
-            className="w-full py-2 bg-background-dark hover:bg-gray-700 text-white rounded-xl text-xs font-bold transition-all border border-border-dark disabled:opacity-60"
+            className="w-full py-2 bg-slate-50 dark:bg-background-dark hover:bg-slate-200 dark:hover:bg-gray-700 text-slate-900 dark:text-white rounded-xl text-xs font-bold transition-all border border-slate-200 dark:border-border-dark disabled:opacity-60"
           >
             {noteSaving ? '...' : t('listeningLesson.saveNote')}
           </button>
@@ -252,7 +252,7 @@ export function ListeningLessonPage() {
             <span className="material-symbols-outlined text-primary">lightbulb</span>
             <h3 className="font-bold text-primary text-sm">{t('listeningLesson.tipTitle')}</h3>
           </div>
-          <p className="text-xs leading-relaxed text-gray-400 italic">
+          <p className="text-xs leading-relaxed text-slate-500 dark:text-gray-400 italic">
             &quot;{t('listeningLesson.tipText')}&quot;
           </p>
         </div>
@@ -262,14 +262,14 @@ export function ListeningLessonPage() {
       {/* Main Content */}
       <div className="flex-1 min-w-0 flex flex-col gap-6 overflow-hidden">
         {/* Audio Player Card */}
-        <div className="bg-card-dark rounded-3xl border border-border-dark overflow-hidden shadow-2xl">
+        <div className="bg-white dark:bg-card-dark rounded-3xl border border-slate-200 dark:border-border-dark overflow-hidden shadow-2xl">
           {content?.audioUrl && <audio ref={audioRef} src={content.audioUrl} />}
           <div className="p-6 flex flex-col md:flex-row gap-6 items-center">
-            <div className="w-32 h-32 rounded-2xl overflow-hidden flex-shrink-0 shadow-lg border border-border-dark bg-background-dark">
+            <div className="w-32 h-32 rounded-2xl overflow-hidden flex-shrink-0 shadow-lg border border-slate-200 dark:border-border-dark bg-slate-50 dark:bg-background-dark">
               {content?.thumbnail ? (
                 <img alt="" className="w-full h-full object-cover" src={content.thumbnail} />
               ) : (
-                <div className="w-full h-full flex items-center justify-center text-gray-500">
+                <div className="w-full h-full flex items-center justify-center text-slate-400 dark:text-gray-500">
                   <span className="material-symbols-outlined text-5xl">headset</span>
                 </div>
               )}
@@ -285,16 +285,16 @@ export function ListeningLessonPage() {
                   </span>
                 )}
               </div>
-              <h1 className="text-xl font-extrabold text-white mb-1">{content?.title || t('listeningLesson.fallbackTitle')}</h1>
-              <p className="text-xs text-gray-400 mb-4 flex items-center justify-center md:justify-start gap-2">
+              <h1 className="text-xl font-extrabold text-slate-900 dark:text-white mb-1">{content?.title || t('listeningLesson.fallbackTitle')}</h1>
+              <p className="text-xs text-slate-500 dark:text-gray-400 mb-4 flex items-center justify-center md:justify-start gap-2">
                 <span className="material-symbols-outlined text-sm">schedule</span>
                 {duration > 0 ? `${Math.floor(duration / 60)} ${t('listeningLesson.minutes')} ${duration % 60} ${t('listeningLesson.seconds')}` : (content?.estimatedTime ? `${content.estimatedTime} ${t('listeningLesson.minutes')}` : content?.time || '—')}
               </p>
               <div className="space-y-3">
                 <div className="flex items-center gap-4">
-                  <span className="text-[10px] font-mono text-gray-400 w-10">{formatTime(currentTime)}</span>
+                  <span className="text-[10px] font-mono text-slate-500 dark:text-gray-400 w-10">{formatTime(currentTime)}</span>
                   <div
-                    className="flex-1 h-1.5 bg-background-dark rounded-full relative overflow-hidden group cursor-pointer"
+                    className="flex-1 h-1.5 bg-slate-50 dark:bg-background-dark rounded-full relative overflow-hidden group cursor-pointer"
                     onClick={handleSeek}
                     onKeyDown={(e) => e.key === 'Enter' && handleSeek(e)}
                     role="progressbar"
@@ -312,13 +312,13 @@ export function ListeningLessonPage() {
                       style={{ left: `${duration ? (currentTime / duration) * 100 : 0}%` }}
                     />
                   </div>
-                  <span className="text-[10px] font-mono text-gray-400 w-10 text-right">{formatTime(duration || 0)}</span>
+                  <span className="text-[10px] font-mono text-slate-500 dark:text-gray-400 w-10 text-right">{formatTime(duration || 0)}</span>
                 </div>
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-4">
                     <button
                       type="button"
-                      className="text-gray-400 hover:text-white transition-colors"
+                      className="text-slate-500 dark:text-gray-400 hover:text-slate-900 dark:hover:text-white transition-colors"
                       onClick={handleRewind10}
                     >
                       <span className="material-symbols-outlined">replay_10</span>
@@ -334,7 +334,7 @@ export function ListeningLessonPage() {
                     </button>
                     <button
                       type="button"
-                      className="text-gray-400 hover:text-white transition-colors"
+                      className="text-slate-500 dark:text-gray-400 hover:text-slate-900 dark:hover:text-white transition-colors"
                       onClick={handleForward10}
                     >
                       <span className="material-symbols-outlined">forward_10</span>
@@ -342,20 +342,20 @@ export function ListeningLessonPage() {
                   </div>
                   <div className="flex items-center gap-6">
                     <div className="flex items-center gap-2 group">
-                      <span className="material-symbols-outlined text-gray-400 text-lg">volume_up</span>
+                      <span className="material-symbols-outlined text-slate-500 dark:text-gray-400 text-lg">volume_up</span>
                       <input
                         type="range"
                         min="0"
                         max="100"
                         value={volume}
                         onChange={(e) => setVolume(Number(e.target.value))}
-                        className="w-20 h-1.5 bg-background-dark rounded-full appearance-none cursor-pointer [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-3 [&::-webkit-slider-thumb]:h-3 [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-primary [&::-webkit-slider-thumb]:cursor-pointer [&::-moz-range-thumb]:w-3 [&::-moz-range-thumb]:h-3 [&::-moz-range-thumb]:rounded-full [&::-moz-range-thumb]:bg-primary [&::-moz-range-thumb]:border-0"
+                        className="w-20 h-1.5 bg-slate-50 dark:bg-background-dark rounded-full appearance-none cursor-pointer [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-3 [&::-webkit-slider-thumb]:h-3 [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-primary [&::-webkit-slider-thumb]:cursor-pointer [&::-moz-range-thumb]:w-3 [&::-moz-range-thumb]:h-3 [&::-moz-range-thumb]:rounded-full [&::-moz-range-thumb]:bg-primary [&::-moz-range-thumb]:border-0"
                         title={t('listeningLesson.volume')}
                       />
                     </div>
                     <button
                       type="button"
-                      className="text-xs font-bold text-gray-400 border border-border-dark px-2 py-1 rounded hover:bg-background-dark hover:text-white transition-colors min-w-[3rem]"
+                      className="text-xs font-bold text-slate-500 dark:text-gray-400 border border-slate-200 dark:border-border-dark px-2 py-1 rounded hover:bg-slate-100 dark:hover:bg-background-dark hover:text-slate-900 dark:hover:text-white transition-colors min-w-[3rem]"
                       onClick={cycleSpeed}
                       title={t('listeningLesson.playbackSpeed')}
                     >
@@ -366,11 +366,11 @@ export function ListeningLessonPage() {
               </div>
             </div>
           </div>
-          <div className="border-t border-border-dark bg-background-dark/30">
+          <div className="border-t border-slate-200 dark:border-border-dark bg-slate-50/50 dark:bg-background-dark/30">
             <button
               type="button"
               onClick={() => setShowTranscript(!showTranscript)}
-              className="w-full p-3 flex items-center justify-between text-xs font-bold text-gray-400 hover:text-white transition-colors"
+              className="w-full p-3 flex items-center justify-between text-xs font-bold text-slate-500 dark:text-gray-400 hover:text-slate-900 dark:hover:text-white transition-colors"
             >
               <span className="flex items-center gap-2">
                 <span className="material-symbols-outlined text-sm">subtitles</span> {t('listeningLesson.viewTranscript')}
@@ -380,8 +380,8 @@ export function ListeningLessonPage() {
               </span>
             </button>
             {showTranscript && (
-              <div className="p-4 border-t border-border-dark max-h-60 overflow-y-auto">
-                <p className="text-sm text-white leading-relaxed whitespace-pre-wrap">{content?.transcript || '—'}</p>
+              <div className="p-4 border-t border-slate-200 dark:border-border-dark max-h-60 overflow-y-auto">
+                <p className="text-sm text-slate-900 dark:text-white leading-snug whitespace-pre-wrap">{content?.transcript || '—'}</p>
               </div>
             )}
             {vocabularyList.length > 0 && (
@@ -389,7 +389,7 @@ export function ListeningLessonPage() {
                 <button
                   type="button"
                   onClick={() => setShowVocabTable(!showVocabTable)}
-                  className="w-full p-3 flex items-center justify-between text-xs font-bold text-gray-400 hover:text-white transition-colors border-t border-border-dark"
+                  className="w-full p-3 flex items-center justify-between text-xs font-bold text-slate-500 dark:text-gray-400 hover:text-slate-900 dark:hover:text-white transition-colors border-t border-slate-200 dark:border-border-dark"
                 >
                   <span className="flex items-center gap-2">
                     <span className="material-symbols-outlined text-sm">translate</span>
@@ -400,20 +400,20 @@ export function ListeningLessonPage() {
                   </span>
                 </button>
                 {showVocabTable && (
-                  <div className="border-t border-border-dark overflow-hidden">
+                  <div className="border-t border-slate-200 dark:border-border-dark overflow-hidden">
                     <div className="max-h-64 overflow-y-auto">
                       <table className="w-full text-sm">
-                        <thead className="sticky top-0 bg-card-dark border-b border-border-dark">
+                        <thead className="sticky top-0 bg-white dark:bg-card-dark border-b border-slate-200 dark:border-border-dark">
                           <tr>
                             <th className="text-left py-2.5 px-3 text-xs font-bold text-primary uppercase">{t('listeningLesson.english')}</th>
                             <th className="text-left py-2.5 px-3 text-xs font-bold text-primary uppercase">{t('listeningLesson.vietnamese')}</th>
                           </tr>
                         </thead>
-                        <tbody className="text-white">
+                        <tbody className="text-slate-900 dark:text-white">
                           {vocabularyList.map((v, i) => (
                             <tr key={i} className="border-b border-border-dark/50 hover:bg-background-dark/30">
                               <td className="py-2 px-3 font-medium">{v.word || '—'}</td>
-                              <td className="py-2 px-3 text-gray-400">{v.meaning || v.meaningVi || '—'}</td>
+                              <td className="py-2 px-3 text-slate-500 dark:text-gray-400">{v.meaning || v.meaningVi || '—'}</td>
                             </tr>
                           ))}
                         </tbody>
@@ -427,12 +427,12 @@ export function ListeningLessonPage() {
         </div>
 
         {/* Quiz Card */}
-        <div className="flex-1 bg-card-dark rounded-2xl border border-border-dark overflow-hidden flex flex-col shadow-2xl">
-          <div className="p-4 border-b border-border-dark flex justify-between items-center bg-background-dark/50">
+        <div className="flex-1 bg-white dark:bg-card-dark rounded-2xl border border-slate-200 dark:border-border-dark overflow-hidden flex flex-col shadow-2xl">
+          <div className="p-4 border-b border-slate-200 dark:border-border-dark flex justify-between items-center bg-slate-50/50 dark:bg-background-dark/50">
             <div className="flex items-center gap-4">
               <div className="flex flex-col">
-                <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">{t('listeningLesson.progress')}</span>
-                <span className="text-sm font-bold text-white">
+                <span className="text-[10px] font-bold text-slate-500 dark:text-gray-400 uppercase tracking-widest">{t('listeningLesson.progress')}</span>
+                <span className="text-sm font-bold text-slate-900 dark:text-white">
                   {t('listeningLesson.questionCount', { current: currentQuestion + 1, total: totalQuestions })}
                 </span>
               </div>
@@ -446,7 +446,7 @@ export function ListeningLessonPage() {
                   type="button"
                   onClick={() => setShowHint((v) => !v)}
                   title={t('listeningLesson.hint')}
-                  className={`h-9 w-9 inline-flex items-center justify-center rounded-lg border transition-all ${showHint ? 'bg-amber-500/20 text-amber-400 border-amber-500/40' : 'border-border-dark text-gray-500 hover:text-amber-400 hover:border-amber-500/30'}`}
+                  className={`h-9 w-9 inline-flex items-center justify-center rounded-lg border transition-all ${showHint ? 'bg-amber-500/20 text-amber-400 border-amber-500/40' : 'border-slate-200 dark:border-border-dark text-slate-400 dark:text-gray-500 hover:text-amber-400 hover:border-amber-500/30'}`}
                 >
                   <span className="material-symbols-outlined text-lg">lightbulb</span>
                 </button>
@@ -472,22 +472,22 @@ export function ListeningLessonPage() {
           </div>
           <div className="flex-1 grid grid-cols-1 md:grid-cols-2 overflow-hidden divide-x divide-border-dark">
             {/* Instructions */}
-            <div className="overflow-y-auto custom-scrollbar p-6 bg-background-dark/20">
+            <div className="overflow-y-auto custom-scrollbar p-6 bg-slate-50/50 dark:bg-background-dark/20">
               <h4 className="text-xs font-bold text-primary uppercase mb-4">{t('listeningLesson.instructions')}</h4>
-              <p className="text-sm text-white leading-relaxed mb-6">
+              <p className="text-sm text-slate-900 dark:text-white leading-relaxed mb-6">
                 {content?.description || t('listeningLesson.instructionsDefault')}
               </p>
               {content?.transcript && (
-                <div className="p-4 rounded-xl bg-background-dark border border-border-dark italic text-xs text-gray-400 leading-relaxed max-h-32 overflow-y-auto">
+                <div className="p-4 rounded-xl bg-slate-50 dark:bg-background-dark border border-slate-200 dark:border-border-dark italic text-xs text-slate-500 dark:text-gray-400 leading-relaxed max-h-32 overflow-y-auto">
                   {content.transcript.slice(0, 200)}{content.transcript.length > 200 ? '…' : ''}
                 </div>
               )}
             </div>
 
             {/* Questions */}
-            <div className="overflow-y-auto custom-scrollbar p-6 bg-card-dark/30">
+            <div className="overflow-y-auto custom-scrollbar p-6 bg-white/50 dark:bg-card-dark/30">
               <div className="mb-8">
-                <p className="text-base font-semibold text-white mb-6">
+                <p className="text-base font-semibold text-slate-900 dark:text-white mb-6">
                   {currentQ?.question || t('listeningLesson.chooseAnswer')}
                 </p>
                 <div className="space-y-3">
@@ -497,7 +497,7 @@ export function ListeningLessonPage() {
                       className={`group flex items-center p-4 rounded-xl border cursor-pointer transition-all ${
                         selectedAnswer === opt.value
                           ? 'border-emerald-400 bg-emerald-500/10 shadow-[0_0_15px_rgba(20,184,166,0.1)]'
-                          : 'border-border-dark hover:bg-background-dark hover:border-primary transition-colors'
+                          : 'border-slate-200 dark:border-border-dark hover:bg-slate-100 dark:hover:bg-background-dark hover:border-primary transition-colors'
                       }`}
                     >
                       <input
@@ -506,11 +506,11 @@ export function ListeningLessonPage() {
                         value={opt.value}
                         checked={selectedAnswer === opt.value}
                         onChange={(e) => setSelectedAnswer(e.target.value)}
-                        className="w-4 h-4 text-primary bg-background-dark border-border-dark focus:ring-primary"
+                        className="w-4 h-4 text-primary bg-slate-50 dark:bg-background-dark border-slate-200 dark:border-border-dark focus:ring-primary"
                       />
                       <span
                         className={`ml-4 text-sm transition-colors ${
-                          selectedAnswer === opt.value ? 'text-primary font-bold' : 'text-gray-400 group-hover:text-white'
+                          selectedAnswer === opt.value ? 'text-primary font-bold' : 'text-slate-500 dark:text-gray-400 group-hover:text-white'
                         }`}
                       >
                         {opt.text}
@@ -522,12 +522,12 @@ export function ListeningLessonPage() {
                 )}
 
                 {/* Embedded Navigation */}
-                <div className="mt-8 pt-6 border-t border-border-dark flex flex-wrap justify-between items-center gap-3 min-w-0">
+                <div className="mt-8 pt-6 border-t border-slate-200 dark:border-border-dark flex flex-wrap justify-between items-center gap-3 min-w-0">
                   <button
                     type="button"
                     onClick={handlePrevious}
                     disabled={currentQuestion === 0}
-                    className="px-4 py-2 rounded-xl text-xs font-bold border border-border-dark text-gray-400 hover:bg-card-dark hover:text-white transition-all flex items-center gap-2 shrink-0 disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="px-4 py-2 rounded-xl text-xs font-bold border border-slate-200 dark:border-border-dark text-slate-500 dark:text-gray-400 hover:bg-slate-100 dark:hover:bg-card-dark hover:text-slate-900 dark:hover:text-white transition-all flex items-center gap-2 shrink-0 disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     <span className="material-symbols-outlined text-sm">arrow_back</span> {t('listeningLesson.previous')}
                   </button>
@@ -562,14 +562,14 @@ export function ListeningLessonPage() {
         </div>
           
           {/* Navigation Footer for Pagination */}
-          <div className="p-4 bg-background-dark border-t border-border-dark flex flex-wrap justify-center items-center gap-3 min-w-0">
+          <div className="p-4 bg-slate-50 dark:bg-background-dark border-t border-slate-200 dark:border-border-dark flex flex-wrap justify-center items-center gap-3 min-w-0">
             {/* Pagination */}
             <div className="flex items-center gap-1.5 justify-center min-w-0 max-w-full overflow-x-auto">
               <button
                 type="button"
                 onClick={() => handlePageChange(currentPage - 1)}
                 disabled={currentPage === 1}
-                className="px-2 py-2 rounded-lg text-xs font-bold text-gray-400 hover:text-white hover:bg-card-dark transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-1 shrink-0"
+                className="px-2 py-2 rounded-lg text-xs font-bold text-slate-500 dark:text-gray-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-card-dark transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-1 shrink-0"
               >
                 <span className="material-symbols-outlined text-sm">chevron_left</span>
               </button>
@@ -580,15 +580,15 @@ export function ListeningLessonPage() {
                   <button
                     type="button"
                     onClick={() => handlePageChange(1)}
-                    className="px-2.5 py-2 rounded-lg text-xs font-bold text-gray-400 hover:text-white hover:bg-card-dark transition-all shrink-0"
+                    className="px-2.5 py-2 rounded-lg text-xs font-bold text-slate-500 dark:text-gray-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-card-dark transition-all shrink-0"
                   >
                     1
                   </button>
-                  {currentPage > 4 && <span className="text-gray-500 text-xs shrink-0">...</span>}
+                  {currentPage > 4 && <span className="text-slate-400 dark:text-gray-500 text-xs shrink-0">...</span>}
                   <button
                     type="button"
                     onClick={() => handlePageChange(currentPage - 1)}
-                    className="px-2.5 py-2 rounded-lg text-xs font-bold text-gray-400 hover:text-white hover:bg-card-dark transition-all shrink-0"
+                    className="px-2.5 py-2 rounded-lg text-xs font-bold text-slate-500 dark:text-gray-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-card-dark transition-all shrink-0"
                   >
                     {currentPage - 1}
                   </button>
@@ -607,7 +607,7 @@ export function ListeningLessonPage() {
                   onBlur={() => {
                     handlePageChange(pageInput)
                   }}
-                  className="w-12 px-1 py-2 rounded-lg text-xs font-bold text-center bg-card-dark border border-primary text-primary focus:outline-none focus:ring-2 focus:ring-primary shrink-0"
+                  className="w-12 px-1 py-2 rounded-lg text-xs font-bold text-center bg-white dark:bg-card-dark border border-primary text-primary focus:outline-none focus:ring-2 focus:ring-primary shrink-0"
                   autoFocus
                 />
               ) : (
@@ -626,16 +626,16 @@ export function ListeningLessonPage() {
                   <button
                     type="button"
                     onClick={() => handlePageChange(currentPage + 1)}
-                    className="px-2.5 py-2 rounded-lg text-xs font-bold text-gray-400 hover:text-white hover:bg-card-dark transition-all shrink-0"
+                    className="px-2.5 py-2 rounded-lg text-xs font-bold text-slate-500 dark:text-gray-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-card-dark transition-all shrink-0"
                   >
                     {currentPage + 1}
                   </button>
-                  {currentPage + 1 < totalQuestions - 1 && <span className="text-gray-500 text-xs shrink-0">...</span>}
+                  {currentPage + 1 < totalQuestions - 1 && <span className="text-slate-400 dark:text-gray-500 text-xs shrink-0">...</span>}
                   {currentPage + 1 < totalQuestions && (
                     <button
                       type="button"
                       onClick={() => handlePageChange(totalQuestions)}
-                      className="px-2.5 py-2 rounded-lg text-xs font-bold text-gray-400 hover:text-white hover:bg-card-dark transition-all shrink-0"
+                      className="px-2.5 py-2 rounded-lg text-xs font-bold text-slate-500 dark:text-gray-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-card-dark transition-all shrink-0"
                     >
                       {totalQuestions}
                     </button>
@@ -643,13 +643,13 @@ export function ListeningLessonPage() {
                 </>
               )}
 
-              <span className="text-gray-500 text-xs mx-1 shrink-0">/ {totalQuestions}</span>
+              <span className="text-slate-400 dark:text-gray-500 text-xs mx-1 shrink-0">/ {totalQuestions}</span>
 
               <button
                 type="button"
                 onClick={() => handlePageChange(currentPage + 1)}
                 disabled={currentPage === totalQuestions}
-                className="px-2 py-2 rounded-lg text-xs font-bold text-gray-400 hover:text-white hover:bg-card-dark transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-1 shrink-0"
+                className="px-2 py-2 rounded-lg text-xs font-bold text-slate-500 dark:text-gray-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-card-dark transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-1 shrink-0"
               >
                 <span className="material-symbols-outlined text-sm">chevron_right</span>
               </button>
@@ -663,7 +663,7 @@ export function ListeningLessonPage() {
           <button
             type="button"
             onClick={() => setRightBarOpen(false)}
-            className="p-2 rounded-lg bg-card-dark border border-border-dark text-gray-400 hover:text-white hover:bg-gray-700 transition-all"
+            className="p-2 rounded-lg bg-white dark:bg-card-dark border border-slate-200 dark:border-border-dark text-slate-500 dark:text-gray-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-200 dark:hover:bg-gray-700 transition-all"
             title={t('listeningLesson.closeRightBar') || 'Close right panel'}
           >
             <span className="material-symbols-outlined">chevron_right</span>
@@ -676,9 +676,9 @@ export function ListeningLessonPage() {
           <div className="space-y-6">
             {/* Question Navigation Card */}
             {questions.length > 0 && (
-              <div className="bg-card-dark rounded-2xl border border-border-dark shadow-xl overflow-hidden p-5">
+              <div className="bg-white dark:bg-card-dark rounded-2xl border border-slate-200 dark:border-border-dark shadow-xl overflow-hidden p-5">
                 <div className="flex items-center justify-between mb-4">
-                  <h3 className="font-bold text-xs uppercase tracking-wider text-gray-400">{t('listeningLesson.questionNav') || 'Navigation'}</h3>
+                  <h3 className="font-bold text-xs uppercase tracking-wider text-slate-500 dark:text-gray-400">{t('listeningLesson.questionNav') || 'Navigation'}</h3>
                   <span className="text-[10px] bg-primary/20 text-primary px-2 py-0.5 rounded-full font-bold">
                     {currentQuestion + 1} / {totalQuestions}
                   </span>
@@ -697,7 +697,7 @@ export function ListeningLessonPage() {
                             ? 'bg-primary text-white border-primary shadow-lg shadow-primary/20'
                             : isAnswered
                             ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/30 hover:bg-emerald-500/20'
-                            : 'bg-background-dark text-gray-400 border-border-dark hover:text-white hover:border-gray-500'
+                            : 'bg-slate-50 dark:bg-background-dark text-slate-500 dark:text-gray-400 border-slate-200 dark:border-border-dark hover:text-slate-900 dark:hover:text-white hover:border-slate-400 dark:hover:border-gray-500'
                         }`}
                       >
                         {idx + 1}
@@ -710,9 +710,9 @@ export function ListeningLessonPage() {
             
             {/* Vocabulary Card */}
             {vocabularyList.length > 0 && (
-              <div className="bg-card-dark rounded-2xl border border-border-dark shadow-xl overflow-hidden group">
-                <div className="p-4 bg-background-dark border-b border-border-dark flex justify-between items-center">
-                  <h3 className="font-bold text-xs uppercase tracking-wider text-gray-400">{t('listeningLesson.vocabHeard')}</h3>
+              <div className="bg-white dark:bg-card-dark rounded-2xl border border-slate-200 dark:border-border-dark shadow-xl overflow-hidden group">
+                <div className="p-4 bg-slate-50 dark:bg-background-dark border-b border-slate-200 dark:border-border-dark flex justify-between items-center">
+                  <h3 className="font-bold text-xs uppercase tracking-wider text-slate-500 dark:text-gray-400">{t('listeningLesson.vocabHeard')}</h3>
                   <span className="text-[10px] bg-emerald-500/20 text-emerald-400 px-2 py-0.5 rounded-full font-bold">
                     {Math.min(vocabIndex + 1, vocabularyList.length)} / {vocabularyList.length}
                   </span>
@@ -723,7 +723,7 @@ export function ListeningLessonPage() {
                       type="button"
                       onClick={() => setVocabIndex((i) => Math.max(0, i - 1))}
                       disabled={vocabIndex === 0}
-                      className="p-2 rounded-lg bg-background-dark border border-border-dark text-gray-400 hover:text-white hover:bg-white/5 disabled:opacity-40 disabled:cursor-not-allowed transition-all"
+                      className="p-2 rounded-lg bg-slate-50 dark:bg-background-dark border border-slate-200 dark:border-border-dark text-slate-500 dark:text-gray-400 hover:text-slate-900 dark:hover:text-white hover:bg-white/5 disabled:opacity-40 disabled:cursor-not-allowed transition-all"
                       title={t('listeningLesson.prevWord')}
                     >
                       <span className="material-symbols-outlined">chevron_left</span>
@@ -732,13 +732,13 @@ export function ListeningLessonPage() {
                       <h4 className="text-lg font-black text-primary truncate" title={vocabularyList[vocabIndex]?.word}>
                         {vocabularyList[vocabIndex]?.word || '—'}
                       </h4>
-                      <span className="text-[10px] font-medium text-gray-400">{vocabularyList[vocabIndex]?.phonetic || ''}</span>
+                      <span className="text-[10px] font-medium text-slate-500 dark:text-gray-400">{vocabularyList[vocabIndex]?.phonetic || ''}</span>
                     </div>
                     <button
                       type="button"
                       onClick={() => setVocabIndex((i) => Math.min(vocabularyList.length - 1, i + 1))}
                       disabled={vocabIndex >= vocabularyList.length - 1}
-                      className="p-2 rounded-lg bg-background-dark border border-border-dark text-gray-400 hover:text-white hover:bg-white/5 disabled:opacity-40 disabled:cursor-not-allowed transition-all"
+                      className="p-2 rounded-lg bg-slate-50 dark:bg-background-dark border border-slate-200 dark:border-border-dark text-slate-500 dark:text-gray-400 hover:text-slate-900 dark:hover:text-white hover:bg-white/5 disabled:opacity-40 disabled:cursor-not-allowed transition-all"
                       title={t('listeningLesson.nextWord')}
                     >
                       <span className="material-symbols-outlined">chevron_right</span>
@@ -746,14 +746,14 @@ export function ListeningLessonPage() {
                   </div>
                   <div className="space-y-4">
                     <div>
-                      <span className="block text-[10px] font-bold text-gray-400 uppercase mb-1">{t('listeningLesson.meaning')}</span>
-                      <p className="text-sm font-medium text-white">{vocabularyList[vocabIndex]?.meaning || vocabularyList[vocabIndex]?.meaningVi || '—'}</p>
+                      <span className="block text-[10px] font-bold text-slate-500 dark:text-gray-400 uppercase mb-1">{t('listeningLesson.meaning')}</span>
+                      <p className="text-sm font-medium text-slate-900 dark:text-white">{vocabularyList[vocabIndex]?.meaning || vocabularyList[vocabIndex]?.meaningVi || '—'}</p>
                     </div>
                   </div>
                   <div className="flex gap-2 mt-5">
                     <button
                       type="button"
-                      className="flex-1 py-2 rounded-lg bg-background-dark border border-border-dark text-[10px] font-bold hover:bg-border-dark transition-colors"
+                      className="flex-1 py-2 rounded-lg bg-slate-50 dark:bg-background-dark border border-slate-200 dark:border-border-dark text-[10px] font-bold hover:bg-border-dark transition-colors"
                     >
                       {t('listeningLesson.known')}
                     </button>
@@ -775,7 +775,7 @@ export function ListeningLessonPage() {
           <button
             type="button"
             onClick={() => setRightBarOpen(true)}
-            className="p-2.5 rounded-l-lg bg-card-dark border border-border-dark border-r-0 text-gray-400 hover:text-primary hover:bg-gray-700 transition-all shadow-lg"
+            className="p-2.5 rounded-l-lg bg-white dark:bg-card-dark border border-slate-200 dark:border-border-dark border-r-0 text-slate-500 dark:text-gray-400 hover:text-primary hover:bg-slate-200 dark:hover:bg-gray-700 transition-all shadow-lg"
             title={t('listeningLesson.openRightBar') || 'Open right panel'}
           >
             <span className="material-symbols-outlined">chevron_left</span>

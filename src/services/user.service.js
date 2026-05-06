@@ -45,4 +45,16 @@ export const userService = {
 
   blockUser: (userId) => apiClient.post(API_ENDPOINTS.USER.BLOCK(userId)),
   unblockUser: (userId) => apiClient.request(API_ENDPOINTS.USER.UNBLOCK(userId), { method: 'DELETE' }),
+
+  changePassword: (data) => apiClient.post(API_ENDPOINTS.USER.CHANGE_PASSWORD, data),
+
+  requestEmailChange: (newEmail) => apiClient.post(API_ENDPOINTS.USER.CHANGE_EMAIL_REQUEST, { newEmail }),
+
+  confirmEmailChange: (otp) => apiClient.post(API_ENDPOINTS.USER.CHANGE_EMAIL_CONFIRM, { otp }),
+
+  requestDeleteAccount: () => apiClient.post(API_ENDPOINTS.USER.DELETE_ACCOUNT_REQUEST),
+
+  confirmDeleteAccount: (otp) => apiClient.post(API_ENDPOINTS.USER.DELETE_ACCOUNT_CONFIRM, { otp }),
 }
+
+
