@@ -89,27 +89,25 @@ export function WritingLessonResultPage() {
   return (
     <main className="max-w-[1440px] mx-auto grid grid-cols-12 gap-10 pt-4 px-6 pb-10 lg:pt-4 lg:px-10 lg:pb-10 animate-in fade-in duration-700">
       {/* Sidebar - Summary */}
-      <aside className="col-span-12 lg:col-span-4 xl:col-span-3 space-y-8">
-        <div className="bg-white dark:bg-card-dark rounded-[2.5rem] border border-slate-200 dark:border-border-dark p-10 shadow-2xl shadow-slate-200/50 dark:shadow-none sticky top-4 flex flex-col gap-10 overflow-hidden group">
-          <div className="absolute top-0 right-0 w-32 h-32 bg-primary/5 rounded-full -mr-16 -mt-16 blur-3xl" />
-          
-          <div className="flex flex-col gap-4 relative z-10">
-            <h1 className="text-3xl font-black text-slate-900 dark:text-white tracking-tighter leading-none uppercase">{t('lessonResult.writingTitle') || 'Writing Result'}</h1>
-            <p className="text-[11px] text-slate-500 dark:text-gray-400 font-bold leading-relaxed italic opacity-80">
-              &quot;{info.title}&quot;
+      <aside className="col-span-12 lg:col-span-4 xl:col-span-3 space-y-6">
+        <div className="bg-white dark:bg-card-dark rounded-2xl border border-slate-200 dark:border-border-dark p-6 shadow-xl sticky top-4 flex flex-col gap-6 overflow-hidden">
+          <div className="flex flex-col gap-2 relative z-10">
+            <h1 className="text-xl font-bold text-slate-900 dark:text-white leading-tight">{t('lessonResult.writingTitle') || 'Writing Result'}</h1>
+            <p className="text-sm text-slate-500 dark:text-gray-400 truncate">
+              {info.title}
             </p>
           </div>
 
-          <div className="grid grid-cols-1 gap-6 relative z-10">
+          <div className="grid grid-cols-1 gap-4 relative z-10">
             {/* Status Card */}
-            <div className={`bg-slate-50 dark:bg-background-dark/40 rounded-[2rem] p-8 border border-slate-100 dark:border-white/5 relative overflow-hidden group/status shadow-inner`}>
-              <div className={`absolute top-0 left-0 w-1.5 h-full ${isCompleted ? 'bg-emerald-500' : 'bg-amber-500'} transition-all group-hover/status:w-2`} />
-              <p className="text-slate-400 dark:text-gray-500 text-[10px] font-black uppercase tracking-[0.2em] mb-4">{t('lessonHistory.colStatus')}</p>
-              <div className="flex items-center gap-3">
-                <span className={`material-symbols-outlined text-2xl ${isCompleted ? 'text-emerald-500' : 'text-amber-500'} animate-pulse`}>
+            <div className={`bg-slate-50 dark:bg-background-dark rounded-xl p-5 border border-slate-200 dark:border-border-dark relative overflow-hidden group/status`}>
+              <div className={`absolute top-0 left-0 w-1 h-full ${isCompleted ? 'bg-emerald-500' : 'bg-amber-500'} transition-all`} />
+              <p className="text-slate-500 dark:text-gray-400 text-xs font-bold mb-2">{t('lessonHistory.colStatus')}</p>
+              <div className="flex items-center gap-2">
+                <span className={`material-symbols-outlined text-lg ${isCompleted ? 'text-emerald-500' : 'text-amber-500'}`}>
                   {isCompleted ? 'check_circle' : 'hourglass_empty'}
                 </span>
-                <p className={`text-[11px] font-black uppercase tracking-widest ${isCompleted ? 'text-emerald-500' : 'text-amber-500'}`}>
+                <p className={`text-sm font-bold ${isCompleted ? 'text-emerald-500' : 'text-amber-500'}`}>
                   {isCompleted ? t('lessonHistory.statusCompleted') : t('lessonHistory.statusUnderReview')}
                 </p>
               </div>
@@ -117,34 +115,34 @@ export function WritingLessonResultPage() {
 
             {/* Score Card (Only if completed) */}
             {isCompleted && (
-              <div className="bg-slate-50 dark:bg-background-dark/40 rounded-[2rem] p-8 border border-slate-100 dark:border-white/5 relative overflow-hidden group/score shadow-inner">
-                <div className="absolute top-0 left-0 w-1.5 h-full bg-primary transition-all group-hover/score:w-2" />
-                <p className="text-slate-400 dark:text-gray-500 text-[10px] font-black uppercase tracking-[0.2em] mb-4">{t('lessonResult.scoreLabel')}</p>
-                <div className="flex items-baseline gap-2">
-                  <p className="text-slate-900 dark:text-white text-5xl font-black">{score}/{maxScore}</p>
-                  <span className="text-primary text-[10px] font-black uppercase tracking-widest">PTS</span>
+              <div className="bg-slate-50 dark:bg-background-dark rounded-xl p-5 border border-slate-200 dark:border-border-dark relative overflow-hidden group/score">
+                <div className="absolute top-0 left-0 w-1 h-full bg-primary transition-all" />
+                <p className="text-slate-500 dark:text-gray-400 text-xs font-bold mb-2">{t('lessonResult.scoreLabel')}</p>
+                <div className="flex items-baseline gap-1">
+                  <p className="text-slate-900 dark:text-white text-3xl font-bold">{score}/{maxScore}</p>
+                  <span className="text-primary text-[10px] font-bold">PTS</span>
                 </div>
               </div>
             )}
 
             {/* XP Card */}
-            <div className="bg-slate-50 dark:bg-background-dark/40 rounded-[2rem] p-8 border border-slate-100 dark:border-white/5 relative overflow-hidden group/xp shadow-inner">
-              <div className="absolute top-0 left-0 w-1.5 h-full bg-amber-500 transition-all group-hover/xp:w-2" />
-              <p className="text-slate-400 dark:text-gray-500 text-[10px] font-black uppercase tracking-[0.2em] mb-4">{t('lessonResult.xpEarned')}</p>
-              <div className="flex items-baseline gap-2">
-                <p className="text-slate-900 dark:text-white text-5xl font-black tracking-tight">+{xpEarned || 0} XP</p>
+            <div className="bg-slate-50 dark:bg-background-dark rounded-xl p-5 border border-slate-200 dark:border-border-dark relative overflow-hidden group/xp">
+              <div className="absolute top-0 left-0 w-1 h-full bg-amber-500 transition-all" />
+              <p className="text-slate-500 dark:text-gray-400 text-xs font-bold mb-2">{t('lessonResult.xpEarned')}</p>
+              <div className="flex items-baseline gap-1">
+                <p className="text-slate-900 dark:text-white text-3xl font-bold">+{xpEarned || 0} XP</p>
               </div>
             </div>
           </div>
 
-          <div className="flex flex-col gap-4 mt-4 relative z-10">
+          <div className="flex flex-col gap-3 mt-2 relative z-10">
             {!isCompleted && (
               <button
                 type="button"
                 onClick={() => navigate(`/lesson/writing/${id}`)}
-                className="w-full py-5 bg-slate-900 dark:bg-white/5 hover:bg-primary text-white dark:text-slate-400 hover:dark:text-white rounded-[1.5rem] text-[10px] font-black uppercase tracking-[0.2em] transition-all border border-transparent flex items-center justify-center gap-4 group/btn shadow-xl shadow-slate-900/10 active:scale-95"
+                className="w-full py-2.5 bg-primary/10 hover:bg-primary text-primary hover:text-white rounded-xl text-sm font-bold transition-all flex items-center justify-center gap-2 group/btn"
               >
-                <span className="material-symbols-outlined text-lg group-hover/btn:rotate-12 transition-transform duration-300">edit</span>
+                <span className="material-symbols-outlined text-base">edit</span>
                 {t('lessonResult.editWriting') || 'Edit Submission'}
               </button>
             )}
@@ -153,41 +151,37 @@ export function WritingLessonResultPage() {
       </aside>
 
       {/* Main Content */}
-      <div className="col-span-12 lg:col-span-8 xl:col-span-9 space-y-10">
+      <div className="col-span-12 lg:col-span-8 xl:col-span-9 space-y-6">
         {/* The Prompt */}
-        <section className="bg-white dark:bg-card-dark rounded-[2.5rem] border border-slate-200 dark:border-border-dark overflow-hidden shadow-2xl shadow-slate-200/50 dark:shadow-none animate-in slide-in-from-top-8 duration-700">
-          <div className="p-8 bg-slate-50 dark:bg-background-dark/50 border-b border-slate-100 dark:border-white/5 flex items-center gap-6">
-             <div className="size-12 rounded-2xl bg-primary text-white flex items-center justify-center shadow-lg shadow-primary/20">
-               <span className="material-symbols-outlined text-2xl">description</span>
-             </div>
-             <h3 className="text-slate-900 dark:text-white font-black text-lg uppercase tracking-tight">{t('writingLesson.prompt')}</h3>
+        <section className="bg-white dark:bg-card-dark rounded-2xl border border-slate-200 dark:border-border-dark overflow-hidden shadow-xl animate-in slide-in-from-top-4 duration-500">
+          <div className="p-4 bg-slate-50 dark:bg-background-dark/50 border-b border-slate-200 dark:border-border-dark flex items-center gap-3">
+             <span className="material-symbols-outlined text-primary">description</span>
+             <h3 className="text-slate-900 dark:text-white font-bold text-sm">{t('writingLesson.prompt')}</h3>
           </div>
-          <div className="p-10">
-            <p className="text-slate-600 dark:text-slate-300 text-lg font-medium leading-snug whitespace-pre-wrap selection:bg-primary/20">{info.prompt}</p>
+          <div className="p-5">
+            <p className="text-slate-700 dark:text-slate-300 text-sm whitespace-pre-wrap">{info.prompt}</p>
           </div>
         </section>
 
         {/* User Submission */}
-        <section className="bg-white dark:bg-card-dark rounded-[2.5rem] border border-slate-200 dark:border-border-dark overflow-hidden shadow-2xl shadow-slate-200/50 dark:shadow-none animate-in slide-in-from-top-8 duration-700 delay-100">
-          <div className="p-8 bg-slate-50 dark:bg-background-dark/50 border-b border-slate-100 dark:border-white/5 flex items-center justify-between">
-             <div className="flex items-center gap-6">
-                <div className="size-12 rounded-2xl bg-emerald-500 text-white flex items-center justify-center shadow-lg shadow-emerald-500/20">
-                  <span className="material-symbols-outlined text-2xl">edit_square</span>
-                </div>
-                <h3 className="text-slate-900 dark:text-white font-black text-lg uppercase tracking-tight">{t('writingLesson.yourWriting')}</h3>
+        <section className="bg-white dark:bg-card-dark rounded-2xl border border-slate-200 dark:border-border-dark overflow-hidden shadow-xl animate-in slide-in-from-top-4 duration-500 delay-100">
+          <div className="p-4 bg-slate-50 dark:bg-background-dark/50 border-b border-slate-200 dark:border-border-dark flex items-center justify-between">
+             <div className="flex items-center gap-3">
+                <span className="material-symbols-outlined text-emerald-500">edit_square</span>
+                <h3 className="text-slate-900 dark:text-white font-bold text-sm">{t('writingLesson.yourWriting')}</h3>
              </div>
-             <span className="text-[10px] font-black text-slate-400 dark:text-gray-500 bg-white dark:bg-card-dark px-5 py-2.5 rounded-full border border-slate-100 dark:border-white/5 shadow-inner uppercase tracking-widest">
+             <span className="text-xs font-bold text-slate-500 dark:text-gray-400 bg-white dark:bg-card-dark px-3 py-1 rounded-md border border-slate-200 dark:border-border-dark">
                {submission.wordCount || 0} WORDS
              </span>
           </div>
-          <div className="p-12 bg-slate-50/30 dark:bg-background-dark/10">
-            <div className="text-slate-800 dark:text-slate-200 text-xl leading-snug whitespace-pre-wrap font-serif selection:bg-emerald-500/20">
+          <div className="p-6 bg-slate-50/50 dark:bg-background-dark/20">
+            <div className="text-slate-800 dark:text-slate-200 text-base leading-relaxed whitespace-pre-wrap font-serif">
               {submission.content || '—'}
             </div>
             {submission.submittedAt && (
-              <div className="mt-12 pt-8 border-t-2 border-slate-100 dark:border-white/5 text-[10px] text-slate-400 dark:text-gray-500 flex justify-between uppercase tracking-[0.2em] font-black">
-                <span className="flex items-center gap-2">
-                  <span className="material-symbols-outlined text-base">schedule</span>
+              <div className="mt-8 pt-4 border-t border-slate-200 dark:border-border-dark text-xs text-slate-400 flex justify-between font-medium">
+                <span className="flex items-center gap-1.5">
+                  <span className="material-symbols-outlined text-sm">schedule</span>
                   {t('writingLesson.submittedAt') || 'Submitted at'}: {new Date(submission.submittedAt).toLocaleString()}
                 </span>
               </div>
@@ -197,15 +191,13 @@ export function WritingLessonResultPage() {
 
         {/* Teacher Feedback */}
         {feedback && (
-          <section className="bg-emerald-500/5 border-2 border-emerald-500/20 rounded-[2.5rem] overflow-hidden shadow-2xl shadow-emerald-500/10 animate-in slide-in-from-bottom-8 duration-700 delay-200">
-            <div className="p-8 bg-emerald-500/10 border-b border-emerald-500/10 flex items-center gap-6">
-               <div className="size-12 rounded-2xl bg-emerald-500 text-white flex items-center justify-center shadow-lg shadow-emerald-500/30">
-                 <span className="material-symbols-outlined text-2xl">rate_review</span>
-               </div>
-               <h3 className="text-emerald-500 font-black text-lg uppercase tracking-tight">{t('writingLesson.modFeedback') || "Teacher's Feedback"}</h3>
+          <section className="bg-emerald-50 dark:bg-emerald-500/5 border border-emerald-500/20 rounded-2xl overflow-hidden shadow-xl animate-in slide-in-from-bottom-4 duration-500 delay-200">
+            <div className="p-4 border-b border-emerald-500/10 flex items-center gap-3">
+               <span className="material-symbols-outlined text-emerald-500">rate_review</span>
+               <h3 className="text-emerald-600 dark:text-emerald-400 font-bold text-sm">{t('writingLesson.modFeedback') || "Teacher's Feedback"}</h3>
             </div>
-            <div className="p-10">
-              <div className="text-emerald-600 dark:text-emerald-400 text-lg leading-snug whitespace-pre-wrap italic font-bold border-l-8 border-emerald-500/20 pl-8">
+            <div className="p-5">
+              <div className="text-emerald-700 dark:text-emerald-300 text-sm whitespace-pre-wrap italic">
                 {feedback}
               </div>
             </div>
@@ -214,18 +206,16 @@ export function WritingLessonResultPage() {
 
         {/* Sample Answer */}
         {info.sampleAnswer && (
-          <section className="bg-white dark:bg-card-dark rounded-[2.5rem] border border-slate-200 dark:border-border-dark overflow-hidden shadow-2xl shadow-slate-200/50 dark:shadow-none opacity-90 hover:opacity-100 transition-all group/sample animate-in slide-in-from-bottom-8 duration-700 delay-300">
+          <section className="bg-white dark:bg-card-dark rounded-2xl border border-slate-200 dark:border-border-dark overflow-hidden shadow-xl animate-in slide-in-from-bottom-4 duration-500 delay-300">
             <details className="group/details">
-              <summary className="flex cursor-pointer items-center justify-between p-8 list-none hover:bg-slate-50 dark:hover:bg-white/5 transition-colors">
-                <div className="flex items-center gap-6">
-                  <div className="size-14 rounded-2xl bg-amber-500 text-white flex items-center justify-center shadow-xl shadow-amber-500/30 transition-transform group-hover/sample:scale-110 group-hover/sample:rotate-3">
-                    <span className="material-symbols-outlined text-3xl">emoji_objects</span>
-                  </div>
-                  <h3 className="text-slate-900 dark:text-white text-xl font-black uppercase tracking-tight">{t('writingLesson.showSample')}</h3>
+              <summary className="flex cursor-pointer items-center justify-between p-4 hover:bg-slate-50 dark:hover:bg-background-dark transition-colors">
+                <div className="flex items-center gap-3">
+                  <span className="material-symbols-outlined text-amber-500">emoji_objects</span>
+                  <h3 className="text-slate-900 dark:text-white text-sm font-bold">{t('writingLesson.showSample')}</h3>
                 </div>
-                <span className="material-symbols-outlined text-slate-300 dark:text-gray-700 text-3xl transition-transform duration-500 group-open/details:rotate-180">expand_more</span>
+                <span className="material-symbols-outlined text-slate-400 transition-transform duration-300 group-open/details:rotate-180">expand_more</span>
               </summary>
-              <div className="p-10 pt-4 text-slate-500 dark:text-gray-400 leading-snug text-lg font-medium border-t-2 border-slate-100 dark:border-white/5 bg-slate-50/50 dark:bg-background-dark/20 italic selection:bg-amber-500/20">
+              <div className="p-5 pt-4 text-slate-600 dark:text-gray-400 text-sm border-t border-slate-200 dark:border-border-dark bg-slate-50 dark:bg-background-dark/20 italic">
                 {info.sampleAnswer}
               </div>
             </details>

@@ -83,6 +83,7 @@ export const API_ENDPOINTS = {
   LESSONS: {
     LIST: '/lessons',
     MY_PROGRESS: '/lessons/my-progress',
+    USER_PROGRESS: (targetUserId) => `/lessons/user-progress/${targetUserId}`,
     DETAIL: (id) => `/lessons/${id}`,
     PROGRESS: (id) => `/lessons/${id}/progress`,
     NOTES: (id) => `/lessons/${id}/notes`,
@@ -95,6 +96,7 @@ export const API_ENDPOINTS = {
     REVIEWS: (id) => `/lessons/${id}/reviews`,
     AI_GRADE: (id, userId) => `/lessons/${id}/ai-grade/${userId}`,
   },
+
 
   UPLOAD: {
     ASSET: '/upload/asset',

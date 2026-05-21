@@ -80,7 +80,7 @@ export function LessonsPage() {
   return (
     <main className="max-w-[1440px] mx-auto grid grid-cols-12 gap-6 p-6">
       {/* Left sidebar - sticky scroll theo trang */}
-      <aside className="col-span-12 lg:col-span-3 space-y-6 lg:sticky lg:top-20 lg:self-start">
+      <aside className="col-span-12 lg:col-span-3 space-y-6 lg:sticky lg:top-6 lg:self-start">
         <div className="bg-white dark:bg-card-dark rounded-xl p-5 border border-slate-200 dark:border-border-dark shadow-sm">
           <div className="flex items-center justify-between gap-2 mb-4">
             <h3 className="font-bold text-sm flex items-center gap-2 text-slate-900 dark:text-white">

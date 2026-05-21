@@ -159,14 +159,14 @@ export function WordsNotesLayout() {
           ))}
         </nav>
 
-        <div className="md:hidden mb-8 bg-white dark:bg-card-dark border border-slate-200 dark:border-border-dark rounded-[2.5rem] p-6 shadow-xl shadow-slate-200/50 dark:shadow-none">
+        <div className="md:hidden mb-6 bg-white dark:bg-card-dark border border-slate-200 dark:border-border-dark rounded-2xl p-5 shadow-sm">
           <RecentTopicsBlock />
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-12 gap-10 md:items-stretch">
           <aside className="hidden md:flex md:flex-col md:col-span-3 lg:col-span-3 min-h-0">
-            <div className="space-y-8 md:sticky md:top-8 md:self-start w-full md:max-h-[calc(100vh-6rem)] md:overflow-y-auto no-scrollbar">
-              <div className="bg-white dark:bg-card-dark border border-slate-200 dark:border-border-dark rounded-[2.5rem] p-8 shadow-xl shadow-slate-200/50 dark:shadow-none relative overflow-hidden">
+            <div className="space-y-4 md:sticky md:top-4 md:self-start w-full md:max-h-[calc(100vh-6rem)] md:overflow-y-auto no-scrollbar">
+              <div className="bg-white dark:bg-card-dark border border-slate-200 dark:border-border-dark rounded-2xl p-5 shadow-sm relative overflow-hidden">
                 <div className="absolute top-0 right-0 w-32 h-32 bg-primary/5 rounded-full -mr-16 -mt-16 blur-3xl" />
                 <h1 className="text-xl font-bold text-slate-900 dark:text-white mb-1 relative z-10">{t('vocabulary.pageTitle')}</h1>
                 <p className="text-xs text-slate-500 dark:text-gray-400 mb-6 relative z-10">{t('vocabulary.pageSubtitle')}</p>
@@ -188,7 +188,7 @@ export function WordsNotesLayout() {
                 </nav>
               </div>
 
-              <div className="bg-white dark:bg-card-dark border border-slate-200 dark:border-border-dark rounded-[2.5rem] p-8 shadow-xl shadow-slate-200/50 dark:shadow-none">
+              <div className="bg-white dark:bg-card-dark border border-slate-200 dark:border-border-dark rounded-2xl p-5 shadow-sm">
                 <RecentTopicsBlock />
               </div>
             </div>

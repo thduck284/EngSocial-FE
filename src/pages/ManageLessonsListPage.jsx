@@ -63,6 +63,12 @@ export function ManageLessonsListPage({ mode }) {
   const [gradingSubmitting, setGradingSubmitting] = useState(false)
   const [gradingAiLoading, setGradingAiLoading] = useState(false)
 
+  // User-level progress modal ("Xem kết quả học viên")
+  const [showUserProgressModal, setShowUserProgressModal] = useState(false)
+  const [userProgressList, setUserProgressList] = useState([])
+  const [userProgressLoading, setUserProgressLoading] = useState(false)
+  const [userProgressSkill, setUserProgressSkill] = useState('all')
+
   const [skillFilter, setSkillFilter] = useState('all')
   const [levelFilter, setLevelFilter] = useState('all')
   const [topicFilter, setTopicFilter] = useState('all')
@@ -104,6 +110,21 @@ export function ManageLessonsListPage({ mode }) {
       })
       .finally(() => setLoading(false))
   }, [category, skillFilter, levelFilter, topicFilter, t, isMockTest, userId])
+
+  const loadUserProgress = useCallback(async () => {
+    if (!userId) return
+    setUserProgressLoading(true)
+    try {
+      const params = { limit: 100 }
+      if (userProgressSkill !== 'all') params.skill = userProgressSkill
+      const res = await lessonsService.getUserProgressByMod(userId, params)
+      setUserProgressList(Array.isArray(res?.data) ? res.data : [])
+    } catch (e) {
+      console.error('Failed to load user progress', e)
+    } finally {
+      setUserProgressLoading(false)
+    }
+  }, [userId, userProgressSkill])
 
   useEffect(() => {
     load()
@@ -362,6 +383,16 @@ export function ManageLessonsListPage({ mode }) {
             <span className="material-symbols-outlined text-[18px] leading-none">add_circle</span>
             {addLabel}
           </Link>
+        )}
+        {!isMockTest && (
+          <button
+            type="button"
+            onClick={() => { setShowUserProgressModal(true); loadUserProgress() }}
+            className="inline-flex items-center justify-center gap-1.5 px-3.5 py-1.5 rounded-lg bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 font-semibold text-xs hover:bg-emerald-500/20 transition-colors shrink-0 min-h-0"
+          >
+            <span className="material-symbols-outlined text-[18px] leading-none">bar_chart</span>
+            Kết quả học viên
+          </button>
         )}
       </div>
 
@@ -954,6 +985,139 @@ export function ManageLessonsListPage({ mode }) {
         onClose={() => setItemToDelete(null)}
         onConfirm={handleConfirmDelete}
       />
+
+      {/* User Progress Modal */}
+      {showUserProgressModal && (
+        <div className="fixed inset-0 z-[120] flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
+          <div className="bg-card-dark border border-border-dark w-full max-w-3xl rounded-2xl overflow-hidden shadow-2xl animate-in fade-in zoom-in duration-200 flex flex-col max-h-[90vh]">
+            {/* Header */}
+            <div className="p-4 border-b border-border-dark flex items-center justify-between bg-background-dark/50 shrink-0">
+              <div>
+                <h3 className="text-base font-bold text-white flex items-center gap-2">
+                  <span className="material-symbols-outlined text-emerald-400 text-lg">bar_chart</span>
+                  Kết quả làm bài của học viên
+                </h3>
+                <p className="text-[11px] text-gray-500 mt-0.5">{isPractice ? 'Practice' : 'Lesson'} — Tất cả bài đã làm</p>
+              </div>
+              <div className="flex items-center gap-2">
+                {/* Skill filter */}
+                <select
+                  value={userProgressSkill}
+                  onChange={(e) => { setUserProgressSkill(e.target.value) }}
+                  onBlur={() => loadUserProgress()}
+                  className="bg-background-dark border border-border-dark rounded-lg px-2 py-1.5 text-xs text-white outline-none focus:ring-1 focus:ring-primary"
+                >
+                  <option value="all">Tất cả skill</option>
+                  <option value="reading">Reading</option>
+                  <option value="listening">Listening</option>
+                  <option value="writing">Writing</option>
+                </select>
+                <button
+                  onClick={loadUserProgress}
+                  className="p-1.5 rounded-lg text-gray-400 hover:bg-white/10 hover:text-primary transition-colors"
+                  title="Tải lại"
+                >
+                  <span className="material-symbols-outlined text-base">refresh</span>
+                </button>
+                <button
+                  onClick={() => setShowUserProgressModal(false)}
+                  className="p-1.5 rounded-lg text-gray-400 hover:bg-white/10 transition-colors"
+                >
+                  <span className="material-symbols-outlined">close</span>
+                </button>
+              </div>
+            </div>
+
+            {/* Body */}
+            <div className="overflow-y-auto custom-scrollbar flex-1">
+              {userProgressLoading ? (
+                <div className="py-20 text-center">
+                  <span className="material-symbols-outlined animate-spin text-3xl text-primary">progress_activity</span>
+                </div>
+              ) : userProgressList.length === 0 ? (
+                <div className="py-20 text-center text-gray-500 flex flex-col items-center gap-3">
+                  <span className="material-symbols-outlined text-5xl opacity-20">history_edu</span>
+                  <p className="text-sm">Học viên chưa làm bài nào</p>
+                </div>
+              ) : (
+                <table className="w-full text-left text-sm">
+                  <thead className="sticky top-0 bg-card-dark border-b border-border-dark z-10">
+                    <tr>
+                      <th className="px-4 py-3 text-[11px] font-bold text-gray-500 uppercase">Bài học</th>
+                      <th className="px-4 py-3 text-[11px] font-bold text-gray-500 uppercase">Skill</th>
+                      <th className="px-4 py-3 text-[11px] font-bold text-gray-500 uppercase text-center">Điểm</th>
+                      <th className="px-4 py-3 text-[11px] font-bold text-gray-500 uppercase text-center">Trạng thái</th>
+                      <th className="px-4 py-3 text-[11px] font-bold text-gray-500 uppercase text-right">Ngày làm</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-border-dark/40">
+                    {userProgressList.map((p, i) => {
+                      const skillColor =
+                        p.lesson?.skill === 'writing' ? 'text-amber-400 bg-amber-500/10 border-amber-500/20'
+                        : p.lesson?.skill === 'listening' ? 'text-emerald-400 bg-emerald-500/10 border-emerald-500/20'
+                        : 'text-blue-400 bg-blue-500/10 border-blue-500/20'
+                      const statusColor =
+                        p.status === 'completed' ? 'text-emerald-400 bg-emerald-500/10 border-emerald-500/20'
+                        : p.status === 'under_review' ? 'text-amber-400 bg-amber-500/10 border-amber-500/20'
+                        : 'text-gray-400 bg-white/5 border-white/10'
+                      const statusLabel =
+                        p.status === 'completed' ? 'Hoàn thành'
+                        : p.status === 'under_review' ? 'Chờ chấm'
+                        : 'Đang làm'
+                      const submittedDate = p.submittedAt || p.completedAt || p.lastAccessedAt
+                      return (
+                        <tr key={p.id || i} className="hover:bg-white/[0.02] transition-colors">
+                          <td className="px-4 py-3 max-w-[220px]">
+                            <p className="text-sm font-medium text-white line-clamp-2">{p.lesson?.title || '—'}</p>
+                            {p.attemptNo > 0 && (
+                              <span className="text-[9px] text-primary bg-primary/10 px-1.5 py-0.5 rounded border border-primary/20 mt-0.5 inline-block">Lần {p.attemptNo}</span>
+                            )}
+                          </td>
+                          <td className="px-4 py-3">
+                            <span className={`px-2 py-0.5 rounded border text-[10px] font-bold uppercase ${skillColor}`}>
+                              {p.lesson?.skill || '—'}
+                            </span>
+                          </td>
+                          <td className="px-4 py-3 text-center">
+                            {p.status === 'under_review' ? (
+                              <span className="text-xs text-amber-400 font-bold">—</span>
+                            ) : (
+                              <span className={`text-sm font-black ${(p.score / (p.maxScore || 1)) >= 0.8 ? 'text-emerald-400' : 'text-primary'}`}>
+                                {p.score ?? 0}/{p.maxScore ?? 0}
+                              </span>
+                            )}
+                          </td>
+                          <td className="px-4 py-3 text-center">
+                            <span className={`px-2 py-0.5 rounded-full border text-[10px] font-bold ${statusColor}`}>
+                              {statusLabel}
+                            </span>
+                          </td>
+                          <td className="px-4 py-3 text-right text-[11px] text-gray-500">
+                            {submittedDate ? new Date(submittedDate).toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit', year: '2-digit' }) : '—'}
+                          </td>
+                        </tr>
+                      )
+                    })}
+                  </tbody>
+                </table>
+              )}
+            </div>
+
+            {/* Footer */}
+            <div className="p-4 border-t border-border-dark bg-background-dark/50 shrink-0 flex items-center justify-between">
+              <p className="text-xs text-gray-500">
+                {userProgressList.length > 0 && `${userProgressList.length} kết quả`}
+              </p>
+              <button
+                onClick={() => setShowUserProgressModal(false)}
+                className="px-5 py-2 rounded-xl border border-border-dark text-gray-400 font-bold text-xs hover:bg-white/5"
+              >
+                {t('common.close')}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
