@@ -191,9 +191,15 @@ export function ChatbotPanel({ open, onClose, onMinimize }) {
       })
       await loadConversations()
     } catch (e) {
-      setMessages((prev) =>
-        prev.filter((m) => m.id !== optimisticId && m.id !== streamAiIdRef.current),
-      )
+      setMessages((prev) => {
+        const streamAi = prev.find((m) => m.id === streamAiIdRef.current)
+        if (streamAi && streamAi.text && String(streamAi.text).trim().length > 0) {
+          return prev.map((m) =>
+            m.id === streamAiIdRef.current ? { ...m, typing: false } : m
+          ).filter((m) => m.id !== optimisticId)
+        }
+        return prev.filter((m) => m.id !== optimisticId && m.id !== streamAiIdRef.current)
+      })
       setError(e?.message || t('chatbot.sendError', 'Gửi thất bại.'))
     } finally {
       streamAiIdRef.current = null
