@@ -306,9 +306,12 @@ export function useCreatePostModal({
       if (err?.status === 422 && err?.data?.data) {
         // Nội dung vi phạm: lưu kết quả kiểm duyệt để hiển thị UI
         setViolationResult(err.data.data)
-        setError(err?.message || 'Nội dung vi phạm tiêu chuẩn cộng đồng.')
+        setError(err?.data?.message || err?.message || 'Nội dung bài viết vi phạm tiêu chuẩn cộng đồng.')
+      } else if (err?.status === 503) {
+        // Moderation service tạm thời không khả dụng
+        setError('Hệ thống kiểm duyệt nội dung đang tạm thời không khả dụng. Vui lòng thử lại sau.')
       } else {
-        setError(err?.message || t('dashboard.postFailed') || 'Đăng bài thất bại.')
+        setError(err?.data?.message || err?.message || t('dashboard.postFailed') || 'Đăng bài thất bại.')
       }
     } finally {
       setPosting(false)

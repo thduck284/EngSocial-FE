@@ -61,10 +61,10 @@ export function CreatePostModal({
       onClick={handleClose}
     >
       <div
-        className="w-full max-w-2xl bg-white dark:bg-card-dark rounded-xl shadow-2xl border border-slate-200 dark:border-border-dark overflow-hidden flex flex-col max-h-[95vh]"
+        className="w-full max-w-2xl bg-white dark:bg-card-dark rounded-xl shadow-2xl border border-slate-200 dark:border-border-dark overflow-hidden flex flex-col min-h-[80vh] max-h-[95vh]"
         onClick={(e) => e.stopPropagation()}
       >
-        {/* Header */}
+        {/* Pinned Header */}
         <header className="flex items-center justify-between px-6 py-4 border-b border-slate-200 dark:border-border-dark shrink-0">
           <h2 className="text-xl font-bold text-slate-900 dark:text-slate-100">
             {t('dashboard.createPost') || 'Tạo bài viết'}
@@ -79,8 +79,8 @@ export function CreatePostModal({
           </button>
         </header>
 
-        {/* User Info & Privacy */}
-        <div className="px-6 py-4 flex items-center justify-between gap-4 shrink-0">
+        {/* User Info & Privacy (Pinned below header) */}
+        <div className="px-6 py-2 flex items-center justify-between gap-4 shrink-0">
           <div className="flex items-center gap-3">
             <div className="size-11 rounded-full bg-primary/20 flex items-center justify-center overflow-hidden border-2 border-primary/30 shrink-0">
               <img
@@ -122,57 +122,58 @@ export function CreatePostModal({
           </div>
         </div>
 
-        {/* Content Area */}
-        <div ref={contentBlockRef} className="px-6 pb-2 shrink-0 relative">
-          <textarea
-            ref={contentTextareaRef}
-            value={content}
-            onChange={handleContentChange}
-            onKeyDown={handleContentKeyDown}
-            className="w-full min-h-[170px] bg-transparent border-none focus:ring-0 text-lg text-slate-900 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 resize-none p-0"
-            placeholder={t('dashboard.postPlaceholder')}
-            rows={6}
-          />
-          {showMentionDropdown && (
-            <div className="absolute left-6 right-6 top-full mt-0.5 pt-1.5 pb-2 bg-white dark:bg-card-dark rounded-xl shadow-xl border border-slate-200 dark:border-border-dark z-50 max-h-48 overflow-y-auto custom-scrollbar">
-              <p className="px-3 pt-0.5 pb-1 text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
-                {t('dashboard.mentionFriend') || 'Gợi ý bạn bè'}
-              </p>
-              {mentionCandidates.length === 0 ? (
-                <p className="px-3 py-4 text-sm text-slate-500 dark:text-slate-400">{t('dashboard.noFriendMatch') || 'Không có bạn bè trùng khớp.'}</p>
-              ) : (
-                mentionCandidates.map((friend) => (
-                  <button
-                    key={friend.id}
-                    type="button"
-                    onClick={() => insertMention(friend)}
-                    className="w-full flex items-center gap-3 px-3 py-2 text-left hover:bg-slate-100 dark:hover:bg-white/10 transition-colors"
-                  >
-                    {friend.avatar ? (
-                      <span className="size-8 rounded-full overflow-hidden border border-primary/40 shrink-0">
-                        <img
-                          src={friend.avatar}
-                          alt=""
-                          className="w-full h-full object-cover"
-                        />
-                      </span>
-                    ) : (
-                      <span className="size-8 rounded-full bg-primary/20 flex items-center justify-center text-sm font-bold text-primary shrink-0">
-                        {(friend.name || '?').charAt(0).toUpperCase()}
-                      </span>
-                    )}
-                    <span className="text-sm font-medium text-slate-900 dark:text-slate-100 truncate">{friend.name}</span>
-                  </button>
-                ))
-              )}
-            </div>
-          )}
-        </div>
+        {/* Scrollable Center Body */}
+        <div className="flex-1 overflow-y-auto min-h-0 custom-scrollbar pb-2">
+          {/* Content Area */}
+          <div ref={contentBlockRef} className="px-6 pb-2 relative">
+            <textarea
+              ref={contentTextareaRef}
+              value={content}
+              onChange={handleContentChange}
+              onKeyDown={handleContentKeyDown}
+              className="w-full min-h-[220px] bg-transparent border-none focus:ring-0 text-lg text-slate-900 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 resize-none p-0"
+              placeholder={t('dashboard.postPlaceholder')}
+              rows={8}
+            />
+            {showMentionDropdown && (
+              <div className="absolute left-6 right-6 top-full mt-0.5 pt-1.5 pb-2 bg-white dark:bg-card-dark rounded-xl shadow-xl border border-slate-200 dark:border-border-dark z-50 max-h-48 overflow-y-auto custom-scrollbar">
+                <p className="px-3 pt-0.5 pb-1 text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
+                  {t('dashboard.mentionFriend') || 'Gợi ý bạn bè'}
+                </p>
+                {mentionCandidates.length === 0 ? (
+                  <p className="px-3 py-4 text-sm text-slate-500 dark:text-slate-400">{t('dashboard.noFriendMatch') || 'Không có bạn bè trùng khớp.'}</p>
+                ) : (
+                  mentionCandidates.map((friend) => (
+                    <button
+                      key={friend.id}
+                      type="button"
+                      onClick={() => insertMention(friend)}
+                      className="w-full flex items-center gap-3 px-3 py-2 text-left hover:bg-slate-100 dark:hover:bg-white/10 transition-colors"
+                    >
+                      {friend.avatar ? (
+                        <span className="size-8 rounded-full overflow-hidden border border-primary/40 shrink-0">
+                          <img
+                            src={friend.avatar}
+                            alt=""
+                            className="w-full h-full object-cover"
+                          />
+                        </span>
+                      ) : (
+                        <span className="size-8 rounded-full bg-primary/20 flex items-center justify-center text-sm font-bold text-primary shrink-0">
+                          {(friend.name || '?').charAt(0).toUpperCase()}
+                        </span>
+                      )}
+                      <span className="text-sm font-medium text-slate-900 dark:text-slate-100 truncate">{friend.name}</span>
+                    </button>
+                  ))
+                )}
+              </div>
+            )}
+          </div>
 
-        {/* Preview Area - images and video same thumbnail style */}
-        <div className="px-6 py-4 space-y-3 overflow-y-auto flex-1 min-h-0">
+          {/* Previews (Images/Videos) */}
           {(images.length > 0 || videoUrl) && (
-            <div className="flex flex-wrap gap-2">
+            <div className="px-6 pb-4 flex flex-wrap gap-2">
               {images.map((url, i) => (
                 <div key={`img-${i}-${url}`} className="relative group">
                   <img
@@ -212,8 +213,10 @@ export function CreatePostModal({
               )}
             </div>
           )}
+
+          {/* Previews (Documents) */}
           {documents.length > 0 && (
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div className="px-6 pb-4 grid grid-cols-1 sm:grid-cols-2 gap-3">
               {documents.map((d, i) => {
                 const url = typeof d === 'string' ? d : d?.url
                 const name = typeof d === 'string' ? '' : (d?.name || '')
@@ -242,90 +245,78 @@ export function CreatePostModal({
               })}
             </div>
           )}
-        </div>
 
-        <PostComposerAddToPostRow
-          t={t}
-          uploading={uploading}
-          imagesCount={images.length}
-          hasVideo={Boolean(videoUrl)}
-          documentsCount={documents.length}
-          onImageSelect={handleImageSelect}
-          onVideoSelect={handleVideoSelect}
-          onDocSelect={handleDocSelect}
-          addons={addons}
-        />
-        <div className="px-6 py-0 border-t-0">
-          {uploading && (
-            <p className="text-xs text-slate-500 dark:text-slate-400 mt-2">
-              {t('dashboard.uploading')}
-            </p>
-          )}
+          {/* Addons Panel (Add to post tools) */}
+          <div className="px-6 py-2 bg-slate-50/50 dark:bg-card-dark/20">
+            <PostComposerAddToPostRow
+              t={t}
+              uploading={uploading}
+              imagesCount={images.length}
+              hasVideo={Boolean(videoUrl)}
+              documentsCount={documents.length}
+              onImageSelect={handleImageSelect}
+              onVideoSelect={handleVideoSelect}
+              onDocSelect={handleDocSelect}
+              addons={addons}
+            />
+          </div>
 
-          {/* Việc kiểm duyệt nội dung vi phạm */}
-          {violationResult && (
-            <div className="mt-3 rounded-xl border border-red-300 dark:border-red-700 bg-red-50 dark:bg-red-900/20 p-4 space-y-3">
-              {/* Tiêu đề */}
-              <div className="flex items-center gap-2">
-                <span className="material-symbols-outlined text-red-500 text-xl">gpp_bad</span>
-                <p className="font-bold text-red-600 dark:text-red-400 text-sm">
-                  Nội dung vi phạm tiêu chuẩn cộng đồng
+          {/* Alerts & Errors */}
+          <div className="px-6 pt-3">
+            {uploading && (
+              <p className="text-xs text-slate-500 dark:text-slate-400">
+                {t('dashboard.uploading')}
+              </p>
+            )}
+
+            {violationResult && (
+              <div className="rounded-xl border border-red-300 dark:border-red-700 bg-red-50 dark:bg-red-900/20 p-4 space-y-3">
+                <div className="flex items-center gap-2">
+                  <span className="material-symbols-outlined text-red-500 text-xl">gpp_bad</span>
+                  <p className="font-bold text-red-600 dark:text-red-400 text-sm">
+                    Nội dung vi phạm tiêu chuẩn cộng đồng
+                  </p>
+                </div>
+
+                <div className="flex items-center gap-2 text-xs text-slate-500 dark:text-slate-400">
+                  <span className="material-symbols-outlined text-base text-red-500">warning</span>
+                  Mức độ vi phạm:&nbsp;
+                  <span className="font-bold text-red-600 dark:text-red-400 uppercase">
+                    {(violationResult.violation_score ?? 0) >= 80 ? 'Cao' : 'Trung bình'}
+                  </span>
+                </div>
+
+                {violationResult.keywords?.length > 0 && (
+                  <div>
+                    <p className="text-xs text-slate-500 dark:text-slate-400 mb-1.5">
+                      Từ khóa vi phạm phát hiện:
+                    </p>
+                    <div className="flex flex-wrap gap-1.5">
+                      {violationResult.keywords.map((kw, i) => (
+                        <span
+                          key={i}
+                          className="px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 dark:bg-red-900/40 text-red-600 dark:text-red-400 border border-red-200 dark:border-red-700"
+                        >
+                          {kw}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                <p className="text-xs text-slate-500 dark:text-slate-400 pt-1 border-t border-red-200 dark:border-red-800">
+                  ⚠️ Vui lòng chỉnh sửa nội dung và thử lại.
                 </p>
               </div>
+            )}
 
-              {/* Thanh xác suất vi phạm */}
-              <div>
-                <div className="flex justify-between items-center mb-1">
-                  <span className="text-xs text-slate-500 dark:text-slate-400">Xác suất vi phạm</span>
-                  <span className="text-xs font-bold text-red-500">{(violationResult.violation_score ?? 0).toFixed(1)}%</span>
-                </div>
-                <div className="h-2 rounded-full bg-slate-200 dark:bg-slate-700 overflow-hidden">
-                  <div
-                    className="h-full rounded-full bg-gradient-to-r from-yellow-400 to-red-500 transition-all duration-700"
-                    style={{ width: `${Math.min(violationResult.violation_score ?? 0, 100)}%` }}
-                  />
-                </div>
-              </div>
-
-              {/* Độ tự tin */}
-              <div className="flex items-center gap-2 text-xs text-slate-500 dark:text-slate-400">
-                <span className="material-symbols-outlined text-base text-slate-400">psychology</span>
-                Độ tự tin AI:&nbsp;
-                <span className="font-semibold text-slate-700 dark:text-slate-200">{(violationResult.confidence ?? 0).toFixed(1)}%</span>
-              </div>
-
-              {/* Từ khóa */}
-              {violationResult.keywords?.length > 0 && (
-                <div>
-                  <p className="text-xs text-slate-500 dark:text-slate-400 mb-1.5">
-                    Từ khóa vi phạm phát hiện:
-                  </p>
-                  <div className="flex flex-wrap gap-1.5">
-                    {violationResult.keywords.map((kw, i) => (
-                      <span
-                        key={i}
-                        className="px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 dark:bg-red-900/40 text-red-600 dark:text-red-400 border border-red-200 dark:border-red-700"
-                      >
-                        {kw}
-                      </span>
-                    ))}
-                  </div>
-                </div>
-              )}
-
-              {/* Hướng dẫn */}
-              <p className="text-xs text-slate-500 dark:text-slate-400 pt-1 border-t border-red-200 dark:border-red-800">
-                ⚠️ Vui lòng chỉnh sửa nội dung và thử lại.
-              </p>
-            </div>
-          )}
-
-          {error && !violationResult && (
-            <p className="text-sm text-red-500 mt-2">{error}</p>
-          )}
+            {error && !violationResult && (
+              <p className="text-sm text-red-500 mt-2">{error}</p>
+            )}
+          </div>
         </div>
 
-        {/* Footer Buttons */}
+        {/* Pinned Footer */}
         <footer className="px-6 py-5 bg-slate-50 dark:bg-background-dark/30 border-t border-slate-200 dark:border-border-dark flex items-center justify-end gap-3 shrink-0">
           <button
             type="button"

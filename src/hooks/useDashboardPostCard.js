@@ -240,12 +240,24 @@ export function useDashboardPostCard({
       })
       .catch((err) => {
         if (typeof setEditError === 'function') {
-          setEditError(
-            err?.data?.message ||
-              err?.message ||
-              t('profile.saveFailed') ||
-              'Failed to save. Please try again.',
-          )
+          if (err?.status === 422) {
+            // Nội dung vi phạm
+            const mod = err?.data?.data
+            const label = mod?.label ? ` (${mod.label})` : ''
+            const keywords = mod?.keywords?.length ? ` — Từ khóa: ${mod.keywords.join(', ')}` : ''
+            setEditError(
+              (err?.data?.message || 'Nội dung bài viết vi phạm tiêu chuẩn cộng đồng.') + label + keywords
+            )
+          } else if (err?.status === 503) {
+            setEditError('Hệ thống kiểm duyệt nội dung đang tạm thời không khả dụng. Vui lòng thử lại sau.')
+          } else {
+            setEditError(
+              err?.data?.message ||
+                err?.message ||
+                t('profile.saveFailed') ||
+                'Failed to save. Please try again.',
+            )
+          }
         }
       })
       .finally(() => setPostActionLoading(false))

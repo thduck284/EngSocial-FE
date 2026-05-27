@@ -419,6 +419,17 @@ export function DashboardPostCard({
         {/* Content: post body (hashtags, @mentions); long content truncated with "See more" */}
         {(contentToShow || imagesList.length > 0 || post.video || documentsList.length > 0) ? (
           <div className="p-5 pt-0 text-sm text-slate-800 dark:text-slate-200 leading-relaxed">
+            {post.moderation && (post.moderation.level === 'medium' || post.moderation.level === 'high') && (
+              <div className="mb-4 p-3.5 rounded-2xl bg-amber-50 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-900/40 text-amber-800 dark:text-amber-300 flex items-start gap-2.5 shadow-sm">
+                <span className="material-symbols-outlined shrink-0 text-amber-500 text-xl">warning</span>
+                <div className="text-xs">
+                  <p className="font-bold mb-0.5">⚠️ Cảnh báo nội dung ({post.moderation.level === 'high' ? 'Mức độ: Cao' : 'Mức độ: Trung bình'})</p>
+                  {post.moderation.keywords && post.moderation.keywords.length > 0 && (
+                    <p className="opacity-90">Từ khóa nhạy cảm phát hiện: <span className="font-semibold">{post.moderation.keywords.join(', ')}</span></p>
+                  )}
+                </div>
+              </div>
+            )}
             {contentToShow ? (
               <>
                 <div className="whitespace-pre-wrap">

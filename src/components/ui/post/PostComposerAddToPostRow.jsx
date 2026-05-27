@@ -34,7 +34,7 @@ export function PostComposerAddToPostRow({
   } = addons
 
   return (
-    <div className="px-6 py-3 border-t border-slate-200 dark:border-border-dark shrink-0">
+    <div className="py-3 border-t border-slate-200 dark:border-border-dark shrink-0">
       <p className="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-3">
         {t('dashboard.addToPost') || 'Them vao bai viet'}
       </p>
