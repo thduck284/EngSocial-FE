@@ -47,6 +47,8 @@ export function isFacebookSdkBlockedOnHttp() {
   return window.location.protocol === 'http:'
 }
 
+let _fbInitialized = false
+
 export async function getFacebookAccessToken() {
   if (isFacebookSdkBlockedOnHttp()) {
     throw new Error(
@@ -59,15 +61,19 @@ export async function getFacebookAccessToken() {
   const FB = window.FB
   if (!FB) throw new Error('Facebook SDK not available')
 
-  await new Promise((resolve) => {
-    FB.init({
-      appId,
-      cookie: true,
-      xfbml: false,
-      version: import.meta.env.VITE_FACEBOOK_GRAPH_VERSION || 'v19.0',
+  if (!_fbInitialized) {
+    await new Promise((resolve) => {
+      FB.init({
+        appId,
+        cookie: true,
+        xfbml: false,
+        version: import.meta.env.VITE_FACEBOOK_GRAPH_VERSION || 'v19.0',
+      })
+      resolve()
     })
-    resolve()
-  })
+    _fbInitialized = true
+  }
+
 
   return await new Promise((resolve, reject) => {
     FB.login(
