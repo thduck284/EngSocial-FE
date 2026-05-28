@@ -4,11 +4,12 @@ import { useTranslation } from 'react-i18next'
 import { useAuth } from '../../context/AuthContext'
 import {
   ROUTES,
-  modPathTail,
+  staffPortalPathTail,
   getStaffNavCore,
   getStaffNavEntertainment,
   getStaffNavGamification,
   getStaffNavAchievements,
+  getAdminPortalNav,
 } from '../../constants'
 import { LogoutConfirmModal } from './LogoutConfirmModal'
 
@@ -55,13 +56,13 @@ export function StaffPortalLayout() {
   const [mobileNavOpen, setMobileNavOpen] = useState(false)
   const [logoutConfirmOpen, setLogoutConfirmOpen] = useState(false)
 
-  const modTail = modPathTail(location.pathname)
+  const modTail = staffPortalPathTail(location.pathname)
   const [entertainmentOpen, setEntertainmentOpen] = useState(() =>
     Boolean(modTail?.startsWith('/entertainment') || modTail?.startsWith('/word-scramble')),
   )
 
   useEffect(() => {
-    const tail = modPathTail(location.pathname)
+    const tail = staffPortalPathTail(location.pathname)
     const open = Boolean(tail?.startsWith('/entertainment') || tail?.startsWith('/word-scramble'))
     if (open) setEntertainmentOpen(true)
   }, [location.pathname])
@@ -98,6 +99,11 @@ export function StaffPortalLayout() {
 
   const entertainmentChildren = staffNavEntertainment.children.filter((s) => !s.adminOnly || isAdmin)
 
+  const adminNavItems = useMemo(() => {
+    if (user?.id == null) return []
+    return getAdminPortalNav(user.id)
+  }, [user?.id])
+
   if (!isAuthenticated) {
     return <Navigate to={ROUTES.LOGIN} state={{ from: location }} replace />
   }
@@ -108,8 +114,20 @@ export function StaffPortalLayout() {
     return <Navigate to={ROUTES.HOME} replace />
   }
   if (String(modUserParam) !== String(user.id)) {
-    const tail = location.pathname.replace(/^\/mod\/[^/]+/, '') || ''
-    const to = tail ? `${ROUTES.MANAGE_ROOT(user.id)}${tail}` : ROUTES.MANAGE_OVERVIEW(user.id)
+    const tail = staffPortalPathTail(location.pathname)
+    if (tail == null) {
+      return <Navigate to={ROUTES.HOME} replace />
+    }
+    const isAdminstrator = location.pathname.startsWith('/adminstrator/')
+    const base = isAdminstrator
+      ? `/adminstrator/${encodeURIComponent(String(user.id))}`
+      : ROUTES.MANAGE_ROOT(user.id)
+    const to =
+      tail === '/'
+        ? isAdminstrator
+          ? ROUTES.MANAGE_ADMIN_OVERVIEW(user.id)
+          : ROUTES.MANAGE_OVERVIEW(user.id)
+        : `${base}${tail}`
     return <Navigate to={to} replace />
   }
 
@@ -139,7 +157,7 @@ export function StaffPortalLayout() {
               <span className="material-symbols-outlined text-[26px]">{mobileNavOpen ? 'close' : 'menu'}</span>
             </button>
             <Link
-              to={ROUTES.MANAGE_OVERVIEW(user.id)}
+              to={isAdmin ? ROUTES.MANAGE_ADMIN_OVERVIEW(user.id) : ROUTES.MANAGE_OVERVIEW(user.id)}
               className="flex items-center gap-2.5 sm:gap-3 min-w-0 rounded-xl sm:rounded-2xl sm:pr-4 sm:py-1 sm:-my-1 hover:bg-white/[0.03] transition-colors"
               onClick={closeMobile}
             >
@@ -205,76 +223,86 @@ export function StaffPortalLayout() {
           ].join(' ')}
         >
           <nav className="flex-1 overflow-y-auto custom-scrollbar px-2 pt-4 pb-4 md:pt-5 space-y-1">
-            <StaffNavLink to={ROUTES.MANAGE_OVERVIEW(user.id)} end icon="dashboard" onNavigate={closeMobile}>
-              {t('staffDashboard.navOverview')}
-            </StaffNavLink>
+            {isAdmin ? (
+              adminNavItems.map((item) => (
+                <StaffNavLink key={item.to} to={item.to} end={item.end} icon={item.icon} onNavigate={closeMobile}>
+                  {t(item.labelKey)}
+                </StaffNavLink>
+              ))
+            ) : (
+              <>
+                <StaffNavLink to={ROUTES.MANAGE_OVERVIEW(user.id)} end icon="dashboard" onNavigate={closeMobile}>
+                  {t('staffDashboard.navOverview')}
+                </StaffNavLink>
 
-            {staffNavCore.map((item) => (
-              <StaffNavLink key={item.to} to={item.to} end={item.end} icon={item.icon} onNavigate={closeMobile}>
-                {t(item.labelKey)}
-              </StaffNavLink>
-            ))}
-
-            <div className="pt-1 space-y-0.5">
-              <div className="flex items-stretch gap-0.5 rounded-xl">
-                <div className="min-w-0 flex-1">
-                  <StaffNavLink
-                    to={staffNavEntertainment.hubTo}
-                    end
-                    icon={staffNavEntertainment.icon}
-                    onNavigate={closeMobile}
-                  >
-                    {t(staffNavEntertainment.labelKey)}
-                  </StaffNavLink>
-                </div>
-                <button
-                  type="button"
-                  onClick={() => setEntertainmentOpen((o) => !o)}
-                  className="shrink-0 w-10 flex items-center justify-center rounded-xl border border-transparent text-gray-500 hover:bg-white/[0.06] hover:text-white transition-colors"
-                  aria-expanded={entertainmentOpen}
-                  aria-label={t('staffDashboard.toggleEntertainment')}
-                >
-                  <span
-                    className={`material-symbols-outlined text-[22px] transition-transform ${entertainmentOpen ? 'rotate-180' : ''}`}
-                  >
-                    expand_more
-                  </span>
-                </button>
-              </div>
-              {entertainmentOpen
-                ? entertainmentChildren.map((child) => (
-                    <StaffNavLink
-                      key={child.to}
-                      to={child.to}
-                      end={child.end}
-                      icon={child.icon}
-                      onNavigate={closeMobile}
-                      nested
-                    >
-                      {t(child.labelKey)}
-                    </StaffNavLink>
-                  ))
-                : null}
-            </div>
-
-            {gamificationNav.length > 0 ? (
-              <div className="pt-2 space-y-1">
-                {gamificationNav.map((item) => (
+                {staffNavCore.map((item) => (
                   <StaffNavLink key={item.to} to={item.to} end={item.end} icon={item.icon} onNavigate={closeMobile}>
                     {t(item.labelKey)}
                   </StaffNavLink>
                 ))}
-              </div>
-            ) : null}
 
-            <StaffNavLink
-              to={staffNavAchievements.to}
-              end={staffNavAchievements.end}
-              icon={staffNavAchievements.icon}
-              onNavigate={closeMobile}
-            >
-              {t(staffNavAchievements.labelKey)}
-            </StaffNavLink>
+                <div className="pt-1 space-y-0.5">
+                  <div className="flex items-stretch gap-0.5 rounded-xl">
+                    <div className="min-w-0 flex-1">
+                      <StaffNavLink
+                        to={staffNavEntertainment.hubTo}
+                        end
+                        icon={staffNavEntertainment.icon}
+                        onNavigate={closeMobile}
+                      >
+                        {t(staffNavEntertainment.labelKey)}
+                      </StaffNavLink>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => setEntertainmentOpen((o) => !o)}
+                      className="shrink-0 w-10 flex items-center justify-center rounded-xl border border-transparent text-gray-500 hover:bg-white/[0.06] hover:text-white transition-colors"
+                      aria-expanded={entertainmentOpen}
+                      aria-label={t('staffDashboard.toggleEntertainment')}
+                    >
+                      <span
+                        className={`material-symbols-outlined text-[22px] transition-transform ${entertainmentOpen ? 'rotate-180' : ''}`}
+                      >
+                        expand_more
+                      </span>
+                    </button>
+                  </div>
+                  {entertainmentOpen
+                    ? entertainmentChildren.map((child) => (
+                        <StaffNavLink
+                          key={child.to}
+                          to={child.to}
+                          end={child.end}
+                          icon={child.icon}
+                          onNavigate={closeMobile}
+                          nested
+                        >
+                          {t(child.labelKey)}
+                        </StaffNavLink>
+                      ))
+                    : null}
+                </div>
+
+                {gamificationNav.length > 0 ? (
+                  <div className="pt-2 space-y-1">
+                    {gamificationNav.map((item) => (
+                      <StaffNavLink key={item.to} to={item.to} end={item.end} icon={item.icon} onNavigate={closeMobile}>
+                        {t(item.labelKey)}
+                      </StaffNavLink>
+                    ))}
+                  </div>
+                ) : null}
+
+                <StaffNavLink
+                  to={staffNavAchievements.to}
+                  end={staffNavAchievements.end}
+                  icon={staffNavAchievements.icon}
+                  onNavigate={closeMobile}
+                >
+                  {t(staffNavAchievements.labelKey)}
+                </StaffNavLink>
+              </>
+            )}
           </nav>
 
           <div className="shrink-0 border-t border-white/[0.06] px-2 pb-4 pt-2 md:pb-3">

@@ -3,6 +3,7 @@ import { PostComposerAddToPostRow } from './PostComposerAddToPostRow'
 export function PostShareComposerSection({
   t,
   post,
+  user,
   audience,
   setAudience,
   audienceOpen,
@@ -29,18 +30,20 @@ export function PostShareComposerSection({
   onDocSelect,
   addons,
 }) {
+  const avatar = user?.avatar || (user?.name ? `https://ui-avatars.com/api/?name=${encodeURIComponent(user.name)}&background=13b6ec&color=fff` : '')
+
   return (
     <>
       <div className="p-4 space-y-4">
         <div className="flex gap-3">
           <img
-            src={post.author?.avatarUrl || post.author?.avatar || ''}
-            alt={post.author?.name || 'avatar'}
+            src={avatar}
+            alt={user?.name || 'avatar'}
             className="w-10 h-10 rounded-full object-cover bg-slate-500/40"
           />
-          <div className="flex flex-col gap-1.5">
-            <span className="text-[15px] font-semibold">
-              {post.author?.name || 'User'}
+          <div className="flex flex-col gap-1">
+            <span className="text-[15px] font-bold text-slate-100">
+              {user?.name || 'User'}
             </span>
             <div className="flex gap-2 flex-wrap relative">
               <button

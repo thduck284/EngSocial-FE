@@ -12,6 +12,8 @@ import { formatTime } from '../utils/dateTime'
  * @returns {Object} All state and handlers including audioRef for <audio>
  */
 export function useListeningLesson(id, t) {
+  const navigate = useNavigate()
+  const location = useLocation()
   const audioRef = useRef(null)
   const lessonOpenedAtMs = useRef(null)
 
@@ -43,6 +45,13 @@ export function useListeningLesson(id, t) {
   useEffect(() => {
     if (!id) return
     setLoading(true)
+    // Reset all per-lesson state when id changes
+    setAnswers({})
+    setCurrentQuestion(0)
+    setShowHint(false)
+    setCompleteMessage('')
+    setShowConfirmModal(false)
+    setShowIncompleteModal(false)
     // Fetch lesson content
     lessonsService
       .getListeningContent(id)
@@ -212,7 +221,8 @@ export function useListeningLesson(id, t) {
         setCompleteMessage(
           xp > 0 ? t('listeningLesson.completeSuccess', { xp }) : t('listeningLesson.completeSuccessShort')
         )
-        const redirectTo = `/lesson/listening/${id}/result`
+        const type = location.pathname.startsWith('/practice/') ? 'practice' : 'lesson'
+        const redirectTo = `/${type}/listening/${id}/result`
         setTimeout(() => {
           setCompleteMessage('')
           navigate(redirectTo)

@@ -35,10 +35,10 @@ const PRACTICE_LABEL_KEYS = {
 }
 
 function sidebarLinkClass(isActive) {
-  return `w-full flex items-center gap-3 p-3 rounded-lg transition-colors text-left ${
+  return `w-full flex items-center gap-4 px-4 py-3 rounded-xl transition-all text-left group ${
     isActive
-      ? 'bg-primary/15 text-primary font-semibold border border-primary/40'
-      : 'hover:bg-slate-800 text-slate-200 border border-transparent'
+      ? 'bg-primary/10 text-primary font-bold border-2 border-primary/20 shadow-sm'
+      : 'hover:bg-slate-50 dark:hover:bg-white/5 text-slate-600 dark:text-gray-400 font-medium border-2 border-transparent'
   }`
 }
 
@@ -78,16 +78,22 @@ function RecentTopicsBlock({ className = '' }) {
   if (rows.length === 0) {
     return (
       <div className={className}>
-        <h3 className="font-bold text-sm text-white mb-2">{t('vocabulary.recentTopics')}</h3>
-        <p className="text-xs text-slate-500 leading-relaxed">{t('vocabulary.recentTopicsEmpty')}</p>
+        <h3 className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 dark:text-gray-500 mb-4 flex items-center gap-2">
+          <span className="material-symbols-outlined text-lg">history</span>
+          {t('vocabulary.recentTopics')}
+        </h3>
+        <p className="text-[10px] font-bold text-slate-400 dark:text-gray-600 italic px-2">{t('vocabulary.recentTopicsEmpty')}</p>
       </div>
     )
   }
 
   return (
     <div className={className}>
-      <h3 className="font-bold text-sm text-white mb-3">{t('vocabulary.recentTopics')}</h3>
-      <ul className="space-y-1 text-sm">
+      <h3 className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 dark:text-gray-500 mb-4 flex items-center gap-2">
+        <span className="material-symbols-outlined text-lg text-primary">history</span>
+        {t('vocabulary.recentTopics')}
+      </h3>
+      <ul className="space-y-2">
         {rows.map((row) => (
           <li key={row.key}>
             <button
@@ -100,16 +106,16 @@ function RecentTopicsBlock({ className = '' }) {
                     : vocabPracticePath(e.topicId, e.practiceMode, e.deck)
                 navigate(path)
               }}
-              className="w-full flex items-start gap-2.5 px-2 py-2 rounded-lg hover:bg-slate-800 text-left text-slate-200 transition-colors border border-transparent hover:border-slate-700"
+              className="w-full flex items-start gap-4 px-3 py-3 rounded-2xl hover:bg-slate-50 dark:hover:bg-white/5 text-left transition-all border border-transparent hover:border-slate-100 dark:hover:border-white/5 group"
             >
-              <span className="text-lg shrink-0 leading-none pt-0.5" aria-hidden>
+              <span className="size-10 rounded-xl bg-white dark:bg-card-dark flex items-center justify-center text-xl shadow-sm border border-slate-100 dark:border-white/5 group-hover:scale-110 transition-transform" aria-hidden>
                 {row.icon}
               </span>
-              <span className="min-w-0 flex-1">
-                <span className="block truncate font-medium text-slate-100">{row.title}</span>
-                <span className="block text-[11px] text-slate-500 mt-0.5 truncate">{row.modeLabel}</span>
+              <span className="min-w-0 flex-1 py-0.5">
+                <span className="block truncate text-xs font-black text-slate-700 dark:text-white uppercase tracking-tight group-hover:text-primary transition-colors">{row.title}</span>
+                <span className="block text-[9px] font-black text-slate-400 dark:text-gray-600 uppercase tracking-widest mt-1">{row.modeLabel}</span>
               </span>
-              <span className="material-symbols-outlined text-slate-500 text-lg shrink-0 self-center">chevron_right</span>
+              <span className="material-symbols-outlined text-slate-300 dark:text-gray-700 text-lg shrink-0 self-center group-hover:text-primary group-hover:translate-x-1 transition-all">chevron_right</span>
             </button>
           </li>
         ))}
@@ -129,10 +135,10 @@ export function WordsNotesLayout() {
   }))
 
   return (
-    <main className="min-h-screen bg-gray-50 dark:bg-gray-900">
-      <div className="max-w-[1440px] mx-auto px-4 sm:px-6 lg:px-8 py-6">
+    <main className="min-h-screen bg-white dark:bg-background-dark">
+      <div className="max-w-[1440px] mx-auto px-6 sm:px-8 lg:px-10 py-8">
         <nav
-          className="md:hidden flex gap-2 overflow-x-auto pb-4 mb-2 -mx-1 px-1"
+          className="md:hidden flex gap-3 overflow-x-auto pb-6 mb-4 no-scrollbar"
           aria-label={t('vocabulary.pageTitle')}
         >
           {links.map((item) => (
@@ -141,10 +147,10 @@ export function WordsNotesLayout() {
               to={item.to}
               end
               className={({ isActive }) =>
-                `shrink-0 px-4 py-2.5 rounded-full text-sm font-semibold whitespace-nowrap transition-all ${
+                `shrink-0 px-5 py-2.5 rounded-xl text-sm font-medium transition-all ${
                   isActive
-                    ? 'bg-gradient-to-r from-purple-600 to-pink-600 text-white shadow-md'
-                    : 'bg-white dark:bg-[#1f2e36] text-gray-700 dark:text-gray-300 border border-gray-200 dark:border-gray-600'
+                    ? 'bg-primary text-white shadow-md'
+                    : 'bg-white dark:bg-card-dark text-slate-600 dark:text-gray-400 border border-slate-200 dark:border-border-dark hover:bg-slate-50'
                 }`
               }
             >
@@ -153,23 +159,24 @@ export function WordsNotesLayout() {
           ))}
         </nav>
 
-        <div className="md:hidden mb-4 bg-white dark:bg-[#1f2e36] border border-gray-200 dark:border-gray-700 rounded-xl p-3">
+        <div className="md:hidden mb-6 bg-white dark:bg-card-dark border border-slate-200 dark:border-border-dark rounded-2xl p-5 shadow-sm">
           <RecentTopicsBlock />
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-12 gap-6 md:items-stretch">
+        <div className="grid grid-cols-1 md:grid-cols-12 gap-10 md:items-stretch">
           <aside className="hidden md:flex md:flex-col md:col-span-3 lg:col-span-3 min-h-0">
-            <div className="space-y-4 md:sticky md:top-6 md:self-start w-full md:max-h-[calc(100vh-5.5rem)] md:overflow-y-auto md:pb-2 md:pr-1 [scrollbar-gutter:stable]">
-              <div className="bg-slate-900/90 border border-slate-800 rounded-xl p-4">
-                <h1 className="text-lg font-bold text-white mb-1">{t('vocabulary.pageTitle')}</h1>
-                <p className="text-xs text-slate-400 mb-6 leading-relaxed">{t('vocabulary.pageSubtitle')}</p>
-                <nav className="space-y-1 text-sm" aria-label="Words and notes sections">
+            <div className="space-y-4 md:sticky md:top-4 md:self-start w-full md:max-h-[calc(100vh-6rem)] md:overflow-y-auto no-scrollbar">
+              <div className="bg-white dark:bg-card-dark border border-slate-200 dark:border-border-dark rounded-2xl p-5 shadow-sm relative overflow-hidden">
+                <div className="absolute top-0 right-0 w-32 h-32 bg-primary/5 rounded-full -mr-16 -mt-16 blur-3xl" />
+                <h1 className="text-xl font-bold text-slate-900 dark:text-white mb-1 relative z-10">{t('vocabulary.pageTitle')}</h1>
+                <p className="text-xs text-slate-500 dark:text-gray-400 mb-6 relative z-10">{t('vocabulary.pageSubtitle')}</p>
+                <nav className="space-y-2 text-sm relative z-10" aria-label="Words and notes sections">
                   {links.map((item) => (
                     <NavLink key={item.path} to={item.to} end className={({ isActive }) => sidebarLinkClass(isActive)}>
                       {({ isActive }) => (
                         <>
                           <span
-                            className={`material-symbols-outlined text-xl ${isActive ? 'text-primary' : 'text-slate-400'}`}
+                            className={`material-symbols-outlined text-xl ${isActive ? 'text-primary' : 'text-slate-400 dark:text-gray-600'}`}
                           >
                             {item.icon}
                           </span>
@@ -181,17 +188,20 @@ export function WordsNotesLayout() {
                 </nav>
               </div>
 
-              <div className="bg-slate-900/90 border border-slate-800 rounded-xl p-4">
+              <div className="bg-white dark:bg-card-dark border border-slate-200 dark:border-border-dark rounded-2xl p-5 shadow-sm">
                 <RecentTopicsBlock />
               </div>
             </div>
           </aside>
 
           <section className="md:col-span-9 lg:col-span-9 min-w-0">
-            <Outlet key={location.pathname} />
+            <div className="animate-in fade-in slide-in-from-bottom-4 duration-500">
+              <Outlet key={location.pathname} />
+            </div>
           </section>
         </div>
       </div>
     </main>
   )
 }
+

@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback, useMemo } from 'react'
 import { Link, useParams } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
-import { lessonsService } from '../services'
+import { lessonsService, mockTestService } from '../services'
 import { ROUTES } from '../constants'
 import { AlertModal } from '../components/ui/common/AlertModal'
 import { SKILL_TABS_LESSONS, TOPIC_OPTIONS, LEVEL_ORDER, SKILL_ORDER } from '../constants/lessons'
@@ -37,14 +37,17 @@ function SortableTh({ columnKey, label, activeKey, sortDir, onSort, align, t }) 
 }
 
 /**
- * @param {{ mode: 'lesson' | 'practice' }} props
+ * @param {{ mode: 'lesson' | 'practice' | 'mock-test' }} props
  */
 export function ManageLessonsListPage({ mode }) {
   const { t } = useTranslation()
   const { userId } = useParams()
   const isPractice = mode === 'practice'
-  const category = isPractice ? 'practice' : 'lesson'
-  const basePath = isPractice ? ROUTES.MANAGE_SKILLS(userId) : ROUTES.MANAGE_LESSONS(userId)
+  const isMockTest = mode === 'mock-test'
+  const category = isMockTest ? 'mock_test' : (isPractice ? 'practice' : 'lesson')
+  const basePath = isMockTest 
+    ? ROUTES.MANAGE_MOCK_TESTS(userId) 
+    : (isPractice ? ROUTES.MANAGE_SKILLS(userId) : ROUTES.MANAGE_LESSONS(userId))
   const newPath = `${basePath}/new`
 
   const [rows, setRows] = useState([])
@@ -60,6 +63,12 @@ export function ManageLessonsListPage({ mode }) {
   const [gradingSubmitting, setGradingSubmitting] = useState(false)
   const [gradingAiLoading, setGradingAiLoading] = useState(false)
 
+  // User-level progress modal ("Xem kết quả học viên")
+  const [showUserProgressModal, setShowUserProgressModal] = useState(false)
+  const [userProgressList, setUserProgressList] = useState([])
+  const [userProgressLoading, setUserProgressLoading] = useState(false)
+  const [userProgressSkill, setUserProgressSkill] = useState('all')
+
   const [skillFilter, setSkillFilter] = useState('all')
   const [levelFilter, setLevelFilter] = useState('all')
   const [topicFilter, setTopicFilter] = useState('all')
@@ -73,6 +82,17 @@ export function ManageLessonsListPage({ mode }) {
   const load = useCallback(() => {
     setError('')
     setLoading(true)
+    
+    if (isMockTest && userId) {
+      mockTestService.getUserResults(userId, { page: 1, limit: 100 })
+        .then(res => {
+          setRows(Array.isArray(res?.data) ? res.data : [])
+        })
+        .catch(() => setError(t('manageLessons.listLoadError')))
+        .finally(() => setLoading(false))
+      return
+    }
+
     const params = { category, status: 'all', page: 1, limit: 200 }
     if (skillFilter !== 'all') params.skill = skillFilter
     if (levelFilter !== 'all') params.level = levelFilter
@@ -89,7 +109,22 @@ export function ManageLessonsListPage({ mode }) {
         setError(t('manageLessons.listLoadError'))
       })
       .finally(() => setLoading(false))
-  }, [category, skillFilter, levelFilter, topicFilter, t])
+  }, [category, skillFilter, levelFilter, topicFilter, t, isMockTest, userId])
+
+  const loadUserProgress = useCallback(async () => {
+    if (!userId) return
+    setUserProgressLoading(true)
+    try {
+      const params = { limit: 100 }
+      if (userProgressSkill !== 'all') params.skill = userProgressSkill
+      const res = await lessonsService.getUserProgressByMod(userId, params)
+      setUserProgressList(Array.isArray(res?.data) ? res.data : [])
+    } catch (e) {
+      console.error('Failed to load user progress', e)
+    } finally {
+      setUserProgressLoading(false)
+    }
+  }, [userId, userProgressSkill])
 
   useEffect(() => {
     load()
@@ -202,7 +237,13 @@ export function ManageLessonsListPage({ mode }) {
     setUserResultsLoading(true)
     setUserResults([])
     try {
-      const res = await lessonsService.getAllResults(id)
+      const [res, lessonRes] = await Promise.all([
+        lessonsService.getAllResults(id),
+        lessonsService.getById(id).catch(() => null)
+      ])
+      if (lessonRes?.data) {
+        setSelectedLessonForResults(lessonRes.data)
+      }
       setUserResults(res?.data || [])
     } catch (err) {
       console.error('Cant load results', err)
@@ -211,10 +252,26 @@ export function ManageLessonsListPage({ mode }) {
     }
   }
 
-  const onStartGrading = (result) => {
+  const onStartGrading = async (result) => {
     setGradingUser(result)
     setGradeScore(result.submission?.score ?? result.submission?.aiScore ?? '')
     setGradeFeedback(result.submission?.feedback ?? result.submission?.aiFeedback ?? '')
+
+    // Fetch full lesson detail to get the prompt (mock test rows only have minimal lesson info)
+    const lessonId = result.lessonId || result.lesson?.lessonId || result.lesson?.id
+    if (lessonId && !result.lesson?.content?.prompt) {
+      try {
+        const lessonRes = await lessonsService.getById(lessonId)
+        if (lessonRes?.data) {
+          setGradingUser(prev => ({
+            ...prev,
+            lesson: { ...prev.lesson, ...lessonRes.data }
+          }))
+        }
+      } catch (err) {
+        console.error('Failed to load lesson detail for grading modal:', err)
+      }
+    }
   }
 
   const onUseAIResult = () => {
@@ -225,7 +282,7 @@ export function ManageLessonsListPage({ mode }) {
 
   const handleGradeWithAi = async () => {
     if (!selectedLessonForResults || !gradingUser) return
-    const lessonId = selectedLessonForResults.id || selectedLessonForResults._id
+    const lessonId = gradingUser.lessonId || selectedLessonForResults.id || selectedLessonForResults._id
     const userId = gradingUser.user.id || gradingUser.user._id
 
     setGradingAiLoading(true)
@@ -249,7 +306,7 @@ export function ManageLessonsListPage({ mode }) {
 
   const onSubmitGrade = async () => {
     if (!selectedLessonForResults || !gradingUser) return
-    const lessonId = selectedLessonForResults.id || selectedLessonForResults._id
+    const lessonId = gradingUser.lessonId || selectedLessonForResults.id || selectedLessonForResults._id
     const userId = gradingUser.user.id
     
     setGradingSubmitting(true)
@@ -258,8 +315,29 @@ export function ManageLessonsListPage({ mode }) {
         score: Number(gradeScore),
         feedback: gradeFeedback
       })
-      // Refresh results
-      onViewResults(selectedLessonForResults)
+      if (selectedLessonForResults.isMockTestSuite) {
+        // Update the specific row in the modal in-place
+        setUserResults(prev => prev.map(r => {
+          const rLessonId = r.lessonId || r.lesson?.lessonId
+          if (String(rLessonId) === String(lessonId)) {
+            return {
+              ...r,
+              status: 'completed',
+              score: Number(gradeScore),
+              maxScore: r.maxScore || 100,
+              submission: {
+                ...r.submission,
+                score: Number(gradeScore),
+                feedback: gradeFeedback
+              }
+            }
+          }
+          return r
+        }))
+        load() // Also refresh main table so overall status updates
+      } else {
+        onViewResults(selectedLessonForResults)
+      }
       setGradingUser(null)
     } catch (err) {
       console.error('Grading failed', err)
@@ -268,8 +346,17 @@ export function ManageLessonsListPage({ mode }) {
     }
   }
 
-  const title = isPractice ? t('manageLessons.listTitlePractice') : t('manageLessons.listTitleLessons')
-  const addLabel = isPractice ? t('manageLessons.addPracticeBtn') : t('manageLessons.addLessonBtn')
+  const title = isMockTest 
+    ? t('manageLessons.mockTestHistoryTitle')
+    : (isPractice ? t('manageLessons.listTitlePractice') : t('manageLessons.listTitleLessons'))
+    
+  const addLabel = isMockTest
+    ? null // No adding results manually
+    : (isPractice ? t('manageLessons.addPracticeBtn') : t('manageLessons.addLessonBtn'))
+
+  const filterLabel = isMockTest
+    ? t('manageLessons.mockTestHistoryLabel')
+    : (isPractice ? t('manageLessons.skillsLabel') : t('manageLessons.lessonsLabel'))
 
   const emptyMessage =
     !loading && rows.length > 0 && filteredRows.length === 0
@@ -285,131 +372,145 @@ export function ManageLessonsListPage({ mode }) {
         <div>
           <h1 className="text-xl md:text-2xl font-bold text-white">{title}</h1>
           <p className="text-xs text-gray-500 mt-1">
-            {isPractice ? t('manageLessons.skillsLabel') : t('manageLessons.lessonsLabel')}
+            {filterLabel}
           </p>
         </div>
-        <Link
-          to={newPath}
-          className="inline-flex items-center justify-center gap-1.5 px-3.5 py-1.5 rounded-lg bg-primary text-background-dark font-semibold text-xs hover:opacity-90 transition-opacity shadow-md shadow-primary/15 shrink-0 min-h-0"
-        >
-          <span className="material-symbols-outlined text-[18px] leading-none">add_circle</span>
-          {addLabel}
-        </Link>
+        {!isMockTest && (
+          <Link
+            to={newPath}
+            className="inline-flex items-center justify-center gap-1.5 px-3.5 py-1.5 rounded-lg bg-primary text-background-dark font-semibold text-xs hover:opacity-90 transition-opacity shadow-md shadow-primary/15 shrink-0 min-h-0"
+          >
+            <span className="material-symbols-outlined text-[18px] leading-none">add_circle</span>
+            {addLabel}
+          </Link>
+        )}
+        {!isMockTest && (
+          <button
+            type="button"
+            onClick={() => { setShowUserProgressModal(true); loadUserProgress() }}
+            className="inline-flex items-center justify-center gap-1.5 px-3.5 py-1.5 rounded-lg bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 font-semibold text-xs hover:bg-emerald-500/20 transition-colors shrink-0 min-h-0"
+          >
+            <span className="material-symbols-outlined text-[18px] leading-none">bar_chart</span>
+            Kết quả học viên
+          </button>
+        )}
       </div>
 
-      <div className="rounded-xl border border-border-dark bg-card-dark/80 backdrop-blur-sm p-4 md:p-5 mb-4">
-        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between sm:gap-3 pb-4 mb-4 border-b border-border-dark">
-          <div className="flex items-center gap-2 text-white">
-            <span className="flex size-9 items-center justify-center rounded-lg bg-primary/15 text-primary shrink-0">
-              <span className="material-symbols-outlined text-[22px]">tune</span>
-            </span>
-            <div>
-              <p className="text-sm font-bold">{t('manageLessons.filtersHeading')}</p>
-              {!loading && total > 0 ? (
-                <p className="text-[11px] text-gray-500 mt-0.5">{t('manageLessons.listResultCount', { shown, total })}</p>
-              ) : null}
+      {!isMockTest && (
+        <div className="rounded-xl border border-border-dark bg-card-dark/80 backdrop-blur-sm p-4 md:p-5 mb-4">
+          <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between sm:gap-3 pb-4 mb-4 border-b border-border-dark">
+            <div className="flex items-center gap-2 text-white">
+              <span className="flex size-9 items-center justify-center rounded-lg bg-primary/15 text-primary shrink-0">
+                <span className="material-symbols-outlined text-[22px]">tune</span>
+              </span>
+              <div>
+                <p className="text-sm font-bold">{t('manageLessons.filtersHeading')}</p>
+                {!loading && total > 0 ? (
+                  <p className="text-[11px] text-gray-500 mt-0.5">{t('manageLessons.listResultCount', { shown, total })}</p>
+                ) : null}
+              </div>
             </div>
-          </div>
-          {hasActiveFilters ? (
-            <button
-              type="button"
-              onClick={clearFilters}
-              className="inline-flex items-center justify-center gap-1.5 self-start sm:self-auto px-4 py-2 rounded-xl text-xs font-bold text-primary border border-primary/35 bg-primary/5 hover:bg-primary/10 transition-colors"
-            >
-              <span className="material-symbols-outlined text-base">restart_alt</span>
-              {t('manageLessons.clearFilters')}
-            </button>
-          ) : null}
-        </div>
-
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 md:gap-4">
-          <div>
-            <label className="block text-xs font-medium text-gray-400 mb-1.5">{t('manageLessons.filterSkill')}</label>
-            <div className="relative">
-              <select
-                value={skillFilter}
-                onChange={(e) => setSkillFilter(e.target.value)}
-                className={selectClass}
-                style={{
-                  backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%239ca3af'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E")`,
-                }}
-              >
-                {SKILL_TABS_LESSONS.map(({ key, label }) => (
-                  <option key={key} value={key}>
-                    {t(label)}
-                  </option>
-                ))}
-              </select>
-            </div>
-          </div>
-          <div>
-            <label className="block text-xs font-medium text-gray-400 mb-1.5">{t('manageLessons.filterLevel')}</label>
-            <div className="relative">
-              <select
-                value={levelFilter}
-                onChange={(e) => setLevelFilter(e.target.value)}
-                className={selectClass}
-                style={{
-                  backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%239ca3af'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E")`,
-                }}
-              >
-                <option value="all">{t('skills.all')}</option>
-                {LEVELS.map((lv) => (
-                  <option key={lv} value={lv}>
-                    {lv} — {t(`manageLessons.${LEVEL_KEYS[lv]}`)}
-                  </option>
-                ))}
-              </select>
-            </div>
-          </div>
-          <div className="sm:col-span-2 lg:col-span-1">
-            <label className="block text-xs font-medium text-gray-400 mb-1.5">{t('lessons.filterTopic')}</label>
-            <div className="relative">
-              <select
-                value={topicFilter}
-                onChange={(e) => setTopicFilter(e.target.value)}
-                className={selectClass}
-                style={{
-                  backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%239ca3af'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E")`,
-                }}
-              >
-                {TOPIC_OPTIONS.map(({ key, label }) => (
-                  <option key={key} value={key}>
-                    {t(label)}
-                  </option>
-                ))}
-              </select>
-            </div>
-          </div>
-        </div>
-
-        <div className="mt-3 md:mt-4">
-          <label className="block text-xs font-medium text-gray-400 mb-1.5">{t('manageLessons.filterSearch')}</label>
-          <div className="relative">
-            <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 text-xl pointer-events-none">
-              search
-            </span>
-            <input
-              type="search"
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder={t('manageLessons.filterSearchPlaceholder')}
-              className="w-full bg-background-dark border border-border-dark rounded-xl pl-11 pr-10 py-2.5 text-sm text-white placeholder-gray-500 outline-none focus:ring-2 focus:ring-primary focus:border-primary/50 transition-shadow"
-            />
-            {searchQuery ? (
+            {hasActiveFilters ? (
               <button
                 type="button"
-                onClick={() => setSearchQuery('')}
-                className="absolute right-2 top-1/2 -translate-y-1/2 p-1.5 rounded-lg text-gray-500 hover:bg-white/10 hover:text-white transition-colors"
-                aria-label={t('common.cancel')}
+                onClick={clearFilters}
+                className="inline-flex items-center justify-center gap-1.5 self-start sm:self-auto px-4 py-2 rounded-xl text-xs font-bold text-primary border border-primary/35 bg-primary/5 hover:bg-primary/10 transition-colors"
               >
-                <span className="material-symbols-outlined text-lg">close</span>
+                <span className="material-symbols-outlined text-base">restart_alt</span>
+                {t('manageLessons.clearFilters')}
               </button>
             ) : null}
           </div>
-          <p className="text-[10px] text-gray-600 mt-1.5">{t('manageLessons.filterSearchHint')}</p>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 md:gap-4">
+            <div>
+              <label className="block text-xs font-medium text-gray-400 mb-1.5">{t('manageLessons.filterSkill')}</label>
+              <div className="relative">
+                <select
+                  value={skillFilter}
+                  onChange={(e) => setSkillFilter(e.target.value)}
+                  className={selectClass}
+                  style={{
+                    backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%239ca3af'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E")`,
+                  }}
+                >
+                  {SKILL_TABS_LESSONS.map(({ key, label }) => (
+                    <option key={key} value={key}>
+                      {t(label)}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            </div>
+            <div>
+              <label className="block text-xs font-medium text-gray-400 mb-1.5">{t('manageLessons.filterLevel')}</label>
+              <div className="relative">
+                <select
+                  value={levelFilter}
+                  onChange={(e) => setLevelFilter(e.target.value)}
+                  className={selectClass}
+                  style={{
+                    backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%239ca3af'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E")`,
+                  }}
+                >
+                  <option value="all">{t('skills.all')}</option>
+                  {LEVELS.map((lv) => (
+                    <option key={lv} value={lv}>
+                      {lv} — {t(`manageLessons.${LEVEL_KEYS[lv]}`)}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            </div>
+            <div className="sm:col-span-2 lg:col-span-1">
+              <label className="block text-xs font-medium text-gray-400 mb-1.5">{t('lessons.filterTopic')}</label>
+              <div className="relative">
+                <select
+                  value={topicFilter}
+                  onChange={(e) => setTopicFilter(e.target.value)}
+                  className={selectClass}
+                  style={{
+                    backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%239ca3af'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E")`,
+                  }}
+                >
+                  {TOPIC_OPTIONS.map(({ key, label }) => (
+                    <option key={key} value={key}>
+                      {t(label)}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            </div>
+          </div>
+
+          <div className="mt-3 md:mt-4">
+            <label className="block text-xs font-medium text-gray-400 mb-1.5">{t('manageLessons.filterSearch')}</label>
+            <div className="relative">
+              <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 text-xl pointer-events-none">
+                search
+              </span>
+              <input
+                type="search"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                placeholder={t('manageLessons.filterSearchPlaceholder')}
+                className="w-full bg-background-dark border border-border-dark rounded-xl pl-11 pr-10 py-2.5 text-sm text-white placeholder-gray-500 outline-none focus:ring-2 focus:ring-primary focus:border-primary/50 transition-shadow"
+              />
+              {searchQuery ? (
+                <button
+                  type="button"
+                  onClick={() => setSearchQuery('')}
+                  className="absolute right-2 top-1/2 -translate-y-1/2 p-1.5 rounded-lg text-gray-500 hover:bg-white/10 hover:text-white transition-colors"
+                  aria-label={t('common.cancel')}
+                >
+                  <span className="material-symbols-outlined text-lg">close</span>
+                </button>
+              ) : null}
+            </div>
+            <p className="text-[10px] text-gray-600 mt-1.5">{t('manageLessons.filterSearchHint')}</p>
+          </div>
         </div>
-      </div>
+      )}
 
       {error ? (
         <div className="mb-4 py-3 px-4 rounded-xl bg-red-500/10 border border-red-500/30 text-red-400 text-sm">{error}</div>
@@ -420,38 +521,21 @@ export function ManageLessonsListPage({ mode }) {
           <table className="w-full text-sm text-left min-w-[640px]">
             <thead>
               <tr className="border-b border-border-dark">
-                <SortableTh
-                  columnKey="title"
-                  label={t('manageLessons.title')}
-                  activeKey={sortKey}
-                  sortDir={sortDir}
-                  onSort={onSortColumn}
-                  t={t}
-                />
-                <SortableTh
-                  columnKey="skill"
-                  label={t('manageLessons.skill')}
-                  activeKey={sortKey}
-                  sortDir={sortDir}
-                  onSort={onSortColumn}
-                  t={t}
-                />
-                <SortableTh
-                  columnKey="level"
-                  label={t('manageLessons.level')}
-                  activeKey={sortKey}
-                  sortDir={sortDir}
-                  onSort={onSortColumn}
-                  t={t}
-                />
-                <SortableTh
-                  columnKey="topic"
-                  label={t('manageLessons.topic')}
-                  activeKey={sortKey}
-                  sortDir={sortDir}
-                  onSort={onSortColumn}
-                  t={t}
-                />
+                {isMockTest ? (
+                  <>
+                    <th className="px-5 py-3 text-gray-400 text-xs uppercase tracking-wide">{t('manageLessons.colTestDate')}</th>
+                    <th className="px-5 py-3 text-gray-400 text-xs uppercase tracking-wide">{t('manageLessons.colTestSet')}</th>
+                    <th className="px-5 py-3 text-gray-400 text-xs uppercase tracking-wide text-center">{t('manageLessons.colTotalScore')}</th>
+                    <th className="px-5 py-3 text-gray-400 text-xs uppercase tracking-wide text-center">{t('manageLessons.colStatus')}</th>
+                  </>
+                ) : (
+                  <>
+                    <SortableTh columnKey="title" label={t('manageLessons.title')} activeKey={sortKey} sortDir={sortDir} onSort={onSortColumn} t={t} />
+                    <SortableTh columnKey="skill" label={t('manageLessons.skill')} activeKey={sortKey} sortDir={sortDir} onSort={onSortColumn} t={t} />
+                    <SortableTh columnKey="level" label={t('manageLessons.level')} activeKey={sortKey} sortDir={sortDir} onSort={onSortColumn} t={t} />
+                    <SortableTh columnKey="topic" label={t('manageLessons.topic')} activeKey={sortKey} sortDir={sortDir} onSort={onSortColumn} t={t} />
+                  </>
+                )}
                 <th className="px-4 py-3 text-gray-400 text-xs uppercase tracking-wide text-right font-semibold">
                   {t('manageLessons.colActions')}
                 </th>
@@ -460,19 +544,83 @@ export function ManageLessonsListPage({ mode }) {
             <tbody>
               {loading ? (
                 <tr>
-                  <td colSpan={5} className="px-4 py-16 text-center text-gray-500">
+                  <td colSpan={isMockTest ? 5 : 5} className="px-4 py-16 text-center text-gray-500">
                     <span className="material-symbols-outlined animate-spin text-3xl text-primary inline-block align-middle">progress_activity</span>
                   </td>
                 </tr>
               ) : totalSorted === 0 ? (
                 <tr>
-                  <td colSpan={5} className="px-4 py-12 text-center text-gray-500">
+                  <td colSpan={isMockTest ? 5 : 5} className="px-4 py-12 text-center text-gray-500">
                     {emptyMessage}
                   </td>
                 </tr>
               ) : (
                 pagedRows.map((row) => {
                   const id = row?.id ?? row?._id
+                  
+                  if (isMockTest) {
+                    return (
+                      <tr key={id} className="border-b border-border-dark/80 hover:bg-white/[0.02]">
+                        <td className="px-5 py-4">
+                          <p className="text-white font-medium text-xs">
+                            {new Date(row.completedAt || row.createdAt).toLocaleDateString('vi-VN')}
+                          </p>
+                          <p className="text-[10px] text-gray-500 mt-0.5">
+                            {new Date(row.completedAt || row.createdAt).toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' })}
+                          </p>
+                        </td>
+                        <td className="px-5 py-4">
+                          <div className="flex flex-wrap gap-1.5">
+                            {row.lessons?.map((l, i) => (
+                              <span key={i} className={`text-[10px] px-1.5 py-0.5 rounded border ${
+                                l.skill === 'writing' ? 'border-amber-500/20 text-amber-400 bg-amber-500/5' : 
+                                l.skill === 'reading' ? 'border-blue-500/20 text-blue-400 bg-blue-500/5' :
+                                'border-emerald-500/20 text-emerald-400 bg-emerald-500/5'
+                              }`}>
+                                {l.skill === 'writing' ? 'W' : l.skill === 'reading' ? 'R' : 'L'}
+                              </span>
+                            ))}
+                          </div>
+                        </td>
+                        <td className="px-5 py-4 text-center">
+                          <span className="text-sm font-black text-primary">
+                            {row.overallScore}/{row.maxTotalScore}
+                          </span>
+                        </td>
+                        <td className="px-5 py-4 text-center">
+                          <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider border ${
+                            row.status === 'graded' ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20' : 'bg-primary/10 text-primary border-primary/20'
+                          }`}>
+                            {row.status === 'graded' ? t('manageLessons.statusGraded') : t('manageLessons.statusNotGraded')}
+                          </span>
+                        </td>
+                        <td className="px-4 py-4 text-right">
+                          <button
+                            type="button"
+                            onClick={() => {
+                              // We use the lesson results modal but show the mock test's parts
+                              // We map lessonResults to the format expected by the modal
+                              setSelectedLessonForResults({
+                                isMockTestSuite: true,
+                                title: `Mock Test - ${new Date(row.createdAt).toLocaleDateString()}`,
+                                lessons: row.lessons,
+                                userId: row.userId
+                              })
+                              setUserResults(row.lessonResults.map(r => ({
+                                ...r,
+                                user: { id: row.userId, name: 'Học viên' }, // Mocking user info for display
+                                lesson: row.lessons.find(l => String(l.lessonId) === String(r.lessonId))
+                              })))
+                            }}
+                            className="bg-primary/10 hover:bg-primary text-primary hover:text-background-dark px-3 py-1.5 rounded-lg text-[10px] font-bold transition-all"
+                          >
+                            {t('manageLessons.viewGradeBtn')}
+                          </button>
+                        </td>
+                      </tr>
+                    )
+                  }
+
                   const editPath = `${basePath}/${id}`
                   return (
                     <tr key={id} className="border-b border-border-dark/80 hover:bg-white/[0.02]">
@@ -587,38 +735,55 @@ export function ManageLessonsListPage({ mode }) {
                 <table className="w-full text-left text-sm">
                   <thead className="sticky top-0 bg-card-dark border-b border-border-dark">
                     <tr>
-                      <th className="px-5 py-3 text-[11px] font-bold text-gray-500 uppercase">{t('staffDashboard.colUser')}</th>
+                      <th className="px-5 py-3 text-[11px] font-bold text-gray-500 uppercase">
+                        {selectedLessonForResults.isMockTestSuite ? t('manageLessons.colPart') : t('staffDashboard.colUser')}
+                      </th>
                       <th className="px-5 py-3 text-[11px] font-bold text-gray-500 uppercase text-center">{t('staffDashboard.colScore')}</th>
-                      <th className="px-5 py-3 text-[11px] font-bold text-gray-500 uppercase text-right">{t('staffDashboard.colCompletedAt')}</th>
+                      <th className="px-5 py-3 text-[11px] font-bold text-gray-500 uppercase text-right">
+                        {selectedLessonForResults.isMockTestSuite ? t('manageLessons.colStatus') : t('staffDashboard.colCompletedAt')}
+                      </th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-border-dark/50">
                     {userResults.map((res) => (
                       <tr key={res.id} className="hover:bg-white/[0.02] transition-colors">
                         <td className="px-5 py-3">
-                          <div className="flex items-center gap-3">
-                            <div className="size-8 rounded-full bg-primary/20 flex items-center justify-center overflow-hidden border border-primary/20">
-                              {res.user.avatar ? (
-                                <img src={res.user.avatar} alt="" className="size-full object-cover" />
-                              ) : (
-                                <span className="text-xs font-bold text-primary">{res.user.name?.[0]}</span>
-                              )}
+                          {selectedLessonForResults.isMockTestSuite ? (
+                            <div className="flex items-center gap-2">
+                               <span className={`w-6 h-6 rounded flex items-center justify-center text-[10px] font-black ${
+                                 res.lesson?.skill === 'writing' ? 'bg-amber-500/10 text-amber-500' :
+                                 res.lesson?.skill === 'reading' ? 'bg-blue-500/10 text-blue-500' :
+                                 'bg-emerald-500/10 text-emerald-500'
+                               }`}>
+                                 {res.lesson?.skill?.[0]?.toUpperCase()}
+                               </span>
+                               <span className="text-xs text-gray-300 truncate max-w-[200px]">{res.lesson?.title}</span>
                             </div>
-                            <div>
-                              <p className="text-sm font-bold text-white">
-                                {res.user.name} 
-                                {res.attemptNo > 0 && (
-                                  <span className="ml-2 text-[10px] text-primary bg-primary/10 px-1.5 py-0.5 rounded border border-primary/20">
-                                    Lần {res.attemptNo}
-                                  </span>
+                          ) : (
+                            <div className="flex items-center gap-3">
+                              <div className="size-8 rounded-full bg-primary/20 flex items-center justify-center overflow-hidden border border-primary/20">
+                                {res.user.avatar ? (
+                                  <img src={res.user.avatar} alt="" className="size-full object-cover" />
+                                ) : (
+                                  <span className="text-xs font-bold text-primary">{res.user.name?.[0]}</span>
                                 )}
-                              </p>
-                              <p className="text-[10px] text-gray-500">{res.user.email}</p>
+                              </div>
+                              <div>
+                                <p className="text-sm font-bold text-white">
+                                  {res.user.name} 
+                                  {res.attemptNo > 0 && (
+                                    <span className="ml-2 text-[10px] text-primary bg-primary/10 px-1.5 py-0.5 rounded border border-primary/20">
+                                      Lần {res.attemptNo}
+                                    </span>
+                                  )}
+                                </p>
+                                <p className="text-[10px] text-gray-500">{res.user.email}</p>
+                              </div>
                             </div>
-                          </div>
+                          )}
                         </td>
                         <td className="px-5 py-3 text-center">
-                          {(res.status === 'in_progress' && res.submission?.submittedAt) ? (
+                          {(res.status === 'under_review') ? (
                             <span className="px-2.5 py-1 rounded-full text-[10px] font-bold bg-amber-500/10 text-amber-400 border border-amber-500/20 uppercase tracking-wider">
                               Review
                             </span>
@@ -630,18 +795,25 @@ export function ManageLessonsListPage({ mode }) {
                         </td>
                         <td className="px-5 py-3 text-right">
                           <div className="flex flex-col items-end">
-                            <span className="text-xs text-gray-500 font-medium">
-                              {new Date(res.completedAt || res.submission?.submittedAt).toLocaleDateString('vi-VN', {
-                                day: '2-digit',
-                                month: '2-digit'
-                              })}
-                            </span>
-                            {selectedLessonForResults.skill === 'writing' && (
+                            {selectedLessonForResults.isMockTestSuite ? (
+                               <span className={`text-[10px] font-bold uppercase ${res.status === 'completed' || res.status === 'graded' ? 'text-emerald-500' : 'text-amber-500'}`}>
+                                 {res.status === 'completed' || res.status === 'graded' ? t('manageLessons.statusGraded') : t('manageLessons.statusNotGraded')}
+                               </span>
+                            ) : (
+                               <span className="text-xs text-gray-500 font-medium">
+                                {new Date(res.completedAt || res.submission?.submittedAt).toLocaleDateString('vi-VN', {
+                                  day: '2-digit',
+                                  month: '2-digit'
+                                })}
+                              </span>
+                            )}
+                            
+                            {res.lesson?.skill === 'writing' && (
                               <button
                                 onClick={() => onStartGrading(res)}
                                 className="mt-1 text-[10px] font-bold text-primary hover:underline uppercase tracking-tighter"
                               >
-                                {(res.status === 'in_progress' && res.submission?.submittedAt) ? 'Chấm điểm' : 'Sửa điểm'}
+                                {res.status === 'under_review' ? t('staffDashboard.gradeBtn') || 'Grade' : t('staffDashboard.editGradeBtn') || 'Edit Grade'}
                               </button>
                             )}
                           </div>
@@ -683,6 +855,13 @@ export function ManageLessonsListPage({ mode }) {
               
               <div className="space-y-4">
                 <div className="bg-background-dark/50 rounded-xl p-5 border border-border-dark">
+                  <h5 className="text-[11px] font-bold text-emerald-500 uppercase mb-3 tracking-wider">Đề Bài (Prompt)</h5>
+                  <div className="text-sm text-gray-300 leading-relaxed whitespace-pre-wrap font-serif">
+                    {gradingUser.lesson?.content?.prompt || selectedLessonForResults?.content?.prompt || 'Không có dữ liệu đề bài'}
+                  </div>
+                </div>
+
+                <div className="bg-background-dark/50 rounded-xl p-5 border border-border-dark">
                   <h5 className="text-[11px] font-bold text-gray-500 uppercase mb-3 tracking-wider">Nội dung bài viết</h5>
                   <div className="text-sm text-gray-300 leading-relaxed whitespace-pre-wrap font-serif">
                     {gradingUser.submission?.content}
@@ -693,12 +872,36 @@ export function ManageLessonsListPage({ mode }) {
                   </div>
                 </div>
 
-                <div className="bg-primary/5 rounded-xl p-4 border border-primary/10 italic">
+                <div className="bg-primary/5 rounded-xl p-4 border border-primary/10">
                   <div className="flex items-center gap-2 mb-2">
                     <span className="material-symbols-outlined text-sm text-primary">psychology</span>
-                    <span className="text-[11px] font-bold text-primary uppercase">Gợi ý từ AI (Score: {gradingUser.submission?.aiScore})</span>
+                    <span className="text-[11px] font-bold text-primary uppercase">Gợi ý từ AI (Score: {gradingUser.submission?.aiScore}/100)</span>
                   </div>
-                  <p className="text-[11px] text-gray-400 leading-relaxed">
+                  {gradingUser.submission?.aiBreakdown && (
+                    <div className="grid grid-cols-2 gap-1.5 mb-3 not-italic">
+                      {[
+                        { label: 'Task Response', key: 'taskResponse' },
+                        { label: 'Coherence', key: 'coherence' },
+                        { label: 'Lexical', key: 'lexical' },
+                        { label: 'Grammar', key: 'grammar' },
+                      ].map(({ label, key }) => {
+                        const val = gradingUser.submission.aiBreakdown[key] ?? '—'
+                        const pct = typeof val === 'number' ? (val / 25) * 100 : 0
+                        return (
+                          <div key={key} className="bg-background-dark/60 rounded-lg p-2">
+                            <div className="flex justify-between text-[9px] mb-1">
+                              <span className="text-gray-500 font-bold uppercase">{label}</span>
+                              <span className={`font-black ${pct >= 80 ? 'text-emerald-400' : pct >= 60 ? 'text-primary' : 'text-amber-400'}`}>{val}/25</span>
+                            </div>
+                            <div className="h-1 bg-border-dark rounded-full overflow-hidden">
+                              <div className={`h-full rounded-full ${pct >= 80 ? 'bg-emerald-500' : pct >= 60 ? 'bg-primary' : 'bg-amber-400'}`} style={{ width: `${pct}%` }} />
+                            </div>
+                          </div>
+                        )
+                      })}
+                    </div>
+                  )}
+                  <p className="text-[11px] text-gray-400 leading-relaxed italic">
                     {gradingUser.submission?.aiFeedback}
                   </p>
                 </div>
@@ -782,6 +985,139 @@ export function ManageLessonsListPage({ mode }) {
         onClose={() => setItemToDelete(null)}
         onConfirm={handleConfirmDelete}
       />
+
+      {/* User Progress Modal */}
+      {showUserProgressModal && (
+        <div className="fixed inset-0 z-[120] flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
+          <div className="bg-card-dark border border-border-dark w-full max-w-3xl rounded-2xl overflow-hidden shadow-2xl animate-in fade-in zoom-in duration-200 flex flex-col max-h-[90vh]">
+            {/* Header */}
+            <div className="p-4 border-b border-border-dark flex items-center justify-between bg-background-dark/50 shrink-0">
+              <div>
+                <h3 className="text-base font-bold text-white flex items-center gap-2">
+                  <span className="material-symbols-outlined text-emerald-400 text-lg">bar_chart</span>
+                  Kết quả làm bài của học viên
+                </h3>
+                <p className="text-[11px] text-gray-500 mt-0.5">{isPractice ? 'Practice' : 'Lesson'} — Tất cả bài đã làm</p>
+              </div>
+              <div className="flex items-center gap-2">
+                {/* Skill filter */}
+                <select
+                  value={userProgressSkill}
+                  onChange={(e) => { setUserProgressSkill(e.target.value) }}
+                  onBlur={() => loadUserProgress()}
+                  className="bg-background-dark border border-border-dark rounded-lg px-2 py-1.5 text-xs text-white outline-none focus:ring-1 focus:ring-primary"
+                >
+                  <option value="all">Tất cả skill</option>
+                  <option value="reading">Reading</option>
+                  <option value="listening">Listening</option>
+                  <option value="writing">Writing</option>
+                </select>
+                <button
+                  onClick={loadUserProgress}
+                  className="p-1.5 rounded-lg text-gray-400 hover:bg-white/10 hover:text-primary transition-colors"
+                  title="Tải lại"
+                >
+                  <span className="material-symbols-outlined text-base">refresh</span>
+                </button>
+                <button
+                  onClick={() => setShowUserProgressModal(false)}
+                  className="p-1.5 rounded-lg text-gray-400 hover:bg-white/10 transition-colors"
+                >
+                  <span className="material-symbols-outlined">close</span>
+                </button>
+              </div>
+            </div>
+
+            {/* Body */}
+            <div className="overflow-y-auto custom-scrollbar flex-1">
+              {userProgressLoading ? (
+                <div className="py-20 text-center">
+                  <span className="material-symbols-outlined animate-spin text-3xl text-primary">progress_activity</span>
+                </div>
+              ) : userProgressList.length === 0 ? (
+                <div className="py-20 text-center text-gray-500 flex flex-col items-center gap-3">
+                  <span className="material-symbols-outlined text-5xl opacity-20">history_edu</span>
+                  <p className="text-sm">Học viên chưa làm bài nào</p>
+                </div>
+              ) : (
+                <table className="w-full text-left text-sm">
+                  <thead className="sticky top-0 bg-card-dark border-b border-border-dark z-10">
+                    <tr>
+                      <th className="px-4 py-3 text-[11px] font-bold text-gray-500 uppercase">Bài học</th>
+                      <th className="px-4 py-3 text-[11px] font-bold text-gray-500 uppercase">Skill</th>
+                      <th className="px-4 py-3 text-[11px] font-bold text-gray-500 uppercase text-center">Điểm</th>
+                      <th className="px-4 py-3 text-[11px] font-bold text-gray-500 uppercase text-center">Trạng thái</th>
+                      <th className="px-4 py-3 text-[11px] font-bold text-gray-500 uppercase text-right">Ngày làm</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-border-dark/40">
+                    {userProgressList.map((p, i) => {
+                      const skillColor =
+                        p.lesson?.skill === 'writing' ? 'text-amber-400 bg-amber-500/10 border-amber-500/20'
+                        : p.lesson?.skill === 'listening' ? 'text-emerald-400 bg-emerald-500/10 border-emerald-500/20'
+                        : 'text-blue-400 bg-blue-500/10 border-blue-500/20'
+                      const statusColor =
+                        p.status === 'completed' ? 'text-emerald-400 bg-emerald-500/10 border-emerald-500/20'
+                        : p.status === 'under_review' ? 'text-amber-400 bg-amber-500/10 border-amber-500/20'
+                        : 'text-gray-400 bg-white/5 border-white/10'
+                      const statusLabel =
+                        p.status === 'completed' ? 'Hoàn thành'
+                        : p.status === 'under_review' ? 'Chờ chấm'
+                        : 'Đang làm'
+                      const submittedDate = p.submittedAt || p.completedAt || p.lastAccessedAt
+                      return (
+                        <tr key={p.id || i} className="hover:bg-white/[0.02] transition-colors">
+                          <td className="px-4 py-3 max-w-[220px]">
+                            <p className="text-sm font-medium text-white line-clamp-2">{p.lesson?.title || '—'}</p>
+                            {p.attemptNo > 0 && (
+                              <span className="text-[9px] text-primary bg-primary/10 px-1.5 py-0.5 rounded border border-primary/20 mt-0.5 inline-block">Lần {p.attemptNo}</span>
+                            )}
+                          </td>
+                          <td className="px-4 py-3">
+                            <span className={`px-2 py-0.5 rounded border text-[10px] font-bold uppercase ${skillColor}`}>
+                              {p.lesson?.skill || '—'}
+                            </span>
+                          </td>
+                          <td className="px-4 py-3 text-center">
+                            {p.status === 'under_review' ? (
+                              <span className="text-xs text-amber-400 font-bold">—</span>
+                            ) : (
+                              <span className={`text-sm font-black ${(p.score / (p.maxScore || 1)) >= 0.8 ? 'text-emerald-400' : 'text-primary'}`}>
+                                {p.score ?? 0}/{p.maxScore ?? 0}
+                              </span>
+                            )}
+                          </td>
+                          <td className="px-4 py-3 text-center">
+                            <span className={`px-2 py-0.5 rounded-full border text-[10px] font-bold ${statusColor}`}>
+                              {statusLabel}
+                            </span>
+                          </td>
+                          <td className="px-4 py-3 text-right text-[11px] text-gray-500">
+                            {submittedDate ? new Date(submittedDate).toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit', year: '2-digit' }) : '—'}
+                          </td>
+                        </tr>
+                      )
+                    })}
+                  </tbody>
+                </table>
+              )}
+            </div>
+
+            {/* Footer */}
+            <div className="p-4 border-t border-border-dark bg-background-dark/50 shrink-0 flex items-center justify-between">
+              <p className="text-xs text-gray-500">
+                {userProgressList.length > 0 && `${userProgressList.length} kết quả`}
+              </p>
+              <button
+                onClick={() => setShowUserProgressModal(false)}
+                className="px-5 py-2 rounded-xl border border-border-dark text-gray-400 font-bold text-xs hover:bg-white/5"
+              >
+                {t('common.close')}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }

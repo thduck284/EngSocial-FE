@@ -4,7 +4,7 @@ import { useLocation, useNavigate, useSearchParams } from 'react-router-dom'
 import { ROUTES } from '../constants'
 import { API_BASE_URL, API_ENDPOINTS } from '../constants/api'
 import { useAuth } from '../context/AuthContext'
-import { conversationService, friendsService, uploadService, userService } from '../services'
+import { conversationService, friendsService, uploadService, userService, reportService } from '../services'
 import { searchGiphy as giphySearch, hasGiphyKey } from '../services/giphy.service'
 import { getAuthToken } from '../utils/auth'
 import { getMessageEmojiCategories } from '../utils/emoji'
@@ -89,6 +89,12 @@ export function useMessagesPage() {
   const [headerActionPanel, setHeaderActionPanel] = useState(null) // 'search' | 'mute' | 'disappearing' – panel mở bên trái (main)
   const [forwardMessage, setForwardMessage] = useState(null)
   const [forwardingToId, setForwardingToId] = useState(null)
+  const [reportModal, setReportModal] = useState({
+    open: false,
+    targetType: '',
+    targetId: '',
+    titleKey: '',
+  })
 
   const rightBar = useRightBarData(messages)
   const {
@@ -702,6 +708,73 @@ export function useMessagesPage() {
     })
   }, [selected?.isGroup, loadConversations])
 
+  const closeReportModal = useCallback(() => {
+    setReportModal({ open: false, targetType: '', targetId: '', titleKey: '' })
+  }, [])
+
+  const handleAnyReport = useCallback(
+    (arg) => {
+      if (arg && typeof arg === 'object' && arg.id) {
+        const conv = arg
+        if (conv.isGroup) {
+          setReportModal({
+            open: true,
+            targetType: 'conversation',
+            targetId: String(conv.id),
+            titleKey: 'report.titleConversation',
+          })
+        } else if (conv.otherUserId) {
+          setReportModal({
+            open: true,
+            targetType: 'user',
+            targetId: String(conv.otherUserId),
+            titleKey: 'report.titleUser',
+          })
+        }
+        return
+      }
+      if (typeof arg === 'string' && arg) {
+        setReportModal({
+          open: true,
+          targetType: 'user',
+          targetId: String(arg),
+          titleKey: 'report.titleUser',
+        })
+        return
+      }
+      if (!selected) return
+      if (selected.isGroup) {
+        setReportModal({
+          open: true,
+          targetType: 'conversation',
+          targetId: String(selected.id),
+          titleKey: 'report.titleConversation',
+        })
+      } else if (selected.otherUserId) {
+        setReportModal({
+          open: true,
+          targetType: 'user',
+          targetId: String(selected.otherUserId),
+          titleKey: 'report.titleUser',
+        })
+      }
+    },
+    [selected]
+  )
+
+  const submitReportModal = useCallback(
+    async ({ reason, details }) => {
+      if (!reportModal.targetType || !reportModal.targetId) return
+      await reportService.submitReport({
+        targetType: reportModal.targetType,
+        targetId: reportModal.targetId,
+        reason,
+        details,
+      })
+    },
+    [reportModal.targetType, reportModal.targetId]
+  )
+
   const updateConversationData = useCallback((conversationId, patch) => {
     if (!conversationId || !patch || typeof patch !== 'object') return
     setConversations((prev) =>
@@ -738,6 +811,14 @@ export function useMessagesPage() {
         setInputText(msg.text || '')
       } else if (action === 'forward') {
         setForwardMessage(msg)
+      } else if (action === 'report') {
+        if (!selectedId || !msg?.id) return
+        setReportModal({
+          open: true,
+          targetType: 'message',
+          targetId: String(msg.id),
+          titleKey: 'report.titleMessage',
+        })
       }
     },
     [selectedId, updateConversationLastMessage]
@@ -936,5 +1017,9 @@ export function useMessagesPage() {
     handleReaction,
     loadConversations,
     formatConversationTime,
+    reportModal,
+    closeReportModal,
+    handleAnyReport,
+    submitReportModal,
   }
 }

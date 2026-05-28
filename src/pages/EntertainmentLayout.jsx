@@ -6,13 +6,16 @@ import { DEFAULT_AVATAR } from '../constants/ui'
 import { useAuth } from '../context/AuthContext'
 import { useDashboardSocket, useDashboardFriends, useStudyGroups } from '../hooks'
 import { rawService } from '../services/raw.service'
-
+import { challengesService } from '../services/challenges.service'
+import { userService } from '../services'
+import { ENTERTAINMENT_GAMES } from '../constants/entertainmentGames'
 
 export function EntertainmentLayout() {
   const { pathname } = useLocation()
   const navigate = useNavigate()
-  const { t } = useTranslation()
+  const { t, i18n } = useTranslation()
   const { user } = useAuth()
+  const isVi = i18n.language?.startsWith('vi')
 
   const [onlineUserIds, setOnlineUserIds] = useState(new Set())
   const { allConversations, setConversations } = useStudyGroups(setOnlineUserIds)
@@ -22,31 +25,45 @@ export function EntertainmentLayout() {
 
   const onlineCount = displayedFriendsList.filter((item) => item.isOnline).length
 
-  const [rawData, setRawData] = useState({
-    hotGames: [],
-    challenge: {},
-  })
+  const [rawData, setRawData] = useState({ challenge: null })
+  const [userStats, setUserStats] = useState(null)
 
   useEffect(() => {
-    rawService
-      .getGames()
+    challengesService
+      .getChallenges({ status: 'active', limit: 1 })
       .then((res) => {
-        const d = res?.data || {}
-        setRawData((prev) => ({ ...prev, hotGames: d.hotGames || [] }))
+        const activeChallenge = res?.data?.data?.[0] || null
+        setRawData({ challenge: activeChallenge })
       })
       .catch(() => {})
-    rawService
-      .getDashboard()
-      .then((res) => {
-        const d = res?.data || {}
-        if (d.challenge) setRawData((prev) => ({ ...prev, challenge: d.challenge }))
-      })
+
+    userService.getStats()
+      .then((res) => setUserStats(res?.data))
       .catch(() => {})
   }, [])
 
-  const challenge = rawData.challenge?.title
-    ? rawData.challenge
-    : { title: t('enter.bannerTitle'), desc: t('enter.bannerPickGame'), time: '', btn: 'buttons.join' }
+  const skillStatsMap = (userStats?.skillStats || []).reduce((acc, cur) => {
+    acc[cur.key] = cur
+    return acc
+  }, {})
+
+  // Tổng hợp toàn bộ kỹ năng (giống /practice nhưng sum tất cả)
+  const totalDone = (userStats?.skillStats || []).reduce((sum, s) => sum + (s.lessonsCompleted || 0), 0)
+  const totalWeeklyMinsRaw = (userStats?.skillStats || []).reduce((sum, s) => sum + (s.weeklyTimeSpent || 0), 0)
+
+  const challenge = rawData.challenge || null
+  const challengeTitle = challenge
+    ? (isVi ? (challenge.titleVi || challenge.title) : (challenge.titleEn || challenge.title))
+    : t('enter.bannerTitle')
+  const challengeDesc = challenge
+    ? (isVi ? (challenge.descriptionVi || challenge.description) : (challenge.descriptionEn || challenge.description))
+    : t('enter.bannerPickGame')
+
+  // Weekly time - format giống /practice
+  const formatTimeVal = (val) => Number(val || 0).toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 1 })
+  const weeklyTimeStr = totalWeeklyMinsRaw >= 60
+    ? `${Math.floor(totalWeeklyMinsRaw / 60)}h ${formatTimeVal(totalWeeklyMinsRaw % 60)}m`
+    : `${formatTimeVal(totalWeeklyMinsRaw)}m`
 
   return (
     <main className="max-w-[1440px] mx-auto grid grid-cols-12 gap-6 p-6">
@@ -75,55 +92,111 @@ export function EntertainmentLayout() {
             {t('enter.hotGames')}
           </h3>
           <div className="space-y-4">
-            {(rawData.hotGames || []).map(({ id, icon, title, playing, bgColor }) => (
-              <div key={id} className="flex items-center justify-between gap-2">
+            {ENTERTAINMENT_GAMES.map((g, idx) => (
+              <div key={g.slug} className="flex items-center justify-between gap-2 group">
                 <div className="flex items-center gap-3 min-w-0">
-                  <div className={`size-8 rounded shrink-0 ${bgColor || 'bg-indigo-500'} flex items-center justify-center`}>
-                    <span className="material-symbols-outlined text-white text-sm">{icon || 'spellcheck'}</span>
+                  <div className={`size-10 rounded-xl shrink-0 ${idx === 0 ? 'bg-indigo-500/20 text-indigo-400' : 'bg-rose-500/20 text-rose-400'} flex items-center justify-center relative overflow-hidden border border-white/5`}>
+                    <img src={g.image} alt={t(g.titleKey)} className="absolute inset-0 w-full h-full object-cover opacity-30 group-hover:opacity-60 transition-opacity" />
+                    <span className="material-symbols-outlined text-[18px] relative z-10">{g.icon}</span>
                   </div>
-                  <div className="text-[10px] min-w-0">
-                    <p className="font-bold truncate">{title}</p>
-                    <p className="text-gray-400">
-                      {playing} {t('enter.playing')}
+                  <div className="text-[11px] min-w-0">
+                    <p className="font-bold truncate text-white group-hover:text-cyan-400 transition-colors">{t(g.titleKey)}</p>
+                    <p className="text-gray-400 flex items-center gap-1 mt-0.5">
+                      <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                      Global MMO
                     </p>
                   </div>
                 </div>
-                <button
-                  className="px-3 py-1 bg-primary/20 text-primary text-[10px] font-bold rounded hover:bg-primary hover:text-background-dark transition-all shrink-0"
-                  type="button"
+                <Link
+                  to={g.path}
+                  className="px-3 py-1.5 bg-primary/10 border border-primary/20 text-primary text-[10px] font-bold rounded-lg hover:bg-primary hover:text-background-dark transition-all shrink-0"
                 >
-                  {t('buttons.join')}
-                </button>
+                  {t('buttons.join' || 'Play')}
+                </Link>
               </div>
             ))}
           </div>
         </div>
+
+        {/* Tip of the Day */}
+        {(() => {
+          const tips = isVi ? [
+            { icon: 'school', text: 'Chơi game học tiếng Anh mỗi ngày giúp bạn ghi nhớ từ vựng qua hành động thực tế — não bộ học nhanh hơn khi có cảm xúc!' },
+            { icon: 'repeat', text: 'Lặp lại là chìa khóa! Gặp một từ mới trong game, hãy cố tình tìm lại nó lần sau để khắc sâu vào trí nhớ dài hạn.' },
+            { icon: 'translate', text: 'Khi thấy từ mới, hãy nhẩm câu ví dụ bằng tiếng Anh — không chỉ dịch nghĩa, mà đặt từ vào ngữ cảnh thực tế.' },
+            { icon: 'volume_up', text: 'Sau khi chơi, hãy đọc to các từ vừa học. Kết hợp nghe + nhìn + nói giúp ghi nhớ từ gấp 3 lần so với chỉ đọc thầm.' },
+            { icon: 'psychology', text: 'Các game chữ luyện tư duy nhận dạng hình dạng từ — kỹ năng quan trọng giúp bạn đọc tiếng Anh nhanh hơn trong tương lai.' },
+            { icon: 'emoji_objects', text: 'Thua một từ không sao! Hãy ghi từ đó ra và xem lại sau. Sai lầm là cơ hội học hiệu quả nhất.' },
+          ] : [
+            { icon: 'school', text: 'Playing English word games daily builds vocabulary through action — your brain learns faster when emotions are involved!' },
+            { icon: 'repeat', text: 'Repetition is key! When you see a new word in a game, intentionally hunt for it again next round to lock it into long-term memory.' },
+            { icon: 'translate', text: 'When you spot a new word, mentally form an example sentence — context beats translation every time.' },
+            { icon: 'volume_up', text: 'After playing, say the words you learned out loud. Hearing + seeing + speaking boosts retention 3x compared to reading alone.' },
+            { icon: 'psychology', text: 'Word games train letter-pattern recognition — a key skill that makes you a faster English reader in the long run.' },
+            { icon: 'emoji_objects', text: 'Missing a word is fine! Write it down and review later. Mistakes are the most effective learning opportunities.' },
+          ]
+          const tip = tips[Math.floor(Date.now() / 86400000) % tips.length]
+          return (
+            <div className="bg-gradient-to-br from-amber-500/10 to-orange-500/5 rounded-xl p-4 border border-amber-500/20">
+              <h3 className="font-bold text-xs mb-2 flex items-center gap-1.5 text-amber-400">
+                <span className="material-symbols-outlined text-[16px]">tips_and_updates</span>
+                {isVi ? 'Mẹo hôm nay' : 'Tip of the Day'}
+              </h3>
+              <div className="flex gap-2">
+                <span className="material-symbols-outlined text-amber-400/60 text-[20px] shrink-0 mt-0.5">{tip.icon}</span>
+                <p className="text-[11px] text-slate-300 leading-relaxed">{tip.text}</p>
+              </div>
+            </div>
+          )
+        })()}
       </aside>
 
       <section className="col-span-12 lg:col-span-6 space-y-6">
-        <div className="bg-gradient-to-r from-fuchsia-900/40 to-primary/20 border border-primary/30 rounded-xl p-5 relative overflow-hidden">
-          <div className="relative z-10 flex items-center justify-between gap-4">
-            <div className="space-y-2 min-w-0">
-              <div className="flex flex-wrap items-center gap-2">
-                <span className="px-2 py-0.5 bg-primary text-background-dark text-[10px] font-bold rounded">
-                  {t('enter.weeklyChallenge')}
+        <div className="relative rounded-2xl overflow-hidden border border-primary/20">
+          <div className="absolute inset-0 bg-gradient-to-br from-violet-900/60 via-slate-900/80 to-fuchsia-900/40" />
+          <div className="absolute top-0 right-0 w-64 h-64 bg-primary/10 blur-[60px] rounded-full" />
+          <div className="relative z-10 p-5 sm:p-6">
+            <div className="flex flex-wrap items-center gap-2 mb-3">
+              <span className="px-2.5 py-1 bg-primary text-background-dark text-[10px] font-black rounded-lg uppercase tracking-[0.15em] flex items-center gap-1">
+                <span className="material-symbols-outlined text-[14px]">emoji_events</span>
+                {challenge?.type ? `${challenge.type} Challenge` : t('enter.weeklyChallenge')}
+              </span>
+              {challenge?.endDate && (
+                <span className="px-2.5 py-1 text-xs text-amber-400 bg-amber-400/10 border border-amber-400/20 rounded-lg flex items-center gap-1 font-semibold">
+                  <span className="material-symbols-outlined text-[14px]">schedule</span>
+                  {new Date(challenge.endDate).toLocaleDateString(isVi ? 'vi-VN' : 'en-US')}
                 </span>
-                {challenge.time ? (
-                  <span className="text-xs text-primary flex items-center gap-1">
-                    <span className="material-symbols-outlined text-sm">schedule</span> {challenge.time}
-                  </span>
-                ) : null}
-              </div>
-              <h4 className="font-bold text-lg text-white">{challenge.title}</h4>
-              <p className="text-xs text-gray-300">{challenge.desc}</p>
-              <button
-                className="mt-2 px-6 py-2 bg-primary text-background-dark font-bold text-sm rounded-lg hover:brightness-110"
-                type="button"
-              >
-                {t(challenge.btn)}
-              </button>
+              )}
             </div>
-            <span className="material-symbols-outlined text-7xl text-primary/25 shrink-0 hidden sm:block">sports_esports</span>
+            <h4 className="font-black text-xl text-white mb-1 leading-tight">{challengeTitle}</h4>
+            <p className="text-sm text-slate-400 mb-4 leading-relaxed line-clamp-2">{challengeDesc}</p>
+            <div className="flex flex-wrap gap-4 mb-5">
+              {(challenge?.xpReward > 0) && (
+                <div className="flex items-center gap-1.5">
+                  <span className="material-symbols-outlined text-yellow-400 text-[18px]">bolt</span>
+                  <span className="text-sm font-bold text-yellow-400">{challenge.xpReward} XP</span>
+                </div>
+              )}
+              {(challenge?.participantCount > 0) && (
+                <div className="flex items-center gap-1.5">
+                  <span className="material-symbols-outlined text-slate-400 text-[18px]">group</span>
+                  <span className="text-sm text-slate-300">{challenge.participantCount} {isVi ? 'người tham gia' : 'participants'}</span>
+                </div>
+              )}
+              {(challenge?.requirement?.target > 0) && (
+                <div className="flex items-center gap-1.5">
+                  <span className="material-symbols-outlined text-cyan-400 text-[18px]">flag</span>
+                  <span className="text-sm text-slate-300">{isVi ? 'Mục tiêu' : 'Goal'}: {challenge.requirement.target} {challenge.requirement.type}</span>
+                </div>
+              )}
+            </div>
+            <Link
+              to={ROUTES.CHALLENGE || '/challenge'}
+              className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl font-bold text-sm bg-primary text-background-dark hover:brightness-110 hover:scale-105 active:scale-95 transition-all"
+            >
+              <span className="material-symbols-outlined text-[16px]">arrow_forward</span>
+              {isVi ? 'Xem tất cả thử thách' : 'View all challenges'}
+            </Link>
           </div>
         </div>
 
@@ -137,24 +210,22 @@ export function EntertainmentLayout() {
             {t('skills.skillStats')}
           </h3>
           <div className="space-y-4">
-            {Object.entries(SKILLS).map(([key, { icon, label, color }]) => (
-              <div key={key} className="flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                  <span className={`material-symbols-outlined ${color}`}>{icon}</span>
-                  <span className="text-sm">{t(label)}</span>
+            {Object.entries(SKILLS).map(([key, { icon, label, color }]) => {
+              const stat = skillStatsMap[key] || {}
+              const xp = (stat.totalXpEarned || 0).toLocaleString()
+              return (
+                <div key={key} className="flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <span className={`material-symbols-outlined ${color}`}>{icon}</span>
+                    <span className="text-sm">{t(label)}</span>
+                  </div>
+                  <span className="text-sm font-bold text-primary">{xp} XP</span>
                 </div>
-                <span className="text-sm font-bold">
-                  {t('skills.stats.xpValue', { count: key === 'reading' ? '1,240' : key === 'listening' ? '850' : '420' })}
-                </span>
-              </div>
-            ))}
-            <div className="pt-4 border-t border-border-dark flex justify-between items-center text-xs text-gray-400">
-              <span>
-                {t('skills.weeklyTime')}: <strong className="text-white">{t('skills.stats.timeValue', { h: 5, m: 20 })}</strong>
-              </span>
-              <span>
-                {t('skills.done')}: <strong className="text-white">{t('skills.stats.doneValue', { completed: 12, total: 15 })}</strong>
-              </span>
+              )
+            })}
+            <div className="pt-3 border-t border-border-dark flex justify-between items-center text-xs text-gray-400">
+              <span>{t('skills.weeklyTime')}: <strong className="text-white">{weeklyTimeStr}</strong></span>
+              <span>{t('skills.done')}: <strong className="text-white">{totalDone}</strong></span>
             </div>
           </div>
         </div>

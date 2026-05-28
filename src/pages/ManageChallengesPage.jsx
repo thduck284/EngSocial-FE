@@ -24,7 +24,8 @@ export function ManageChallengesPage() {
     titleVi: '',
     description: '',
     descriptionVi: '',
-    type: 'weekly',
+    /** BE vẫn bắt enum; UI không chọn — mặc định special (theo khung ngày) */
+    type: 'special',
     skill: 'all',
     requirement: { type: 'lessons', target: 5 },
     xpReward: 100,
@@ -32,7 +33,6 @@ export function ManageChallengesPage() {
     endDate: toDateInput(new Date(Date.now() + 7 * 24 * 60 * 60 * 1000)),
     status: 'active',
     icon: 'emoji_events',
-    color: '#22C55E',
   })
 
   useEffect(() => {
@@ -48,7 +48,7 @@ export function ManageChallengesPage() {
           titleVi: c.titleVi ?? '',
           description: c.description ?? '',
           descriptionVi: c.descriptionVi ?? '',
-          type: c.type ?? 'weekly',
+          type: c.type ?? 'special',
           skill: c.skill ?? 'all',
           requirement: {
             type: c.requirement?.type ?? 'lessons',
@@ -59,7 +59,6 @@ export function ManageChallengesPage() {
           endDate: toDateInput(c.endDate),
           status: c.status ?? 'active',
           icon: c.icon ?? 'emoji_events',
-          color: c.color ?? '#22C55E',
         })
       })
       .catch(() => setError(t('common.loadFailed')))
@@ -126,95 +125,137 @@ export function ManageChallengesPage() {
 
       <div className="space-y-6">
         <div className="p-6 bg-card-dark rounded-2xl border border-border-dark">
-          <h2 className="text-lg font-semibold mb-4 flex items-center gap-2 text-white">
+          <h2 className="text-lg font-semibold mb-5 flex items-center gap-2 text-white">
             <span className="material-symbols-outlined text-primary">emoji_events</span>
             Challenge info
           </h2>
-          <div className="space-y-4">
-            <div>
-              <label className="block text-sm font-medium text-gray-400 mb-2">{t('manageQuests.title')} <span className="text-red-500">*</span></label>
-              <input value={form.title} onChange={(e) => setForm({ ...form, title: e.target.value })} className="w-full bg-background-dark border border-border-dark rounded-xl px-4 py-3 text-white outline-none focus:ring-2 focus:ring-primary" placeholder="Challenge title" type="text" />
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-x-5 gap-y-4">
+            <div className="space-y-2">
+              <label className="block text-sm font-medium text-gray-400">
+                {t('manageQuests.title')} <span className="text-red-500">*</span>
+              </label>
+              <input
+                value={form.title}
+                onChange={(e) => setForm({ ...form, title: e.target.value })}
+                className="w-full bg-background-dark border border-border-dark rounded-xl px-4 py-2.5 text-white outline-none focus:ring-2 focus:ring-primary"
+                placeholder="Challenge title"
+                type="text"
+              />
             </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-400 mb-2">Title (VI)</label>
-              <input value={form.titleVi || ''} onChange={(e) => setForm({ ...form, titleVi: e.target.value })} className="w-full bg-background-dark border border-border-dark rounded-xl px-4 py-3 text-white outline-none focus:ring-2 focus:ring-primary" placeholder="Tiêu đề (tiếng Việt)" type="text" />
+            <div className="space-y-2">
+              <label className="block text-sm font-medium text-gray-400">Title (VI)</label>
+              <input
+                value={form.titleVi || ''}
+                onChange={(e) => setForm({ ...form, titleVi: e.target.value })}
+                className="w-full bg-background-dark border border-border-dark rounded-xl px-4 py-2.5 text-white outline-none focus:ring-2 focus:ring-primary"
+                placeholder="Tiêu đề (tiếng Việt)"
+                type="text"
+              />
             </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-400 mb-2">{t('manageQuests.description')}</label>
-              <textarea value={form.description || ''} onChange={(e) => setForm({ ...form, description: e.target.value })} className="w-full bg-background-dark border border-border-dark rounded-xl px-4 py-3 text-white resize-none outline-none focus:ring-2 focus:ring-primary" placeholder="Description" rows={2} />
+            <div className="space-y-2 md:col-span-2">
+              <label className="block text-sm font-medium text-gray-400">{t('manageQuests.description')}</label>
+              <textarea
+                value={form.description || ''}
+                onChange={(e) => setForm({ ...form, description: e.target.value })}
+                className="w-full bg-background-dark border border-border-dark rounded-xl px-4 py-2.5 text-white resize-y min-h-[5.5rem] outline-none focus:ring-2 focus:ring-primary"
+                placeholder="Description"
+                rows={3}
+              />
             </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-400 mb-2">Description (VI)</label>
-              <textarea value={form.descriptionVi || ''} onChange={(e) => setForm({ ...form, descriptionVi: e.target.value })} className="w-full bg-background-dark border border-border-dark rounded-xl px-4 py-3 text-white resize-none outline-none focus:ring-2 focus:ring-primary" placeholder="Mô tả (tiếng Việt)" rows={2} />
+            <div className="space-y-2 md:col-span-2">
+              <label className="block text-sm font-medium text-gray-400">Description (VI)</label>
+              <textarea
+                value={form.descriptionVi || ''}
+                onChange={(e) => setForm({ ...form, descriptionVi: e.target.value })}
+                className="w-full bg-background-dark border border-border-dark rounded-xl px-4 py-2.5 text-white resize-y min-h-[5.5rem] outline-none focus:ring-2 focus:ring-primary"
+                placeholder="Mô tả (tiếng Việt)"
+                rows={3}
+              />
             </div>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-400 mb-2">Type</label>
-                <select value={form.type} onChange={(e) => setForm({ ...form, type: e.target.value })} className="w-full bg-background-dark border border-border-dark rounded-xl px-4 py-2.5 text-white outline-none focus:ring-2 focus:ring-primary">
-                  <option value="special">One-time</option>
-                  <option value="daily">Daily</option>
-                  <option value="weekly">Weekly</option>
-                  <option value="monthly">Monthly</option>
-                </select>
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-400 mb-2">{t('manageQuests.skill')}</label>
-                <select value={form.skill} onChange={(e) => setForm({ ...form, skill: e.target.value })} className="w-full bg-background-dark border border-border-dark rounded-xl px-4 py-2.5 text-white outline-none focus:ring-2 focus:ring-primary">
-                  <option value="all">{t('manageQuests.skillAll')}</option>
-                  <option value="reading">Reading</option>
-                  <option value="listening">Listening</option>
-                  <option value="writing">Writing</option>
-                </select>
-              </div>
+            <div className="space-y-2">
+              <label className="block text-sm font-medium text-gray-400">{t('manageQuests.skill')}</label>
+              <select
+                value={form.skill}
+                onChange={(e) => setForm({ ...form, skill: e.target.value })}
+                className="w-full bg-background-dark border border-border-dark rounded-xl px-4 py-2.5 text-white outline-none focus:ring-2 focus:ring-primary"
+              >
+                <option value="all">{t('manageQuests.skillAll')}</option>
+                <option value="reading">Reading</option>
+                <option value="listening">Listening</option>
+                <option value="writing">Writing</option>
+              </select>
             </div>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-400 mb-2">Requirement type</label>
-                <select value={form.requirement?.type} onChange={(e) => setForm({ ...form, requirement: { ...form.requirement, type: e.target.value } })} className="w-full bg-background-dark border border-border-dark rounded-xl px-4 py-2.5 text-white outline-none focus:ring-2 focus:ring-primary">
-                  <option value="lessons">Lessons</option>
-                  <option value="time">Time (min)</option>
-                  <option value="score">Score/XP</option>
-                  <option value="streak">Streak (days)</option>
-                </select>
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-400 mb-2">Target</label>
-                <input type="number" min={0} value={form.requirement?.target ?? 0} onChange={(e) => setForm({ ...form, requirement: { ...form.requirement, target: +e.target.value || 0 } })} className="w-full bg-background-dark border border-border-dark rounded-xl px-4 py-2.5 text-white outline-none focus:ring-2 focus:ring-primary" />
-              </div>
+            <div className="space-y-2">
+              <label className="block text-sm font-medium text-gray-400">Status</label>
+              <select
+                value={form.status}
+                onChange={(e) => setForm({ ...form, status: e.target.value })}
+                className="w-full bg-background-dark border border-border-dark rounded-xl px-4 py-2.5 text-white outline-none focus:ring-2 focus:ring-primary"
+              >
+                <option value="upcoming">Upcoming</option>
+                <option value="active">Active</option>
+                <option value="ended">Ended</option>
+              </select>
             </div>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-400 mb-2">{t('manageQuests.xpReward')}</label>
-                <input type="number" min={0} value={form.xpReward} onChange={(e) => setForm({ ...form, xpReward: +e.target.value || 0 })} className="w-full bg-background-dark border border-border-dark rounded-xl px-4 py-2.5 text-white outline-none focus:ring-2 focus:ring-primary" />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-400 mb-2">Icon</label>
-                <input value={form.icon || ''} onChange={(e) => setForm({ ...form, icon: e.target.value })} className="w-full bg-background-dark border border-border-dark rounded-xl px-4 py-2.5 text-white outline-none focus:ring-2 focus:ring-primary" placeholder="emoji_events" />
-              </div>
+            <div className="space-y-2">
+              <label className="block text-sm font-medium text-gray-400">{t('manageChallenges.requirementType')}</label>
+              <select
+                value={form.requirement?.type}
+                onChange={(e) => setForm({ ...form, requirement: { ...form.requirement, type: e.target.value } })}
+                className="w-full bg-background-dark border border-border-dark rounded-xl px-4 py-2.5 text-white outline-none focus:ring-2 focus:ring-primary"
+              >
+                <option value="lessons">{t('manageChallenges.reqTypeLessons')}</option>
+                <option value="time">{t('manageChallenges.reqTypeTime')}</option>
+                <option value="score">{t('manageChallenges.reqTypeScore')}</option>
+                <option value="streak">{t('manageChallenges.reqTypeStreak')}</option>
+              </select>
             </div>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-400 mb-2">Start date</label>
-                <input type="date" value={form.startDate || ''} onChange={(e) => setForm({ ...form, startDate: e.target.value })} className="w-full bg-background-dark border border-border-dark rounded-xl px-4 py-2.5 text-white outline-none focus:ring-2 focus:ring-primary" />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-400 mb-2">End date</label>
-                <input type="date" value={form.endDate || ''} onChange={(e) => setForm({ ...form, endDate: e.target.value })} className="w-full bg-background-dark border border-border-dark rounded-xl px-4 py-2.5 text-white outline-none focus:ring-2 focus:ring-primary" />
-              </div>
+            <div className="space-y-2">
+              <label className="block text-sm font-medium text-gray-400">Target</label>
+              <input
+                type="number"
+                min={0}
+                value={form.requirement?.target ?? 0}
+                onChange={(e) => setForm({ ...form, requirement: { ...form.requirement, target: +e.target.value || 0 } })}
+                className="w-full bg-background-dark border border-border-dark rounded-xl px-4 py-2.5 text-white outline-none focus:ring-2 focus:ring-primary"
+              />
             </div>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-400 mb-2">Status</label>
-                <select value={form.status} onChange={(e) => setForm({ ...form, status: e.target.value })} className="w-full bg-background-dark border border-border-dark rounded-xl px-4 py-2.5 text-white outline-none focus:ring-2 focus:ring-primary">
-                  <option value="upcoming">Upcoming</option>
-                  <option value="active">Active</option>
-                  <option value="ended">Ended</option>
-                </select>
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-400 mb-2">Color</label>
-                <input type="text" value={form.color || ''} onChange={(e) => setForm({ ...form, color: e.target.value })} className="w-full bg-background-dark border border-border-dark rounded-xl px-4 py-2.5 text-white outline-none focus:ring-2 focus:ring-primary" placeholder="#22C55E" />
-              </div>
+            <div className="space-y-2">
+              <label className="block text-sm font-medium text-gray-400">{t('manageQuests.xpReward')}</label>
+              <input
+                type="number"
+                min={0}
+                value={form.xpReward}
+                onChange={(e) => setForm({ ...form, xpReward: +e.target.value || 0 })}
+                className="w-full bg-background-dark border border-border-dark rounded-xl px-4 py-2.5 text-white outline-none focus:ring-2 focus:ring-primary"
+              />
+            </div>
+            <div className="space-y-2">
+              <label className="block text-sm font-medium text-gray-400">Icon</label>
+              <input
+                value={form.icon || ''}
+                onChange={(e) => setForm({ ...form, icon: e.target.value })}
+                className="w-full bg-background-dark border border-border-dark rounded-xl px-4 py-2.5 text-white outline-none focus:ring-2 focus:ring-primary"
+                placeholder="emoji_events"
+              />
+            </div>
+            <div className="space-y-2">
+              <label className="block text-sm font-medium text-gray-400">Start date</label>
+              <input
+                type="date"
+                value={form.startDate || ''}
+                onChange={(e) => setForm({ ...form, startDate: e.target.value })}
+                className="w-full bg-background-dark border border-border-dark rounded-xl px-4 py-2.5 text-white outline-none focus:ring-2 focus:ring-primary"
+              />
+            </div>
+            <div className="space-y-2">
+              <label className="block text-sm font-medium text-gray-400">End date</label>
+              <input
+                type="date"
+                value={form.endDate || ''}
+                onChange={(e) => setForm({ ...form, endDate: e.target.value })}
+                className="w-full bg-background-dark border border-border-dark rounded-xl px-4 py-2.5 text-white outline-none focus:ring-2 focus:ring-primary"
+              />
             </div>
           </div>
         </div>

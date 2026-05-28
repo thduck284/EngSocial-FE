@@ -1,5 +1,6 @@
 import { createPortal } from 'react-dom'
 import { useEffect, useMemo, useRef, useState } from 'react'
+import { useAuth } from '../../../context/AuthContext'
 import { communityService } from '../../../services/community.service'
 import { friendsService, conversationService } from '../../../services'
 import { uploadService } from '../../../services/upload.service'
@@ -12,6 +13,7 @@ import { PostShareComposerSection } from './PostShareComposerSection'
 import { PostShareMessengerGroupModal } from './PostShareMessengerGroupModal'
 
 export function PostShareModal({ open, onClose, post, t, onRepostSuccess }) {
+  const { user } = useAuth()
   const [activeTab, setActiveTab] = useState('repost') // 'repost' | 'external' | 'inapp'
   const [repostText, setRepostText] = useState('')
   const [submitting, setSubmitting] = useState(false)
@@ -181,7 +183,7 @@ export function PostShareModal({ open, onClose, post, t, onRepostSuccess }) {
     setError('')
     try {
       const contentRaw = repostText.trim()
-      const content = getContentWithoutMentions(contentRaw).trim()
+      const content = contentRaw
       const mentions = resolveMentionIds(repostText, friendsForMention)
 
       await communityService.createPost({
@@ -403,6 +405,7 @@ export function PostShareModal({ open, onClose, post, t, onRepostSuccess }) {
           <PostShareComposerSection
             t={t}
             post={post}
+            user={user}
             audience={audience}
             setAudience={setAudience}
             audienceOpen={audienceOpen}

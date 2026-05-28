@@ -1,10 +1,10 @@
-import { useState, useEffect, useMemo } from 'react'
-import { Link } from 'react-router-dom'
+import { useState, useEffect, useMemo, useCallback } from 'react'
+import { Link, useLocation } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
-import { useAuth } from '../context/AuthContext'
 import { questsService, challengesService } from '../services'
 import { ROUTES } from '../constants'
-import { AlertModal } from '../components/ui/common/AlertModal'
+import { buildPeriodicQuestDisplay } from '../utils/periodicQuestDisplay.js'
+import { useAuth } from '../context/AuthContext'
 
 const TAB_QUESTS = 'quests'
 const TAB_CHALLENGES = 'challenges'
@@ -12,6 +12,7 @@ const TAB_CHALLENGES = 'challenges'
 const TYPE_LABELS = {
   daily: 'quests.daily',
   weekly: 'quests.weekly',
+  monthly: 'quests.monthly',
   one_time: 'quests.oneTime',
 }
 
@@ -23,27 +24,89 @@ const TYPE_COLORS = {
   special: 'bg-rose-500/10 text-rose-400 border-rose-500/20',
 }
 
-const CHALLENGE_TYPE_LABELS = {
-  daily: 'quests.daily',
-  weekly: 'quests.weekly',
-  monthly: 'quests.monthly',
-  special: 'quests.oneTime',
+const CHALLENGE_WINDOW_BADGE_CLASS =
+  'border-emerald-500/30 bg-emerald-500/10 text-emerald-200'
+
+function getTargetBounds(quest) {
+  const c = quest.condition || {}
+  const lo = Number(c.targetMin ?? c.target ?? quest.targetValue ?? 1)
+  const hiRaw = Number(c.targetMax ?? c.target ?? lo)
+  const min = Math.min(lo, Number.isFinite(hiRaw) ? hiRaw : lo)
+  const max = Math.max(lo, Number.isFinite(hiRaw) ? hiRaw : lo)
+  return { min, max, isRange: min !== max }
 }
 
-function formatTarget(quest, t) {
-  const target = quest.condition?.target ?? quest.targetValue ?? 1
+function countPartLabel(quest, progress) {
+  const { min, max, isRange } = getTargetBounds(quest)
+  const boundsStr = isRange ? `${min}–${max}` : `${min}`
+  if (
+    progress
+    && Number.isFinite(progress.currentCount)
+    && Number.isFinite(progress.effectiveTarget)
+  ) {
+    /** Chỉ hiện tiến độ / mục tiêu đã roll; không lặp (3–8) vì effectiveTarget đã đủ ý nghĩa */
+    return `${progress.currentCount}/${progress.effectiveTarget}`
+  }
+  return boundsStr
+}
+
+function formatTarget(quest, t, progress) {
+  const part = countPartLabel(quest, progress)
   const category = (quest.condition?.filters?.category || 'all').toLowerCase()
   const minScorePercent = Number(quest.condition?.filters?.minScorePercent ?? 0)
-  if (minScorePercent >= 100) return `${target} ${t('quests.lessons')} (100%)`
-  if (category === 'practice') return `${target} ${t('quests.practice')}`
-  if (category === 'all') return `${target} ${t('quests.lessonOrPractice')}`
-  return `${target} ${target === 1 ? t('quests.lesson') : t('quests.lessons')}`
+  if (category === 'friends') return `${part} ${t('quests.targetLabelFriends')}`
+  if (category === 'vocabulary_notes') return `${part} ${t('quests.targetLabelVocabularyNotes')}`
+  if (category === 'community_post') return `${part} ${t('quests.targetLabelCommunityPosts')}`
+  if (category === 'login_streak') return `${part} ${t('quests.targetLabelLoginStreak')}`
+  if (category === 'online_time') return `${part} ${t('quests.targetLabelOnlineTime')}`
+  if (category === 'lesson' && minScorePercent >= 100) {
+    return `${part} ${t('quests.lessons')} (100%)`
+  }
+  if (category === 'practice') {
+    const target = Number(progress?.effectiveTarget ?? quest.condition?.target ?? 0)
+    const label =
+      target === 1 ? t('quests.practiceSession_one') : t('quests.practiceSession_other')
+    return `${part} ${label}`
+  }
+  if (category === 'all') return `${part} ${t('quests.lessonOrPractice')}`
+  const single = getTargetBounds(quest).min === 1
+  return `${part} ${single ? t('quests.lesson') : t('quests.lessons')}`
 }
 
-/** Join URL for quest: lesson -> /lesson; practice_skill: skill "all" or empty -> reading, else specific skill. */
+/** Icon Material cho dòng mục tiêu / fallback tiêu đề khi pool trả về `flag` chung chung */
+function periodicQuestCategoryIcon(quest) {
+  const category = (quest.condition?.filters?.category || 'all').toLowerCase()
+  const map = {
+    lesson: 'menu_book',
+    practice: 'fitness_center',
+    all: 'sync_alt',
+    friends: 'group_add',
+    vocabulary_notes: 'note_alt',
+    community_post: 'forum',
+    login_streak: 'local_fire_department',
+    online_time: 'timer',
+  }
+  return map[category] || 'flag'
+}
+
+/** Phần trăm hoàn thành (0–100) theo currentCount / effectiveTarget; quest đã completed → 100. */
+function periodicQuestProgressPercent(quest, progressFromMap) {
+  if (quest.completed) return 100
+  const up = quest.userProgress ?? progressFromMap ?? {}
+  const target = Number(up.effectiveTarget ?? quest.condition?.target ?? 0)
+  const cur = Number(up.currentCount ?? 0)
+  if (!Number.isFinite(target) || target <= 0) return 0
+  return Math.min(100, Math.max(0, Math.round((cur / target) * 100)))
+}
+
+/** Join URL for quest: social → trang tương ứng; lesson → /lesson; practice/all → luyện kỹ năng. */
 function getQuestJoinTo(quest) {
   if (!quest) return ROUTES.LESSON
   const category = (quest.condition?.filters?.category || 'all').toLowerCase()
+  if (category === 'friends') return ROUTES.FRIENDS
+  if (category === 'vocabulary_notes') return `${ROUTES.WORDS_NOTES}/notes`
+  if (category === 'community_post') return ROUTES.COMMUNITY
+  if (category === 'login_streak' || category === 'online_time') return ROUTES.HOME
   const skill = (quest.condition?.filters?.skill || quest.skill || 'all').toLowerCase()
   if (category === 'practice' || category === 'all') {
     if (skill === 'all' || skill === '') return ROUTES.SKILLS.READING
@@ -64,177 +127,226 @@ function getChallengeJoinTo(challenge) {
   return ROUTES.SKILLS.READING
 }
 
+function challengeRequirementUnit(t, challenge) {
+  const type = challenge.requirement?.type || 'lessons'
+  const valid = ['lessons', 'time', 'score', 'streak']
+  const k = valid.includes(type) ? type : 'lessons'
+  return t(`quests.challengeReq.${k}`)
+}
+
+function formatChallengeTargetLine(challenge, t, participation) {
+  const target = Math.max(0, Number(participation?.target ?? challenge.requirement?.target ?? 0))
+  const unit = challengeRequirementUnit(t, challenge)
+  if (participation) {
+    const cur = Math.max(0, Number(participation.progress ?? 0))
+    return t('quests.challengeProgressFormat', { current: cur, target, unit })
+  }
+  return t('quests.challengeGoalFormat', { target, unit })
+}
+
+function challengeProgressPercent(challenge, participation) {
+  if (participation?.completed) return 100
+  const target = Number(participation?.target ?? challenge.requirement?.target ?? 0)
+  const cur = Number(participation?.progress ?? 0)
+  if (!Number.isFinite(target) || target <= 0) return 0
+  return Math.min(100, Math.max(0, Math.round((cur / target) * 100)))
+}
+
+function challengeRequirementIcon(challenge) {
+  const type = challenge.requirement?.type || 'lessons'
+  const map = {
+    /** lessons = đếm chung bài học + luyện tập */
+    lessons: 'sync_alt',
+    time: 'timer',
+    score: 'grading',
+    streak: 'local_fire_department',
+  }
+  return map[type] || 'emoji_events'
+}
+
+function pickChallengeLocaleText(challenge, lang) {
+  const isEn = String(lang || '').toLowerCase().startsWith('en')
+  const title = isEn
+    ? (challenge.titleEn || challenge.title || challenge.titleVi || '')
+    : (challenge.titleVi || challenge.title || challenge.titleEn || '')
+  const description = isEn
+    ? (challenge.descriptionEn || challenge.description || challenge.descriptionVi || '')
+    : (challenge.descriptionVi || challenge.description || challenge.descriptionEn || '')
+  return { title, description }
+}
+
 export function QuestsPage() {
-  const { t } = useTranslation()
-  const { isAdmin, user } = useAuth()
-  const canManageGamification = isAdmin
-  const [tab, setTab] = useState(TAB_QUESTS)
+  const location = useLocation()
+  const { t, i18n } = useTranslation()
+  const { isAuthenticated } = useAuth()
+  const [tab, setTab] = useState(() => (location.pathname === ROUTES.CHALLENGE ? TAB_CHALLENGES : TAB_QUESTS))
   const [quests, setQuests] = useState([])
+  const [questProgressMap, setQuestProgressMap] = useState({})
   const [challenges, setChallenges] = useState([])
+  const [challengeParticipationByChallengeId, setChallengeParticipationByChallengeId] = useState({})
   const [loading, setLoading] = useState(true)
   const [challengesLoading, setChallengesLoading] = useState(false)
-  const [deletingId, setDeletingId] = useState(null)
-  const [deletingChallengeId, setDeletingChallengeId] = useState(null)
   const [filterType, setFilterType] = useState('all')
-  const [itemToDelete, setItemToDelete] = useState(null)
-  const [deleteType, setDeleteType] = useState(null) // 'quest' or 'challenge'
 
-  const TYPE_ORDER = { one_time: 0, daily: 1, weekly: 2 }
-
-  const loadQuests = () => {
+  const loadQuests = useCallback(() => {
     setLoading(true)
+    if (!isAuthenticated) {
+      setQuests([])
+      setQuestProgressMap({})
+      setLoading(false)
+      return
+    }
     questsService
-      .getQuests({ status: 'active' })
-      .then((res) => setQuests(res?.data || []))
-      .catch(() => setQuests([]))
+      .getMyPeriodic()
+      .then((res) => {
+        const inner = res?.data ?? {}
+        const list = inner.quests ?? inner.data?.quests ?? []
+        const quests = Array.isArray(list) ? list : []
+        setQuests(quests)
+        const m = {}
+        for (const q of quests) {
+          if (q.id && q.userProgress) m[q.id] = q.userProgress
+        }
+        setQuestProgressMap(m)
+      })
+      .catch(() => {
+        setQuests([])
+        setQuestProgressMap({})
+      })
       .finally(() => setLoading(false))
-  }
+  }, [isAuthenticated])
 
   const questsByType = useMemo(() => {
-    const order = ['one_time', 'daily', 'weekly']
-    const grouped = { one_time: [], daily: [], weekly: [] }
+    const order = ['daily', 'weekly']
+    const grouped = { daily: [], weekly: [] }
     quests.forEach((q) => {
-      if (grouped[q.type]) grouped[q.type].push(q)
+      const type = q.type && grouped[q.type] ? q.type : 'daily'
+      grouped[type].push(q)
     })
-    let groups = order.map((type) => ({ type, list: grouped[type] || [] })).filter((g) => g.list.length > 0)
+    let groups = order
+      .map((type) => {
+        const list = grouped[type] || []
+        const listSorted = [...list].sort((a, b) => {
+          const ac = a.completed ? 1 : 0
+          const bc = b.completed ? 1 : 0
+          return ac - bc
+        })
+        return { type, list: listSorted }
+      })
+      .filter((g) => g.list.length > 0)
     if (filterType !== 'all') {
       groups = groups.filter((g) => g.type === filterType)
     }
     return groups
   }, [quests, filterType])
 
-  const loadChallenges = () => {
+  const loadChallenges = useCallback(() => {
     setChallengesLoading(true)
-    const params = { status: 'active', limit: 50 }
-    if (filterType !== 'all') {
-      // BE dùng 'special' cho one-time challenges
-      if (filterType === 'one_time') params.type = 'special'
-      else params.type = filterType
-    }
-    challengesService
-      .getChallenges(params)
-      .then((res) => {
-        const list = res?.data?.data ?? res?.data ?? []
-        setChallenges(Array.isArray(list) ? list : [])
+    const listPromise = challengesService.getChallenges({ status: 'active', limit: 50 })
+    const minePromise = isAuthenticated ? challengesService.getMine({ limit: 100 }) : Promise.resolve(null)
+    Promise.all([
+      listPromise.catch(() => null),
+      minePromise.catch(() => null),
+    ])
+      .then(([resList, resMine]) => {
+        if (resList) {
+          const list = resList?.data?.data ?? resList?.data ?? []
+          setChallenges(Array.isArray(list) ? list : [])
+        } else {
+          setChallenges([])
+        }
+        const m = {}
+        if (resMine) {
+          const rows = resMine?.data?.data ?? resMine?.data ?? []
+          for (const row of Array.isArray(rows) ? rows : []) {
+            const cid = row.challenge?.id ?? row.challengeId
+            if (cid)
+              m[String(cid)] = {
+                progress: row.progress,
+                target: row.target,
+                completed: row.completed,
+              }
+          }
+        }
+        setChallengeParticipationByChallengeId(m)
       })
-      .catch(() => setChallenges([]))
       .finally(() => setChallengesLoading(false))
-  }
+  }, [isAuthenticated])
 
-  const challengesByType = useMemo(() => {
-    const order = ['special', 'daily', 'weekly', 'monthly']
-    const grouped = { daily: [], weekly: [], monthly: [], special: [] }
-    challenges.forEach((c) => {
-      const type = c.type && grouped[c.type] ? c.type : 'daily'
-      grouped[type].push(c)
+  const challengesSorted = useMemo(() => {
+    return [...challenges].sort((a, b) => {
+      const endA = new Date(a.endDate).getTime()
+      const endB = new Date(b.endDate).getTime()
+      return endA - endB
     })
-    return order.map((type) => ({ type, list: grouped[type] || [] })).filter((g) => g.list.length > 0)
   }, [challenges])
 
   useEffect(() => {
     loadQuests()
-  }, [])
+  }, [loadQuests])
 
   useEffect(() => {
     if (tab === TAB_CHALLENGES) loadChallenges()
-  }, [tab, filterType])
+  }, [tab, loadChallenges])
 
-  const handleDelete = async (quest) => {
-    if (!quest?.id) return
-    setDeleteType('quest')
-    setItemToDelete(quest)
-  }
-
-  const handleDeleteChallenge = async (challenge) => {
-    if (!challenge?.id) return
-    setDeleteType('challenge')
-    setItemToDelete(challenge)
-  }
-
-  const handleConfirmDelete = async () => {
-    if (!itemToDelete || !deleteType) return
-    const id = itemToDelete.id
-    if (deleteType === 'quest') {
-      setDeletingId(id)
-      try {
-        await questsService.delete(id)
-        loadQuests()
-      } finally {
-        setDeletingId(null)
-      }
-    } else {
-      setDeletingChallengeId(id)
-      try {
-        await challengesService.delete(id)
-        loadChallenges()
-      } finally {
-        setDeletingChallengeId(null)
-      }
+  useEffect(() => {
+    if (location.pathname === ROUTES.CHALLENGE) {
+      setTab(TAB_CHALLENGES)
+      return
     }
-    setItemToDelete(null)
-    setDeleteType(null)
-  }
+    if (location.pathname === ROUTES.QUESTS) {
+      setTab(TAB_QUESTS)
+    }
+  }, [location.pathname])
+
+  useEffect(() => {
+    if (tab === TAB_QUESTS && filterType === 'one_time') setFilterType('all')
+  }, [tab, filterType])
 
   const formatChallengeDate = (date) => {
     if (!date) return ''
     const d = new Date(date)
-    return d.toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit', year: 'numeric' })
+    const locale = i18n.language?.startsWith('en') ? 'en-GB' : 'vi-VN'
+    return d.toLocaleDateString(locale, { day: '2-digit', month: '2-digit', year: 'numeric' })
   }
 
   return (
     <main className="max-w-[1440px] mx-auto p-6 flex flex-col">
-      <div className="flex flex-wrap items-center justify-between gap-3 mb-4">
-        <div />
-        <div className="flex items-center gap-3">
-          {canManageGamification && tab === TAB_QUESTS && user?.id != null && (
-            <Link
-              to={`${ROUTES.MANAGE_QUESTS(user.id)}/new`}
-              className="inline-flex items-center gap-2 px-4 py-2.5 bg-primary hover:bg-primary/90 text-background-dark font-bold rounded-xl text-sm transition-all shadow-lg shadow-primary/20"
-            >
-              <span className="material-symbols-outlined text-lg">add_circle</span>
-              {t('quests.addQuestBtn')}
-            </Link>
-          )}
-          {canManageGamification && tab === TAB_CHALLENGES && user?.id != null && (
-            <Link
-              to={`${ROUTES.MANAGE_CHALLENGES(user.id)}/new`}
-              className="inline-flex items-center gap-2 px-4 py-2.5 bg-primary hover:bg-primary/90 text-background-dark font-bold rounded-xl text-sm transition-all shadow-lg shadow-primary/20"
-            >
-              <span className="material-symbols-outlined text-lg">add_circle</span>
-              {t('quests.addChallengeBtn')}
-            </Link>
-          )}
-        </div>
-      </div>
-
-      <div className="flex gap-6 flex-1 min-h-0 mt-2">
-        <aside className="flex flex-col gap-3 shrink-0 w-40">
-          <button
-            type="button"
-            onClick={() => setTab(TAB_QUESTS)}
-            className={`px-4 py-2.5 rounded-xl text-sm font-semibold transition-colors text-left ${tab === TAB_QUESTS ? 'bg-primary text-background-dark' : 'bg-card-dark text-gray-400 hover:bg-white/10 hover:text-white'}`}
+      <div className="flex flex-col lg:flex-row gap-6 flex-1 min-h-0">
+        <aside className="flex flex-col gap-3 shrink-0 lg:w-48">
+          <Link
+            to="/quests"
+            className={`px-4 py-3 rounded-xl text-sm font-bold transition-all shadow-sm text-left ${tab === TAB_QUESTS ? 'bg-primary text-white shadow-primary/20' : 'bg-white dark:bg-card-dark text-slate-500 dark:text-gray-400 hover:bg-slate-50 dark:hover:bg-white/10 hover:text-slate-900 dark:hover:text-white border border-slate-200 dark:border-border-dark'}`}
           >
             {t('quests.tabQuests')}
-          </button>
-          <button
-            type="button"
-            onClick={() => setTab(TAB_CHALLENGES)}
-            className={`px-4 py-2.5 rounded-xl text-sm font-semibold transition-colors text-left ${tab === TAB_CHALLENGES ? 'bg-primary text-background-dark' : 'bg-card-dark text-gray-400 hover:bg-white/10 hover:text-white'}`}
+          </Link>
+          <Link
+            to="/challenge"
+            className={`px-4 py-3 rounded-xl text-sm font-bold transition-all shadow-sm text-left ${tab === TAB_CHALLENGES ? 'bg-primary text-white shadow-primary/20' : 'bg-white dark:bg-card-dark text-slate-500 dark:text-gray-400 hover:bg-slate-50 dark:hover:bg-white/10 hover:text-slate-900 dark:hover:text-white border border-slate-200 dark:border-border-dark'}`}
           >
             {t('quests.tabChallenges')}
-          </button>
-          <select
-            value={filterType}
-            onChange={(e) => setFilterType(e.target.value)}
-            className="mt-1 w-full min-w-[10rem] shrink-0 bg-card-dark border border-border-dark rounded-xl px-3 py-2 text-xs text-gray-300 outline-none focus:ring-2 focus:ring-primary"
-            style={{ width: '10rem' }}
-          >
-            <option value="all">Tất cả</option>
-            <option value="one_time">One-time</option>
-            <option value="daily">Daily</option>
-            <option value="weekly">Weekly</option>
-          </select>
-          <p className="mt-1 text-[10px] text-gray-500 leading-snug">
+          </Link>
+          <div className="relative mt-2">
+            <select
+              value={filterType}
+              onChange={(e) => setFilterType(e.target.value)}
+              className="w-full bg-white dark:bg-card-dark border border-slate-200 dark:border-border-dark rounded-xl px-3 py-2.5 text-xs text-slate-700 dark:text-gray-300 outline-none focus:ring-2 focus:ring-primary shadow-sm appearance-none"
+            >
+              {tab === TAB_QUESTS ? (
+                <>
+                  <option value="all">{t('quests.filterAll')}</option>
+                  <option value="daily">{t('quests.daily')}</option>
+                  <option value="weekly">{t('quests.weekly')}</option>
+                </>
+              ) : (
+                <option value="all">{t('quests.challengeFilterAll')}</option>
+              )}
+            </select>
+            <span className="material-symbols-outlined absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none text-lg">
+              expand_more
+            </span>
+          </div>
+          <p className="mt-2 text-[10px] text-slate-400 dark:text-gray-500 leading-relaxed px-1">
             {tab === TAB_QUESTS ? t('quests.filterTipQuests') : t('quests.filterTipChallenges')}
           </p>
         </aside>
@@ -246,66 +358,112 @@ export function QuestsPage() {
       )}
 
       {tab === TAB_QUESTS && !loading && quests.length > 0 && (
-        <div className="space-y-6">
+        <div className="space-y-8">
           {questsByType.map(({ type, list }) => (
             <section key={type}>
-              <h2 className="mb-3 text-xs font-semibold uppercase tracking-wide text-gray-400">
-                {t(TYPE_LABELS[type] || 'quests.daily')}
-              </h2>
-              <div className="flex gap-4 overflow-x-auto hide-scrollbar pb-1 flex-nowrap">
-                {list.map((quest) => (
+              <div className="flex items-center gap-2 mb-4 px-1">
+                <div className="h-4 w-1 bg-primary rounded-full" />
+                <h2 className="text-xs font-black uppercase tracking-widest text-slate-500 dark:text-gray-400">
+                  {t(TYPE_LABELS[type] || 'quests.daily')}
+                </h2>
+              </div>
+              <div className="flex gap-6 overflow-x-auto hide-scrollbar pb-4 flex-nowrap">
+                {list.map((quest) => {
+                  const { title: questTitle, description: questDescription } = buildPeriodicQuestDisplay(quest, t)
+                  const progressPct = periodicQuestProgressPercent(
+                    quest,
+                    questProgressMap[quest.id]
+                  )
+                  const isDone = Boolean(quest.completed)
+                  return (
                   <div
-                    key={quest.id || quest.title}
-                    className="bg-card-dark rounded-xl p-5 border border-border-dark hover:border-primary/50 transition-all flex-shrink-0 flex flex-col w-[360px] max-w-[360px]"
-                    style={{ boxSizing: 'border-box' }}
+                    key={quest.id || `${quest.type}-${quest.slotIndex}`}
+                    className={`bg-white dark:bg-card-dark rounded-2xl p-6 border transition-all flex-shrink-0 flex flex-col w-[340px] shadow-sm hover:shadow-md ${
+                      isDone
+                        ? 'border-emerald-500/30 bg-emerald-50/30 dark:bg-emerald-500/5'
+                        : 'border-slate-200 dark:border-border-dark hover:border-primary/40'
+                    }`}
                   >
-                    <div className="flex items-start justify-between gap-2 mb-3 min-h-[28px] shrink-0">
+                    <div className="flex items-start justify-between gap-2 mb-4 shrink-0">
                       <span
-                        style={{ width: '6rem', minWidth: '6rem', flexShrink: 0 }}
-                        className={`inline-block text-center px-2 py-1 text-[10px] font-bold rounded border ${
-                          TYPE_COLORS[quest.type] || 'bg-gray-600 text-gray-300'
+                        className={`inline-block text-center px-3 py-1 text-[10px] font-black rounded-lg border shadow-sm ${
+                          TYPE_COLORS[quest.type] || 'bg-slate-100 text-slate-500'
                         }`}
                       >
-                        {t(TYPE_LABELS[quest.type] || 'quests.daily')}
+                        {t(TYPE_LABELS[quest.type] || 'quests.daily').toUpperCase()}
                       </span>
-                      <span className="flex items-center gap-1 text-yellow-500 text-sm font-bold">
-                        <span className="material-symbols-outlined text-base fill-icon">star</span>
-                        +{quest.xpReward} XP
-                      </span>
-                    </div>
-                    <div className="flex items-center gap-2 mb-2">
-                      <span className="material-symbols-outlined text-primary text-xl">{quest.icon || 'flag'}</span>
-                      <h3 className="font-bold text-white">{quest.title}</h3>
-                    </div>
-                    <div className="mb-3 min-h-[32px]">
-                      {quest.description && <p className="text-xs text-gray-400 line-clamp-2">{quest.description}</p>}
-                    </div>
-                    <div className="flex items-center justify-between gap-2 pt-3 border-t border-border-dark">
-                      <div className="flex items-center gap-2 text-xs text-gray-300">
-                        <span className="material-symbols-outlined text-sm">flag</span>
-                        <span>{formatTarget(quest, t)}</span>
+                      <div className="flex flex-col items-end gap-1 shrink-0">
+                        {isDone ? (
+                          <span className="inline-flex items-center gap-1 rounded-lg border border-emerald-500/30 bg-emerald-500/10 px-2 py-1 text-[10px] font-black uppercase tracking-tight text-emerald-600 dark:text-emerald-400 shadow-sm">
+                            <span className="material-symbols-outlined text-[14px]">check_circle</span>
+                            {t('quests.periodicDoneBadge')}
+                          </span>
+                        ) : null}
+                        <span className="flex items-center gap-1 text-yellow-600 dark:text-yellow-500 text-sm font-black">
+                          <span className="material-symbols-outlined text-base fill-icon">star</span>
+                          +{quest.xpReward} XP
+                        </span>
                       </div>
-                      <div className="flex items-center gap-1 ml-auto">
-                        {canManageGamification && user?.id != null && (
-                          <>
-                            <Link to={`${ROUTES.MANAGE_QUESTS(user.id)}/${quest.id}`} className="p-2 rounded-lg text-gray-400 hover:bg-white/10 hover:text-primary transition-colors" title={t('quests.edit')}>
-                              <span className="material-symbols-outlined text-lg">edit</span>
-                            </Link>
-                            <button type="button" onClick={() => handleDelete(quest)} disabled={deletingId === quest.id} className="p-2 rounded-lg text-gray-400 hover:bg-red-500/10 hover:text-red-400 transition-colors disabled:opacity-50" title={t('quests.delete')}>
-                              <span className="material-symbols-outlined text-lg">delete</span>
-                            </button>
-                          </>
-                        )}
+                    </div>
+                    <div className="flex items-center gap-3 mb-2">
+                      <div className="size-10 rounded-xl bg-primary/10 flex items-center justify-center text-primary border border-primary/20">
+                        <span className="material-symbols-outlined text-2xl">
+                          {quest.icon && quest.icon !== 'flag' ? quest.icon : periodicQuestCategoryIcon(quest)}
+                        </span>
+                      </div>
+                      <h3 className="font-bold text-slate-900 dark:text-white leading-tight">{questTitle}</h3>
+                    </div>
+                    <div className="mb-4 min-h-[40px]">
+                      {questDescription ? <p className="text-xs text-slate-500 dark:text-gray-400 line-clamp-2 leading-relaxed">{questDescription}</p> : null}
+                    </div>
+                    <div className="mb-4">
+                      <div className="flex items-center justify-between gap-2 mb-2">
+                        <span className="text-[10px] font-black uppercase tracking-widest text-slate-400">
+                          {t('quests.progress')}
+                        </span>
+                        <span className="text-xs font-black tabular-nums text-primary">
+                          {t('quests.progressPercent', { percent: progressPct })}
+                        </span>
+                      </div>
+                      <div
+                        className="h-2.5 w-full rounded-full bg-slate-100 dark:bg-white/10 overflow-hidden shadow-inner"
+                        role="progressbar"
+                        aria-valuemin={0}
+                        aria-valuemax={100}
+                        aria-valuenow={progressPct}
+                        aria-label={t('quests.progress')}
+                      >
+                        <div
+                          className={`h-full rounded-full transition-all duration-500 ease-out shadow-sm ${
+                            isDone ? 'bg-emerald-500' : 'bg-primary'
+                          }`}
+                          style={{ width: `${progressPct}%` }}
+                        />
+                      </div>
+                    </div>
+                    <div className="flex items-center justify-between gap-2 pt-4 border-t border-slate-100 dark:border-border-dark mt-auto">
+                      <div className="flex items-center gap-2 text-[11px] font-bold text-slate-500 dark:text-gray-300">
+                        <span className="material-symbols-outlined text-base text-primary/70">
+                          {periodicQuestCategoryIcon(quest)}
+                        </span>
+                        <span className="truncate">{formatTarget(quest, t, quest.userProgress ?? questProgressMap[quest.id])}</span>
+                      </div>
+                      <div className="flex items-center gap-1 shrink-0">
                         <Link
                           to={getQuestJoinTo(quest)}
-                          className="px-4 py-2 rounded-lg bg-primary hover:bg-primary/90 text-background-dark text-sm font-semibold transition-colors"
+                          className={`px-5 py-2 rounded-xl text-xs font-black transition-all shadow-sm ${
+                            isDone
+                              ? 'border border-emerald-500/30 bg-emerald-500/10 text-emerald-700 dark:text-emerald-200 hover:bg-emerald-500/20'
+                              : 'bg-primary hover:bg-primary/90 text-white shadow-primary/20'
+                          }`}
                         >
-                          {t('buttons.join')}
+                          {isDone ? t('quests.periodicDoneCta') : t('buttons.join')}
                         </Link>
                       </div>
                     </div>
                   </div>
-                ))}
+                  )
+                })}
               </div>
             </section>
           ))}
@@ -313,9 +471,11 @@ export function QuestsPage() {
       )}
 
       {tab === TAB_QUESTS && !loading && quests.length === 0 && (
-        <div className="text-center py-16 text-gray-400">
-          <span className="material-symbols-outlined text-5xl mb-4 block opacity-50">flag</span>
-          <p>{t('quests.empty')}</p>
+        <div className="text-center py-24 bg-white dark:bg-card-dark rounded-3xl border-2 border-dashed border-slate-200 dark:border-border-dark">
+          <div className="size-20 bg-slate-50 dark:bg-white/5 rounded-full flex items-center justify-center mx-auto mb-4">
+            <span className="material-symbols-outlined text-5xl text-slate-300 dark:opacity-50">flag</span>
+          </div>
+          <p className="text-slate-500 dark:text-gray-400 font-bold">{isAuthenticated ? t('quests.empty') : t('quests.periodicLoginHint')}</p>
         </div>
       )}
 
@@ -326,96 +486,121 @@ export function QuestsPage() {
       )}
 
       {tab === TAB_CHALLENGES && !challengesLoading && challenges.length > 0 && (
-        <div className="space-y-6">
-          {challengesByType.map(({ type, list }) => (
-            <section key={type}>
-              <h2 className="mb-3 text-xs font-semibold uppercase tracking-wide text-gray-400">
-                {t(CHALLENGE_TYPE_LABELS[type] || 'quests.weekly')}
+        <div className="space-y-8">
+          <section>
+            <div className="flex items-center gap-2 mb-4 px-1">
+              <div className="h-4 w-1 bg-primary rounded-full" />
+              <h2 className="text-xs font-black uppercase tracking-widest text-slate-500 dark:text-gray-400">
+                {t('quests.sectionChallenges')}
               </h2>
-              <div className="flex gap-4 overflow-x-auto hide-scrollbar pb-1 flex-nowrap">
-                {list.map((challenge) => (
+            </div>
+            <div className="flex gap-6 overflow-x-auto hide-scrollbar pb-4 flex-nowrap">
+              {challengesSorted.map((challenge) => {
+                const participation = challengeParticipationByChallengeId[String(challenge.id)]
+                const progressPct = challengeProgressPercent(challenge, participation)
+                const targetLine = formatChallengeTargetLine(challenge, t, participation)
+                const windowLabel = `${formatChallengeDate(challenge.startDate)} – ${formatChallengeDate(challenge.endDate)}`
+                const localeText = pickChallengeLocaleText(challenge, i18n.language)
+                return (
                   <div
                     key={challenge.id}
-                    className="bg-card-dark rounded-xl p-5 border border-border-dark hover:border-primary/50 transition-all flex-shrink-0 flex flex-col w-[360px] max-w-[360px]"
-                    style={{ boxSizing: 'border-box' }}
+                    className="bg-white dark:bg-card-dark rounded-2xl p-6 border border-slate-200 dark:border-border-dark hover:border-primary/40 transition-all flex-shrink-0 flex flex-col w-[340px] shadow-sm hover:shadow-md"
                   >
-                    <div className="flex items-start justify-between gap-2 mb-3 min-h-[28px] shrink-0">
-                      <span style={{ width: '6rem', minWidth: '6rem', flexShrink: 0 }} className={`inline-block text-center px-2 py-1 text-[10px] font-bold rounded border ${TYPE_COLORS[challenge.type] || 'bg-gray-600 text-gray-300 border-gray-500/20'}`}>
-                        {t(CHALLENGE_TYPE_LABELS[challenge.type] || 'quests.weekly')}
+                    <div className="flex items-start justify-between gap-2 mb-4 shrink-0">
+                      <span
+                        className={`inline-flex items-center gap-1.5 px-3 py-1 text-[10px] font-black rounded-lg border shadow-sm ${CHALLENGE_WINDOW_BADGE_CLASS.replace('text-emerald-200', 'text-emerald-700 dark:text-emerald-200').replace('bg-emerald-500/10', 'bg-emerald-50 dark:bg-emerald-500/10')}`}
+                      >
+                        <span className="material-symbols-outlined text-base shrink-0">event</span>
+                        <span className="min-w-0">{windowLabel}</span>
                       </span>
-                      <span className="flex items-center gap-1 text-yellow-500 text-sm font-bold">
+                      <span className="flex items-center gap-1 text-yellow-600 dark:text-yellow-500 text-sm font-black shrink-0">
                         <span className="material-symbols-outlined text-base fill-icon">star</span>
                         +{challenge.xpReward ?? 0} XP
                       </span>
                     </div>
-                    <div className="flex items-center gap-2 mb-2">
-                      <span className="material-symbols-outlined text-primary text-xl">{challenge.icon || 'emoji_events'}</span>
-                      <h3 className="font-bold text-white">{challenge.title || challenge.titleVi}</h3>
+                    <div className="flex items-center gap-3 mb-2">
+                      <div className="size-10 rounded-xl bg-indigo-500/10 flex items-center justify-center text-indigo-500 border border-indigo-500/20">
+                        <span className="material-symbols-outlined text-2xl">
+                          {challenge.icon || 'emoji_events'}
+                        </span>
+                      </div>
+                      <h3 className="font-bold text-slate-900 dark:text-white leading-tight">{localeText.title}</h3>
                     </div>
-                    <div className="mb-3 min-h-[32px]">
-                      {(challenge.description || challenge.descriptionVi) && (
-                        <p className="text-xs text-gray-400 line-clamp-2">{challenge.description || challenge.descriptionVi}</p>
+                    <div className="mb-4 min-h-[40px]">
+                      {localeText.description && (
+                        <p className="text-xs text-slate-500 dark:text-gray-400 line-clamp-2 leading-relaxed">
+                          {localeText.description}
+                        </p>
                       )}
                     </div>
-                    <div className="flex items-center gap-2 text-xs text-gray-500 mb-4">
-                      <span className="material-symbols-outlined text-sm">schedule</span>
-                      {formatChallengeDate(challenge.startDate)} – {formatChallengeDate(challenge.endDate)}
+                    <div className="mb-4">
+                      <div className="flex items-center justify-between gap-2 mb-2">
+                        <span className="text-[10px] font-black uppercase tracking-widest text-slate-400">
+                          {t('quests.progress')}
+                        </span>
+                        <span className="text-xs font-black tabular-nums text-primary">
+                          {t('quests.progressPercent', { percent: progressPct })}
+                        </span>
+                      </div>
+                      <div
+                        className="h-2.5 w-full rounded-full bg-slate-100 dark:bg-white/10 overflow-hidden shadow-inner"
+                        role="progressbar"
+                        aria-valuemin={0}
+                        aria-valuemax={100}
+                        aria-valuenow={progressPct}
+                        aria-label={t('quests.progress')}
+                      >
+                        <div
+                          className="h-full rounded-full bg-primary transition-all duration-500 ease-out shadow-sm"
+                          style={{ width: `${progressPct}%` }}
+                        />
+                      </div>
+                      {isAuthenticated && !participation ? (
+                        <p className="mt-2 text-[10px] text-slate-400 dark:text-gray-500 leading-relaxed italic">
+                          {t('quests.challengeProgressJoinHint')}
+                        </p>
+                      ) : null}
                     </div>
-                    <div className="flex items-center justify-between gap-2 pt-3 border-t border-border-dark">
-                      <span className="text-xs text-gray-400">
-                        {t('quests.participantsCount', { count: challenge.participantCount ?? 0 })}
-                      </span>
-                      <div className="flex items-center gap-1">
-                        {canManageGamification && user?.id != null && (
-                          <>
-                            <Link to={`${ROUTES.MANAGE_CHALLENGES(user.id)}/${challenge.id}`} className="p-2 rounded-lg text-gray-400 hover:bg-white/10 hover:text-primary transition-colors" title={t('quests.edit')}>
-                              <span className="material-symbols-outlined text-lg">edit</span>
-                            </Link>
-                            <button type="button" onClick={() => handleDeleteChallenge(challenge)} disabled={deletingChallengeId === challenge.id} className="p-2 rounded-lg text-gray-400 hover:bg-red-500/10 hover:text-red-400 transition-colors disabled:opacity-50" title={t('quests.delete')}>
-                              <span className="material-symbols-outlined text-lg">delete</span>
-                            </button>
-                          </>
-                        )}
+                    <div className="flex items-center justify-between gap-2 pt-4 border-t border-slate-100 dark:border-border-dark mt-auto">
+                      <div className="flex flex-col gap-0.5 min-w-0 text-[11px] font-bold text-slate-600 dark:text-gray-300">
+                        <div className="flex items-center gap-2">
+                          <span className="material-symbols-outlined text-base text-indigo-500/70 shrink-0">
+                            {challengeRequirementIcon(challenge)}
+                          </span>
+                          <span className="truncate">{targetLine}</span>
+                        </div>
+                        <span className="text-[10px] text-slate-400 font-medium pl-6">
+                          {t('quests.participantsCount', { count: challenge.participantCount ?? 0 })}
+                        </span>
+                      </div>
+                      <div className="flex items-center gap-1 shrink-0">
                         <Link
                           to={getChallengeJoinTo(challenge)}
-                          className="px-4 py-2 rounded-lg bg-primary hover:bg-primary/90 text-background-dark text-sm font-semibold transition-colors"
+                          className="px-5 py-2 rounded-xl bg-primary hover:bg-primary/90 text-white text-xs font-black transition-all shadow-sm shadow-primary/20"
                         >
                           {t('buttons.join')}
                         </Link>
                       </div>
                     </div>
                   </div>
-                ))}
-              </div>
-            </section>
-          ))}
+                )
+              })}
+            </div>
+          </section>
         </div>
       )}
 
       {tab === TAB_CHALLENGES && !challengesLoading && challenges.length === 0 && (
-        <div className="text-center py-16 text-gray-400">
-          <span className="material-symbols-outlined text-5xl mb-4 block opacity-50">emoji_events</span>
-          <p>{t('quests.challengesEmpty')}</p>
+        <div className="text-center py-24 bg-white dark:bg-card-dark rounded-3xl border-2 border-dashed border-slate-200 dark:border-border-dark">
+          <div className="size-20 bg-slate-50 dark:bg-white/5 rounded-full flex items-center justify-center mx-auto mb-4">
+            <span className="material-symbols-outlined text-5xl text-slate-300 dark:opacity-50">emoji_events</span>
+          </div>
+          <p className="text-slate-500 dark:text-gray-400 font-bold">{t('quests.challengesEmpty')}</p>
         </div>
       )}
         </div>
       </div>
-      <AlertModal
-        open={!!itemToDelete}
-        title={
-          deleteType === 'quest'
-            ? t('manageQuests.deleteConfirmTitle')
-            : t('manageChallenges.deleteConfirmTitle')
-        }
-        message={t('quests.confirmDelete', { title: itemToDelete?.title || itemToDelete?.titleVi || '' })}
-        confirmText={t('common.confirm')}
-        cancelText={t('common.cancel')}
-        onClose={() => {
-          setItemToDelete(null)
-          setDeleteType(null)
-        }}
-        onConfirm={handleConfirmDelete}
-      />
     </main>
   )
 }
+

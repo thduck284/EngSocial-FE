@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, useLocation } from 'react-router-dom'
 import { lessonsService } from '../services'
 import { addVocabNote } from '../utils/vocabularyUserStorage'
 
@@ -11,6 +11,7 @@ import { addVocabNote } from '../utils/vocabularyUserStorage'
  */
 export function useReadingLesson(id, t) {
   const navigate = useNavigate()
+  const location = useLocation()
   const [content, setContent] = useState(null)
   const [loading, setLoading] = useState(true)
   const [currentQuestion, setCurrentQuestion] = useState(0)
@@ -38,6 +39,13 @@ export function useReadingLesson(id, t) {
   useEffect(() => {
     if (!id) return
     setLoading(true)
+    // Reset all per-lesson state when id changes
+    setAnswers({})
+    setCurrentQuestion(0)
+    setShowHint(false)
+    setCompleteMessage('')
+    setShowConfirmModal(false)
+    setShowIncompleteModal(false)
     // Fetch lesson content
     lessonsService
       .getReadingContent(id)
@@ -174,7 +182,8 @@ export function useReadingLesson(id, t) {
         setCompleteMessage(
           xp > 0 ? t('readingLesson.completeSuccess', { xp }) : t('readingLesson.completeSuccessShort')
         )
-        const redirectTo = `/lesson/reading/${id}/result`
+        const type = location.pathname.startsWith('/practice/') ? 'practice' : 'lesson'
+        const redirectTo = `/${type}/reading/${id}/result`
         setTimeout(() => {
           setCompleteMessage('')
           navigate(redirectTo)

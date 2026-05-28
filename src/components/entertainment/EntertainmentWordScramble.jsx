@@ -1,6 +1,8 @@
-import { useCallback, useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useRef, useState, useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
+import { useNavigate } from 'react-router-dom'
 import { io } from 'socket.io-client'
+import { toast } from 'react-hot-toast'
 import { wordScrambleService } from '../../services/wordScramble.service'
 import { scrambleLetters } from '../../utils/scrambleLetters'
 import { SOCKET_BASE_URL } from '../../constants/api'
@@ -19,6 +21,7 @@ export function EntertainmentWordScramble({
 }) {
   const { t } = useTranslation()
   const { user } = useAuth()
+  const navigate = useNavigate()
   const isMulti = gameMode && gameMode.startsWith('multi')
   const rawPc = Number(playerCount) || 2
   const nPlayers = isMulti
@@ -65,9 +68,16 @@ export function EntertainmentWordScramble({
     setNetworkPlayers(game.players || [])
     setActivePlayerIdx(game.turnIndex || 0)
     setRoundId(Number(game.currentRoundId || 0))
+    if (game.status === 'finished') {
+      window.setTimeout(() => {
+        navigate(`/practice/entertainment/word-scramble/result/${roomCode}`)
+      }, 1500)
+    }
     setGameEnded(game.status === 'finished')
 
-    if (game.currentWord) {
+    const isNewWord = game.currentWord?.word && String(game.currentWord.word).trim().toLowerCase() !== entry?.word
+
+    if (game.currentWord && isNewWord) {
       const w = game.currentWord
       const word = String(w.word).trim().toLowerCase()
       setEntry({
@@ -82,8 +92,10 @@ export function EntertainmentWordScramble({
       setInput('')
       setFeedback(null)
       setLoadingWord(false)
+    } else if (game.players) {
+      setLoadingWord(false)
     }
-  }, [])
+  }, [entry, navigate, roomCode])
 
   // SOCKET CONNECTION
   useEffect(() => {
@@ -207,6 +219,8 @@ export function EntertainmentWordScramble({
     if (!entry || feedback === 'correct' || gameEnded) return
 
     if (isMulti && roomCode && socketRef.current) {
+      const myNetworkPlayer = networkPlayers.find(p => String(p.userId) === String(myId))
+      if (myNetworkPlayer?.isOut) return // Don't allow submission if out
       // ONLINE MODE
       socketRef.current.emit('wordScrambleGame:submit', {
         roomCode,
@@ -219,10 +233,16 @@ export function EntertainmentWordScramble({
         }
         if (res?.correct) {
           setFeedback('correct')
+          toast.success(t('enter.game.correct'))
         } else {
           setFeedback('wrong')
           setWrongPulse(true)
-          window.setTimeout(() => setWrongPulse(false), 450)
+          if (res?.error === 'stale_round') {
+            toast.error(t('common.error'))
+          } else {
+            toast.error(t('enter.game.wrong'))
+          }
+          setTimeout(() => setWrongPulse(false), 500)
         }
       })
       return
@@ -254,12 +274,10 @@ export function EntertainmentWordScramble({
       setWrongPulse(true)
       window.setTimeout(() => setWrongPulse(false), 450)
     }
-  }, [entry, feedback, input, isMulti, roomCode, streak, activePlayer, streaks, nPlayers, roundId, gameEnded])
+  }, [entry, feedback, input, isMulti, roomCode, streak, activePlayer, streaks, nPlayers, roundId, gameEnded, networkPlayers, myId, t])
 
   const onNext = useCallback(() => {
     if (isMulti && roomCode && socketRef.current) {
-      // Đã có từ mới từ emit update ở trên, 
-      // nhưng nếu Host muốn bỏ qua từ này thì có thể gọi lệnh riêng
       return
     }
     setLoadingWord(true)
@@ -498,26 +516,46 @@ export function EntertainmentWordScramble({
               >
                 {isMulti ? t('enter.game.answerForPlayer', { n: activePlayer }) : t('enter.game.yourAnswer')}
               </label>
-              <input
-                id="scramble-input"
-                type="text"
-                autoComplete="off"
-                autoCapitalize="off"
-                spellCheck={false}
-                value={input}
-                onChange={(e) => {
-                  setInput(e.target.value)
-                  if (feedback === 'wrong') setFeedback(null)
-                }}
-                onKeyDown={onKeyDown}
-                disabled={feedback === 'correct' || gameEnded}
-                className={
-                  fullScreen
-                    ? `ws-input-game ${feedback === 'correct' ? 'opacity-60' : ''} py-4 text-lg sm:text-xl px-4`
-                    : 'w-full rounded-xl border border-border-dark bg-background-dark px-4 py-3 text-white placeholder:text-gray-600 focus:outline-none focus:ring-2 focus:ring-primary/50'
+              {(() => {
+                const myIdx = networkPlayers.findIndex(p => String(p.userId) === String(myId))
+                const iAmOut = isMulti && myIdx >= 0 && networkPlayers[myIdx]?.isOut
+                
+                if (iAmOut && !gameEnded) {
+                  return (
+                    <div className="rounded-xl border border-rose-500/30 bg-rose-500/10 p-4 text-center">
+                      <p className="text-rose-400 font-bold ws-font-display animate-pulse">
+                        {t('enter.game.youAreEliminated')}
+                      </p>
+                      <p className="text-xs text-rose-300/70 mt-1">
+                        {t('enter.game.spectatingDesc')}
+                      </p>
+                    </div>
+                  )
                 }
-                placeholder={t('enter.game.placeholder')}
-              />
+
+                return (
+                  <input
+                    id="scramble-input"
+                    type="text"
+                    autoComplete="off"
+                    autoCapitalize="off"
+                    spellCheck={false}
+                    value={input}
+                    onChange={(e) => {
+                      setInput(e.target.value)
+                      if (feedback === 'wrong') setFeedback(null)
+                    }}
+                    onKeyDown={onKeyDown}
+                    disabled={feedback === 'correct' || gameEnded}
+                    className={
+                      fullScreen
+                        ? `ws-input-game ${feedback === 'correct' ? 'opacity-60' : ''} py-4 text-lg sm:text-xl px-4`
+                        : 'w-full rounded-xl border border-border-dark bg-background-dark px-4 py-3 text-white placeholder:text-gray-600 focus:outline-none focus:ring-2 focus:ring-primary/50'
+                    }
+                    placeholder={t('enter.game.placeholder')}
+                  />
+                )
+              })()}
             </div>
 
             {feedback === 'correct' && (
@@ -550,17 +588,19 @@ export function EntertainmentWordScramble({
 
               <div className="flex flex-wrap gap-3">
                 {feedback !== 'correct' ? (
-                  <button
-                    type="button"
-                    onClick={onCheck}
-                    className={
-                      fullScreen
-                        ? 'ws-btn-arcade px-8 py-3.5 text-sm sm:text-base'
-                        : 'rounded-xl bg-primary text-background-dark font-bold hover:brightness-110 transition-all px-6 py-2.5 text-sm'
-                    }
-                  >
-                    {t('enter.game.submit')}
-                  </button>
+                  !(isMulti && networkPlayers.find(p => String(p.userId) === String(myId))?.isOut) && (
+                    <button
+                      type="button"
+                      onClick={onCheck}
+                      className={
+                        fullScreen
+                          ? 'ws-btn-arcade px-8 py-3.5 text-sm sm:text-base'
+                          : 'rounded-xl bg-primary text-background-dark font-bold hover:brightness-110 transition-all px-6 py-2.5 text-sm'
+                      }
+                    >
+                      {t('enter.game.submit')}
+                    </button>
+                  )
                 ) : (
                   <button
                     type="button"
@@ -600,12 +640,19 @@ export function EntertainmentWordScramble({
                 return (
                   <div
                     key={p.userId || pid}
-                    className={`rounded-xl px-3 py-3 border text-sm transition-all duration-300 ${
+                    className={`rounded-xl px-3 py-3 border text-sm transition-all duration-300 relative ${
                       isActive ? 'ws-pill-active text-white' : 'ws-pill-idle text-slate-400'
-                    }`}
+                    } ${p.isOut ? 'opacity-50 grayscale-[0.5]' : ''}`}
                   >
+                    {p.isOut && (
+                      <div className="absolute top-1 right-2">
+                        <span className="text-[10px] font-bold text-rose-400 uppercase tracking-tighter">
+                          Out
+                        </span>
+                      </div>
+                    )}
                     <div className="flex items-center justify-between gap-2">
-                      <p className="font-bold text-cyan-200 truncate">
+                      <p className={`font-bold truncate ${p.isOut ? 'text-slate-500' : 'text-cyan-200'}`}>
                         {p.name || t('enter.game.playerLabel', { n: pid })}
                       </p>
                       <span className="text-[11px] font-bold px-2 py-0.5 rounded-full border border-cyan-400/35 text-cyan-200">

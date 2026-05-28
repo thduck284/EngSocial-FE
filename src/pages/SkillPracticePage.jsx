@@ -10,6 +10,7 @@ import { useDashboardSocket, useDashboardFriends, useStudyGroups } from '../hook
 import { friendsService } from '../services/friends.service'
 import { userService } from '../services'
 import { AlertModal } from '../components/ui/common/AlertModal'
+import { ENTERTAINMENT_GAMES } from '../constants/entertainmentGames'
 
 // Stable no-op so socket effect does not re-run every render (no group conversations on skills page)
 const noopSetGroupConversations = () => {}
@@ -19,8 +20,9 @@ export function SkillPracticePage() {
   const { pathname } = useLocation()
   const { t } = useTranslation()
   const navigate = useNavigate()
-  const { user, isModerator, isAdmin } = useAuth()
-  const canAddPractice = isModerator || isAdmin
+  const { user, isModerator } = useAuth()
+  /** Admin trên /practice như user; CRUD qua /mod (moderator). */
+  const canAddPractice = isModerator
 
   const [onlineUserIds, setOnlineUserIds] = useState(new Set())
   const studyGroups = useStudyGroups(setOnlineUserIds)
@@ -104,20 +106,28 @@ export function SkillPracticePage() {
   const achievements = rawData.achievementsBySkill[skill] || rawData.achievementsBySkill.reading || []
 
   const renderCards = () => {
+
     if (loading) {
       return (
-        <div className="col-span-2 flex justify-center py-16">
-          <span className="material-symbols-outlined animate-spin text-4xl text-primary">progress_activity</span>
+        <div className="col-span-1 md:col-span-2 flex justify-center py-20">
+          <div className="flex flex-col items-center gap-4">
+            <span className="material-symbols-outlined animate-spin text-5xl text-primary opacity-50">progress_activity</span>
+            <p className="text-xs font-black uppercase tracking-widest text-slate-400">{t('common.loading')}</p>
+          </div>
         </div>
       )
     }
+
     if (cards.length === 0) {
       return (
-        <div className="col-span-2 flex flex-col items-center justify-center py-16 px-4 rounded-xl bg-card-dark border border-border-dark text-center">
-          <span className="material-symbols-outlined text-5xl text-gray-500 mb-4">folder_off</span>
-          <p className="text-gray-400 text-sm mb-4">{t('skills.emptyPractices')}</p>
+        <div className="col-span-1 md:col-span-2 flex flex-col items-center justify-center py-20 px-6 rounded-[2.5rem] bg-white dark:bg-card-dark border-2 border-dashed border-slate-200 dark:border-white/10 text-center shadow-inner">
+          <div className="size-20 rounded-full bg-slate-50 dark:bg-white/5 flex items-center justify-center mb-6">
+            <span className="material-symbols-outlined text-4xl text-slate-300 dark:text-gray-600">folder_off</span>
+          </div>
+          <h3 className="text-lg font-black text-slate-900 dark:text-white mb-2 uppercase tracking-tight">{t('skills.noPracticesTitle', { defaultValue: 'Chưa có bài tập nào' })}</h3>
+          <p className="text-sm text-slate-500 dark:text-gray-400 max-w-xs mb-8 font-medium italic">{t('skills.emptyPractices')}</p>
           {canAddPractice && user?.id != null && (
-            <Link to={ROUTES.MANAGE_SKILLS(user.id)} className="inline-flex items-center gap-2 px-4 py-2.5 bg-primary hover:bg-primary/90 text-background-dark font-bold rounded-xl text-sm transition-all">
+            <Link to={ROUTES.MANAGE_SKILLS(user.id)} className="inline-flex items-center gap-3 px-8 py-3.5 bg-primary text-white font-black rounded-2xl text-xs uppercase tracking-widest transition-all shadow-xl shadow-primary/25 hover:brightness-110 active:scale-95">
               <span className="material-symbols-outlined text-lg">add_circle</span>
               {t('skills.addPractice')}
             </Link>
@@ -125,366 +135,296 @@ export function SkillPracticePage() {
         </div>
       )
     }
-    if (isReading) {
-      return cards.map((card) => (
-        <div
-          key={card.id || card.title}
-          className="bg-card-dark rounded-xl border border-border-dark overflow-hidden group hover:border-primary/50 transition-all"
-        >
-          <div className="h-32 bg-cover bg-center" style={{ backgroundImage: card.img ? `url('${card.img}')` : undefined }} />
-          <div className="p-4 space-y-3">
-            <div className="flex justify-between items-start">
-              <h5 className="font-bold text-sm leading-snug group-hover:text-primary transition-colors">{card.title}</h5>
-              <div className="flex items-center gap-1">
-                {card.isCompleted && (
-                  <span className="inline-flex items-center justify-center size-5 rounded-full bg-emerald-500/15 text-emerald-400 border border-emerald-500/30">
-                    <span className="material-symbols-outlined text-xs">check</span>
-                  </span>
-                )}
-                <span className={`px-1.5 py-0.5 ${card.levelColor} text-[9px] font-bold rounded`}>{card.level}</span>
+
+    const SkillCard = ({ card, skillType }) => {
+      const isReadingType = skillType === 'reading'
+      const isListeningType = skillType === 'listening'
+      const isWritingType = skillType === 'writing'
+      
+      const detailUrl = `/practice/${skillType}/${card.slug || card.id}`
+      const typeLabel = isReadingType ? t('skills.readingTask') : isListeningType ? t('skills.audioContent') : t('skills.writingTask')
+      const typeIcon = isReadingType ? 'book_5' : isListeningType ? 'equalizer' : 'description'
+      const overlayIcon = isReadingType ? 'visibility' : isListeningType ? 'play_circle' : 'edit_note'
+
+      return (
+        <div className="bg-white dark:bg-card-dark rounded-3xl border border-slate-200 dark:border-border-dark overflow-hidden group hover:border-primary/50 transition-all shadow-sm hover:shadow-2xl flex flex-col h-full hover:-translate-y-1 duration-300">
+          <div className="h-40 bg-slate-100 dark:bg-background-dark relative overflow-hidden">
+            {card.img ? (
+              <img src={card.img} alt="" className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" />
+            ) : (
+              <div className="w-full h-full flex items-center justify-center opacity-20">
+                <span className="material-symbols-outlined text-6xl">{typeIcon}</span>
+              </div>
+            )}
+            <div className="absolute inset-0 bg-primary/20 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center backdrop-blur-[2px]">
+              <span className="material-symbols-outlined text-white text-5xl drop-shadow-lg scale-75 group-hover:scale-100 transition-transform duration-300">{overlayIcon}</span>
+            </div>
+            <div className="absolute top-3 left-3 flex items-center gap-2">
+              <div className="px-2 py-1 bg-black/60 backdrop-blur-md rounded-lg text-[10px] font-bold text-white flex items-center gap-1 shadow-lg border border-white/10">
+                <span className="material-symbols-outlined text-xs text-primary">{typeIcon}</span>
+                {typeLabel}
               </div>
             </div>
-            <p className="text-xs text-gray-400 line-clamp-2">{card.desc}</p>
-            <div className="flex flex-wrap gap-2 py-2">
-              {card.topic && (
-                <span className="px-2 py-0.5 bg-gray-700 text-gray-300 text-[10px] rounded flex items-center gap-1">
-                  <span className="material-symbols-outlined text-xs">category</span> {card.topic}
+            {card.isCompleted && (
+              <div className="absolute top-3 right-3 size-8 rounded-xl bg-emerald-500 text-white flex items-center justify-center shadow-lg shadow-emerald-500/30 border border-white/20">
+                <span className="material-symbols-outlined text-base font-black">check</span>
+              </div>
+            )}
+          </div>
+
+          <div className="p-3 flex flex-col flex-1">
+            <div className="flex justify-between items-start gap-3 mb-2">
+              <h5 className="font-bold text-xs text-slate-900 dark:text-white group-hover:text-primary transition-colors line-clamp-2 leading-tight">
+                {card.title}
+              </h5>
+              <span className={`px-2 py-0.5 ${card.levelColor} text-[9px] font-bold rounded shadow-sm shrink-0 mt-0.5`}>
+                {card.level}
+              </span>
+            </div>
+
+            {isListeningType && card.accent && (
+              <div className="flex items-center gap-2 mb-3">
+                <span className={`px-2.5 py-1 ${card.accentClass} text-[10px] font-bold rounded-lg border shadow-sm`}>
+                  {card.accent}
                 </span>
+              </div>
+            )}
+            
+            {isWritingType && card.type && (
+              <div className="flex items-center gap-2 mb-3">
+                <span className={`px-2.5 py-1 ${card.typeClass} text-[10px] font-bold rounded-lg border shadow-sm`}>
+                  {card.type}
+                </span>
+              </div>
+            )}
+
+            <p className="text-[11px] text-slate-500 dark:text-gray-400 line-clamp-2 leading-relaxed mb-4 font-medium">
+              {card.desc}
+            </p>
+
+            <div className="flex flex-wrap gap-2 mb-4 mt-auto">
+              {card.topic && (
+                <div className="px-2 py-0.5 bg-slate-50 dark:bg-white/5 text-slate-600 dark:text-gray-400 text-[9px] rounded flex items-center gap-1 border border-slate-100 dark:border-white/5">
+                  <span className="material-symbols-outlined text-[10px]">category</span> {card.topic}
+                </div>
               )}
               {card.time && (
-                <span className="px-2 py-0.5 bg-gray-700 text-gray-300 text-[10px] rounded flex items-center gap-1">
-                  <span className="material-symbols-outlined text-xs">timer</span> {card.time}
-                </span>
+                <div className="px-2 py-0.5 bg-slate-50 dark:bg-white/5 text-slate-600 dark:text-gray-400 text-[9px] rounded flex items-center gap-1 border border-slate-100 dark:border-white/5">
+                  <span className="material-symbols-outlined text-[10px]">timer</span> {card.time}
+                </div>
               )}
-              {card.questions && (
-                <span className="px-2 py-0.5 bg-gray-700 text-gray-300 text-[10px] rounded flex items-center gap-1">
-                  <span className="material-symbols-outlined text-xs">quiz</span> {card.questions}
-                </span>
+              {(isReadingType || isListeningType) && card.questions && (
+                <div className="px-2 py-0.5 bg-slate-50 dark:bg-white/5 text-slate-600 dark:text-gray-400 text-[9px] rounded flex items-center gap-1 border border-slate-100 dark:border-white/5">
+                  <span className="material-symbols-outlined text-[10px]">quiz</span> {card.questions}
+                </div>
+              )}
+              {isWritingType && card.length && (
+                <div className="px-2 py-0.5 bg-slate-50 dark:bg-white/5 text-slate-600 dark:text-gray-400 text-[9px] rounded flex items-center gap-1 border border-slate-100 dark:border-white/5">
+                  <span className="material-symbols-outlined text-[10px]">straighten</span> {card.length}
+                </div>
               )}
               {card.xpReward != null && (
-                <span className="px-2 py-0.5 bg-yellow-500/10 text-yellow-500 text-[10px] rounded flex items-center gap-1 font-bold border border-yellow-500/20">
-                  <span className="material-symbols-outlined text-[12px] fill-icon">star</span> {card.xpReward} XP
-                </span>
+                <div className="px-2 py-0.5 bg-yellow-50 dark:bg-yellow-500/10 text-yellow-600 dark:text-yellow-500 text-[9px] rounded flex items-center gap-1 font-bold border border-yellow-200/50 dark:border-yellow-500/20">
+                  <span className="material-symbols-outlined text-[11px] fill-icon">star</span> {card.xpReward} XP
+                </div>
               )}
             </div>
-            <div className="flex items-center justify-between pt-2 border-t border-border-dark">
+
+            <div className="flex items-center justify-between pt-4 border-t border-slate-100 dark:border-white/5">
               <div className="flex items-center gap-1">
                 <span className="material-symbols-outlined text-yellow-500 text-sm fill-icon">star</span>
-                <span className="text-[10px] font-bold">{t('skills.ratingLabel')}: {card.rating}</span>
+                <span className="text-[10px] font-bold text-slate-700 dark:text-slate-300">
+                  {card.rating} 
+                  <span className="text-slate-400 dark:text-gray-500 font-medium ml-1">
+                    ({t('lessons.reviewsCount', { count: card.ratingCount || 0 })})
+                  </span>
+                </span>
               </div>
               <div className="flex items-center gap-2">
                 {canAddPractice && user?.id != null && card.id && (
                   <>
-                    <Link to={`${ROUTES.MANAGE_SKILLS(user.id)}/${card.id}`} className="p-2 rounded-lg text-gray-400 hover:bg-white/10 hover:text-primary transition-colors" title={t('quests.edit')}>
-                      <span className="material-symbols-outlined text-sm">edit</span>
+                    <Link to={`${ROUTES.MANAGE_SKILLS(user.id)}/${card.id}`} className="size-8 flex items-center justify-center rounded-xl text-slate-400 hover:bg-slate-100 dark:hover:bg-white/5 hover:text-primary transition-all" title={t('quests.edit')}>
+                      <span className="material-symbols-outlined text-lg">edit</span>
                     </Link>
-                    <button type="button" onClick={() => setItemToDelete(card)} disabled={deletingId === card.id} className="p-2 rounded-lg text-gray-400 hover:bg-red-500/10 hover:text-red-400 transition-colors disabled:opacity-50" title={t('quests.delete')}>
-                      <span className="material-symbols-outlined text-sm">delete</span>
+                    <button type="button" onClick={() => setItemToDelete(card)} disabled={deletingId === card.id} className="size-8 flex items-center justify-center rounded-xl text-slate-400 hover:bg-red-500/10 hover:text-red-400 transition-all disabled:opacity-50" title={t('quests.delete')}>
+                      <span className="material-symbols-outlined text-lg">delete</span>
                     </button>
                   </>
                 )}
                 <Link
                   to={ROUTES.LESSON_REVIEWS(card.id)}
-                  className="p-2 rounded-lg text-yellow-500 hover:bg-yellow-500/10 transition-colors"
+                  className="size-8 flex items-center justify-center rounded-xl text-yellow-600 dark:text-yellow-500 hover:bg-yellow-500/10 transition-all"
                   title={t('lessons.reviews') || 'Review'}
                 >
-                  <span className="material-symbols-outlined text-sm">star</span>
+                  <span className="material-symbols-outlined text-lg">reviews</span>
                 </Link>
                 <button
-                  onClick={() => navigate(`/practice/reading/${card.id}`)}
-                  className="px-4 py-1.5 bg-primary/10 text-primary hover:bg-primary hover:text-background-dark font-bold text-xs rounded transition-all"
+                  onClick={() => navigate(detailUrl)}
+                  className="ml-2 px-3 py-1.5 bg-primary text-white font-bold text-[10px] rounded-lg transition-all shadow-sm hover:brightness-110"
                 >
-                  {t('buttons.start')}
+                  {t('dashboard.viewDetail')}
                 </button>
               </div>
             </div>
           </div>
         </div>
+      )
+    }
+
+    if (skill === 'entertainment') {
+      return ENTERTAINMENT_GAMES.map((g) => (
+        <Link
+          key={g.slug}
+          to={g.path}
+          className="group relative rounded-[2.5rem] border border-slate-200 dark:border-white/10 bg-white dark:bg-card-dark overflow-hidden hover:border-primary/50 transition-all duration-500 hover:-translate-y-2 hover:shadow-2xl flex flex-col h-[340px]"
+        >
+          {/* Image Section */}
+          <div className="relative h-[220px] w-full overflow-hidden shrink-0 bg-slate-100 dark:bg-background-dark">
+            <img 
+              src={g.image} 
+              alt={t(g.titleKey)} 
+              className="absolute inset-0 w-full h-full object-cover transition-transform duration-1000 ease-out group-hover:scale-110"
+            />
+            <div className="absolute inset-0 bg-gradient-to-t from-white dark:from-card-dark via-white/20 dark:via-card-dark/40 to-transparent" />
+            <div className="absolute top-4 left-4 bg-white/80 dark:bg-black/60 backdrop-blur-md border border-slate-200 dark:border-white/10 px-3 py-1.5 rounded-xl flex items-center gap-2 shadow-lg">
+              <span className="material-symbols-outlined text-primary text-base animate-pulse">public</span>
+              <span className="text-[9px] font-black text-slate-900 dark:text-white tracking-[0.2em] uppercase">Global MMO</span>
+            </div>
+          </div>
+
+          {/* Content Section */}
+          <div className="flex flex-col flex-1 px-6 pb-6 relative z-10 -mt-10">
+            <div className="flex items-end justify-between mb-2">
+              <h2 className="text-3xl font-black text-slate-900 dark:text-white group-hover:text-primary transition-colors drop-shadow-sm truncate pr-2">
+                {t(g.titleKey)}
+              </h2>
+              <div className="size-14 rounded-2xl bg-primary text-white flex items-center justify-center transition-all shadow-lg shadow-primary/20 group-hover:shadow-primary/40 group-hover:scale-110 group-active:scale-95 border border-white/20 shrink-0">
+                <span className="material-symbols-outlined text-3xl ml-0.5">play_arrow</span>
+              </div>
+            </div>
+            <p className="text-xs text-slate-500 dark:text-gray-400 leading-relaxed line-clamp-2 pr-10 font-medium italic">
+              {t(g.descKey)}
+            </p>
+          </div>
+        </Link>
       ))
+    }
+
+    if (isReading) {
+      return cards.map((card) => <SkillCard key={card.id || card.title} card={card} skillType="reading" />)
     }
     if (isListening) {
-      return cards.map((card) => (
-        <div
-          key={card.id || card.title}
-          className="bg-card-dark rounded-xl border border-border-dark overflow-hidden group hover:border-primary/50 transition-all"
-        >
-          <div className="h-32 bg-cover bg-center relative" style={{ backgroundImage: card.img ? `url('${card.img}')` : undefined }}>
-            <div className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
-              <span className="material-symbols-outlined text-white text-5xl">play_circle</span>
-            </div>
-            <div className="absolute bottom-2 left-2 flex items-center gap-1.5 px-2 py-1 bg-black/60 backdrop-blur rounded text-[10px] font-medium">
-              <span className="material-symbols-outlined text-xs text-primary">equalizer</span>
-              {t('skills.audioContent')}
-            </div>
-          </div>
-          <div className="p-4 space-y-3">
-            <div className="flex justify-between items-start">
-              <h5 className="font-bold text-sm leading-snug group-hover:text-primary transition-colors">{card.title}</h5>
-              <div className="flex items-center gap-1">
-                {card.isCompleted && (
-                  <span className="inline-flex items-center justify-center size-5 rounded-full bg-emerald-500/15 text-emerald-400 border border-emerald-500/30">
-                    <span className="material-symbols-outlined text-xs">check</span>
-                  </span>
-                )}
-                <span className={`px-1.5 py-0.5 ${card.levelColor} text-[9px] font-bold rounded`}>{card.level}</span>
-              </div>
-            </div>
-            {card.accent && (
-              <div className="flex items-center gap-2">
-                <span className={`px-2 py-0.5 ${card.accentClass} text-[10px] font-bold rounded-full border`}>{card.accent}</span>
-              </div>
-            )}
-            <p className="text-xs text-gray-400 line-clamp-2">{card.desc}</p>
-            <div className="flex flex-wrap gap-2 py-2">
-              {card.topic && (
-                <span className="px-2 py-0.5 bg-gray-700 text-gray-300 text-[10px] rounded flex items-center gap-1">
-                  <span className="material-symbols-outlined text-xs">category</span> {card.topic}
-                </span>
-              )}
-              {card.time && (
-                <span className="px-2 py-0.5 bg-gray-700 text-gray-300 text-[10px] rounded flex items-center gap-1">
-                  <span className="material-symbols-outlined text-xs">timer</span> {card.time}
-                </span>
-              )}
-              {card.questions && (
-                <span className="px-2 py-0.5 bg-gray-700 text-gray-300 text-[10px] rounded flex items-center gap-1">
-                  <span className="material-symbols-outlined text-xs">quiz</span> {card.questions}
-                </span>
-              )}
-              {card.xpReward != null && (
-                <span className="px-2 py-0.5 bg-yellow-500/10 text-yellow-500 text-[10px] rounded flex items-center gap-1 font-bold border border-yellow-500/20">
-                  <span className="material-symbols-outlined text-[12px] fill-icon">star</span> {card.xpReward} XP
-                </span>
-              )}
-            </div>
-            <div className="flex items-center justify-between pt-2 border-t border-border-dark">
-              <div className="flex items-center gap-1">
-                <span className="material-symbols-outlined text-yellow-500 text-sm fill-icon">star</span>
-                <span className="text-[10px] font-bold">{t('skills.ratingLabel')}: {card.rating}</span>
-              </div>
-              <div className="flex items-center gap-2">
-                {canAddPractice && user?.id != null && card.id && (
-                  <>
-                    <Link to={`${ROUTES.MANAGE_SKILLS(user.id)}/${card.id}`} className="p-2 rounded-lg text-gray-400 hover:bg-white/10 hover:text-primary transition-colors" title={t('quests.edit')}>
-                      <span className="material-symbols-outlined text-sm">edit</span>
-                    </Link>
-                    <button type="button" onClick={() => setItemToDelete(card)} disabled={deletingId === card.id} className="p-2 rounded-lg text-gray-400 hover:bg-red-500/10 hover:text-red-400 transition-colors disabled:opacity-50" title={t('quests.delete')}>
-                      <span className="material-symbols-outlined text-sm">delete</span>
-                    </button>
-                  </>
-                )}
-                <Link
-                  to={ROUTES.LESSON_REVIEWS(card.id)}
-                  className="p-2 rounded-lg text-yellow-500 hover:bg-yellow-500/10 transition-colors"
-                  title={t('lessons.reviews') || 'Review'}
-                >
-                  <span className="material-symbols-outlined text-sm">star</span>
-                </Link>
-                <button
-                  onClick={() => navigate(`/practice/listening/${card.id}`)}
-                  className="px-4 py-1.5 bg-primary/10 text-primary hover:bg-primary hover:text-background-dark font-bold text-xs rounded transition-all"
-                >
-                  {t('buttons.startListening')}
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-      ))
+      return cards.map((card) => <SkillCard key={card.id || card.title} card={card} skillType="listening" />)
     }
     if (isWriting) {
-      return cards.map((card) => (
-        <div
-          key={card.id || card.title}
-          className="bg-card-dark rounded-xl border border-border-dark overflow-hidden group hover:border-primary/50 transition-all"
-        >
-          <div className="h-32 bg-cover bg-center relative" style={{ backgroundImage: card.img ? `url('${card.img}')` : undefined }}>
-            <div className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
-              <span className="material-symbols-outlined text-white text-5xl">edit_note</span>
-            </div>
-            <div className="absolute bottom-2 left-2 flex items-center gap-1.5 px-2 py-1 bg-black/60 backdrop-blur rounded text-[10px] font-medium">
-              <span className="material-symbols-outlined text-xs text-primary">description</span>
-              {t('skills.writingTask')}
-            </div>
-          </div>
-          <div className="p-4 space-y-3">
-            <div className="flex justify-between items-start">
-              <h5 className="font-bold text-sm leading-snug group-hover:text-primary transition-colors">{card.title}</h5>
-              <div className="flex items-center gap-1">
-                {card.isCompleted && (
-                  <span className="inline-flex items-center justify-center size-5 rounded-full bg-emerald-500/15 text-emerald-400 border border-emerald-500/30">
-                    <span className="material-symbols-outlined text-xs">check</span>
-                  </span>
-                )}
-                <span className={`px-1.5 py-0.5 ${card.levelColor} text-[9px] font-bold rounded`}>{card.level}</span>
-              </div>
-            </div>
-            {card.type && (
-              <div className="flex items-center gap-2">
-                <span className={`px-2 py-0.5 ${card.typeClass} text-[10px] font-bold rounded-full border`}>{card.type}</span>
-              </div>
-            )}
-            <p className="text-xs text-gray-400 line-clamp-2">{card.desc}</p>
-            <div className="flex flex-wrap gap-2 py-2">
-              {card.topic && (
-                <span className="px-2 py-0.5 bg-gray-700 text-gray-300 text-[10px] rounded flex items-center gap-1">
-                  <span className="material-symbols-outlined text-xs">category</span> {card.topic}
-                </span>
-              )}
-              {card.length && (
-                <span className="px-2 py-0.5 bg-gray-700 text-gray-300 text-[10px] rounded flex items-center gap-1">
-                  <span className="material-symbols-outlined text-xs">straighten</span> {card.length}
-                </span>
-              )}
-              {card.time && (
-                <span className="px-2 py-0.5 bg-gray-700 text-gray-300 text-[10px] rounded flex items-center gap-1">
-                  <span className="material-symbols-outlined text-xs">timer</span> {card.time}
-                </span>
-              )}
-              {card.xpReward != null && (
-                <span className="px-2 py-0.5 bg-yellow-500/10 text-yellow-500 text-[10px] rounded flex items-center gap-1 font-bold border border-yellow-500/20">
-                  <span className="material-symbols-outlined text-[12px] fill-icon">star</span> {card.xpReward} XP
-                </span>
-              )}
-            </div>
-            <div className="flex items-center justify-between pt-2 border-t border-border-dark">
-              <div className="flex items-center gap-1">
-                <span className="material-symbols-outlined text-yellow-500 text-sm fill-icon">star</span>
-                <span className="text-[10px] font-bold">{t('skills.ratingLabel')}: {card.rating}</span>
-              </div>
-              <div className="flex items-center gap-2">
-                {canAddPractice && user?.id != null && card.id && (
-                  <>
-                    <Link to={`${ROUTES.MANAGE_SKILLS(user.id)}/${card.id}`} className="p-2 rounded-lg text-gray-400 hover:bg-white/10 hover:text-primary transition-colors" title={t('quests.edit')}>
-                      <span className="material-symbols-outlined text-sm">edit</span>
-                    </Link>
-                    <button type="button" onClick={() => setItemToDelete(card)} disabled={deletingId === card.id} className="p-2 rounded-lg text-gray-400 hover:bg-red-500/10 hover:text-red-400 transition-colors disabled:opacity-50" title={t('quests.delete')}>
-                      <span className="material-symbols-outlined text-sm">delete</span>
-                    </button>
-                  </>
-                )}
-                <Link
-                  to={ROUTES.LESSON_REVIEWS(card.id)}
-                  className="p-2 rounded-lg text-yellow-500 hover:bg-yellow-500/10 transition-colors"
-                  title={t('lessons.reviews') || 'Review'}
-                >
-                  <span className="material-symbols-outlined text-sm">star</span>
-                </Link>
-                <button
-                  onClick={() => navigate(`/practice/writing/${card.id}`)}
-                  className="px-4 py-1.5 bg-primary/10 text-primary hover:bg-primary hover:text-background-dark font-bold text-xs rounded transition-all"
-                >
-                  {t('buttons.startWriting')}
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-      ))
+      return cards.map((card) => <SkillCard key={card.id || card.title} card={card} skillType="writing" />)
     }
     return null
   }
 
 
   return (
-    <main className="max-w-[1440px] mx-auto grid grid-cols-12 gap-6 p-6">
+
+    <main className="max-w-[1440px] mx-auto grid grid-cols-12 gap-6 pt-2 px-6 pb-6">
       {/* Left sidebar - Add practice + Tabs + Filters + Goals + Roadmap */}
-      <aside className="col-span-12 lg:col-span-3 space-y-5 overflow-hidden lg:sticky lg:top-4 self-start max-h-[calc(100vh-64px)] overflow-y-auto">
+      <aside className="col-span-12 lg:col-span-3 space-y-5 lg:sticky lg:top-2 self-start max-h-[calc(100vh-80px)] lg:overflow-y-auto pr-2 custom-scrollbar">
         <div className="space-y-4">
           <Link
             to={ROUTES.LESSON_HISTORY}
-            className="flex items-center justify-center gap-2 w-full py-2.5 bg-card-dark hover:bg-gray-700 text-gray-300 hover:text-white font-medium rounded-xl text-sm transition-all"
+            className="flex items-center justify-center gap-2 w-full py-2.5 bg-white dark:bg-card-dark hover:bg-slate-50 dark:hover:bg-gray-700 text-slate-600 dark:text-gray-300 hover:text-primary dark:hover:text-white font-bold rounded-xl text-xs transition-all border border-slate-200 dark:border-border-dark shadow-sm"
           >
-            <span className="material-symbols-outlined text-xl">history</span>
+            <span className="material-symbols-outlined text-lg">history</span>
             {t('lessons.viewHistory')}
           </Link>
           {canAddPractice && user?.id != null && (
             <Link
               to={ROUTES.MANAGE_SKILLS(user.id)}
-              className="flex items-center justify-center gap-2 w-full py-2.5 bg-primary hover:bg-primary/90 text-background-dark font-semibold rounded-xl text-sm transition-all shadow-lg shadow-primary/25 border border-primary/30"
+              className="flex items-center justify-center gap-2 w-full py-2.5 bg-primary hover:bg-primary/90 text-white font-black rounded-xl text-xs transition-all shadow-lg shadow-primary/25"
             >
-              <span className="material-symbols-outlined text-xl">add_circle</span>
+              <span className="material-symbols-outlined text-lg">add_circle</span>
               {t('skills.addPractice')}
             </Link>
           )}
 
           <Link
             to="/practice/mock-test"
-            className="flex items-center justify-center gap-2 w-full py-2.5 bg-indigo-600 hover:bg-indigo-500 text-white font-black rounded-xl text-sm transition-all shadow-xl shadow-indigo-900/20 border border-indigo-400/30 group"
+            className="flex items-center justify-center gap-2 w-full py-2.5 bg-indigo-600 hover:bg-indigo-500 text-white font-black rounded-xl text-xs transition-all shadow-xl shadow-indigo-900/20 border border-indigo-400/30 group"
           >
-            <span className="material-symbols-outlined text-xl group-hover:rotate-12 transition-transform">school</span>
+            <span className="material-symbols-outlined text-lg group-hover:rotate-12 transition-transform">school</span>
             {t('skills.mockTest')}
           </Link>
-          <div className="bg-card-dark rounded-xl border border-border-dark overflow-hidden">
-            <div className="grid grid-cols-2 gap-1 p-1.5">
+          <div className="bg-white dark:bg-card-dark rounded-xl border border-slate-200 dark:border-border-dark overflow-hidden shadow-sm">
+            <div className="grid grid-cols-2 gap-1.5 p-2">
               {SKILL_TABS.map(({ to, icon, label }) => (
                 <Link
                   key={to}
                   to={to}
-                  className={`py-2.5 px-2 rounded-lg text-xs font-medium flex items-center justify-center gap-1.5 transition-all min-w-0 ${
+                  className={`py-2 px-1.5 rounded-lg text-[10px] font-black flex flex-col items-center justify-center gap-1 transition-all min-w-0 border ${
                     pathname === to || (to === ROUTES.SKILLS.ENTERTAINMENT && pathname.startsWith(`${ROUTES.SKILLS.ENTERTAINMENT}/`))
-                      ? 'bg-primary/20 text-primary border border-primary/40 font-semibold'
-                      : 'hover:bg-white/5 text-gray-400 hover:text-white border border-transparent'
+                      ? 'bg-primary/10 text-primary border-primary/40 shadow-inner'
+                      : 'bg-slate-50 dark:bg-white/5 border-transparent text-slate-500 dark:text-gray-400 hover:bg-slate-100 dark:hover:bg-white/10 hover:text-slate-900 dark:hover:text-white'
                   }`}
                 >
-                  <span className="material-symbols-outlined text-base shrink-0">{icon}</span>
+                  <span className="material-symbols-outlined text-lg shrink-0">{icon}</span>
                   <span className="truncate">{t(label)}</span>
                 </Link>
               ))}
             </div>
           </div>
-          <div className="bg-card-dark rounded-xl border border-border-dark p-4 space-y-4">
-            <h4 className="text-xs font-semibold text-gray-400 uppercase tracking-wider flex items-center gap-1.5">
-              <span className="material-symbols-outlined text-sm">filter_list</span>
+          <div className="bg-white dark:bg-card-dark rounded-xl border border-slate-200 dark:border-border-dark p-5 space-y-5 shadow-sm">
+            <h4 className="text-xs font-black text-slate-900 dark:text-white uppercase tracking-widest flex items-center gap-2">
+              <span className="material-symbols-outlined text-sm text-primary">filter_list</span>
               {t('skills.filters')}
             </h4>
-            <div className="space-y-3">
-              <label className="block text-xs font-medium text-gray-400">{t('skills.filterTitle') || 'Tìm kiếm theo tên bài'}</label>
-              <input
-                type="text"
-                value={filterTitle}
-                onChange={(e) => setFilterTitle(e.target.value)}
-                placeholder={t('skills.filterTitlePlaceholder') || 'Nhập từ khóa...'}
-                className="w-full bg-background-dark border border-border-dark text-sm rounded-lg focus:ring-2 focus:ring-primary focus:border-primary px-3 py-2.5 text-white"
-              />
+            <div className="space-y-4">
+              <div>
+                <label className="block text-[9px] font-black text-slate-400 uppercase mb-1.5 px-1 tracking-wider">{t('skills.filterTitle') || 'Tìm kiếm theo tên bài'}</label>
+                <input
+                  type="text"
+                  value={filterTitle}
+                  onChange={(e) => setFilterTitle(e.target.value)}
+                  placeholder={t('skills.filterTitlePlaceholder') || 'Nhập từ khóa...'}
+                  className="w-full bg-slate-50 dark:bg-background-dark border border-slate-200 dark:border-border-dark text-xs rounded-xl focus:ring-2 focus:ring-primary outline-none px-3 py-2 text-slate-900 dark:text-white transition-all shadow-sm placeholder:text-slate-400"
+                />
+              </div>
+              <div>
+                <label className="block text-[9px] font-black text-slate-400 uppercase mb-1.5 px-1 tracking-wider">{t('skills.filterLevel')}</label>
+                <select
+                  value={filterLevel}
+                  onChange={(e) => setFilterLevel(e.target.value)}
+                  className="w-full bg-slate-50 dark:bg-background-dark border border-slate-200 dark:border-border-dark text-xs rounded-xl focus:ring-2 focus:ring-primary outline-none px-3 py-2 text-slate-900 dark:text-white transition-all shadow-sm"
+                >
+                  <option value="">{t('skills.filterAll')}</option>
+                  <option value="A1">A1</option>
+                  <option value="A2">A2</option>
+                  <option value="B1">B1</option>
+                  <option value="B2">B2</option>
+                  <option value="C1">C1</option>
+                  <option value="C2">C2</option>
+                </select>
+              </div>
+              <div>
+                <label className="block text-[9px] font-black text-slate-400 uppercase mb-1.5 px-1 tracking-wider">{t('skills.filterTopic')}</label>
+                <select
+                  value={filterTopic}
+                  onChange={(e) => setFilterTopic(e.target.value)}
+                  className="w-full bg-slate-50 dark:bg-background-dark border border-slate-200 dark:border-border-dark text-xs rounded-xl focus:ring-2 focus:ring-primary outline-none px-3 py-2 text-slate-900 dark:text-white transition-all shadow-sm"
+                >
+                  <option value="">{t('skills.filterAll')}</option>
+                  <option value="Work">{t('skills.topicWork')}</option>
+                  <option value="Study">{t('skills.topicStudy')}</option>
+                  <option value="Travel">{t('skills.topicTravel')}</option>
+                  <option value="Food and drink">{t('skills.topicFood')}</option>
+                  <option value="Transport">{t('skills.topicTransport')}</option>
+                  <option value="Business">{t('skills.topicBusiness')}</option>
+                </select>
+              </div>
             </div>
-            <div className="space-y-3">
-              <label className="block text-xs font-medium text-gray-400">{t('skills.filterLevel')}</label>
-              <select
-                value={filterLevel}
-                onChange={(e) => setFilterLevel(e.target.value)}
-                className="w-full bg-background-dark border border-border-dark text-sm rounded-lg focus:ring-2 focus:ring-primary focus:border-primary px-3 py-2.5 text-white"
-              >
-                <option value="">{t('skills.filterAll')}</option>
-                <option value="A1">A1</option>
-                <option value="A2">A2</option>
-                <option value="B1">B1</option>
-                <option value="B2">B2</option>
-                <option value="C1">C1</option>
-                <option value="C2">C2</option>
-              </select>
-            </div>
-            <div className="space-y-3">
-              <label className="block text-xs font-medium text-gray-400">{t('skills.filterTopic')}</label>
-              <select
-                value={filterTopic}
-                onChange={(e) => setFilterTopic(e.target.value)}
-                className="w-full bg-background-dark border border-border-dark text-sm rounded-lg focus:ring-2 focus:ring-primary focus:border-primary px-3 py-2.5 text-white"
-              >
-                <option value="">{t('skills.filterAll')}</option>
-                <option value="Work">{t('skills.topicWork')}</option>
-                <option value="Study">{t('skills.topicStudy')}</option>
-                <option value="Travel">{t('skills.topicTravel')}</option>
-                <option value="Food and drink">{t('skills.topicFood')}</option>
-                <option value="Transport">{t('skills.topicTransport')}</option>
-                <option value="Business">{t('skills.topicBusiness')}</option>
-              </select>
-            </div>
-            <div className="flex gap-2 pt-1">
-              <button onClick={handleResetFilters} type="button" className="flex-1 py-2.5 text-sm font-medium text-gray-400 hover:text-white rounded-lg bg-background-dark border border-border-dark transition-colors">
+            <div className="flex gap-2 pt-2">
+              <button onClick={handleResetFilters} type="button" className="flex-1 py-2 text-[10px] font-black text-slate-500 hover:text-slate-900 dark:text-gray-400 dark:hover:text-white rounded-xl bg-slate-50 dark:bg-background-dark border border-slate-200 dark:border-border-dark transition-all shadow-sm">
                 {t('buttons.reset')}
               </button>
-              <button onClick={handleApplyFilters} type="button" className="flex-1 py-2.5 bg-primary text-white font-semibold text-sm rounded-lg hover:brightness-110 transition-all">
+              <button onClick={handleApplyFilters} type="button" className="flex-1 py-2 bg-primary text-white font-black text-[10px] rounded-xl hover:brightness-110 transition-all shadow-lg shadow-primary/20">
                 {t('buttons.save')}
               </button>
             </div>
@@ -494,22 +434,25 @@ export function SkillPracticePage() {
 
       {/* Center - challenge + cards */}
       <section className="col-span-12 lg:col-span-6 space-y-6">
-        <div className={`bg-gradient-to-r ${challengeGradient} to-primary/20 border border-primary/30 rounded-xl p-5 relative overflow-hidden`}>
+        <div className={`bg-gradient-to-r ${challengeGradient} to-primary/20 border border-primary/30 rounded-2xl p-6 relative overflow-hidden shadow-lg`}>
           <div className="relative z-10 flex items-center justify-between">
-            <div className="space-y-2">
+            <div className="space-y-3 max-w-[70%]">
               <div className="flex items-center gap-2">
-                <span className="px-2 py-0.5 bg-primary text-background-dark text-[10px] font-bold rounded">{t('enter.weeklyChallenge')}</span>
-                <span className="text-xs text-primary flex items-center gap-1">
+                <span className="px-2 py-0.5 bg-primary text-white text-[10px] font-black rounded shadow-sm uppercase tracking-wider">{t('enter.weeklyChallenge')}</span>
+                <span className="text-xs text-primary font-bold flex items-center gap-1 bg-white/10 backdrop-blur-sm px-2 py-0.5 rounded-full">
                   <span className="material-symbols-outlined text-sm">schedule</span> {challenge.time}
                 </span>
               </div>
-              <h4 className="font-bold text-lg text-white">{challenge.title}</h4>
-              <p className="text-xs text-gray-300">{challenge.desc}</p>
-              <button className="mt-2 px-6 py-2 bg-primary text-background-dark font-bold text-sm rounded-lg hover:brightness-110" type="button">
+              <h4 className="font-black text-lg text-white leading-tight drop-shadow-md">{challenge.title}</h4>
+              <p className="text-[11px] text-white/80 leading-relaxed font-medium">{challenge.desc}</p>
+              <Link
+                to="/challenge"
+                className="mt-2 px-6 py-2 bg-white text-primary font-black text-xs rounded-xl hover:bg-slate-50 transition-all shadow-lg inline-block"
+              >
                 {t(challenge.btn)}
-              </button>
+              </Link>
             </div>
-            <span className="material-symbols-outlined text-7xl text-primary/20">{challengeIcon}</span>
+            <span className="material-symbols-outlined text-[100px] text-white/10 absolute -right-4 -bottom-4 rotate-12">{challengeIcon}</span>
           </div>
         </div>
 
@@ -521,19 +464,19 @@ export function SkillPracticePage() {
               type="button"
               disabled={page <= 1}
               onClick={() => setPage((p) => Math.max(1, p - 1))}
-              className="px-4 py-2 rounded-lg bg-card-dark border border-border-dark text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-700 transition-colors flex items-center gap-1"
+              className="px-5 py-2.5 rounded-xl bg-white dark:bg-card-dark border border-slate-200 dark:border-border-dark text-sm font-black text-slate-700 dark:text-slate-300 shadow-sm disabled:opacity-50 disabled:cursor-not-allowed hover:bg-slate-50 dark:hover:bg-gray-700 transition-all flex items-center gap-2"
             >
               <span className="material-symbols-outlined text-lg">chevron_left</span>
               {t('buttons.prev') || 'Trước'}
             </button>
-            <span className="px-4 py-2 text-sm text-gray-300">
-              {t('skills.page') || 'Trang'} {page} / {pagination.totalPages} ({pagination.total} {t('skills.items') || 'bài'})
+            <span className="px-6 py-2.5 text-sm font-black text-slate-500 dark:text-gray-400 bg-white dark:bg-background-dark rounded-xl border border-slate-200 dark:border-border-dark shadow-sm">
+              {page} / {pagination.totalPages}
             </span>
             <button
               type="button"
               disabled={page >= pagination.totalPages}
               onClick={() => setPage((p) => Math.min(pagination.totalPages, p + 1))}
-              className="px-4 py-2 rounded-lg bg-card-dark border border-border-dark text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-700 transition-colors flex items-center gap-1"
+              className="px-5 py-2.5 rounded-xl bg-white dark:bg-card-dark border border-slate-200 dark:border-border-dark text-sm font-black text-slate-700 dark:text-slate-300 shadow-sm disabled:opacity-50 disabled:cursor-not-allowed hover:bg-slate-50 dark:hover:bg-gray-700 transition-all flex items-center gap-2"
             >
               {t('buttons.next') || 'Sau'}
               <span className="material-symbols-outlined text-lg">chevron_right</span>
@@ -543,68 +486,68 @@ export function SkillPracticePage() {
       </section>
 
       {/* Right sidebar - Skill Stats + Friends, Achievements, Hot Games */}
-      <aside className="col-span-12 lg:col-span-3 space-y-6 lg:sticky lg:top-4 self-start max-h-[calc(100vh-64px)] overflow-y-auto">
-        <div className="bg-card-dark rounded-xl p-5 border border-border-dark">
-          <h3 className="font-bold text-sm mb-4 flex items-center gap-2">
-            <span className="material-symbols-outlined text-primary">analytics</span>
+      <aside className="col-span-12 lg:col-span-3 space-y-6 lg:sticky lg:top-2 self-start max-h-[calc(100vh-80px)] lg:overflow-y-auto pr-2 custom-scrollbar">
+        <div className="bg-white dark:bg-card-dark rounded-xl p-5 border border-slate-200 dark:border-border-dark shadow-sm">
+          <h3 className="font-black text-xs text-slate-900 dark:text-white uppercase tracking-widest mb-5 flex items-center gap-2">
+            <span className="material-symbols-outlined text-primary text-xl">analytics</span>
             {t('skills.skillStats')}
           </h3>
           <div className="space-y-4">
             {Object.entries(SKILLS).map(([key, { icon, label, color }]) => (
-              <div key={key} className="flex items-center justify-between">
+              <div key={key} className="flex items-center justify-between p-2 rounded-lg hover:bg-slate-50 dark:hover:bg-white/5 transition-all">
                 <div className="flex items-center gap-3">
-                  <span className={`material-symbols-outlined ${color}`}>{icon}</span>
-                  <span className="text-sm">{t(label)}</span>
+                  <span className={`material-symbols-outlined ${color} text-xl`}>{icon}</span>
+                  <span className="text-xs font-bold text-slate-700 dark:text-slate-300">{t(label)}</span>
                 </div>
-                <span className="text-sm font-bold">
+                <span className="font-black text-xs text-primary">
                   {(skillStatsMap[key]?.totalXpEarned || 0).toLocaleString()} XP
                 </span>
               </div>
             ))}
-            <div className="pt-4 border-t border-border-dark flex justify-between items-center text-xs text-gray-400">
-              <span>{t('skills.weeklyTime')}: <strong className="text-white">{weeklyTimeStr}</strong></span>
-              <span>{t('skills.done')}: <strong className="text-white">{doneLessons}</strong></span>
+            <div className="pt-4 mt-2 border-t border-slate-100 dark:border-border-dark flex justify-between items-center text-[10px] font-bold text-slate-500 dark:text-gray-400">
+              <span className="flex items-center gap-1"><span className="material-symbols-outlined text-sm">schedule</span>{t('skills.weeklyTime')}: <strong className="text-slate-900 dark:text-white">{weeklyTimeStr}</strong></span>
+              <span className="flex items-center gap-1"><span className="material-symbols-outlined text-sm">check_circle</span>{t('skills.done')}: <strong className="text-slate-900 dark:text-white">{doneLessons}</strong></span>
             </div>
           </div>
         </div>
-        {/* Existing Friends List Card */}
-        <div className="bg-card-dark rounded-xl p-5 border border-border-dark">
-          <h3 className="font-bold text-sm mb-3 flex items-center gap-2">
+
+        <div className="bg-white dark:bg-card-dark rounded-xl p-5 border border-slate-200 dark:border-border-dark shadow-sm">
+          <h3 className="font-black text-xs text-slate-900 dark:text-white uppercase tracking-widest mb-4 flex items-center gap-2">
             <span className="material-symbols-outlined text-primary text-lg">people</span>
             {t('dashboard.friends')}
             {activeOnlineCount > 0 && (
-              <span className="text-[10px] font-medium text-green-500 flex items-center gap-0.5" title={t('userProfile.online')}>
+              <span className="text-[10px] font-black text-green-500 flex items-center gap-0.5" title={t('userProfile.online')}>
                 <span className="size-1.5 rounded-full bg-green-500 animate-pulse" />
                 {activeOnlineCount} {t('userProfile.online')}
               </span>
             )}
             <Link
               to={ROUTES.MESSAGES}
-              className="ml-auto p-1 rounded-lg text-gray-400 hover:bg-primary/10 hover:text-primary transition-colors"
+              className="ml-auto p-1 rounded-lg text-slate-400 hover:bg-primary/10 hover:text-primary transition-colors"
               title={t('messages.title')}
             >
               <span className="material-symbols-outlined text-lg">chat_bubble</span>
             </Link>
           </h3>
-          <div className="flex gap-1 p-1 bg-background-dark/50 rounded-lg mb-4 border border-border-dark">
+          <div className="flex gap-1 p-1 bg-slate-50 dark:bg-background-dark/50 rounded-lg mb-4 border border-slate-100 dark:border-border-dark shadow-inner">
             <button
               type="button"
               onClick={() => setFriendsFilterTab('all')}
-              className={`flex-1 py-1.5 rounded-md text-[11px] font-bold transition-colors ${friendsFilterTab === 'all' ? 'bg-primary/20 text-primary border border-primary/30' : 'text-gray-400 hover:text-white'}`}
+              className={`flex-1 py-1.5 rounded-md text-xs font-bold transition-all ${friendsFilterTab === 'all' ? 'bg-primary text-white shadow-sm' : 'text-slate-400 dark:text-gray-400 hover:text-slate-900 dark:hover:text-white'}`}
             >
               {t('dashboard.all')}
             </button>
             <button
               type="button"
               onClick={() => setFriendsFilterTab('online')}
-              className={`flex-1 py-1.5 rounded-md text-[11px] font-bold transition-colors ${friendsFilterTab === 'online' ? 'bg-primary/20 text-primary border border-primary/30' : 'text-gray-400 hover:text-white'}`}
+              className={`flex-1 py-1.5 rounded-md text-xs font-bold transition-all ${friendsFilterTab === 'online' ? 'bg-primary text-white shadow-sm' : 'text-slate-400 dark:text-gray-400 hover:text-slate-900 dark:hover:text-white'}`}
             >
               {t('userProfile.online')}
             </button>
           </div>
-          <div className={`space-y-2.5 overflow-y-auto pr-1 custom-scrollbar ${displayedFriendsList.length > 5 ? 'max-h-[220px]' : ''}`}>
+          <div className={`space-y-2 overflow-y-auto pr-1 custom-scrollbar ${displayedFriendsList.length > 5 ? 'max-h-[220px]' : ''}`}>
             {displayedFriendsList.length === 0 ? (
-              <p className="text-xs text-gray-500 py-4 text-center">{t('dashboard.noFriendsOnline')}</p>
+              <p className="text-xs text-slate-500 dark:text-gray-500 py-6 text-center font-medium italic">{t('dashboard.noFriendsOnline')}</p>
             ) : (
               displayedFriendsList.map((item) => {
                 const u = item?.user || item
@@ -615,21 +558,21 @@ export function SkillPracticePage() {
                 return (
                   <div
                     key={id}
-                    className="flex items-center gap-3 p-2 rounded-lg hover:bg-white/5 transition-colors group"
+                    className="flex items-center gap-3 p-2 rounded-xl hover:bg-slate-50 dark:hover:bg-white/5 transition-all group"
                   >
                     <Link to={id ? `/profile/${id}` : '#'} className="flex items-center gap-2.5 min-w-0 flex-1">
                       <div className="relative shrink-0">
-                        <img src={avatar} alt="" className="size-8 rounded-full object-cover border border-border-dark" />
+                        <img src={avatar} alt="" className="size-9 rounded-full object-cover border border-slate-200 dark:border-border-dark shadow-sm" />
                         {isOnline && (
-                          <span className="absolute bottom-0 right-0 size-2.5 bg-green-500 rounded-full border-2 border-card-dark" title={t('userProfile.online')} />
+                          <span className="absolute bottom-0 right-0 size-2.5 bg-green-500 rounded-full border-2 border-white dark:border-card-dark" title={t('userProfile.online')} />
                         )}
                       </div>
-                      <span className="text-sm font-medium truncate text-gray-200">{name}</span>
+                      <span className="text-sm font-medium truncate text-slate-700 dark:text-gray-200 group-hover:text-primary transition-colors">{name}</span>
                     </Link>
                     <button
                       type="button"
                       onClick={() => navigate(`${ROUTES.MESSAGES}?with=${encodeURIComponent(id)}`, { state: { withUser: { id, name, avatar } } })}
-                      className="p-1 rounded-lg text-gray-500 hover:bg-primary/10 hover:text-primary transition-colors shrink-0"
+                      className="p-1.5 rounded-lg text-slate-400 hover:bg-primary/10 hover:text-primary transition-all shrink-0"
                       title={t('messages.title')}
                     >
                       <span className="material-symbols-outlined text-[18px]">chat_bubble</span>
@@ -640,40 +583,34 @@ export function SkillPracticePage() {
             )}
           </div>
         </div>
-        <div className="bg-card-dark rounded-xl p-5 border border-border-dark">
-          <h3 className="font-bold text-sm mb-4">{t('enter.achievements')}</h3>
-          <div className="grid grid-cols-3 gap-2">
-            {achievements.map(({ icon, color, label }) => (
-              <div
-                key={label}
-                className="aspect-square bg-background-dark rounded-lg flex flex-col items-center justify-center border border-border-dark p-2 group cursor-help"
-              >
-                <span className={`material-symbols-outlined ${color} text-2xl group-hover:scale-110 transition-transform`}>{icon}</span>
-                <span className="text-[8px] mt-1 text-center font-bold">{label}</span>
-              </div>
-            ))}
-          </div>
-        </div>
-        <div className="bg-card-dark rounded-xl p-5 border border-border-dark">
-          <h3 className="font-bold text-sm mb-4 flex items-center gap-2">
-            <span className="material-symbols-outlined text-orange-400">local_fire_department</span>
+
+        <div className="bg-white dark:bg-card-dark rounded-xl p-5 border border-slate-200 dark:border-border-dark shadow-sm">
+          <h3 className="font-black text-xs text-slate-900 dark:text-white uppercase tracking-widest mb-4 flex items-center gap-2">
+            <span className="material-symbols-outlined text-orange-500">local_fire_department</span>
             {t('enter.hotGames')}
           </h3>
           <div className="space-y-4">
-            {rawData.hotGames.map(({ id, icon, title, playing, bgColor }) => (
-              <div key={id} className="flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                  <div className={`size-8 rounded ${bgColor || 'bg-indigo-500'} flex items-center justify-center`}>
-                    <span className="material-symbols-outlined text-white text-sm">{icon || 'spellcheck'}</span>
+            {ENTERTAINMENT_GAMES.map((g, idx) => (
+              <div key={g.slug} className="flex items-center justify-between gap-2 group">
+                <div className="flex items-center gap-3 min-w-0">
+                  <div className={`size-10 rounded-xl shrink-0 ${idx === 0 ? 'bg-indigo-500/20 text-indigo-400' : 'bg-rose-500/20 text-rose-400'} flex items-center justify-center relative overflow-hidden border border-slate-200 dark:border-white/5`}>
+                    <img src={g.image} alt={t(g.titleKey)} className="absolute inset-0 w-full h-full object-cover opacity-20 group-hover:opacity-50 transition-opacity" />
+                    <span className="material-symbols-outlined text-[18px] relative z-10">{g.icon}</span>
                   </div>
-                  <div className="text-[10px]">
-                    <p className="font-bold">{title}</p>
-                    <p className="text-gray-400">{playing} {t('enter.playing')}</p>
+                  <div className="text-[11px] min-w-0">
+                    <p className="font-bold truncate text-slate-900 dark:text-white group-hover:text-primary transition-colors">{t(g.titleKey)}</p>
+                    <p className="text-slate-500 dark:text-gray-400 flex items-center gap-1.5 mt-0.5">
+                      <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                      Global MMO
+                    </p>
                   </div>
                 </div>
-                <button className="px-3 py-1 bg-primary/20 text-primary text-[10px] font-bold rounded hover:bg-primary hover:text-background-dark transition-all" type="button">
+                <Link
+                  to={g.path}
+                  className="px-3 py-1.5 bg-primary/10 border border-primary/20 text-primary text-[10px] font-bold rounded-lg hover:bg-primary hover:text-white transition-all shrink-0"
+                >
                   {t('buttons.join')}
-                </button>
+                </Link>
               </div>
             ))}
           </div>
@@ -697,3 +634,4 @@ export function SkillPracticePage() {
     </main>
   )
 }
+

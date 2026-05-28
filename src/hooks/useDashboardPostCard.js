@@ -1,4 +1,5 @@
 import { useEffect } from 'react'
+import { toast } from 'react-hot-toast'
 import { DEFAULT_AVATAR } from '../constants/ui'
 import { communityService } from '../services'
 import { getContentWithoutMentions } from '../utils/postContent'
@@ -37,6 +38,7 @@ export function useDashboardPostCard({
   onDeletePost,
   isSavedPost,
   t,
+  onRequestReportPost,
 }) {
   const normalizeDocs = (docs) =>
     (Array.isArray(docs) ? docs : []).map((d) =>
@@ -141,7 +143,7 @@ export function useDashboardPostCard({
   const handleSaveEdit = () => {
     if (!postId || !isOwnPost || postActionLoading) return
     const nextContentRaw = editContent.trim()
-    const nextContent = getContentWithoutMentions(nextContentRaw).trim()
+    const nextContent = nextContentRaw
     const hasMedia =
       (Array.isArray(editImages) && editImages.length > 0) ||
       (typeof editVideoUrl === 'string' && editVideoUrl.trim()) ||
@@ -154,7 +156,7 @@ export function useDashboardPostCard({
     }
 
     const originalContentRaw = post?.content != null ? String(post.content).trim() : ''
-    const originalContent = getContentWithoutMentions(originalContentRaw).trim()
+    const originalContent = originalContentRaw
     const originalImages = Array.isArray(post?.images) ? post.images : []
     const originalVideo = typeof post?.video === 'string' ? post.video : ''
     const originalDocuments = normalizeDocs(post?.documents)
@@ -238,12 +240,24 @@ export function useDashboardPostCard({
       })
       .catch((err) => {
         if (typeof setEditError === 'function') {
-          setEditError(
-            err?.data?.message ||
-              err?.message ||
-              t('profile.saveFailed') ||
-              'Failed to save. Please try again.',
-          )
+          if (err?.status === 422) {
+            // Nội dung vi phạm
+            const mod = err?.data?.data
+            const label = mod?.label ? ` (${mod.label})` : ''
+            const keywords = mod?.keywords?.length ? ` — Từ khóa: ${mod.keywords.join(', ')}` : ''
+            setEditError(
+              (err?.data?.message || 'Nội dung bài viết vi phạm tiêu chuẩn cộng đồng.') + label + keywords
+            )
+          } else if (err?.status === 503) {
+            setEditError('Hệ thống kiểm duyệt nội dung đang tạm thời không khả dụng. Vui lòng thử lại sau.')
+          } else {
+            setEditError(
+              err?.data?.message ||
+                err?.message ||
+                t('profile.saveFailed') ||
+                'Failed to save. Please try again.',
+            )
+          }
         }
       })
       .finally(() => setPostActionLoading(false))
@@ -255,9 +269,12 @@ export function useDashboardPostCard({
     communityService
       .deletePost(postId)
       .then(() => {
+        toast.success(t('common.deleteSuccess') || 'Post deleted successfully')
         if (typeof onDeletePost === 'function') onDeletePost(postId)
       })
-      .catch(() => {})
+      .catch((err) => {
+        toast.error(err?.data?.message || t('common.deleteError') || 'Failed to delete post')
+      })
       .finally(() => {
         setPostActionLoading(false)
       })
@@ -265,8 +282,7 @@ export function useDashboardPostCard({
 
   const handleReportPost = () => {
     if (!postId || isOwnPost || postActionLoading) return
-    // TODO: replace with backend report-post API when available
-    window.alert(t('dashboard.reportPostSoon') || 'Report submitted. Thank you!')
+    if (typeof onRequestReportPost === 'function') onRequestReportPost()
   }
 
   const handleToggleSavePost = () => {

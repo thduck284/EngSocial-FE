@@ -6,6 +6,7 @@ import {
   deleteVocabNote,
 } from '../../utils/vocabularyUserStorage'
 import { AlertModal } from '../ui/common/AlertModal'
+import { useAchievementSync } from '../../hooks/useAchievementSync'
 
 /** Độ dài tối đa phần xem trước trong danh sách; dài hơn thì có nút xem chi tiết */
 const PREVIEW_MAX_CHARS = 220
@@ -36,6 +37,7 @@ function buildNotePreview(content) {
 
 export default function VocabularyNotesPanel() {
   const { t, i18n } = useTranslation()
+  const { sync } = useAchievementSync()
   const [notes, setNotes] = useState([])
   const [title, setTitle] = useState('')
   const [content, setContent] = useState('')
@@ -48,7 +50,8 @@ export default function VocabularyNotesPanel() {
 
   useEffect(() => {
     refresh()
-  }, [])
+    sync()
+  }, [sync])
 
   const closeComposer = useCallback(() => {
     setComposerOpen(false)
@@ -63,6 +66,7 @@ export default function VocabularyNotesPanel() {
     setContent('')
     setComposerOpen(false)
     refresh()
+    sync()
     setSavedHint(t('vocabulary.notesSaved'))
     setTimeout(() => setSavedHint(''), 2500)
   }
@@ -334,6 +338,7 @@ export default function VocabularyNotesPanel() {
             deleteVocabNote(itemToDelete.id)
             if (detailNote?.id === itemToDelete.id) setDetailNote(null)
             refresh()
+            sync()
             setItemToDelete(null)
           }
         }}

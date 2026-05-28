@@ -29,8 +29,8 @@ export function ProfileAvatarCard({
       </div>
       <h2 className="text-2xl font-bold dark:text-white">{displayName}</h2>
       <p className="text-slate-500 dark:text-slate-400 mb-6 font-medium">
-        {t('dashboard.level')} {displayLevel} ·{' '}
-        <span className="text-primary">{displayXp} XP</span>
+        {t('dashboard.level')} {displayLevel || 1} ·{' '}
+        <span className="text-primary">{displayXp || 0} XP</span>
       </p>
       <div className="w-full bg-slate-100 dark:bg-slate-800 rounded-full h-4 mb-2 overflow-hidden">
         <div
@@ -43,14 +43,13 @@ export function ProfileAvatarCard({
       </div>
       <div className="flex justify-between w-full text-xs text-slate-500 font-medium">
         <span>
-          {t('profile.currentLevel')} {displayLevel}
+          {t('profile.currentLevel')} {displayLevel || 1}
         </span>
         <span>
-          {Math.max(0, displayXpMax - displayXp)} XP {t('profile.toLevel')}{' '}
-          {displayLevel + 1}
+          {Math.max(0, (displayXpMax || 500) - (displayXp || 0))} XP {t('profile.toLevel')}{' '}
+          {(displayLevel || 1) + 1}
         </span>
       </div>
     </div>
   )
 }
-

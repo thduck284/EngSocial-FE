@@ -5,14 +5,20 @@ import { useAuth } from '../context/AuthContext'
 import { useDashboardSocket, useStudyGroups } from '../hooks'
 import { ROUTES } from '../constants'
 import { DEFAULT_AVATAR } from '../constants/ui'
-import { userService, friendsService } from '../services'
+import { userService, friendsService, reportService } from '../services'
 import { useProfilePosts, useProfilePhotos, useProfileVideos } from '../hooks/useProfile'
 import { ProfilePostsList } from '../components/profile/ProfilePostsList'
 import { ProfilePhotosGrid } from '../components/profile/ProfilePhotosGrid'
 import { ProfileVideosGrid } from '../components/profile/ProfileVideosGrid'
 import { ProfileSkillsTab } from '../components/profile/ProfileSkillsTab'
 import { ProfileFriendsListModal } from '../components/profile/ProfileFriendsListModal'
+import { ReportContentModal } from '../components/ui/common/ReportContentModal'
 import { normalizeFriendsFromResponse, sortFriendsByOnlineAndLastActive } from '../utils/profile'
+import { ProfileLeftStatsSection } from '../components/profile/ProfileLeftStatsSection'
+import { ProfileAchievementsCard } from '../components/profile/ProfileAchievementsCard'
+import { useProfileAchievements } from '../hooks/useProfileAchievements'
+import { flatAchievementItemsFromApiList } from '../hooks/useAchievementsCatalog'
+import { getDefaultSkillStats, normalizeSkillStatsFromStats } from '../utils/dashboard'
 
 function formatJoinedAt(createdAt) {
   if (!createdAt) return ''
@@ -35,7 +41,8 @@ function mapApiProfileToState(data) {
     level: data.level ?? 1,
     xp: data.xp ?? 0,
     totalXp: data.totalXp ?? 0,
-    xpPercent: 0,
+    xpMax: data.xpMax,
+    xpPercent: data.xpPercent ?? 0,
     mutualFriendsCount: data.mutualFriendsCount ?? 0,
     friendsCount: data.friendsCount ?? 0,
     friendStatus: data.friendStatus ?? 'none',
@@ -45,13 +52,14 @@ function mapApiProfileToState(data) {
     joinedAt: formatJoinedAt(data.createdAt),
     profileSkills: data.profileSkills || { skills: {}, goals: [], activeView: 'bars', updatedAt: null },
     skills: Array.isArray(data.skills) ? data.skills : [],
-    achievements: [],
+    achievements: data.achievements || data.badges || data.badgeList || data.userAchievements || data.profileAchievements || data.unlockedBadges || data.achieved || data.earned || [],
     friends: Array.isArray(data.friends) ? data.friends : [],
+    mutualFriends: Array.isArray(data.mutualFriends) ? data.mutualFriends : [],
   }
 }
 
 export function UserProfilePage() {
-  const { t } = useTranslation()
+  const { t, i18n } = useTranslation()
   const { userId } = useParams()
   const navigate = useNavigate()
   const location = useLocation()
@@ -71,6 +79,13 @@ export function UserProfilePage() {
   const [myConnectedFriendIds, setMyConnectedFriendIds] = useState(null)
   const [myPendingSentUserIds, setMyPendingSentUserIds] = useState(null)
   const friendsMenuRef = useRef(null)
+  const [showReportUserModal, setShowReportUserModal] = useState(false)
+  const [showMutualFriendsModal, setShowMutualFriendsModal] = useState(false)
+  const [profileProgress, setProfileProgress] = useState({
+    level: 1,
+    xp: 0,
+    xpMax: 500,
+  })
 
   const viewerId = currentUser?.id || currentUser?._id
 
@@ -94,6 +109,41 @@ export function UserProfilePage() {
     hasMore: userVideosHasMore,
     loadMore: loadMoreUserVideos,
   } = useProfileVideos(userId, { pageSize: 5 })
+
+  const { items: fetchedAchievements, loading: userAchievementsLoading } = useProfileAchievements(userId)
+  
+  const userAchievements = useMemo(() => {
+    let list = fetchedAchievements
+    if (list.length === 0 && profile?.achievements?.length > 0) {
+      list = flatAchievementItemsFromApiList(profile.achievements, t, i18n.language)
+    }
+    return list
+  }, [fetchedAchievements, profile?.achievements, t, i18n.language])
+  const [userSkillStats, setUserSkillStats] = useState(getDefaultSkillStats())
+
+  useEffect(() => {
+    if (!userId) return
+    setUserSkillStats(getDefaultSkillStats()) // Reset on change
+    userService.getStats(userId)
+      .then(res => {
+        const data = res?.data || res || {}
+        const list = normalizeSkillStatsFromStats(data, getDefaultSkillStats())
+        setUserSkillStats(list)
+
+        // Update level and XP from stats
+        setProfileProgress({
+          level: Number(data.level || data.currentLevel || 1),
+          xp: Number(data.currentXp || data.xpInLevel || data.xp || 0),
+          xpMax: Number(data.xpToNextLevel || 500),
+        })
+        // Update achievements if present in stats
+        const statsAchievements = data.achievements || data.profileAchievements || data.userAchievements || []
+        if (statsAchievements.length > 0) {
+           setProfile(prev => prev ? { ...prev, achievements: statsAchievements } : prev)
+        }
+      })
+      .catch(() => setUserSkillStats(getDefaultSkillStats()))
+  }, [userId])
 
   const refetchProfile = useCallback(() => {
     if (!userId) return
@@ -277,10 +327,28 @@ export function UserProfilePage() {
       navigate(ROUTES.PROFILE, { replace: true })
       return
     }
+    setProfile(null) // Reset on change
     setLoading(true)
     userService
       .getUserProfile(userId)
-      .then((res) => setProfile(mapApiProfileToState(res?.data)))
+      .then((res) => {
+        const data = res?.data
+        const mapped = mapApiProfileToState(data)
+        setProfile(mapped)
+        if (mapped) {
+          setProfileProgress((prev) => ({
+            ...prev,
+            level: mapped.level,
+            xp: mapped.xp,
+            xpMax: mapped.xpMax || prev.xpMax,
+          }))
+          // If profile response already contains achievements, use them
+          if (mapped.achievements && mapped.achievements.length > 0) {
+            // We can't directly set state in the hook from here easily without refactoring, 
+            // but we can ensure useProfileAchievements is robust.
+          }
+        }
+      })
       .catch(() => setProfile(null))
       .finally(() => setLoading(false))
   }, [userId, currentUser?.id, currentUser?._id, navigate])
@@ -318,91 +386,104 @@ export function UserProfilePage() {
   }
 
   const displayAvatar = profile.avatar || DEFAULT_AVATAR
-  const xpPercent = profile.xpPercent ?? (profile.xpMax ? Math.round((profile.xp / profile.xpMax) * 100) : 0)
+  const xpPercent = profileProgress.xpMax ? Math.min(100, Math.round((profileProgress.xp / profileProgress.xpMax) * 100)) : 0
 
   return (
-    <main className="max-w-[1200px] mx-auto px-4 lg:px-10 py-8">
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
+    <main className="max-w-[1440px] mx-auto px-6 lg:px-10 py-10">
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-10">
         {/* Left: Profile card & Friends */}
-        <div className="lg:col-span-4 space-y-6">
-          <div className="bg-card-dark border border-border-dark rounded-xl p-6 flex flex-col items-center text-center">
-            <div className="relative mb-4">
-              <div className="size-32 rounded-full border-4 border-primary p-1 overflow-hidden">
+        <div className="lg:col-span-4 space-y-10">
+          <div className="bg-white dark:bg-card-dark border border-slate-200 dark:border-border-dark rounded-[2.5rem] p-8 flex flex-col items-center text-center shadow-2xl shadow-slate-200/50 dark:shadow-none relative">
+            <div className="absolute top-0 left-0 w-full h-24 bg-gradient-to-b from-primary/10 to-transparent rounded-t-[2.5rem]" />
+            <div className="relative mb-6 z-10">
+              <div className="size-40 rounded-full border-4 border-white dark:border-card-dark shadow-2xl overflow-hidden ring-4 ring-primary/20">
                 <img alt={profile.name} className="w-full h-full rounded-full object-cover" src={displayAvatar} />
               </div>
               {(() => {
                 const isOnline = Boolean(userId && onlineUserIds && onlineUserIds.has(String(userId)))
                 return (
-                  <span
-                    className={`absolute bottom-1 right-1 size-5 rounded-full border-4 border-card-dark ${isOnline ? 'bg-green-500' : 'bg-gray-400 dark:bg-gray-500'}`}
+                  <div
+                    className={`absolute bottom-3 right-3 size-6 rounded-full border-4 border-white dark:border-card-dark shadow-lg ${isOnline ? 'bg-green-500' : 'bg-slate-300 dark:bg-gray-600'}`}
                     title={isOnline ? t('userProfile.online') : t('profile.offline')}
-                  />
+                  >
+                    <div className={`w-full h-full rounded-full ${isOnline ? 'animate-pulse bg-green-400' : ''}`} />
+                  </div>
                 )
               })()}
             </div>
-            <h1 className="text-2xl font-bold text-white mb-1">{profile.name}</h1>
-            <div className="flex items-center gap-2 text-gray-400 text-sm mb-4">
-              <span className="bg-primary/10 text-primary px-2 py-0.5 rounded font-bold">{t('userProfile.levelLabel', { level: profile.level })}</span>
-              <span>•</span>
-              <span>{profile.xp} XP</span>
+            <h1 className="text-2xl font-bold text-slate-900 dark:text-white mb-2 relative z-10">{profile.name}</h1>
+            <div className="flex items-center gap-3 mb-8 relative z-10">
+              <span className="bg-primary text-white text-[10px] font-black px-3 py-1 rounded-full uppercase tracking-widest shadow-lg shadow-primary/20">
+                {t('userProfile.levelLabel', { level: profileProgress.level || 1 })}
+              </span>
+              <span className="text-slate-300 dark:text-gray-700 font-black">•</span>
+              <span className="text-[10px] font-black text-slate-400 dark:text-gray-500 uppercase tracking-widest">{profileProgress.xp || 0} XP</span>
             </div>
-            <div className="w-full mb-2">
-              <div className="flex justify-between text-xs mb-1 text-gray-400 font-medium">
+            
+            <div className="w-full mb-8 bg-slate-50 dark:bg-background-dark/50 p-6 rounded-3xl border border-slate-100 dark:border-white/5 relative z-10">
+              <div className="flex justify-between text-[10px] font-black uppercase tracking-[0.2em] mb-3 text-slate-400 dark:text-gray-500">
                 <span>{t('userProfile.levelProgress')}</span>
-                <span>{xpPercent}%</span>
+                <span className="text-primary">{xpPercent}%</span>
               </div>
-              <div className="h-2 w-full bg-background-dark rounded-full overflow-hidden">
-                <div className="h-full bg-primary transition-all" style={{ width: `${xpPercent}%` }} />
+              <div className="h-2.5 w-full bg-slate-200 dark:bg-card-dark rounded-full overflow-hidden shadow-inner">
+                <div className="h-full bg-gradient-to-r from-primary to-cyan-400 transition-all duration-1000 shadow-[0_0_10px_rgba(19,182,236,0.5)]" style={{ width: `${xpPercent}%` }} />
               </div>
+              <p className="text-[10px] font-black text-slate-400 dark:text-gray-600 uppercase tracking-widest mt-4 italic">{t('userProfile.levelUpSoon')}</p>
             </div>
-            <p className="text-xs text-gray-500 mb-6">{t('userProfile.levelUpSoon')}</p>
+
             {profile.mutualFriendsCount > 0 && (
-              <div className="text-sm text-gray-400 flex items-center gap-1 mb-6">
-                <span className="material-symbols-outlined text-sm">group</span>
+              <button
+                type="button"
+                onClick={() => setShowMutualFriendsModal(true)}
+                className="text-[10px] font-black text-slate-400 dark:text-gray-500 uppercase tracking-widest flex items-center justify-center gap-2 mb-8 bg-slate-50 dark:bg-white/5 px-4 py-2 rounded-full border border-slate-100 dark:border-white/5 relative z-10 transition-all hover:bg-slate-100 dark:hover:bg-white/10 hover:text-primary dark:hover:text-primary group mx-auto"
+              >
+                <span className="material-symbols-outlined text-base text-primary group-hover:scale-110 transition-transform">group</span>
                 {t('userProfile.mutualFriends', { count: profile.mutualFriendsCount })}
-              </div>
+              </button>
             )}
-            <div className="w-full flex flex-col gap-3">
-              <div className="flex gap-2">
+
+            <div className="w-full flex flex-col gap-3 relative z-10">
+              <div className="flex gap-3">
                 {profile.friendStatus === 'connected' && (
                   <>
                     <button
                       type="button"
                       disabled={profile.blockedByMe}
                       onClick={handleMessage}
-                      className="flex-1 bg-primary hover:bg-primary/90 disabled:opacity-50 text-white py-2.5 rounded-lg font-bold text-sm flex items-center justify-center gap-2"
+                      className="flex-1 bg-primary hover:brightness-110 disabled:opacity-50 text-white h-11 rounded-xl text-[10px] font-black uppercase tracking-widest flex items-center justify-center gap-3 shadow-lg shadow-primary/20 transition-all active:scale-95"
                     >
-                      <span className="material-symbols-outlined text-lg">chat</span>
+                      <span className="material-symbols-outlined text-xl">chat</span>
                       {t('userProfile.sendMessage')}
                     </button>
                     <div className="relative shrink-0" ref={friendsMenuRef}>
                       <button
                         type="button"
                         onClick={() => setFriendsMenuOpen((o) => !o)}
-                        className="w-11 h-[42px] bg-border-dark hover:bg-border-dark/70 text-white rounded-lg font-bold flex items-center justify-center"
+                        className="size-11 bg-slate-50 dark:bg-white/5 hover:bg-slate-100 dark:hover:bg-white/10 text-slate-400 dark:text-gray-500 rounded-xl flex items-center justify-center transition-all border border-slate-100 dark:border-white/5"
                         aria-expanded={friendsMenuOpen}
                       >
-                        <span className="material-symbols-outlined">expand_more</span>
+                        <span className="material-symbols-outlined text-lg transition-transform duration-300" style={{ transform: friendsMenuOpen ? 'rotate(180deg)' : 'none' }}>expand_more</span>
                       </button>
                       {friendsMenuOpen && (
-                        <div className="absolute right-0 left-0 top-full z-10 mt-1 py-1 rounded-lg border border-border-dark bg-card-dark shadow-xl min-w-[160px]">
+                        <div className="absolute right-0 top-full z-[100] mt-3 py-2 rounded-[1.5rem] border border-slate-200 dark:border-border-dark bg-white dark:bg-card-dark shadow-2xl min-w-[200px] animate-in fade-in zoom-in-95 duration-200">
                           <button
                             type="button"
                             disabled={friendActionLoading}
                             onClick={handleRemoveFriend}
-                            className="w-full flex items-center gap-2 px-4 py-2.5 text-sm text-left text-gray-200 hover:bg-white/5 disabled:opacity-60"
+                            className="w-full flex items-center gap-3 px-5 py-3 text-[10px] font-bold uppercase tracking-widest text-left text-slate-600 dark:text-gray-300 hover:bg-slate-50 dark:hover:bg-white/5 disabled:opacity-60 transition-colors rounded-t-[1.5rem]"
                           >
-                            <span className="material-symbols-outlined text-lg">person_remove</span>
+                            <span className="material-symbols-outlined text-lg text-rose-500">person_remove</span>
                             {t('userProfile.removeFriend')}
                           </button>
+                          <div className="h-px bg-slate-100 dark:bg-white/5 mx-2 my-1" />
                           {profile.blockedByMe ? (
                             <button
                               type="button"
                               disabled={blockActionLoading}
                               onClick={handleUnblock}
-                              className="w-full flex items-center gap-2 px-4 py-2.5 text-sm text-left text-gray-200 hover:bg-white/5 disabled:opacity-60"
+                              className="w-full flex items-center gap-3 px-5 py-3 text-[10px] font-bold uppercase tracking-widest text-left text-slate-600 dark:text-gray-300 hover:bg-slate-50 dark:hover:bg-white/5 disabled:opacity-60 transition-colors rounded-b-[1.5rem]"
                             >
-                              <span className="material-symbols-outlined text-lg">block</span>
+                              <span className="material-symbols-outlined text-lg text-primary">block</span>
                               {t('messages.unblock')}
                             </button>
                           ) : (
@@ -410,7 +491,7 @@ export function UserProfilePage() {
                               type="button"
                               disabled={blockActionLoading}
                               onClick={handleBlock}
-                              className="w-full flex items-center gap-2 px-4 py-2.5 text-sm text-left text-red-400 hover:bg-red-500/10 disabled:opacity-60"
+                              className="w-full flex items-center gap-3 px-5 py-3 text-[10px] font-bold uppercase tracking-widest text-left text-rose-500 hover:bg-rose-500/10 disabled:opacity-60 transition-colors rounded-b-[1.5rem]"
                             >
                               <span className="material-symbols-outlined text-lg">block</span>
                               {t('userProfile.block')}
@@ -427,12 +508,12 @@ export function UserProfilePage() {
                       type="button"
                       disabled={friendActionLoading}
                       onClick={handleAddFriend}
-                      className="flex-1 bg-primary hover:bg-primary/90 disabled:opacity-60 text-white py-2.5 rounded-lg font-bold text-sm flex items-center justify-center gap-2"
+                      className="flex-1 bg-primary hover:brightness-110 disabled:opacity-60 text-white py-3 rounded-xl text-[10px] font-black uppercase tracking-widest flex items-center justify-center gap-3 shadow-lg shadow-primary/20 transition-all active:scale-95"
                     >
                       {friendActionLoading ? (
-                        <span className="material-symbols-outlined text-lg animate-spin">progress_activity</span>
+                        <span className="material-symbols-outlined text-xl animate-spin">progress_activity</span>
                       ) : (
-                        <span className="material-symbols-outlined text-lg">person_add</span>
+                        <span className="material-symbols-outlined text-xl">person_add</span>
                       )}
                       {t('userProfile.addFriend')}
                     </button>
@@ -440,9 +521,9 @@ export function UserProfilePage() {
                       type="button"
                       disabled={profile.blockedByMe}
                       onClick={handleMessage}
-                      className="flex-1 bg-border-dark hover:bg-border-dark/70 disabled:opacity-50 text-white py-2.5 rounded-lg font-bold text-sm flex items-center justify-center gap-2"
+                      className="flex-1 bg-slate-100 dark:bg-white/10 hover:bg-slate-200 dark:hover:bg-white/20 disabled:opacity-50 text-slate-600 dark:text-white py-3 rounded-xl text-[10px] font-black uppercase tracking-widest flex items-center justify-center gap-3 transition-all active:scale-95 border border-slate-200 dark:border-white/10"
                     >
-                      <span className="material-symbols-outlined text-lg">chat</span>
+                      <span className="material-symbols-outlined text-xl">chat</span>
                       {t('userProfile.sendMessage')}
                     </button>
                   </>
@@ -453,12 +534,12 @@ export function UserProfilePage() {
                       type="button"
                       disabled={friendActionLoading}
                       onClick={handleCancelRequest}
-                      className="flex-1 bg-amber-600 hover:bg-amber-700 disabled:opacity-60 text-white py-2.5 rounded-lg font-bold text-sm flex items-center justify-center gap-2"
+                      className="flex-1 bg-amber-500 hover:brightness-110 disabled:opacity-60 text-white py-3 rounded-xl text-[10px] font-black uppercase tracking-widest flex items-center justify-center gap-3 shadow-lg shadow-amber-500/20 transition-all active:scale-95"
                     >
                       {friendActionLoading ? (
-                        <span className="material-symbols-outlined text-lg animate-spin">progress_activity</span>
+                        <span className="material-symbols-outlined text-xl animate-spin">progress_activity</span>
                       ) : (
-                        <span className="material-symbols-outlined text-lg">person_remove</span>
+                        <span className="material-symbols-outlined text-xl">person_remove</span>
                       )}
                       {t('userProfile.cancelRequest')}
                     </button>
@@ -466,31 +547,35 @@ export function UserProfilePage() {
                       type="button"
                       disabled={profile.blockedByMe}
                       onClick={handleMessage}
-                      className="flex-1 bg-border-dark hover:bg-border-dark/70 disabled:opacity-50 text-white py-2.5 rounded-lg font-bold text-sm flex items-center justify-center gap-2"
+                      className="flex-1 bg-slate-100 dark:bg-white/10 hover:bg-slate-200 dark:hover:bg-white/20 disabled:opacity-50 text-slate-600 dark:text-white py-3 rounded-xl text-[10px] font-black uppercase tracking-widest flex items-center justify-center gap-3 transition-all active:scale-95 border border-slate-200 dark:border-white/10"
                     >
-                      <span className="material-symbols-outlined text-lg">chat</span>
+                      <span className="material-symbols-outlined text-xl">chat</span>
                       {t('userProfile.sendMessage')}
                     </button>
                   </>
                 )}
                 {profile.friendStatus === 'pending' && !profile.pendingSentByMe && (
-                  <span className="flex-1 bg-border-dark text-gray-400 py-2.5 rounded-lg font-bold text-sm flex items-center justify-center gap-2 cursor-default">
-                    <span className="material-symbols-outlined text-lg">schedule</span>
+                  <div className="flex-1 bg-slate-50 dark:bg-white/5 text-slate-400 dark:text-gray-600 py-3 rounded-xl text-[10px] font-black uppercase tracking-widest flex items-center justify-center gap-3 cursor-default border border-slate-100 dark:border-white/5">
+                    <span className="material-symbols-outlined text-xl">schedule</span>
                     {t('userProfile.pendingRequest')}
-                  </span>
+                  </div>
                 )}
               </div>
-              <button
-                type="button"
-                className="w-full text-gray-500 hover:text-red-400 py-2 text-xs flex items-center justify-center gap-1 transition-colors"
-              >
-                <span className="material-symbols-outlined text-sm">report</span>
-                {t('userProfile.report')}
-              </button>
+              {viewerId && userId && String(viewerId) !== String(userId) ? (
+                <button
+                  type="button"
+                  onClick={() => setShowReportUserModal(true)}
+                  className="w-full text-slate-400 dark:text-gray-600 hover:text-rose-500 py-3 text-[10px] font-black uppercase tracking-[0.2em] flex items-center justify-center gap-2 transition-colors mt-2"
+                >
+                  <span className="material-symbols-outlined text-sm">report</span>
+                  {t('userProfile.report')}
+                </button>
+              ) : null}
             </div>
+
           </div>
 
-          <div className="bg-card-dark border border-border-dark rounded-xl p-5">
+          <div className="bg-white dark:bg-card-dark border border-slate-200 dark:border-border-dark rounded-[2.5rem] p-8 shadow-2xl shadow-slate-200/50 dark:shadow-none">
             <ProfileFriendsListModal
               t={t}
               show={friendsModalOpen}
@@ -505,44 +590,47 @@ export function UserProfilePage() {
               myPendingSentUserIds={myPendingSentUserIds}
               onSendFriendRequest={handleSendFriendRequestFromModal}
             />
-            <div className="flex justify-between items-center mb-4">
-              <h3 className="font-bold text-white">{t('userProfile.friendsCount', { count: profile.friendsCount })}</h3>
+            <div className="flex justify-between items-center mb-8">
+              <h3 className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-900 dark:text-white flex items-center gap-2">
+                <span className="size-2 rounded-full bg-primary" />
+                {t('userProfile.friendsCount', { count: profile.friendsCount })}
+              </h3>
               <button
                 type="button"
                 onClick={() => setFriendsModalOpen(true)}
-                className="text-xs text-primary font-medium hover:underline"
+                className="text-[10px] font-black uppercase tracking-widest text-primary hover:underline"
               >
                 {t('userProfile.viewAllFriends')}
               </button>
             </div>
-            <div className="grid grid-cols-3 gap-4">
+            <div className="grid grid-cols-3 gap-6">
               {profile.friends.slice(0, 6).map((friend) => (
                 <Link
                   key={friend.id}
                   to={`/profile/${friend.id}`}
-                  className="flex flex-col items-center gap-1 text-center group"
+                  className="flex flex-col items-center gap-3 text-center group"
                 >
-                  <div className="size-14 rounded-lg bg-background-dark overflow-hidden">
+                  <div className="size-16 rounded-2xl bg-slate-50 dark:bg-white/5 border border-slate-100 dark:border-white/5 overflow-hidden shadow-sm group-hover:scale-105 transition-transform group-hover:shadow-lg group-hover:shadow-primary/10">
                     <img alt="" className="w-full h-full object-cover group-hover:opacity-90 transition-opacity" src={friend.avatar} />
                   </div>
-                  <span className="text-[10px] text-gray-400 truncate w-full">{friend.name}</span>
+                  <span className="text-[10px] font-black text-slate-500 dark:text-gray-400 uppercase tracking-widest truncate w-full group-hover:text-primary transition-colors">{friend.name}</span>
                 </Link>
               ))}
             </div>
           </div>
         </div>
 
-        {/* Right: Tabs & Content - giống profile cá nhân: tab 201px, card min-w bọc hết */}
-        <div className="lg:col-span-8 lg:flex-[1_1_0%] lg:min-w-[780px] w-full bg-white dark:bg-card-dark rounded-2xl border border-slate-200 dark:border-border-dark overflow-hidden">
-          <nav className="flex pt-2 border-b border-slate-200 dark:border-border-dark">
+        {/* Right: Tabs & Content */}
+        <div className="lg:col-span-8 lg:flex-1 min-w-0 bg-white dark:bg-card-dark rounded-[2.5rem] border border-slate-200 dark:border-border-dark overflow-hidden shadow-2xl shadow-slate-200/50 dark:shadow-none flex flex-col">
+          <nav className="flex w-full border-b border-slate-100 dark:border-white/5 overflow-x-auto no-scrollbar">
             {[
-              { key: 'about', label: 'userProfile.tabAbout' },
-              { key: 'personalInfo', label: 'userProfile.tabPersonalInfo' },
-              { key: 'skills', label: 'userProfile.mySkills' },
-              { key: 'posts', label: 'userProfile.tabPosts' },
-              { key: 'photos', label: 'userProfile.tabPhotos' },
-              { key: 'video', label: 'userProfile.tabVideo' },
-            ].map(({ key, label }) => (
+              { key: 'about', label: 'userProfile.tabAbout', icon: 'info' },
+              { key: 'personalInfo', label: 'userProfile.tabPersonalInfo', icon: 'badge' },
+              { key: 'skills', label: 'userProfile.mySkills', icon: 'psychology' },
+              { key: 'posts', label: 'userProfile.tabPosts', icon: 'article' },
+              { key: 'photos', label: 'userProfile.tabPhotos', icon: 'photo_library' },
+              { key: 'video', label: 'userProfile.tabVideo', icon: 'movie' },
+            ].map(({ key, label, icon }) => (
             <button
               key={key}
               type="button"
@@ -556,51 +644,138 @@ export function UserProfilePage() {
                   navigate(`/profile/${userId}/${key}`)
                 }
               }}
-                className={`shrink-0 w-[130px] py-5 text-base font-medium border-b-2 transition-colors text-center ${
-                  activeTab === key
-                    ? 'text-primary border-primary'
-                    : 'text-slate-500 dark:text-slate-400 border-transparent hover:text-slate-700 dark:hover:text-slate-200'
-                }`}
-              >
-                {t(label)}
+              className={`flex-1 flex items-center justify-center gap-3 px-4 py-5 text-xs font-black uppercase tracking-widest transition-all relative group/tab shrink-0 ${
+                activeTab === key
+                  ? 'text-primary'
+                  : 'text-slate-400 dark:text-gray-500 hover:text-slate-600 dark:hover:text-gray-300'
+              }`}
+            >
+              <span className={`material-symbols-outlined text-xl transition-transform group-hover/tab:scale-110 ${activeTab === key ? 'text-primary' : 'text-slate-300 dark:text-gray-700'}`}>
+                {icon}
+              </span>
+              {t(label)}
+              {activeTab === key && (
+                <div className="absolute bottom-0 left-0 right-0 h-1 bg-primary rounded-full shadow-[0_-4px_10px_rgba(19,182,236,0.5)]" />
+              )}
               </button>
             ))}
           </nav>
 
-          <div className="p-8 w-full min-w-[32rem] flex flex-col space-y-6">
+          <div className="p-10 w-full flex-1 flex flex-col space-y-10 animate-in fade-in slide-in-from-right-4 duration-500">
             {activeTab === 'about' && (
               <>
-                <div className="bg-card-dark border border-border-dark rounded-xl p-6">
-                  <h3 className="text-lg font-bold text-white mb-4 flex items-center gap-2">
+                <div className="bg-slate-50 dark:bg-white/5 border border-slate-100 dark:border-white/10 rounded-[2rem] p-8 shadow-inner">
+                  <h3 className="text-xs font-black text-slate-900 dark:text-white mb-6 uppercase tracking-[0.2em] flex items-center gap-3">
                     <span className="material-symbols-outlined text-primary">person</span>
                     {t('userProfile.bioTitle')}
                   </h3>
-                  <p className="text-gray-300 leading-relaxed mb-6">
+                  <p className="text-sm font-medium text-slate-600 dark:text-gray-300 leading-relaxed mb-8 px-2">
                     {profile.bio || t('userProfile.noBio')}
                   </p>
-                  <div className="flex items-center gap-2 text-sm text-gray-400">
-                    <span className="material-symbols-outlined text-sm">calendar_month</span>
+                  <div className="flex items-center gap-3 text-xs font-black text-slate-400 dark:text-gray-600 uppercase tracking-widest border-t border-slate-200 dark:border-white/5 pt-6">
+                    <span className="material-symbols-outlined text-base">calendar_month</span>
                     {t('userProfile.joinedSince', { date: profile.joinedAt })}
                   </div>
                 </div>
 
-                <div className="bg-card-dark border border-border-dark rounded-xl p-6">
-                  <div className="flex justify-between items-center mb-6">
-                    <h3 className="text-lg font-bold text-white flex items-center gap-2">
-                      <span className="material-symbols-outlined text-yellow-500">emoji_events</span>
+                <div className="bg-slate-50 dark:bg-white/5 border border-slate-100 dark:border-white/10 rounded-[2rem] p-8 shadow-inner">
+                  <div className="flex justify-between items-center mb-8">
+                    <h3 className="text-xs font-black text-slate-900 dark:text-white flex items-center gap-3 uppercase tracking-[0.2em]">
+                      <span className="material-symbols-outlined text-amber-500">emoji_events</span>
                       {t('userProfile.achievements')}
                     </h3>
-                    <Link to={userId ? `${ROUTES.PROFILE_USER(userId)}/achievements` : '#'} className="text-xs text-primary font-medium hover:underline">
-                      {t('userProfile.seeAllAchievements')}
-                    </Link>
                   </div>
-                  <div className="flex flex-wrap gap-8">
-                    {profile.achievements.map((a) => (
-                      <div key={a.id} className="flex flex-col items-center text-center gap-2 group cursor-pointer">
-                        <div className={`size-16 rounded-full border flex items-center justify-center group-hover:scale-110 transition-transform ${a.boxClass}`}>
-                          <span className={`material-symbols-outlined text-3xl ${a.iconClass}`}>{a.icon}</span>
+                  <div className="flex flex-wrap gap-8 px-2">
+                    {userAchievementsLoading ? (
+                      <div className="flex flex-wrap gap-8 w-full">
+                        {Array.from({ length: 5 }).map((_, i) => (
+                          <div key={i} className="flex flex-col items-center gap-3 animate-pulse">
+                            <div className="size-14 rounded-full bg-slate-200 dark:bg-white/5" />
+                            <div className="h-2 w-12 bg-slate-200 dark:bg-white/5 rounded" />
+                          </div>
+                        ))}
+                      </div>
+                    ) : (() => {
+                      const unlockedWithBadges = userAchievements.filter(a => 
+                        a.unlocked && (
+                          (Array.isArray(a.earnedBadges) && a.earnedBadges.length > 0) ||
+                          (a.badgeName && String(a.badgeName).trim()) ||
+                          (a.badgeImage && String(a.badgeImage).trim()) ||
+                          (a.badgeIcon && String(a.badgeIcon).trim()) ||
+                          a.rewardType === 'badge' || 
+                          a.rewardType === 'both'
+                        )
+                      )
+                      if (unlockedWithBadges.length === 0) return (
+                        <div className="w-full flex flex-col items-center justify-center py-10 opacity-40">
+                          <span className="material-symbols-outlined text-6xl text-slate-300 dark:text-gray-700">workspace_premium</span>
+                          <p className="text-xs font-black uppercase tracking-[0.2em] text-slate-400 dark:text-gray-600 mt-4">{t('userProfile.noAchievements') || 'No achievements yet'}</p>
                         </div>
-                        <span className="text-xs font-semibold text-gray-300">{a.title}</span>
+                      )
+                      
+                      return unlockedWithBadges.map((a) => {
+                        const badges = []
+                        if (Array.isArray(a.earnedBadges) && a.earnedBadges.length > 0) {
+                          a.earnedBadges.forEach(b => {
+                            badges.push({
+                              id: b.id || `${a.id}-${b.value}`,
+                              name: b.badgeName,
+                              image: b.badgeImage,
+                              icon: b.badgeIcon || 'military_tech'
+                            })
+                          })
+                        } else {
+                          badges.push({
+                            id: a.id,
+                            name: a.badgeName || a.name,
+                            image: a.badgeImage,
+                            icon: a.badgeIcon || a.icon || 'military_tech'
+                          })
+                        }
+
+                        return badges.map(badge => {
+                          const img = badge.image && !String(badge.image).startsWith('blob:') ? String(badge.image) : ''
+                          return (
+                            <div key={badge.id} className="flex flex-col items-center text-center gap-2.5 group cursor-pointer">
+                              <div className="size-14 rounded-full border-[3px] border-amber-400/50 bg-gradient-to-br from-amber-500/20 to-slate-900/80 text-amber-200 shadow-lg ring-2 ring-transparent transition-all group-hover:scale-110 group-hover:rotate-6 flex items-center justify-center relative overflow-hidden">
+                                {img ? (
+                                  <img src={img} alt="" className="w-full h-full object-cover" />
+                                ) : (
+                                  <span className="material-symbols-outlined text-2xl">{badge.icon}</span>
+                                )}
+                                <div className="absolute inset-0 bg-gradient-to-tr from-white/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
+                              </div>
+                              <span className="text-[9px] font-black text-slate-500 dark:text-gray-400 uppercase tracking-widest group-hover:text-primary transition-colors line-clamp-1 max-w-[70px]">{badge.name}</span>
+                            </div>
+                          )
+                        })
+                      })
+                    })()}
+                  </div>
+                </div>
+
+                <div className="bg-slate-50 dark:bg-white/5 border border-slate-100 dark:border-white/10 rounded-[2rem] p-8 shadow-inner">
+                  <h3 className="text-xs font-black text-slate-900 dark:text-white mb-8 uppercase tracking-[0.2em] flex items-center gap-3">
+                    <span className="material-symbols-outlined text-primary">analytics</span>
+                    {t('profile.skillStats')}
+                  </h3>
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    {userSkillStats.map(({ icon, label, value, change, changeColor }) => (
+                      <div
+                        key={label}
+                        className="bg-white dark:bg-card-dark p-6 rounded-2xl border border-slate-100 dark:border-white/10 flex flex-col items-center text-center shadow-sm"
+                      >
+                        <span className={`material-symbols-outlined text-3xl mb-4 ${changeColor || 'text-primary'}`}>
+                          {icon}
+                        </span>
+                        <span className="text-[10px] font-black text-slate-400 dark:text-gray-500 uppercase tracking-widest mb-2">{t(label)}</span>
+                        <div className="flex items-baseline gap-2">
+                          <span className="text-2xl font-bold text-slate-900 dark:text-white">{value}</span>
+                          <span className="text-[10px] font-black text-slate-400">XP</span>
+                        </div>
+                        {change && (
+                          <span className={`text-[10px] font-bold mt-2 ${changeColor}`}>{change}</span>
+                        )}
                       </div>
                     ))}
                   </div>
@@ -609,11 +784,20 @@ export function UserProfilePage() {
             )}
 
             {activeTab === 'personalInfo' && (
-              <div className="bg-card-dark border border-border-dark rounded-xl p-6">
-                <h3 className="text-lg font-bold text-white mb-4 flex items-center gap-2">
+              <div className="bg-slate-50 dark:bg-white/5 border border-slate-100 dark:border-white/10 rounded-[2rem] p-10 shadow-inner">
+                <h3 className="text-xs font-black text-slate-900 dark:text-white mb-10 uppercase tracking-[0.2em] flex items-center gap-3">
                   <span className="material-symbols-outlined text-primary">badge</span>
                   {t('userProfile.personalInfoTitle')}
                 </h3>
+                <div className="flex flex-col gap-2 mb-10 text-xs font-black text-slate-500 dark:text-gray-400 uppercase tracking-widest">
+                  <span>
+                    {t('profile.currentLevel')} {displayLevel || 1}
+                  </span>
+                  <span>
+                    {Math.max(0, (displayXpMax || 500) - (displayXp || 0))} XP {t('profile.toLevel')}{' '}
+                    {(displayLevel || 1) + 1}
+                  </span>
+                </div>
                 {(() => {
                   const name = profile.name ?? ''
                   const email = profile.email ?? ''
@@ -628,41 +812,29 @@ export function UserProfilePage() {
                     return Number.isNaN(d.getTime()) ? val : d.toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit', year: 'numeric' })
                   }
                   const genderLabel = gender ? t(`auth.gender${gender.charAt(0).toUpperCase() + gender.slice(1)}`) : ''
-                  const emptyClass = 'text-gray-500 dark:text-gray-500'
-                  const valueClass = 'text-slate-800 dark:text-white'
-                  const Value = ({ children, isEmpty }) => (
-                    <div className={isEmpty ? emptyClass : valueClass}>{children || '—'}</div>
+                  const labelClass = 'text-xs font-black text-slate-400 dark:text-gray-500 uppercase tracking-widest mb-2 flex items-center gap-2'
+                  const valueClass = 'text-sm font-bold text-slate-700 dark:text-white px-1'
+                  const emptyClass = 'text-sm font-bold text-slate-300 dark:text-gray-700 italic px-1'
+                  
+                  const InfoItem = ({ label, value, icon, isEmpty, colSpan = 1 }) => (
+                    <div className={`space-y-2 ${colSpan === 2 ? 'md:col-span-2' : ''}`}>
+                      <div className={labelClass}>
+                        <span className="material-symbols-outlined text-sm text-primary/50">{icon}</span>
+                        {label}
+                      </div>
+                      <div className={isEmpty ? emptyClass : valueClass}>{value || '—'}</div>
+                    </div>
                   )
+
                   return (
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                      <div className="space-y-1">
-                        <div className="text-sm font-semibold text-slate-500 dark:text-slate-400">{t('profile.displayName')}</div>
-                        <Value isEmpty={!name}>{name}</Value>
-                      </div>
-                      <div className="space-y-1">
-                        <div className="text-sm font-semibold text-slate-500 dark:text-slate-400">{t('auth.email')}</div>
-                        <Value isEmpty={!email}>{email}</Value>
-                      </div>
-                      <div className="space-y-1">
-                        <div className="text-sm font-semibold text-slate-500 dark:text-slate-400">{t('profile.phone')}</div>
-                        <Value isEmpty={!phone}>{phone}</Value>
-                      </div>
-                      <div className="md:col-span-2 space-y-1">
-                        <div className="text-sm font-semibold text-slate-500 dark:text-slate-400">{t('profile.bio')}</div>
-                        <div className={!bio ? emptyClass : valueClass}>{bio ? <span className="whitespace-pre-wrap">{bio}</span> : '—'}</div>
-                      </div>
-                      <div className="space-y-1">
-                        <div className="text-sm font-semibold text-slate-500 dark:text-slate-400">{t('profile.address')}</div>
-                        <Value isEmpty={!address}>{address}</Value>
-                      </div>
-                      <div className="space-y-1">
-                        <div className="text-sm font-semibold text-slate-500 dark:text-slate-400">{t('auth.dateOfBirth')}</div>
-                        <Value isEmpty={!dateOfBirth}>{formatDoB(dateOfBirth)}</Value>
-                      </div>
-                      <div className="space-y-1">
-                        <div className="text-sm font-semibold text-slate-500 dark:text-slate-400">{t('auth.gender')}</div>
-                        <Value isEmpty={!gender}>{genderLabel}</Value>
-                      </div>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-y-10 gap-x-12">
+                      <InfoItem label={t('profile.displayName')} value={name} icon="person" isEmpty={!name} />
+                      <InfoItem label={t('auth.email')} value={email} icon="mail" isEmpty={!email} />
+                      <InfoItem label={t('profile.phone')} value={phone} icon="call" isEmpty={!phone} />
+                      <InfoItem label={t('auth.gender')} value={genderLabel} icon="wc" isEmpty={!gender} />
+                      <InfoItem label={t('profile.address')} value={address} icon="location_on" isEmpty={!address} colSpan={2} />
+                      <InfoItem label={t('auth.dateOfBirth')} value={formatDoB(dateOfBirth)} icon="cake" isEmpty={!dateOfBirth} />
+                      <InfoItem label={t('userProfile.joinedSince', { date: profile.joinedAt })} value={profile.joinedAt} icon="event" isEmpty={!profile.joinedAt} />
                     </div>
                   )
                 })()}
@@ -672,11 +844,13 @@ export function UserProfilePage() {
             {activeTab === 'skills' && <ProfileSkillsTab readOnly initialData={profile?.profileSkills} />}
 
             {activeTab === 'posts' && (
-              <ProfilePostsList
-                posts={userPosts}
-                loading={userPostsLoading}
-                error={userPostsError}
-              />
+              <div className="animate-in fade-in slide-in-from-bottom-4 duration-500">
+                <ProfilePostsList
+                  posts={userPosts}
+                  loading={userPostsLoading}
+                  error={userPostsError}
+                />
+              </div>
             )}
 
             {activeTab === 'photos' && (
@@ -701,6 +875,33 @@ export function UserProfilePage() {
           </div>
         </div>
       </div>
+      <ProfileFriendsListModal
+        t={t}
+        show={showMutualFriendsModal}
+        onClose={() => setShowMutualFriendsModal(false)}
+        friends={profile?.mutualFriends || []}
+        loading={false}
+        onlineUserIds={onlineUserIds}
+        navigate={navigate}
+        viewerUserId={viewerId}
+        showStrangerAddFriend
+        myConnectedFriendIds={myConnectedFriendIds}
+        myPendingSentUserIds={myPendingSentUserIds}
+        onSendFriendRequest={handleSendFriendRequestFromModal}
+      />
+      <ReportContentModal
+        open={showReportUserModal}
+        titleKey="report.titleUser"
+        onClose={() => setShowReportUserModal(false)}
+        onSubmit={async ({ reason, details }) => {
+          await reportService.submitReport({
+            targetType: 'user',
+            targetId: String(userId),
+            reason,
+            details,
+          })
+        }}
+      />
     </main>
   )
 }

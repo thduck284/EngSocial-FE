@@ -12,6 +12,7 @@ import { ProfilePhotosGrid } from '../components/profile/ProfilePhotosGrid'
 import { ProfileVideosGrid } from '../components/profile/ProfileVideosGrid'
 import { ProfileSkillsTab } from '../components/profile/ProfileSkillsTab'
 import { useProfilePage, useProfilePhotos, useProfileVideos } from '../hooks/useProfile'
+import { useProfileAchievements } from '../hooks/useProfileAchievements'
 import { LogoutConfirmModal } from '../components/layout/LogoutConfirmModal'
 
 export function ProfilePage() {
@@ -19,7 +20,6 @@ export function ProfilePage() {
     t,
     navigate,
     user,
-    raw,
     profileSkillStats,
     profileFriends,
     sortedProfileFriends,
@@ -45,8 +45,6 @@ export function ProfilePage() {
     profilePostsLoading,
     profilePostsError,
     filteredFriends,
-    goalsDone,
-    goalsTotal,
     handleChange,
     handleSave,
     handleCancel,
@@ -57,6 +55,9 @@ export function ProfilePage() {
     handleSaveAvatar,
     setProfileTab,
   } = useProfilePage()
+
+  const { items: profileAchievementItems, loading: profileAchievementsLoading } =
+    useProfileAchievements()
 
   const [logoutConfirmOpen, setLogoutConfirmOpen] = useState(false)
   const activeOnlineCount = (sortedProfileFriends || []).filter(f => f.isOnline).length
@@ -107,58 +108,42 @@ export function ProfilePage() {
   } = useProfileVideos(user?.id || user?._id, { pageSize: 5 })
 
   return (
-    <main className="max-w-7xl mx-auto px-4 py-8">
-      {/* Breadcrumb */}
-      <div className="mb-6 flex items-center gap-2 text-sm text-slate-500 dark:text-slate-400">
-        <span className="material-symbols-outlined text-sm">home</span>
-        <span>/</span>
-        <Link to={ROUTES.HOME} className="hover:text-primary transition-colors">
-          {t('header.home')}
-        </Link>
-        <span>/</span>
-        <span className="text-primary font-medium">{t('profile.title')}</span>
-      </div>
-
-      <div className="flex flex-col lg:flex-row gap-6 mb-8">
+    <main className="max-w-[1440px] mx-auto px-6 lg:px-10 py-10">
+      <div className="flex flex-col lg:flex-row gap-10 mb-12">
         {/* Left: Avatar + Level + Friends (+ optional stats when on Posts tab) */}
-        <div className="lg:w-[calc(100%/3)] lg:shrink-0">
-          <div
-            className={`flex flex-col gap-6 ${
-              profileTab === 'posts' ? 'lg:sticky lg:top-24' : ''
-            }`}
-          >
-          <ProfileAvatarCard
-            t={t}
-            displayName={displayName}
-            displayLevel={displayLevel}
-            displayXp={displayXp}
-            displayXpMax={displayXpMax}
-            displayAvatar={displayAvatar}
-            xpPercent={xpPercent}
-            onOpenAvatarModal={openAvatarModal}
-          />
-
-          <ProfileFriendsCard
-            t={t}
-            friends={filteredFriends}
-            allFriends={sortedProfileFriends}
-            loading={profileFriendsLoading}
-            friendSearch={friendSearch}
-            setFriendSearch={setFriendSearch}
-            onlineCount={activeOnlineCount}
-            onlineUserIds={onlineUserIds}
-            navigate={navigate}
-          />
-
-          {profileTab === 'posts' && (
-            <ProfileLeftStatsSection
+        <div className="lg:w-1/3 lg:shrink-0 space-y-10">
+          <div className="flex flex-col gap-10">
+            <ProfileAvatarCard
               t={t}
-              profileSkillStats={profileSkillStats}
-              raw={raw}
-              goalsDone={goalsDone}
-              goalsTotal={goalsTotal}
+              displayName={displayName}
+              displayLevel={displayLevel}
+              displayXp={displayXp}
+              displayXpMax={displayXpMax}
+              displayAvatar={displayAvatar}
+              xpPercent={xpPercent}
+              onOpenAvatarModal={openAvatarModal}
             />
-          )}
+
+            <ProfileFriendsCard
+              t={t}
+              friends={filteredFriends}
+              allFriends={sortedProfileFriends}
+              loading={profileFriendsLoading}
+              friendSearch={friendSearch}
+              setFriendSearch={setFriendSearch}
+              onlineCount={activeOnlineCount}
+              onlineUserIds={onlineUserIds}
+              navigate={navigate}
+            />
+
+            {profileTab === 'posts' && (
+              <ProfileLeftStatsSection
+                t={t}
+                profileSkillStats={profileSkillStats}
+                achievementItems={profileAchievementItems}
+                achievementsLoading={profileAchievementsLoading}
+              />
+            )}
           </div>
         </div>
 
@@ -175,71 +160,77 @@ export function ProfilePage() {
         />
 
         {/* Right: Tabs + content */}
-        <div className="lg:flex-[1_1_0%] lg:min-w-[800px] w-full bg-white dark:bg-card-dark rounded-2xl border border-slate-200 dark:border-border-dark overflow-hidden">
-          <nav className="flex pt-2 border-b border-slate-200 dark:border-border-dark">
+        <div className="lg:flex-1 min-w-0 bg-white dark:bg-card-dark rounded-[2.5rem] border border-slate-200 dark:border-border-dark overflow-hidden shadow-2xl shadow-slate-200/50 dark:shadow-none flex flex-col">
+          <nav className="flex w-full border-b border-slate-100 dark:border-white/5 overflow-x-auto no-scrollbar">
             {[
-              { id: 'personalInfo', key: 'tabPersonalInfo' },
-              { id: 'skills', key: 'mySkills' },
-              { id: 'posts', key: 'tabPosts' },
-              { id: 'photos', key: 'tabPhotos' },
-              { id: 'video', key: 'tabVideo' },
-            ].map(({ id, key }) => (
+              { id: 'personalInfo', key: 'tabPersonalInfo', icon: 'person' },
+              { id: 'skills', key: 'mySkills', icon: 'psychology' },
+              { id: 'posts', key: 'tabPosts', icon: 'article' },
+              { id: 'photos', key: 'tabPhotos', icon: 'photo_library' },
+              { id: 'video', key: 'tabVideo', icon: 'movie' },
+            ].map(({ id, key, icon }) => (
               <button
                 key={id}
                 type="button"
                 onClick={() => handleTabChange(id)}
-                className={`shrink-0 w-[160px] py-5 text-base font-medium border-b-2 transition-colors text-center ${
+                className={`flex-1 flex items-center justify-center gap-3 px-4 py-5 text-xs font-black uppercase tracking-widest transition-all relative group/tab ${
                   profileTab === id
-                    ? 'text-primary border-primary'
-                    : 'text-slate-500 dark:text-slate-400 border-transparent hover:text-slate-700 dark:hover:text-slate-200'
+                    ? 'text-primary'
+                    : 'text-slate-400 dark:text-gray-500 hover:text-slate-600 dark:hover:text-gray-300'
                 }`}
               >
+                <span className={`material-symbols-outlined text-xl transition-transform group-hover/tab:scale-110 ${profileTab === id ? 'text-primary' : 'text-slate-300 dark:text-gray-700'}`}>
+                  {icon}
+                </span>
                 {t(`profile.${key}`)}
+                {profileTab === id && (
+                  <div className="absolute bottom-0 left-0 right-0 h-1 bg-primary rounded-full shadow-[0_-4px_10px_rgba(19,182,236,0.5)]" />
+                )}
               </button>
             ))}
           </nav>
-          <div className="p-8 w-full min-w-[32rem] flex flex-col">
-          {profileTab === 'personalInfo' && (
-            <ProfilePersonalInfoForm
-              t={t}
-              form={form}
-              saving={saving}
-              message={message}
-              onChange={handleChange}
-              onCancel={handleCancel}
-              onSave={handleSave}
-            />
-          )}
+          <div className="p-10 w-full flex-1 flex flex-col animate-in fade-in slide-in-from-right-4 duration-500">
+            {profileTab === 'personalInfo' && (
+              <ProfilePersonalInfoForm
+                t={t}
+                form={form}
+                saving={saving}
+                message={message}
+                onChange={handleChange}
+                onCancel={handleCancel}
+                onSave={handleSave}
+              />
+            )}
 
-          {profileTab === 'posts' && (
-            <ProfilePostsList
-              posts={profilePosts}
-              loading={profilePostsLoading}
-              error={profilePostsError}
-            />
-          )}
+            {profileTab === 'posts' && (
+              <ProfilePostsList
+                posts={profilePosts}
+                loading={profilePostsLoading}
+                error={profilePostsError}
+              />
+            )}
 
-          {profileTab === 'skills' && <ProfileSkillsTab t={t} />}
+            {profileTab === 'skills' && <ProfileSkillsTab t={t} />}
 
-          {profileTab === 'photos' && (
-            <ProfilePhotosGrid
-              photos={profilePhotos}
-              loading={profilePhotosLoading}
-              error={profilePhotosError}
-              hasMore={profilePhotosHasMore}
-              loadMore={loadMoreProfilePhotos}
-            />
-          )}
+            {profileTab === 'photos' && (
+              <ProfilePhotosGrid
+                photos={profilePhotos}
+                loading={profilePhotosLoading}
+                error={profilePhotosError}
+                hasMore={profilePhotosHasMore}
+                loadMore={loadMoreProfilePhotos}
+              />
+            )}
 
-          {profileTab === 'video' && (
-            <ProfileVideosGrid
-              videos={profileVideos}
-              loading={profileVideosLoading}
-              error={profileVideosError}
-              hasMore={profileVideosHasMore}
-              loadMore={loadMoreProfileVideos}
-            />
-          )}
+            {profileTab === 'video' && (
+              <ProfileVideosGrid
+                videos={profileVideos}
+                loading={profileVideosLoading}
+                error={profileVideosError}
+                hasMore={profileVideosHasMore}
+                loadMore={loadMoreProfileVideos}
+              />
+            )}
           </div>
         </div>
       </div>
@@ -249,23 +240,23 @@ export function ProfilePage() {
         <ProfileBottomStatsSection
           t={t}
           profileSkillStats={profileSkillStats}
-          raw={raw}
-          goalsDone={goalsDone}
-          goalsTotal={goalsTotal}
+          achievementItems={profileAchievementItems}
+          achievementsLoading={profileAchievementsLoading}
         />
       )}
 
       {/* Actions */}
-      <div className="flex flex-col sm:flex-row items-center justify-center gap-4 border-t border-slate-200 dark:border-border-dark pt-8">
+      <div className="flex items-center justify-center pt-12 border-t border-slate-100 dark:border-white/5">
         <button
           type="button"
-          className="flex items-center gap-2 px-6 py-3 rounded-xl border-2 border-red-100 dark:border-red-900/30 font-bold text-red-500 hover:bg-red-50 dark:hover:bg-red-500/10 transition-all w-full sm:w-auto"
+          className="flex items-center gap-3 px-8 py-4 rounded-[1.5rem] bg-rose-50 dark:bg-rose-500/5 border-2 border-rose-100 dark:border-rose-500/20 text-xs font-black uppercase tracking-widest text-rose-500 hover:bg-rose-500 hover:text-white dark:hover:bg-rose-500 transition-all active:scale-95 shadow-lg shadow-rose-500/5"
           onClick={() => setLogoutConfirmOpen(true)}
         >
           <span className="material-symbols-outlined">logout</span>
           {t('header.logout')}
         </button>
       </div>
+
       <LogoutConfirmModal
         open={logoutConfirmOpen}
         onCancel={() => setLogoutConfirmOpen(false)}

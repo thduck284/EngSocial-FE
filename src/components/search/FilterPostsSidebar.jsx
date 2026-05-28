@@ -22,112 +22,113 @@ export function FilterPostsSidebar({
   clearFilters,
 }) {
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between mb-4">
-        <h2 className="text-lg font-bold flex items-center gap-2 text-white">
-          <span className="material-symbols-outlined text-primary">filter_list</span>
+    <div className="space-y-6 bg-white dark:bg-card-dark p-6 rounded-[2rem] border border-slate-200 dark:border-border-dark shadow-xl shadow-slate-200/50 dark:shadow-none">
+      <div className="flex items-center justify-between mb-2">
+        <h2 className="text-sm font-black uppercase tracking-[0.2em] flex items-center gap-3 text-slate-900 dark:text-white">
+          <span className="material-symbols-outlined text-primary text-xl">filter_list</span>
           {t('search.filterPostsTitle')}
         </h2>
       </div>
 
-      <div className="space-y-3">
-        <h3 className="text-xs font-semibold uppercase tracking-wider text-gray-500">{t('search.filterTimeLabel')}</h3>
+      <div className="space-y-4">
+        <h3 className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 dark:text-gray-500 flex items-center gap-2">
+          <span className="size-1 rounded-full bg-primary" />
+          {t('search.filterTimeLabel')}
+        </h3>
         <div className="flex flex-wrap gap-2">
           {TIME_OPTIONS.map((opt) => (
             <button
               key={opt}
               type="button"
               onClick={() => setTimeFilter(opt)}
-              className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${
+              className={`px-3 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all shadow-sm ${
                 timeFilter === opt
-                  ? 'bg-primary text-white'
-                  : 'bg-card-dark border border-border-dark text-gray-300 hover:bg-primary/20'
+                  ? 'bg-primary text-white shadow-primary/30'
+                  : 'bg-slate-50 dark:bg-white/5 border border-slate-100 dark:border-white/10 text-slate-500 dark:text-gray-400 hover:bg-slate-100 dark:hover:bg-white/10'
               }`}
             >
               {t(opt === 'all' ? 'search.filterTimeAll' : `search.filterTime${opt.charAt(0).toUpperCase() + opt.slice(1)}`)}
             </button>
           ))}
         </div>
-        <div className="grid grid-cols-2 gap-2 pt-1">
-          <div className="space-y-1">
-            <span className="text-[10px] text-gray-400">{t('search.filterTimeFrom')}</span>
+        <div className="grid grid-cols-2 gap-2 pt-2">
+          <div className="space-y-1.5">
+            <span className="text-[9px] font-black uppercase tracking-widest text-slate-400 dark:text-gray-500 px-1">{t('search.filterTimeFrom')}</span>
             <input
               type="date"
               value={dateFrom}
               onChange={(e) => setDateFrom(e.target.value)}
-              className="w-full bg-card-dark border border-border-dark rounded-lg text-xs p-1.5 focus:ring-primary text-white"
+              className="w-full bg-slate-50 dark:bg-background-dark/50 border border-slate-200 dark:border-white/5 rounded-lg text-[10px] font-bold p-2.5 focus:ring-2 focus:ring-primary/20 outline-none text-slate-700 dark:text-white transition-all shadow-inner"
             />
           </div>
-          <div className="space-y-1">
-            <span className="text-[10px] text-gray-400">{t('search.filterTimeTo')}</span>
+          <div className="space-y-1.5">
+            <span className="text-[9px] font-black uppercase tracking-widest text-slate-400 dark:text-gray-500 px-1">{t('search.filterTimeTo')}</span>
             <input
               type="date"
               value={dateTo}
               onChange={(e) => setDateTo(e.target.value)}
-              className="w-full bg-card-dark border border-border-dark rounded-lg text-xs p-1.5 focus:ring-primary text-white"
+              className="w-full bg-slate-50 dark:bg-background-dark/50 border border-slate-200 dark:border-white/5 rounded-lg text-[10px] font-bold p-2.5 focus:ring-2 focus:ring-primary/20 outline-none text-slate-700 dark:text-white transition-all shadow-inner"
             />
           </div>
         </div>
       </div>
 
-      {/* Sort by section đã được ẩn theo yêu cầu, giữ logic nhưng không render UI */}
-
-      <div className="space-y-3">
-        <h3 className="text-xs font-semibold uppercase tracking-wider text-gray-500">{t('search.contentTypeLabel')}</h3>
-        <div className="space-y-2">
+      <div className="space-y-4 pt-4 border-t border-slate-100 dark:border-white/5">
+        <h3 className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 dark:text-gray-500 flex items-center gap-2">
+          <span className="size-1 rounded-full bg-primary" />
+          {t('search.contentTypeLabel')}
+        </h3>
+        <div className="space-y-3 px-1">
           {CONTENT_TYPES.map(({ value, key }) => (
-            <label key={value} className="flex items-center gap-2 cursor-pointer group">
-              <input
-                type="radio"
-                name="content-type"
-                checked={contentType === value}
-                onChange={() => setContentType(value)}
-                className="text-primary focus:ring-primary bg-card-dark border-border-dark"
-              />
-              <span className="text-sm text-gray-300 group-hover:text-primary transition-colors">{t(`search.${key}`)}</span>
+            <label key={value} className="flex items-center gap-3 cursor-pointer group">
+              <div className="relative flex items-center justify-center">
+                <input
+                  type="radio"
+                  name="content-type"
+                  checked={contentType === value}
+                  onChange={() => setContentType(value)}
+                  className="peer appearance-none size-4 rounded-full border-2 border-slate-200 dark:border-white/10 checked:border-primary transition-all"
+                />
+                <div className="absolute size-2 rounded-full bg-primary scale-0 peer-checked:scale-100 transition-transform" />
+              </div>
+              <span className="text-[10px] font-bold text-slate-600 dark:text-gray-300 group-hover:text-primary transition-colors uppercase tracking-widest">{t(`search.${key}`)}</span>
             </label>
           ))}
         </div>
       </div>
 
-      <div className="space-y-3">
-        <h3 className="text-xs font-semibold uppercase tracking-wider text-gray-500">{t('search.interactionsLabel')}</h3>
-        <div className="space-y-2">
-          <label className="flex items-center gap-2 cursor-pointer group">
-            <input
-              type="checkbox"
-              checked={hasComments}
-              onChange={(e) => setHasComments(e.target.checked)}
-              className="rounded text-primary focus:ring-primary bg-card-dark border-border-dark"
-            />
-            <span className="text-sm text-gray-300 group-hover:text-primary transition-colors">{t('search.filterHasComments')}</span>
-          </label>
-          <label className="flex items-center gap-2 cursor-pointer group">
-            <input
-              type="checkbox"
-              checked={hasLikes}
-              onChange={(e) => setHasLikes(e.target.checked)}
-              className="rounded text-primary focus:ring-primary bg-card-dark border-border-dark"
-            />
-            <span className="text-sm text-gray-300 group-hover:text-primary transition-colors">{t('search.filterHasLikes')}</span>
-          </label>
-          <label className="flex items-center gap-2 cursor-pointer group">
-            <input
-              type="checkbox"
-              checked={savedOnly}
-              onChange={(e) => setSavedOnly(e.target.checked)}
-              className="rounded text-primary focus:ring-primary bg-card-dark border-border-dark"
-            />
-            <span className="text-sm text-gray-300 group-hover:text-primary transition-colors">{t('search.filterSaved')}</span>
-          </label>
+      <div className="space-y-4 pt-4 border-t border-slate-100 dark:border-white/5">
+        <h3 className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 dark:text-gray-500 flex items-center gap-2">
+          <span className="size-1 rounded-full bg-primary" />
+          {t('search.interactionsLabel')}
+        </h3>
+        <div className="space-y-3 px-1">
+          {[
+            { checked: hasComments, onChange: setHasComments, label: 'search.filterHasComments' },
+            { checked: hasLikes, onChange: setHasLikes, label: 'search.filterHasLikes' },
+            { checked: savedOnly, onChange: setSavedOnly, label: 'search.filterSaved' },
+          ].map((item, idx) => (
+            <label key={idx} className="flex items-center gap-3 cursor-pointer group">
+              <div className="relative flex items-center justify-center">
+                <input
+                  type="checkbox"
+                  checked={item.checked}
+                  onChange={(e) => item.onChange(e.target.checked)}
+                  className="peer appearance-none size-4 rounded border-2 border-slate-200 dark:border-white/10 checked:bg-primary checked:border-primary transition-all"
+                />
+                <span className="material-symbols-outlined absolute text-white text-xs scale-0 peer-checked:scale-100 transition-transform pointer-events-none">check</span>
+              </div>
+              <span className="text-[10px] font-bold text-slate-600 dark:text-gray-300 group-hover:text-primary transition-colors uppercase tracking-widest">{t(item.label)}</span>
+            </label>
+          ))}
         </div>
       </div>
 
-      <div className="flex flex-col gap-2 pt-4 border-t border-border-dark">
+      <div className="pt-6 border-t border-slate-100 dark:border-white/5">
         <button
           type="button"
           onClick={clearFilters}
-          className="w-full border border-border-dark py-2 rounded-lg font-medium text-sm hover:bg-card-dark transition-all text-gray-300"
+          className="w-full h-10 rounded-xl bg-slate-50 dark:bg-white/5 hover:bg-slate-100 dark:hover:bg-white/10 border border-slate-200 dark:border-white/10 text-[10px] font-black uppercase tracking-widest text-slate-500 dark:text-gray-400 transition-all active:scale-95 shadow-sm"
         >
           {t('search.clearFilters')}
         </button>

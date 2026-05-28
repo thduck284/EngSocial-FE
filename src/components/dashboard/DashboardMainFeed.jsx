@@ -1,4 +1,4 @@
-import { useRef, useEffect } from 'react'
+import React, { useRef, useEffect } from 'react'
 import { Link } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { ROUTES } from '../../constants'
@@ -27,9 +27,40 @@ export function DashboardMainFeed({
   feedTab = 'all',
   setFeedTab,
   friendsList = [],
+  featuredLessons = [],
 }) {
   const { t } = useTranslation()
   const loadMoreRef = useRef(null)
+
+  // Interleave posts and featured lessons
+  const combinedFeed = React.useMemo(() => {
+    const result = []
+    let postsCount = 0
+    let lessonIdx = 0
+
+    // Sequence of gaps: first gap is 4, then subsequent are 7-10
+    const getGap = (i) => {
+      if (i === 0) return 4 
+      return 7 + ([0, 3, 1, 2][i % 4])
+    }
+    let nextGap = getGap(lessonIdx)
+
+    posts.forEach((post) => {
+      result.push({ type: 'post', content: post })
+      postsCount++
+
+      if (postsCount === nextGap && featuredLessons.length > 0) {
+        result.push({
+          type: 'lesson',
+          content: featuredLessons[lessonIdx % featuredLessons.length],
+        })
+        lessonIdx++
+        postsCount = 0
+        nextGap = getGap(lessonIdx)
+      }
+    })
+    return result
+  }, [posts, featuredLessons])
 
   // Infinite scroll: load more when sentinel reaches viewport
   useEffect(() => {
@@ -46,35 +77,107 @@ export function DashboardMainFeed({
     return () => observer.disconnect()
   }, [loadMorePosts, hasMorePosts, postsLoadingMore])
 
+  const renderLessonCard = (lesson, isEnd = false) => {
+    if (!lesson) return null
+    const skill = lesson.skill || 'reading'
+    const category = lesson.category || 'lesson'
+    const slug = lesson.slug || lesson.id || lesson._id
+    const targetUrl = `/${category}/${skill}/${slug}`
+
+    return (
+      <Link
+        to={targetUrl}
+        className="block bg-gradient-to-br from-slate-50 to-slate-100 dark:from-[#111e22] dark:to-[#1a353d] rounded-2xl border border-slate-200 dark:border-primary/30 p-5 relative overflow-hidden group hover:border-primary/60 transition-all shadow-lg hover:shadow-primary/10"
+      >
+        <div className="relative z-10 flex flex-col md:flex-row gap-6">
+          <div
+            className="w-full md:w-1/3 aspect-video rounded-xl bg-cover bg-center shrink-0 bg-slate-200 dark:bg-slate-800 shadow-inner overflow-hidden border border-slate-200 dark:border-transparent"
+            style={{
+              backgroundImage: lesson.thumbnail ? `url('${lesson.thumbnail}')` : undefined,
+            }}
+          >
+            {!lesson.thumbnail && (
+              <div className="w-full h-full flex items-center justify-center">
+                <span className="material-symbols-outlined text-slate-400 dark:text-slate-600 text-3xl">school</span>
+              </div>
+            )}
+          </div>
+          <div className="flex-1 space-y-2.5 min-w-0">
+            <div className="flex items-center gap-2">
+              <span className="px-2 py-0.5 bg-primary text-white text-[10px] font-black rounded shadow-sm uppercase tracking-wider">
+                {t('dashboard.featured')}
+              </span>
+              <span className="text-xs text-primary font-black uppercase tracking-tighter">
+                {t('dashboard.by')} {t('dashboard.team')}
+              </span>
+              {lesson.level && (
+                <span className="px-1.5 py-0.5 bg-slate-200 dark:bg-white/10 text-slate-600 dark:text-white text-[10px] font-black rounded border border-slate-300 dark:border-white/20 uppercase">
+                  {lesson.level}
+                </span>
+              )}
+            </div>
+            <h4 className="font-black text-xl leading-tight text-slate-900 dark:text-white group-hover:text-primary transition-colors truncate">
+              {lesson.title}
+            </h4>
+            <p className="text-sm text-slate-500 dark:text-[#92bbc9] line-clamp-2 font-medium">
+              {lesson.description || t('dashboard.lessonDescriptionFallback') || 'Nâng cao kỹ năng của bạn với bài học chất lượng cao từ đội ngũ chuyên gia...'}
+            </p>
+            <div className="flex items-center gap-4 pt-2">
+              <span className="px-5 py-2.5 bg-primary/10 text-primary border border-primary/20 font-black text-xs rounded-xl group-hover:bg-primary group-hover:text-white transition-all shadow-sm">
+                {t('dashboard.viewDetail')}
+              </span>
+              <span className="text-[11px] text-slate-400 dark:text-[#92bbc9] flex items-center gap-1.5 font-black uppercase tracking-wider">
+                <span className="material-symbols-outlined text-lg">schedule</span> {lesson.estimatedTime || 15} {t('dashboard.minutes')}
+              </span>
+              {lesson.skill && (
+                <span className="text-[11px] text-slate-400 dark:text-[#92bbc9] flex items-center gap-1.5 font-black uppercase tracking-wider">
+                  <span className="material-symbols-outlined text-lg text-primary/60">
+                    {lesson.skill === 'reading' ? 'menu_book' : lesson.skill === 'listening' ? 'headphones' : 'edit_note'}
+                  </span>
+                  {t(`skills.${lesson.skill}`) || lesson.skill}
+                </span>
+              )}
+            </div>
+          </div>
+        </div>
+        <div className="absolute top-0 right-0 w-32 h-32 bg-primary/10 rounded-full -translate-y-16 translate-x-16 blur-3xl opacity-50 dark:opacity-100" />
+        <div className="absolute bottom-0 left-0 w-24 h-24 bg-primary/5 rounded-full translate-y-12 -translate-x-12 blur-2xl opacity-50 dark:opacity-100" />
+      </Link>
+    )
+  }
+
   return (
     <section className="col-span-12 lg:col-span-6 space-y-6">
-      <div className="bg-white dark:bg-[#111e22] rounded-xl p-5 border border-slate-200 dark:border-[#325a67]">
+      <div className="bg-white dark:bg-card-dark rounded-2xl p-5 border border-slate-200 dark:border-border-dark shadow-sm">
         <div className="flex gap-4">
-          <img src={displayAvatar} alt="" className="size-10 rounded-full object-cover shrink-0" />
+          <div className="relative shrink-0">
+            <img src={displayAvatar} alt="" className="size-10 rounded-full object-cover border-2 border-slate-100 dark:border-slate-800 shadow-sm" />
+            <span className="absolute bottom-0 right-0 size-3 bg-green-500 rounded-full border-2 border-white dark:border-card-dark shadow-sm" />
+          </div>
           <button
             type="button"
             onClick={() => setShowCreateModal(true)}
-            className="flex-1 text-left bg-slate-50 dark:bg-[#233f48] rounded-xl px-4 py-3 text-sm text-slate-400 dark:text-[#92bbc9] hover:bg-slate-100 dark:hover:bg-[#325a67] transition-colors"
+            className="flex-1 text-left bg-slate-50 dark:bg-background-dark rounded-2xl px-5 py-3 text-sm text-slate-400 dark:text-[#92bbc9] hover:bg-slate-100 dark:hover:bg-white/10 transition-all font-medium border border-slate-100 dark:border-transparent"
           >
             {t('dashboard.postPlaceholder')}
           </button>
         </div>
-        <div className="flex items-center justify-between pt-3 mt-3 border-t border-slate-100 dark:border-[#325a67]">
+        <div className="flex items-center justify-between pt-3 mt-4 border-t border-slate-100 dark:border-border-dark">
           <div className="flex gap-1">
-            <button type="button" onClick={() => setShowCreateModal(true)} className="flex items-center gap-2 px-3 py-1.5 hover:bg-slate-50 dark:hover:bg-[#233f48] rounded-lg text-xs font-medium text-slate-500 dark:text-[#92bbc9] transition-colors">
-              <span className="material-symbols-outlined text-green-500 text-lg">image</span> {t('dashboard.image')}
+            <button type="button" onClick={() => setShowCreateModal(true)} className="flex items-center gap-2 px-3 py-2 hover:bg-slate-50 dark:hover:bg-white/5 rounded-xl text-xs font-black text-slate-600 dark:text-[#92bbc9] transition-all group">
+              <span className="material-symbols-outlined text-green-500 text-xl group-hover:scale-110 transition-transform">image</span> {t('dashboard.image')}
             </button>
-            <button type="button" onClick={() => setShowCreateModal(true)} className="flex items-center gap-2 px-3 py-1.5 hover:bg-slate-50 dark:hover:bg-[#233f48] rounded-lg text-xs font-medium text-slate-500 dark:text-[#92bbc9] transition-colors">
-              <span className="material-symbols-outlined text-red-500 text-lg">videocam</span> {t('dashboard.video')}
+            <button type="button" onClick={() => setShowCreateModal(true)} className="flex items-center gap-2 px-3 py-2 hover:bg-slate-50 dark:hover:bg-white/5 rounded-xl text-xs font-black text-slate-600 dark:text-[#92bbc9] transition-all group">
+              <span className="material-symbols-outlined text-red-500 text-xl group-hover:scale-110 transition-transform">videocam</span> {t('dashboard.video')}
             </button>
-            <button type="button" onClick={() => setShowCreateModal(true)} className="flex items-center gap-2 px-3 py-1.5 hover:bg-slate-50 dark:hover:bg-[#233f48] rounded-lg text-xs font-medium text-slate-500 dark:text-[#92bbc9] transition-colors">
-              <span className="material-symbols-outlined text-blue-500 text-lg">description</span> {t('dashboard.document')}
+            <button type="button" onClick={() => setShowCreateModal(true)} className="flex items-center gap-2 px-3 py-2 hover:bg-slate-50 dark:hover:bg-white/5 rounded-xl text-xs font-black text-slate-600 dark:text-[#92bbc9] transition-all group">
+              <span className="material-symbols-outlined text-blue-500 text-xl group-hover:scale-110 transition-transform">description</span> {t('dashboard.document')}
             </button>
           </div>
           <button
             type="button"
             onClick={() => setShowCreateModal(true)}
-            className="px-5 py-2 bg-primary text-white font-bold text-sm rounded-lg hover:brightness-110 transition-all"
+            className="px-6 py-2.5 bg-primary text-white font-black text-sm rounded-xl hover:brightness-110 transition-all shadow-lg shadow-primary/20"
           >
             {t('dashboard.createPost') || 'Tạo bài viết'}
           </button>
@@ -90,30 +193,30 @@ export function DashboardMainFeed({
 
       {studyGroups.showStudyGroupsModal && (
         <div
-          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60"
+          className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm"
           onClick={() => studyGroups.setShowStudyGroupsModal(false)}
         >
           <div
-            className="bg-white dark:bg-[#111e22] rounded-2xl border border-slate-200 dark:border-[#325a67] shadow-xl w-full max-w-md max-h-[85vh] flex flex-col"
+            className="bg-white dark:bg-card-dark rounded-[2.5rem] border border-slate-200 dark:border-border-dark shadow-2xl w-full max-w-md max-h-[85vh] flex flex-col overflow-hidden animate-in zoom-in duration-300"
             onClick={(e) => e.stopPropagation()}
           >
-            <div className="flex items-center justify-between p-4 border-b border-slate-200 dark:border-[#325a67] shrink-0">
-              <h2 className="font-bold text-lg flex items-center gap-2">
-                <span className="material-symbols-outlined text-primary">groups</span>
+            <div className="flex items-center justify-between p-6 border-b border-slate-100 dark:border-border-dark shrink-0">
+              <h2 className="font-black text-lg flex items-center gap-3 uppercase tracking-wider text-slate-900 dark:text-white">
+                <span className="material-symbols-outlined text-primary bg-primary/10 p-2 rounded-2xl">groups</span>
                 {t('dashboard.studyGroups')}
               </h2>
               <button
                 type="button"
                 onClick={() => studyGroups.setShowStudyGroupsModal(false)}
-                className="p-2 rounded-lg text-slate-500 hover:bg-slate-100 dark:hover:bg-[#233f48] dark:hover:text-white"
+                className="size-10 flex items-center justify-center rounded-2xl text-slate-400 hover:bg-slate-100 dark:hover:bg-white/5 dark:hover:text-white transition-all"
               >
                 <span className="material-symbols-outlined">close</span>
               </button>
             </div>
-            <div className="p-4 flex flex-col min-h-[200px]">
+            <div className="p-6 flex flex-col min-h-[200px]">
               {studyGroups.groupConversationsLoading ? (
-                <div className="py-8 flex justify-center">
-                  <span className="material-symbols-outlined animate-spin text-3xl text-primary">
+                <div className="py-12 flex justify-center">
+                  <span className="material-symbols-outlined animate-spin text-4xl text-primary opacity-50">
                     progress_activity
                   </span>
                 </div>
@@ -142,30 +245,30 @@ export function DashboardMainFeed({
                           key={convId}
                           to={ROUTES.MESSAGES_CONVERSATION(convId)}
                           onClick={() => studyGroups.setShowStudyGroupsModal(false)}
-                          className="flex items-center gap-3 p-3 rounded-xl border border-slate-200 dark:border-[#325a67] hover:bg-slate-50 dark:hover:bg-[#233f48] transition-colors"
+                          className="flex items-center gap-4 p-4 rounded-2xl border border-slate-200 dark:border-border-dark bg-slate-50/50 dark:bg-background-dark/50 hover:bg-white dark:hover:bg-white/5 hover:border-primary/40 dark:hover:border-primary/40 transition-all group shadow-sm"
                         >
                           <div className="relative shrink-0">
-                            <img src={avatar} alt="" className="size-10 rounded-lg object-cover" />
+                            <img src={avatar} alt="" className="size-12 rounded-2xl object-cover shadow-md group-hover:scale-105 transition-transform" />
                             {isGroupOnline && (
                               <span
-                                className="absolute bottom-0 right-0 size-2.5 bg-green-500 rounded-full border-2 border-white dark:border-[#111e22]"
+                                className="absolute bottom-0 right-0 size-3 bg-green-500 rounded-full border-2 border-white dark:border-[#111e22]"
                                 title={t('userProfile.online')}
                               />
                             )}
                           </div>
                           <div className="min-w-0 flex-1">
-                            <p className="font-semibold text-sm truncate">{name}</p>
+                            <p className="font-black text-sm text-slate-900 dark:text-white truncate group-hover:text-primary transition-colors">{name}</p>
                             {membersLabel && (
-                              <p className="text-xs text-slate-500 dark:text-[#92bbc9]">
+                              <p className="text-xs font-bold text-slate-400 dark:text-[#92bbc9] mt-0.5 uppercase tracking-tighter">
                                 {membersLabel}
                               </p>
                             )}
                           </div>
                           <span
-                            className="material-symbols-outlined text-slate-400 text-lg shrink-0"
+                            className="material-symbols-outlined text-slate-400 text-xl shrink-0 group-hover:text-primary group-hover:translate-x-0.5 transition-all"
                             aria-hidden="true"
                           >
-                            chat_bubble
+                            arrow_forward_ios
                           </span>
                         </Link>
                       )
@@ -173,24 +276,25 @@ export function DashboardMainFeed({
                   </div>
                   {studyGroups.groupConversations.length === 0 &&
                     suggestedGroups?.length > 0 && (
-                      <div className="space-y-3">
+                      <div className="space-y-4">
+                        <p className="text-[10px] font-black uppercase tracking-widest text-slate-400 dark:text-gray-500 px-1">{t('dashboard.suggestedGroups') || 'Gợi ý cho bạn'}</p>
                         {suggestedGroups.slice(0, 3).map((g, idx) => (
                           <div
                             key={g.title || idx}
-                            className="flex items-center gap-3 p-3 rounded-xl border border-slate-200 dark:border-[#325a67] bg-slate-50/50 dark:bg-[#233f48]/30"
+                            className="flex items-center gap-4 p-4 rounded-2xl border border-slate-100 dark:border-border-dark bg-slate-50 dark:bg-white/5 shadow-sm"
                           >
                             <div
-                              className={`size-10 rounded-lg ${
+                              className={`size-12 rounded-2xl ${
                                 g.color || 'bg-primary/20'
-                              } flex items-center justify-center shrink-0`}
+                              } flex items-center justify-center shrink-0 shadow-inner`}
                             >
-                              <span className="material-symbols-outlined text-white text-xl">
+                              <span className="material-symbols-outlined text-white text-2xl">
                                 {g.icon || 'groups'}
                               </span>
                             </div>
                             <div className="min-w-0 flex-1">
-                              <p className="font-semibold text-sm truncate">{g.title}</p>
-                              <p className="text-xs text-slate-500 dark:text-[#92bbc9]">
+                              <p className="font-black text-sm text-slate-900 dark:text-white truncate">{g.title}</p>
+                              <p className="text-xs font-bold text-slate-400 dark:text-[#92bbc9] mt-0.5 uppercase tracking-tighter">
                                 {g.members}
                               </p>
                             </div>
@@ -200,9 +304,12 @@ export function DashboardMainFeed({
                     )}
                   {studyGroups.groupConversations.length === 0 &&
                     (!suggestedGroups || suggestedGroups.length === 0) && (
-                      <p className="text-sm text-slate-500 dark:text-[#92bbc9] py-4 text-center">
-                        {t('dashboard.noStudyGroups')}
-                      </p>
+                      <div className="py-12 flex flex-col items-center justify-center text-center">
+                        <span className="material-symbols-outlined text-5xl text-slate-200 dark:text-gray-700 mb-4">group_off</span>
+                        <p className="text-sm font-bold text-slate-500 dark:text-[#92bbc9]">
+                          {t('dashboard.noStudyGroups')}
+                        </p>
+                      </div>
                     )}
                 </>
               )}
@@ -211,15 +318,15 @@ export function DashboardMainFeed({
         </div>
       )}
 
-      <div className="flex items-center gap-4 bg-white/50 dark:bg-transparent p-1 rounded-xl">
-        <div className="flex gap-2 p-1 bg-slate-200/50 dark:bg-[#111e22] rounded-xl border border-slate-200 dark:border-[#325a67]">
+      <div className="flex items-center gap-4 p-1.5 rounded-2xl bg-white dark:bg-card-dark border border-slate-200 dark:border-border-dark shadow-sm">
+        <div className="flex gap-1.5 p-1 w-full">
           <button
             type="button"
             onClick={() => setFeedTab?.('all')}
-            className={`px-6 py-2 rounded-lg text-sm font-bold shadow-sm transition-all ${
+            className={`flex-1 px-6 py-2.5 rounded-xl text-xs font-black uppercase tracking-wider transition-all ${
               feedTab === 'all'
-                ? 'bg-white dark:bg-[#233f48] text-primary'
-                : 'text-slate-500 dark:text-[#92bbc9] hover:bg-white/30 dark:hover:bg-[#233f48]/50'
+                ? 'bg-primary text-white shadow-lg shadow-primary/25 scale-[1.02]'
+                : 'text-slate-500 dark:text-[#92bbc9] hover:bg-slate-50 dark:hover:bg-white/5'
             }`}
           >
             {t('dashboard.all')}
@@ -227,10 +334,10 @@ export function DashboardMainFeed({
           <button
             type="button"
             onClick={() => setFeedTab?.('following')}
-            className={`px-6 py-2 rounded-lg text-sm font-bold shadow-sm transition-all ${
+            className={`flex-1 px-6 py-2.5 rounded-xl text-xs font-black uppercase tracking-wider transition-all ${
               feedTab === 'following'
-                ? 'bg-white dark:bg-[#233f48] text-primary'
-                : 'text-slate-500 dark:text-[#92bbc9] hover:bg-white/30 dark:hover:bg-[#233f48]/50'
+                ? 'bg-primary text-white shadow-lg shadow-primary/25 scale-[1.02]'
+                : 'text-slate-500 dark:text-[#92bbc9] hover:bg-slate-50 dark:hover:bg-white/5'
             }`}
           >
             {t('dashboard.following')}
@@ -238,10 +345,10 @@ export function DashboardMainFeed({
           <button
             type="button"
             onClick={() => setFeedTab?.('popular')}
-            className={`px-6 py-2 rounded-lg text-sm font-bold shadow-sm transition-all ${
+            className={`flex-1 px-6 py-2.5 rounded-xl text-xs font-black uppercase tracking-wider transition-all ${
               feedTab === 'popular'
-                ? 'bg-white dark:bg-[#233f48] text-primary'
-                : 'text-slate-500 dark:text-[#92bbc9] hover:bg-white/30 dark:hover:bg-[#233f48]/50'
+                ? 'bg-primary text-white shadow-lg shadow-primary/25 scale-[1.02]'
+                : 'text-slate-500 dark:text-[#92bbc9] hover:bg-slate-50 dark:hover:bg-white/5'
             }`}
           >
             {t('dashboard.popular')}
@@ -250,78 +357,46 @@ export function DashboardMainFeed({
       </div>
 
       {postsLoading ? (
-        <div className="bg-white dark:bg-[#111e22] rounded-xl border border-slate-200 dark:border-[#325a67] p-8 text-center">
-          <span className="material-symbols-outlined animate-spin text-3xl text-primary">progress_activity</span>
-          <p className="text-sm text-slate-500 dark:text-[#92bbc9] mt-2">{t('dashboard.loading') || 'Đang tải...'}</p>
+        <div className="bg-white dark:bg-card-dark rounded-2xl border border-slate-200 dark:border-border-dark p-12 text-center shadow-sm">
+          <span className="material-symbols-outlined animate-spin text-4xl text-primary opacity-50">progress_activity</span>
+          <p className="text-sm font-black text-slate-500 dark:text-[#92bbc9] mt-4 uppercase tracking-widest">{t('dashboard.loading') || 'Đang tải...'}</p>
         </div>
       ) : posts.length === 0 ? (
-        <div className="bg-white dark:bg-[#111e22] rounded-xl border border-slate-200 dark:border-[#325a67] p-8 text-center">
-          <span className="material-symbols-outlined text-4xl text-slate-400 dark:text-[#92bbc9]">edit_note</span>
-          <p className="text-sm text-slate-500 dark:text-[#92bbc9] mt-2">{t('dashboard.noPosts') || 'Chưa có bài viết. Hãy viết bài đầu tiên phía trên!'}</p>
+        <div className="bg-white dark:bg-card-dark rounded-3xl border-2 border-dashed border-slate-200 dark:border-border-dark p-16 text-center shadow-sm">
+          <div className="size-20 bg-slate-50 dark:bg-white/5 rounded-full flex items-center justify-center mx-auto mb-4 shadow-inner">
+            <span className="material-symbols-outlined text-5xl text-slate-300 dark:text-gray-700">edit_note</span>
+          </div>
+          <p className="text-sm font-black text-slate-500 dark:text-[#92bbc9] max-w-xs mx-auto">{t('dashboard.noPosts') || 'Chưa có bài viết. Hãy viết bài đầu tiên phía trên!'}</p>
         </div>
       ) : (
         <>
-          {posts.map((post, index) => (
-            <DashboardPostCard
-              key={post?.id ?? post?._id ?? `post-${index}`}
-              post={post}
-              useHomeCommunityStyle
-              onToggleLike={onPostReactionUpdate}
-              onUpdatePost={onPostUpdate}
-              onDeletePost={onPostDelete}
-            />
-          ))}
+          <div className="space-y-4">
+            {combinedFeed.map((item, index) => (
+              <React.Fragment key={item.type === 'post' ? (item.content?.id ?? item.content?._id ?? `p-${index}`) : `l-${index}`}>
+                {item.type === 'post' ? (
+                  <DashboardPostCard
+                    post={item.content}
+                    useHomeCommunityStyle
+                    onToggleLike={onPostReactionUpdate}
+                    onUpdatePost={onPostUpdate}
+                    onDeletePost={onPostDelete}
+                  />
+                ) : (
+                  renderLessonCard(item.content)
+                )}
+              </React.Fragment>
+            ))}
+          </div>
           {hasMorePosts && <div ref={loadMoreRef} className="h-4 min-h-[1rem]" aria-hidden />}
           {postsLoadingMore && (
-            <div className="bg-white dark:bg-[#111e22] rounded-xl border border-slate-200 dark:border-[#325a67] py-6 text-center">
-              <span className="material-symbols-outlined animate-spin text-2xl text-primary">progress_activity</span>
-              <p className="text-xs text-slate-500 dark:text-[#92bbc9] mt-2">{t('dashboard.loading') || 'Đang tải...'}</p>
+            <div className="bg-white dark:bg-card-dark rounded-2xl border border-slate-200 dark:border-border-dark py-8 text-center shadow-sm">
+              <span className="material-symbols-outlined animate-spin text-3xl text-primary opacity-50">progress_activity</span>
+              <p className="text-xs font-black text-slate-500 dark:text-[#92bbc9] mt-3 uppercase tracking-widest">{t('dashboard.loading') || 'Đang tải...'}</p>
             </div>
           )}
         </>
       )}
-
-      <div className="flex items-center gap-4 py-2">
-        <div className="h-[1px] flex-1 bg-slate-200 dark:bg-[#325a67]" />
-        <span className="text-[10px] font-bold text-slate-500 dark:text-[#92bbc9] uppercase tracking-widest">
-          {t('dashboard.suggestedLessons')}
-        </span>
-        <div className="h-[1px] flex-1 bg-slate-200 dark:bg-[#325a67]" />
-      </div>
-      <Link
-        to="/lesson"
-        className="block bg-gradient-to-br from-[#111e22] to-[#1a353d] dark:from-[#111e22] dark:to-[#1a353d] rounded-xl border border-primary/30 p-5 relative overflow-hidden group hover:border-primary/50 transition-colors"
-      >
-        <div className="relative z-10 flex gap-6">
-          <div
-            className="w-1/3 aspect-video rounded-lg bg-cover bg-center shrink-0"
-            style={{
-              backgroundImage: `url('https://lh3.googleusercontent.com/aida-public/AB6AXuDKqQRcZ2qEUm_G9civhe_WEXiHigCQOkb56jFE6xSQfjLEgB0aZByKocBA4xPNZtFhRTG5TuqjG1kogq3KdZD8cfD6VINztDQdUM2TAwY9Yn8HNzzMjl5yzHc7Eo5SkMYsiTiC4t_f5lxm-nTX1rNn7IXUmFieoc2KhtrWo9kc6a9H8sw20XyDiswbiBiG62iFjYbKEQB7Q63k7DzND2sbrO4hI5jhmTwYkzUtLGuY2cCIhPb8rZ-OelYJqRfAU20NTYUtHW7CqXmW')`,
-            }}
-          />
-          <div className="flex-1 space-y-2 min-w-0">
-            <div className="flex items-center gap-2">
-              <span className="px-2 py-0.5 bg-primary text-[#111e22] text-[10px] font-bold rounded">{t('dashboard.featured')}</span>
-              <span className="text-xs text-primary font-medium">{t('dashboard.by')} {t('dashboard.team')}</span>
-            </div>
-            <h4 className="font-bold text-lg leading-tight group-hover:text-primary transition-colors">
-              Mastering Business English: Email Etiquette
-            </h4>
-            <p className="text-xs text-slate-400 dark:text-[#92bbc9] line-clamp-2">
-              Nâng tầm kỹ năng viết email chuyên nghiệp với bộ quy tắc giao tiếp công sở hiện đại...
-            </p>
-            <div className="flex items-center gap-4 pt-2">
-              <span className="px-4 py-1.5 bg-primary text-[#111e22] font-bold text-xs rounded-lg">
-                {t('dashboard.learnNow')}
-              </span>
-              <span className="text-[10px] text-slate-400 dark:text-[#92bbc9] flex items-center gap-1">
-                <span className="material-symbols-outlined text-sm">schedule</span> 15 {t('dashboard.minutes')}
-              </span>
-            </div>
-          </div>
-        </div>
-        <div className="absolute top-0 right-0 w-32 h-32 bg-primary/5 rounded-full -translate-y-16 translate-x-16 blur-3xl" />
-      </Link>
     </section>
+
   )
 }

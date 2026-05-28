@@ -29,11 +29,12 @@ export function LanguageSwitcher() {
     <button
       type="button"
       onClick={toggleLanguage}
-      className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-card-dark text-gray-300 hover:bg-gray-700 hover:text-primary transition-all border border-border-dark text-xs font-medium"
+      className="flex items-center gap-1 px-2 py-0.5 rounded-xl bg-white dark:bg-card-dark text-slate-500 dark:text-gray-400 hover:text-primary dark:hover:text-primary border border-slate-100 dark:border-white/5 transition-all shadow-lg shadow-slate-200/40 dark:shadow-none active:scale-95 group"
       aria-label="Chuyển ngôn ngữ"
     >
-      <span className="material-symbols-outlined text-base">translate</span>
-      <span className="uppercase font-bold">{i18n.language === 'vi' ? 'VI' : 'EN'}</span>
+      <span className="material-symbols-outlined text-lg group-hover:scale-110 transition-transform">translate</span>
+      <span className="uppercase font-black text-[10px] tracking-[0.2em]">{i18n.language === 'vi' ? 'VI' : 'EN'}</span>
     </button>
+
   )
 }

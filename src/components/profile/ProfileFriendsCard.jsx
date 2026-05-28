@@ -34,7 +34,7 @@ export function ProfileFriendsCard({
         <h3 className="font-bold flex items-center gap-2 dark:text-white">
           {t('profile.friends', { count: listForModal.length })}
           {onlineCount > 0 && (
-            <span className="text-[10px] font-medium text-green-500 flex items-center gap-0.5" title={t('userProfile.online')}>
+            <span className="text-xs font-medium text-green-500 flex items-center gap-0.5" title={t('userProfile.online')}>
               <span className="size-1.5 rounded-full bg-green-500 animate-pulse" />
               {onlineCount} {t('userProfile.online')}
             </span>
@@ -101,7 +101,7 @@ export function ProfileFriendsCard({
                     <p className="text-sm font-semibold dark:text-slate-200 group-hover:text-primary transition-colors truncate">
                       {friend.name}
                     </p>
-                    <p className="text-[10px] text-slate-500 font-medium whitespace-nowrap overflow-hidden text-ellipsis">
+                    <p className="text-xs text-slate-500 font-medium whitespace-nowrap overflow-hidden text-ellipsis">
                       {getFriendActivityLabel(friend, isOnline, t)}
                     </p>
                   </div>

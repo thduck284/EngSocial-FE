@@ -4,32 +4,29 @@ import { questsService } from '../services'
 import { ROUTES } from '../constants'
 
 const defaultForm = () => ({
-  title: '',
-  description: '',
   type: 'daily',
   condition: {
-    target: 1,
+    targetMin: 1,
+    targetMax: 1,
     filters: {
       skill: 'all',
-      category: 'all',
-      minProgress: 100,
+      category: 'lesson',
       minScorePercent: 0,
     },
   },
   xpReward: 50,
   icon: 'flag',
   status: 'active',
-  order: 0,
 })
 
 /**
- * Hook for Manage Quest page (add/edit): form state, load quest by id, save.
- * @param {string} id - Quest ID from route (undefined when adding)
- * @param {Function} t - i18n t function
- * @returns {Object} form, setForm, error, loading, loadingQuest, isEdit, save
+ * Form thêm/sửa mẫu PeriodicQuestPool (staff /mod/.../quests).
+ * @param {string} [id] - poolId khi sửa (route quests/:id)
+ * @param {Function} t - i18n t
  */
 export function useManageQuestForm(id, t) {
   const navigate = useNavigate()
+  const { userId } = useParams()
   const isEdit = !!id
   const [form, setForm] = useState(defaultForm)
   const [error, setError] = useState('')
@@ -37,48 +34,61 @@ export function useManageQuestForm(id, t) {
   const [loadingQuest, setLoadingQuest] = useState(isEdit)
 
   useEffect(() => {
-    if (!id) return
+    if (!id) {
+      setForm(defaultForm())
+      setLoadingQuest(false)
+      return
+    }
     setLoadingQuest(true)
     questsService
-      .getById(id)
+      .getPoolById(id)
       .then((res) => {
         const data = res?.data
-        if (data) {
-          const condition = data.condition || {}
-          setForm({
-            title: data.title ?? '',
-            description: data.description ?? '',
-            type: data.type ?? 'daily',
-            condition: {
-              target: condition.target ?? data.targetValue ?? 1,
-              filters: {
-                skill: condition.filters?.skill ?? data.skill ?? 'all',
-                category: condition.filters?.category ?? 'all',
-                minProgress: condition.filters?.minProgress ?? 100,
-                minScorePercent: condition.filters?.minScorePercent ?? 0,
-              },
+        if (!data) return
+        setForm({
+          type: data.periodType || 'daily',
+          condition: {
+            targetMin: data.targetMin ?? 1,
+            targetMax: data.targetMax ?? data.targetMin ?? 1,
+            filters: {
+              skill: data.skill ?? 'all',
+              category: data.category ?? 'lesson',
+              minScorePercent: data.minScorePercent ?? 0,
             },
-            xpReward: data.xpReward ?? 50,
-            icon: data.icon ?? 'flag',
-            status: data.status ?? 'active',
-            order: data.order ?? 0,
-          })
-        }
+          },
+          xpReward: data.xpReward ?? 50,
+          icon: data.icon ?? 'flag',
+          status: data.status ?? 'active',
+        })
       })
       .catch(() => setError(t('manageQuests.loadQuestFailed')))
       .finally(() => setLoadingQuest(false))
   }, [id, t])
 
   const save = async () => {
-    if (!form?.title?.trim()) return
+    const cat = form.condition?.filters?.category
+    if (!cat) {
+      setError(t('manageQuests.poolSaveNeedCategory'))
+      return
+    }
+    const tMin = form.condition?.targetMin ?? 1
+    const tMax = form.condition?.targetMax ?? tMin
+    if (tMin < 1 || tMax < 1 || tMax < tMin) {
+      setError(t('manageQuests.poolSaveInvalidTarget'))
+      return
+    }
     setError('')
     setLoading(true)
+    const body = {
+      periodType: form.type,
+      condition: form.condition,
+      xpReward: form.xpReward,
+      icon: form.icon,
+      status: form.status,
+    }
     try {
-      if (isEdit) {
-        await questsService.update(id, form)
-      } else {
-        await questsService.create(form)
-      }
+      if (isEdit) await questsService.updatePool(id, body)
+      else await questsService.createPool(body)
       if (userId != null && userId !== '') navigate(ROUTES.MANAGE_QUESTS(userId))
       else navigate(ROUTES.QUESTS)
     } catch (e) {

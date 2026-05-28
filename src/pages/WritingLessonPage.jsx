@@ -1,10 +1,11 @@
 import { useState, useEffect, useRef } from 'react'
-import { Link, useParams, useNavigate, useLocation } from 'react-router-dom'
+import { Link, useParams, useNavigate, useLocation, useBlocker } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { lessonsService } from '../services'
 import { addVocabNote } from '../utils/vocabularyUserStorage'
 import { formatTime } from '../utils/dateTime'
 import { AlertModal } from '../components/ui/common/AlertModal'
+import { MockTestSidebar } from '../components/layout/MockTestSidebar'
 
 export function WritingLessonPage() {
   const { t } = useTranslation()
@@ -31,9 +32,22 @@ export function WritingLessonPage() {
   const [countdownSeconds, setCountdownSeconds] = useState(null)
   const lessonOpenedAtMs = useRef(null)
 
+  const [isMockTest, setIsMockTest] = useState(false)
+  
   useEffect(() => {
-    setRightBarOpen(false)
-  }, [id])
+    const data = localStorage.getItem('engsocial_mock_test')
+    if (data) {
+      const parsed = JSON.parse(data)
+      const isInTest = parsed.lessons.some(l => l.id === id || l.slug === id)
+      setIsMockTest(isInTest)
+    } else {
+      setIsMockTest(false)
+    }
+  }, [id, content])
+
+  useEffect(() => {
+    setRightBarOpen(isMockTest)
+  }, [id, isMockTest])
 
   const handleSaveNote = () => {
     if (!id || (!noteTitle.trim() && !noteContent.trim())) return
@@ -68,6 +82,14 @@ export function WritingLessonPage() {
 
   useEffect(() => {
     setLoading(true)
+    // Reset all per-lesson state when id changes
+    setUserText('')
+    setSubmitMessage('')
+    setCompleteMessage('')
+    setShowConfirmSubmitModal(false)
+    setShowSuccessModal(false)
+    setShowIncompleteModal(false)
+    setShowSample(false)
     // Fetch content
     lessonsService
       .getWritingContent(id)
@@ -90,6 +112,52 @@ export function WritingLessonPage() {
       })
       .catch((err) => console.error('Failed to load writing progress:', err))
   }, [id])
+
+  // Navigation Blocker
+  const [showExitConfirm, setShowExitConfirm] = useState(false)
+  const blocker = useBlocker(
+    ({ currentLocation, nextLocation }) => {
+      if (submitting) return false
+      if (currentLocation.pathname === nextLocation.pathname) return false
+      
+      const inMockTest = !!localStorage.getItem('engsocial_mock_test')
+
+      // Allow navigation between lessons if in Mock Test or going to result
+      if (nextLocation.pathname.includes('/result') || nextLocation.pathname.includes('/mock-test') || (inMockTest && nextLocation.pathname.includes('/study'))) {
+        return false
+      }
+      
+      return true
+    }
+  )
+
+  useEffect(() => {
+    if (blocker.state === 'blocked') {
+      setShowExitConfirm(true)
+    }
+  }, [blocker.state])
+
+  const handleConfirmExit = () => {
+    setShowExitConfirm(false)
+    blocker.proceed()
+  }
+
+  const handleCancelExit = () => {
+    setShowExitConfirm(false)
+    blocker.reset()
+  }
+
+  // Prevent browser close/refresh
+  useEffect(() => {
+    const handleBeforeUnload = (e) => {
+      if (!submitting) {
+        e.preventDefault()
+        e.returnValue = ''
+      }
+    }
+    window.addEventListener('beforeunload', handleBeforeUnload)
+    return () => window.removeEventListener('beforeunload', handleBeforeUnload)
+  }, [submitting])
 
   const info = content?.content || {}
   const wordLimit = info.wordLimit || { min: 100, max: 150 }
@@ -141,7 +209,7 @@ export function WritingLessonPage() {
   }
   if (!content) {
     return (
-      <div className="flex flex-col items-center justify-center min-h-[60vh] text-gray-400">
+      <div className="flex flex-col items-center justify-center min-h-[60vh] text-slate-500 dark:text-gray-400">
         <span className="material-symbols-outlined text-5xl mb-4">error</span>
         <p>{t('writingLesson.loadError')}</p>
         <Link to={backLink} className="mt-4 text-primary hover:underline">
@@ -152,10 +220,11 @@ export function WritingLessonPage() {
   }
 
   return (
-    <main className="max-w-[1600px] mx-auto px-6 py-6 flex flex-col lg:flex-row gap-6 min-h-[calc(100vh-64px)]">
-      {/* Left Sidebar - ~200px, can shrink */}
+    <main className="max-w-[1600px] mx-auto px-6 pt-2 pb-6 flex flex-col lg:flex-row gap-6 min-h-[calc(100vh-64px)]">
+      {/* Left Sidebar - Hidden in Mock Test */}
+      {!isMockTest && (
       <aside className="w-full lg:w-[300px] lg:min-w-[240px] lg:shrink lg:basis-[300px] space-y-6 overflow-y-auto pr-2 pb-6 custom-scrollbar">
-        <div className="bg-card-dark rounded-2xl p-6 border border-border-dark shadow-xl">
+        <div className="bg-white dark:bg-card-dark rounded-2xl p-6 border border-slate-200 dark:border-border-dark shadow-xl">
           <div className="flex justify-between items-start mb-4">
             <span className="bg-primary/20 text-primary text-xs font-bold px-2 py-1 rounded">
               {t('writingLesson.level')} {info.level}
@@ -165,33 +234,33 @@ export function WritingLessonPage() {
               <span className="text-xs font-bold">{info.xpReward || 50} {t('writingLesson.xpReward')}</span>
             </div>
           </div>
-          <h2 className="text-lg font-bold mb-4 text-white leading-tight">{info.title}</h2>
+          <h2 className="text-lg font-bold mb-4 text-slate-900 dark:text-white leading-tight">{info.title}</h2>
           <div className="space-y-3">
-            <div className="flex items-center gap-3 text-sm text-gray-400">
+            <div className="flex items-center gap-3 text-sm text-slate-500 dark:text-gray-400">
               <span className="material-symbols-outlined text-lg text-primary">topic</span>
               <span>{t('writingLesson.topic')}: {info.topic || '—'}</span>
             </div>
-            <div className="flex items-center gap-3 text-sm text-gray-400">
+            <div className="flex items-center gap-3 text-sm text-slate-500 dark:text-gray-400">
               <span className="material-symbols-outlined text-lg text-primary">schedule</span>
               <span>
                 {t('writingLesson.time')}: {info.time?.endsWith('m') ? `${info.time.slice(0, -1)} ${t('writingLesson.minutes')}` : info.time}
               </span>
             </div>
-            <div className="flex items-center gap-3 text-sm text-gray-400">
+            <div className="flex items-center gap-3 text-sm text-slate-500 dark:text-gray-400">
               <span className="material-symbols-outlined text-lg text-primary">edit_note</span>
               <span>
                 {wordLimit.min}–{wordLimit.max} {t('writingLesson.words')}
               </span>
             </div>
           </div>
-          <div className="mt-6 pt-6 border-t border-border-dark">
+          <div className="mt-6 pt-6 border-t border-slate-200 dark:border-border-dark">
             <div className="flex justify-between text-xs font-bold mb-2">
-              <span className="text-gray-400">{t('writingLesson.wordCount')}</span>
+              <span className="text-slate-500 dark:text-gray-400">{t('writingLesson.wordCount')}</span>
               <span className={inRange ? 'text-emerald-400' : 'text-gray-400'}>
                 {wordCount} / {wordLimit.min}–{wordLimit.max} {t('writingLesson.words')}
               </span>
             </div>
-            <div className="w-full bg-background-dark rounded-full h-2">
+            <div className="w-full bg-slate-50 dark:bg-background-dark rounded-full h-2">
               <div
                 className={`h-2 rounded-full transition-all ${inRange ? 'bg-emerald-500' : 'bg-primary'}`}
                 style={{
@@ -202,7 +271,7 @@ export function WritingLessonPage() {
           </div>
         </div>
 
-        <div className="bg-card-dark rounded-2xl p-5 border border-border-dark shadow-lg">
+        <div className="bg-white dark:bg-card-dark rounded-2xl p-5 border border-slate-200 dark:border-border-dark shadow-lg">
           <div className="flex items-center gap-2 mb-4">
             <span className="material-symbols-outlined text-primary">note_alt</span>
             <h3 className="font-bold text-sm">{t('writingLesson.notebook')}</h3>
@@ -211,13 +280,13 @@ export function WritingLessonPage() {
             type="text"
             value={noteTitle}
             onChange={(e) => setNoteTitle(e.target.value)}
-            className="w-full bg-background-dark border border-border-dark rounded-xl p-3 text-sm focus:ring-primary focus:border-primary placeholder:text-gray-500 text-white mb-3"
+            className="w-full bg-slate-50 dark:bg-background-dark border border-slate-200 dark:border-border-dark rounded-xl p-3 text-sm focus:ring-primary focus:border-primary placeholder:text-gray-500 text-slate-900 dark:text-white mb-3"
             placeholder={t('writingLesson.noteTitlePlaceholder')}
           />
           <textarea
             value={noteContent}
             onChange={(e) => setNoteContent(e.target.value)}
-            className="w-full bg-background-dark border border-border-dark rounded-xl p-3 text-sm focus:ring-primary focus:border-primary placeholder:text-gray-500 text-white"
+            className="w-full bg-slate-50 dark:bg-background-dark border border-slate-200 dark:border-border-dark rounded-xl p-3 text-sm focus:ring-primary focus:border-primary placeholder:text-gray-500 text-slate-900 dark:text-white"
             placeholder={t('writingLesson.notePlaceholder')}
             rows={3}
           />
@@ -226,7 +295,7 @@ export function WritingLessonPage() {
             type="button"
             onClick={handleSaveNote}
             disabled={noteSaving}
-            className="mt-3 w-full py-2 bg-background-dark hover:bg-gray-700 text-white rounded-xl text-xs font-bold transition-all border border-border-dark disabled:opacity-60"
+            className="mt-3 w-full py-2 bg-slate-50 dark:bg-background-dark hover:bg-slate-200 dark:hover:bg-gray-700 text-slate-900 dark:text-white rounded-xl text-xs font-bold transition-all border border-slate-200 dark:border-border-dark disabled:opacity-60"
           >
             {noteSaving ? '...' : t('writingLesson.saveNote')}
           </button>
@@ -237,68 +306,75 @@ export function WritingLessonPage() {
             <span className="material-symbols-outlined text-primary">lightbulb</span>
             <h3 className="font-bold text-primary text-sm">{t('writingLesson.tipTitle')}</h3>
           </div>
-          <p className="text-xs leading-relaxed text-gray-400 italic">
+          <p className="text-xs leading-relaxed text-slate-500 dark:text-gray-400 italic">
             &quot;{t('writingLesson.tipText')}&quot;
           </p>
         </div>
       </aside>
+      )}
 
       {/* Main Content */}
       <div className="flex-1 min-w-0 flex flex-col gap-6 overflow-hidden">
-        <div className="bg-card-dark rounded-2xl border border-border-dark overflow-hidden flex flex-col flex-1 shadow-2xl">
-          <div className="p-4 border-b border-border-dark flex justify-between items-center bg-background-dark/50">
+        <div className="bg-white dark:bg-card-dark rounded-2xl border border-slate-200 dark:border-border-dark overflow-hidden flex flex-col flex-1 shadow-2xl">
+          <div className="p-4 border-b border-slate-200 dark:border-border-dark flex justify-between items-center bg-slate-50/50 dark:bg-background-dark/50">
             <div className="flex items-center gap-4">
-              <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">{t('writingLesson.prompt')}</span>
+              <span className="text-[10px] font-bold text-slate-500 dark:text-gray-400 uppercase tracking-widest">{t('writingLesson.prompt')}</span>
             </div>
             <div className="flex items-center gap-3">
               {completeMessage && (
                 <span className="text-xs text-emerald-400 font-bold animate-pulse">{completeMessage}</span>
               )}
-              <div className={`h-9 inline-flex items-center gap-2 px-3 rounded-lg border font-mono font-bold text-sm ${(countdownSeconds ?? 1) <= 0 ? 'bg-red-500/20 text-red-400 border-red-500/30' : 'bg-red-500/10 text-red-400 border-red-500/20'}`}>
-                <span className="material-symbols-outlined text-base">timer</span>
-                <span>{countdownSeconds != null ? formatTime(Math.max(0, countdownSeconds)) : '--:--'}</span>
-                {(countdownSeconds ?? 1) <= 0 && <span className="text-[10px] ml-1">{t('writingLesson.timeUp')}</span>}
-              </div>
-              <button
-                type="button"
-                onClick={handleSubmit}
-                disabled={submitting}
-                className="h-9 px-4 inline-flex items-center justify-center rounded-lg text-sm font-semibold bg-primary/20 text-primary border border-primary/30 hover:bg-primary/30 disabled:opacity-60 disabled:cursor-not-allowed"
-              >
-                {submitting ? '...' : t('writingLesson.submit')}
-              </button>
+              {!isMockTest && (
+                <div className={`h-9 inline-flex items-center gap-2 px-3 rounded-lg border font-mono font-bold text-sm ${(countdownSeconds ?? 1) <= 0 ? 'bg-red-500/20 text-red-400 border-red-500/30' : 'bg-red-500/10 text-red-400 border-red-500/20'}`}>
+                  <span className="material-symbols-outlined text-base">timer</span>
+                  <span>{countdownSeconds != null ? formatTime(Math.max(0, countdownSeconds)) : '--:--'}</span>
+                  {(countdownSeconds ?? 1) <= 0 && <span className="text-[10px] ml-1">{t('writingLesson.timeUp')}</span>}
+                </div>
+              )}
+              {!isMockTest && (
+                <button
+                  type="button"
+                  onClick={handleSubmit}
+                  disabled={submitting}
+                  className="h-9 px-4 inline-flex items-center justify-center rounded-lg text-sm font-semibold bg-primary/20 text-primary border border-primary/30 hover:bg-primary/30 disabled:opacity-60 disabled:cursor-not-allowed"
+                >
+                  {submitting ? '...' : t('writingLesson.submit')}
+                </button>
+              )}
             </div>
           </div>
 
-          <div className="p-6 border-b border-border-dark bg-background-dark/20">
-            <p className="text-white leading-relaxed whitespace-pre-wrap">{info.prompt || t('writingLesson.noPrompt')}</p>
+          <div className="p-6 border-b border-slate-200 dark:border-border-dark bg-slate-50/50 dark:bg-background-dark/20">
+            <p className="text-slate-900 dark:text-white leading-snug whitespace-pre-wrap">{info.prompt || t('writingLesson.noPrompt')}</p>
           </div>
 
           <div className="p-6 flex-1 flex flex-col">
             <div className="flex items-center justify-between mb-3">
-              <label className="text-sm font-medium text-gray-400">{t('writingLesson.yourWriting')}</label>
+              <label className="text-sm font-medium text-slate-500 dark:text-gray-400">{t('writingLesson.yourWriting')}</label>
               <span className={`text-sm font-bold ${inRange ? 'text-emerald-400' : 'text-gray-400'}`}>
                 {wordCount} {t('writingLesson.words')}
               </span>
             </div>
             <div className="flex items-center justify-between mb-4">
               <div className="flex items-center gap-2">
-                <div className={`h-9 inline-flex items-center gap-2 px-3 rounded-lg border font-mono font-bold text-sm ${(countdownSeconds ?? 1) <= 0 ? 'bg-red-500/20 text-red-400 border-red-500/30' : 'bg-red-500/10 text-red-400 border-red-500/20'}`}>
-                  <span className="material-symbols-outlined text-base">timer</span>
-                  <span>{countdownSeconds != null ? formatTime(Math.max(0, countdownSeconds)) : '--:--'}</span>
-                  {(countdownSeconds ?? 1) <= 0 && <span className="text-[10px] ml-1">{t('writingLesson.timeUp')}</span>}
-                </div>
+                {!isMockTest && (
+                  <div className={`h-9 inline-flex items-center gap-2 px-3 rounded-lg border font-mono font-bold text-sm ${(countdownSeconds ?? 1) <= 0 ? 'bg-red-500/20 text-red-400 border-red-500/30' : 'bg-red-500/10 text-red-400 border-red-500/20'}`}>
+                    <span className="material-symbols-outlined text-base">timer</span>
+                    <span>{countdownSeconds != null ? formatTime(Math.max(0, countdownSeconds)) : '--:--'}</span>
+                    {(countdownSeconds ?? 1) <= 0 && <span className="text-[10px] ml-1">{t('writingLesson.timeUp')}</span>}
+                  </div>
+                )}
               </div>
             </div>
             <textarea
               value={userText}
               onChange={(e) => setUserText(e.target.value)}
-              className="w-full flex-1 min-h-[280px] bg-background-dark border border-border-dark rounded-xl p-4 text-white placeholder:text-gray-500 focus:ring-2 focus:ring-primary focus:border-primary resize-none custom-scrollbar"
+              className="w-full flex-1 min-h-[280px] bg-slate-50 dark:bg-background-dark border border-slate-200 dark:border-border-dark rounded-xl p-4 text-slate-900 dark:text-white placeholder:text-gray-500 focus:ring-2 focus:ring-primary focus:border-primary resize-none custom-scrollbar"
               placeholder={t('writingLesson.textareaPlaceholder')}
             />
 
             {info.sampleAnswer && (
-              <div className="mt-6 border-t border-border-dark pt-6">
+              <div className="mt-6 border-t border-slate-200 dark:border-border-dark pt-6">
                 <button
                   type="button"
                   onClick={() => setShowSample((s) => !s)}
@@ -310,8 +386,8 @@ export function WritingLessonPage() {
                   {showSample ? t('writingLesson.hideSample') : t('writingLesson.showSample')}
                 </button>
                 {showSample && (
-                  <div className="bg-background-dark/80 rounded-xl p-4 border border-border-dark">
-                    <p className="text-gray-300 text-sm leading-relaxed whitespace-pre-wrap">
+                  <div className="bg-background-dark/80 rounded-xl p-4 border border-slate-200 dark:border-border-dark">
+                    <p className="text-gray-300 text-sm leading-snug whitespace-pre-wrap">
                       {info.sampleAnswer}
                     </p>
                   </div>
@@ -323,46 +399,50 @@ export function WritingLessonPage() {
               <button
                 type="button"
                 onClick={() => navigate(backLink)}
-                className="px-4 py-2 border border-border-dark rounded-xl text-gray-400 hover:bg-white/5 text-sm font-medium"
+                className="px-4 py-2 border border-slate-200 dark:border-border-dark rounded-xl text-slate-500 dark:text-gray-400 hover:bg-white/5 text-sm font-medium"
               >
                 {t('writingLesson.back')}
               </button>
-              <button
-                type="button"
-                onClick={handleSubmit}
-                disabled={submitting}
-                className="px-6 py-2.5 bg-primary hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed text-black font-bold rounded-xl text-sm transition-all"
-              >
-                {submitting ? t('writingLesson.submitting') : t('writingLesson.submit')}
-              </button>
+              {!isMockTest && (
+                <button
+                  type="button"
+                  onClick={handleSubmit}
+                  disabled={submitting}
+                  className="px-6 py-2.5 bg-primary hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed text-black font-bold rounded-xl text-sm transition-all"
+                >
+                  {submitting ? t('writingLesson.submitting') : t('writingLesson.submit')}
+                </button>
+              )}
             </div>
             {submitMessage && <p className="mt-3 text-sm text-gray-300">{submitMessage}</p>}
           </div>
         </div>
       </div>
 
-      {/* Right Sidebar - Toggleable */}
-      {rightBarOpen ? (
+      {/* Right Sidebar */}
+      {isMockTest ? (
+        <MockTestSidebar currentAnswers={wordCount > 0 ? { 0: userText } : null} currentLessonId={id} />
+      ) : rightBarOpen ? (
         <aside className="w-full lg:w-[300px] lg:min-w-[240px] lg:shrink lg:basis-[300px] space-y-6 overflow-y-auto custom-scrollbar pr-2 pb-6 relative">
           <div className="sticky top-0 z-10 flex justify-end mb-2">
             <button
               type="button"
               onClick={() => setRightBarOpen(false)}
-              className="p-2 rounded-lg bg-card-dark border border-border-dark text-gray-400 hover:text-white hover:bg-gray-700 transition-all"
+              className="p-2 rounded-lg bg-white dark:bg-card-dark border border-slate-200 dark:border-border-dark text-slate-500 dark:text-gray-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-200 dark:hover:bg-gray-700 transition-all"
               title={t('writingLesson.closeRightBar')}
             >
               <span className="material-symbols-outlined">chevron_right</span>
             </button>
           </div>
           {info.vocabulary && info.vocabulary.length > 0 && (
-            <div className="bg-card-dark rounded-2xl p-5 border border-border-dark shadow-lg">
-              <h3 className="font-bold text-sm text-gray-400 mb-3">{t('writingLesson.suggestedVocab')}</h3>
+            <div className="bg-white dark:bg-card-dark rounded-2xl p-5 border border-slate-200 dark:border-border-dark shadow-lg">
+              <h3 className="font-bold text-sm text-slate-500 dark:text-gray-400 mb-3">{t('writingLesson.suggestedVocab')}</h3>
               <ul className="space-y-4">
                 {info.vocabulary.map((v, i) => (
                   <li key={i} className="text-sm">
                     <p className="text-primary font-bold">{v.word}</p>
-                    {v.phonetic && <p className="text-gray-500 text-[10px] italic">{v.phonetic}</p>}
-                    {v.meaning && <p className="text-gray-400 text-xs mt-1 leading-relaxed">{v.meaning}</p>}
+                    {v.phonetic && <p className="text-slate-400 dark:text-gray-500 text-[10px] italic">{v.phonetic}</p>}
+                    {v.meaning && <p className="text-slate-500 dark:text-gray-400 text-xs mt-1 leading-relaxed">{v.meaning}</p>}
                   </li>
                 ))}
               </ul>
@@ -374,7 +454,7 @@ export function WritingLessonPage() {
           <button
             type="button"
             onClick={() => setRightBarOpen(true)}
-            className="p-2.5 rounded-l-lg bg-card-dark border border-border-dark border-r-0 text-gray-400 hover:text-primary hover:bg-gray-700 transition-all shadow-lg"
+            className="p-2.5 rounded-l-lg bg-white dark:bg-card-dark border border-slate-200 dark:border-border-dark border-r-0 text-slate-500 dark:text-gray-400 hover:text-primary hover:bg-slate-200 dark:hover:bg-gray-700 transition-all shadow-lg"
             title={t('writingLesson.openRightBar')}
           >
             <span className="material-symbols-outlined">chevron_left</span>
@@ -399,7 +479,8 @@ export function WritingLessonPage() {
         confirmText={t('common.ok')}
         onClose={() => {
           setShowSuccessModal(false)
-          navigate(`/lesson/writing/${id}/result`)
+          const type = location.pathname.startsWith('/practice/') ? 'practice' : 'lesson'
+          navigate(`/${type}/writing/${id}/result`)
         }}
       />
 
@@ -409,6 +490,17 @@ export function WritingLessonPage() {
         message={t('writingLesson.invalidWordCount')}
         confirmText="OK"
         onClose={() => setShowIncompleteModal(false)}
+      />
+
+      <AlertModal
+        open={showExitConfirm}
+        title={t('common.confirmExit') || 'Confirm Exit'}
+        message={t('common.confirmExitMessage') || 'Are you sure you want to leave? Your progress may not be saved.'}
+        confirmText={t('common.confirm') || 'Yes, leave'}
+        cancelText={t('common.cancel') || 'Cancel'}
+        onClose={handleCancelExit}
+        onConfirm={handleConfirmExit}
+        type="warning"
       />
     </main>
   )

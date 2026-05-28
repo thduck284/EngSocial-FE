@@ -6,6 +6,7 @@ import { getGoogleIdToken, getFacebookAccessToken } from '../utils/socialAuth'
 import { validateEmail, validateResetPasswordForm } from '../validators'
 import { useAuth } from '../context/AuthContext'
 import { ROUTES } from '../constants'
+import { getPostLoginNavigatePath } from '../utils/auth'
 
 // ─── useRegister ─────────────────────────────────────────────────────────────
 
@@ -67,7 +68,7 @@ export function useRegister() {
           if (lang === 'vi' || lang === 'en') {
             authService.updatePreferences({ language: lang }).catch(() => {})
           }
-          navigate(ROUTES.HOME, { replace: true })
+          navigate(getPostLoginNavigatePath(ROUTES.HOME), { replace: true })
         }
         return
       }
@@ -99,7 +100,7 @@ export function useRegister() {
           if (lang === 'vi' || lang === 'en') {
             authService.updatePreferences({ language: lang }).catch(() => {})
           }
-          navigate(ROUTES.HOME, { replace: true })
+          navigate(getPostLoginNavigatePath(ROUTES.HOME), { replace: true })
           return
         }
         if (result.error) setError(result.error)
@@ -198,8 +199,8 @@ export function useLogin() {
             localStorage.removeItem('rememberedPassword')
           }
           setAuth()
-          const from = location.state?.from?.pathname || ROUTES.HOME
-          navigate(from, { replace: true })
+          const fallback = location.state?.from?.pathname || ROUTES.HOME
+          navigate(getPostLoginNavigatePath(fallback), { replace: true })
         }
         return
       }
@@ -225,8 +226,8 @@ export function useLogin() {
 
         if (result.success) {
           setAuth()
-          const from = location.state?.from?.pathname || ROUTES.HOME
-          navigate(from, { replace: true })
+          const fallback = location.state?.from?.pathname || ROUTES.HOME
+          navigate(getPostLoginNavigatePath(fallback), { replace: true })
           return
         }
 

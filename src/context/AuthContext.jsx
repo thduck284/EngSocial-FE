@@ -73,8 +73,14 @@ export function AuthProvider({ children }) {
     const role = currentUser?.role || 'user'
 
     const setAuth = (data) => {
-      if (data?.user) setUser(data.user)
-      else setUser(getStoredUser())
+      if (data?.user) {
+        setUser(data.user)
+        // Sync to storage so user data persists after page refresh
+        const storage = getAuthStorage()
+        storage.setItem('user', JSON.stringify(data.user))
+      } else {
+        setUser(getStoredUser())
+      }
     }
 
     const logout = () => {

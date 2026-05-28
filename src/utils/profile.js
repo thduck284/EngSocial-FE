@@ -57,7 +57,7 @@ export function sortFriendsByOnlineAndLastActive(friends, onlineUserIds) {
 
 export function getFriendActivityLabel(friend, isOnline, t) {
   if (isOnline) return t('messages.activeNow')
-  if (!friend.lastActiveAt) return `${t('dashboard.level')} ${friend.level}`
+  if (!friend.lastActiveAt) return `${t('dashboard.level')} ${friend.level || 1}`
   const diffMs = Date.now() - new Date(friend.lastActiveAt).getTime()
   const diffM = Math.floor(diffMs / 60000)
   const diffH = Math.floor(diffMs / 3600000)

@@ -1,6 +1,12 @@
 import { Link } from 'react-router-dom'
+import { ProfileAchievementsCard } from './ProfileAchievementsCard'
 
-export function ProfileLeftStatsSection({ t, profileSkillStats, raw, goalsDone, goalsTotal }) {
+export function ProfileLeftStatsSection({
+  t,
+  profileSkillStats,
+  achievementItems,
+  achievementsLoading,
+}) {
   return (
     <>
       <div className="bg-white dark:bg-card-dark rounded-2xl p-6 border border-slate-200 dark:border-border-dark">
@@ -19,12 +25,12 @@ export function ProfileLeftStatsSection({ t, profileSkillStats, raw, goalsDone, 
                 <span className={`material-symbols-outlined ${changeColor || 'text-primary'}`}>
                   {icon}
                 </span>
-                <span className="text-sm font-medium">{t(label)}</span>
+                <span className="text-xs font-medium">{t(label)}</span>
               </div>
-              <span className="font-bold text-sm">
+              <span className="font-bold text-xs">
                 {value}{' '}
                 {change && (
-                  <span className={`text-[10px] ml-1 ${changeColor}`}>{change}</span>
+                  <span className={`text-[9px] ml-1 ${changeColor}`}>{change}</span>
                 )}
               </span>
             </Link>
@@ -33,38 +39,11 @@ export function ProfileLeftStatsSection({ t, profileSkillStats, raw, goalsDone, 
       </div>
 
 
-      <div className="bg-white dark:bg-card-dark rounded-2xl p-6 border border-slate-200 dark:border-border-dark">
-        <h4 className="font-bold mb-4 dark:text-white flex items-center gap-2">
-          <span className="material-symbols-outlined text-primary">emoji_events</span>
-          {t('profile.achievements')}
-        </h4>
-        <div className="grid grid-cols-2 gap-4">
-          {raw.profileAchievements.map((a) => (
-            <div
-              key={a.title}
-              className={`p-4 rounded-xl border text-center ${a.bgClass}`}
-            >
-              <div
-                className={`w-10 h-10 ${a.iconBg} text-white rounded-full flex items-center justify-center mx-auto mb-2`}
-              >
-                <span className="material-symbols-outlined">{a.icon}</span>
-              </div>
-              <div
-                className={`text-[10px] font-bold uppercase tracking-wider ${a.textClass}`}
-              >
-                {a.title}
-              </div>
-              <div className="text-xs text-slate-600 dark:text-slate-400">{a.date}</div>
-            </div>
-          ))}
-        </div>
-        <button
-          type="button"
-          className="w-full mt-4 py-2 text-xs font-bold text-primary hover:bg-primary/10 rounded-lg transition-colors"
-        >
-          {t('profile.seeAllBadges')}
-        </button>
-      </div>
+      <ProfileAchievementsCard
+        t={t}
+        items={achievementItems}
+        loading={achievementsLoading}
+      />
     </>
   )
 }

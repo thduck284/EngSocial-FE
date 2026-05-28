@@ -137,11 +137,11 @@ export function CreateGroupModal({ t, open, onClose, onSuccess }) {
         onClick={(e) => e.stopPropagation()}
       >
         <div className="p-5 border-b border-white/5">
-          <h3 className="text-lg font-semibold text-white">{t('messages.createGroup')}</h3>
+          <h3 className="text-lg font-semibold text-slate-900 dark:text-white">{t('messages.createGroup')}</h3>
         </div>
         <div className="p-5 flex-1 overflow-y-auto space-y-4">
           <div className="flex flex-col items-center gap-3">
-            <p className="text-xs font-medium text-gray-400 w-full">{t('messages.groupAvatar')}</p>
+            <p className="text-xs font-medium text-slate-500 dark:text-gray-400 w-full">{t('messages.groupAvatar')}</p>
             <input
               ref={avatarInputRef}
               type="file"
@@ -153,16 +153,16 @@ export function CreateGroupModal({ t, open, onClose, onSuccess }) {
               type="button"
               onClick={() => avatarInputRef.current?.click()}
               disabled={avatarUploading}
-              className="relative w-20 h-20 rounded-full overflow-hidden border-2 border-dashed border-border-dark hover:border-primary/50 bg-card-dark flex items-center justify-center group"
+              className="relative w-20 h-20 rounded-full overflow-hidden border-2 border-dashed border-slate-200 dark:border-border-dark hover:border-primary/50 bg-white dark:bg-card-dark flex items-center justify-center group"
             >
               {groupAvatarPreview ? (
                 <img src={groupAvatarPreview} alt="" className="w-full h-full object-cover" />
               ) : (
-                <span className="material-symbols-outlined text-4xl text-gray-500 group-hover:text-primary">add_photo_alternate</span>
+                <span className="material-symbols-outlined text-4xl text-slate-400 dark:text-gray-500 group-hover:text-primary">add_photo_alternate</span>
               )}
               {avatarUploading && (
                 <span className="absolute inset-0 bg-black/50 flex items-center justify-center">
-                  <span className="material-symbols-outlined animate-spin text-2xl text-white">progress_activity</span>
+                  <span className="material-symbols-outlined animate-spin text-2xl text-slate-900 dark:text-white">progress_activity</span>
                 </span>
               )}
             </button>
@@ -183,29 +183,29 @@ export function CreateGroupModal({ t, open, onClose, onSuccess }) {
             </div>
           </div>
           <div>
-            <label className="block text-xs font-medium text-gray-400 mb-1">{t('messages.groupNamePlaceholder')}</label>
+            <label className="block text-xs font-medium text-slate-500 dark:text-gray-400 mb-1">{t('messages.groupNamePlaceholder')}</label>
             <input
               type="text"
               value={groupName}
               onChange={(e) => setGroupName(e.target.value)}
               placeholder={t('messages.groupNamePlaceholder')}
-              className="w-full bg-card-dark border border-border-dark rounded-xl py-2.5 px-4 text-sm text-white placeholder-gray-500 focus:ring-2 focus:ring-primary outline-none"
+              className="w-full bg-white dark:bg-card-dark border border-slate-200 dark:border-border-dark rounded-xl py-2.5 px-4 text-sm text-slate-900 dark:text-white placeholder-gray-500 focus:ring-2 focus:ring-primary outline-none"
             />
           </div>
           <div>
-            <p className="text-xs font-medium text-gray-400 mb-2">{t('messages.selectMembers')}</p>
+            <p className="text-xs font-medium text-slate-500 dark:text-gray-400 mb-2">{t('messages.selectMembers')}</p>
             {loading ? (
-              <div className="flex justify-center py-8 text-gray-500">
+              <div className="flex justify-center py-8 text-slate-400 dark:text-gray-500">
                 <span className="material-symbols-outlined animate-spin text-2xl">progress_activity</span>
               </div>
             ) : friends.length === 0 ? (
-              <p className="text-sm text-gray-500 py-4">{t('messages.noFriendsForGroup')}</p>
+              <p className="text-sm text-slate-400 dark:text-gray-500 py-4">{t('messages.noFriendsForGroup')}</p>
             ) : (
               <>
-                <p className="text-xs text-gray-500 mb-2">
+                <p className="text-xs text-slate-400 dark:text-gray-500 mb-2">
                   {t('messages.membersSelected', { count: selectedCount, max: CREATE_GROUP_MAX_SELECT })}
                 </p>
-                <ul className="space-y-1 max-h-48 overflow-y-auto rounded-xl border border-border-dark bg-card-dark/50 p-2">
+                <ul className="space-y-1 max-h-48 overflow-y-auto rounded-xl border border-slate-200 dark:border-border-dark bg-card-dark/50 p-2">
                   {friends.map((friend) => {
                     const id = friend.id ?? friend._id
                     const sid = String(id)
@@ -254,7 +254,7 @@ export function CreateGroupModal({ t, open, onClose, onSuccess }) {
           <button
             type="button"
             onClick={onClose}
-            className="px-4 py-2 rounded-xl bg-white/10 text-white hover:bg-white/20 text-sm font-medium"
+            className="px-4 py-2 rounded-xl bg-white/10 text-slate-900 dark:text-white hover:bg-white/20 text-sm font-medium"
           >
             {t('common.cancel')}
           </button>

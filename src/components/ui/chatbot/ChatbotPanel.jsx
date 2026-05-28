@@ -1,6 +1,52 @@
-import { useRef, useEffect, useState } from 'react'
+import { useRef, useEffect, useState, useCallback } from 'react'
+import { flushSync } from 'react-dom'
 import { useTranslation } from 'react-i18next'
-import { rawService } from '../../../services'
+import { chatbotService } from '../../../services'
+
+function formatMsgTime(iso) {
+  if (!iso) return ''
+  try {
+    return new Date(iso).toLocaleString(undefined, { hour: '2-digit', minute: '2-digit', day: 'numeric', month: 'short' })
+  } catch {
+    return ''
+  }
+}
+
+function mapApiMessage(m) {
+  return {
+    id: m.id,
+    type: m.role === 'user' ? 'user' : 'ai',
+    text: m.content || '',
+    time: formatMsgTime(m.createdAt),
+  }
+}
+
+/** Escape rồi render **bold**, _italic_, xuống dòng — an toàn cho XSS. */
+function formatBotRichText(raw) {
+  if (raw == null || raw === '') return ''
+  const d = document.createElement('div')
+  d.textContent = String(raw)
+  let h = d.innerHTML
+  h = h.replace(/\*\*([^*]+)\*\*/g, '<strong class="font-semibold text-white">$1</strong>')
+  h = h.replace(/_([^_\n]+)_/g, '<em class="text-gray-300 not-italic">$1</em>')
+  h = h.replace(/\n/g, '<br />')
+  h = h.replace(/<br \/>•/g, '<br /><span class="text-violet-400 mr-1 select-none" aria-hidden>•</span>')
+  h = h.replace(/<br \/>▸/g, '<br /><span class="text-sky-400 mr-1 select-none" aria-hidden>▸</span>')
+  return `<div class="space-y-1">${h}</div>`
+}
+
+function TypingIndicator({ label }) {
+  return (
+    <span className="inline-flex items-center gap-2 text-gray-400 text-sm">
+      <span>{label}</span>
+      <span className="inline-flex gap-1" aria-hidden>
+        <span className="inline-block w-1.5 h-1.5 rounded-full bg-primary/80 animate-pulse" style={{ animationDelay: '0ms' }} />
+        <span className="inline-block w-1.5 h-1.5 rounded-full bg-primary/80 animate-pulse" style={{ animationDelay: '200ms' }} />
+        <span className="inline-block w-1.5 h-1.5 rounded-full bg-primary/80 animate-pulse" style={{ animationDelay: '400ms' }} />
+      </span>
+    </span>
+  )
+}
 
 export function ChatbotPanel({ open, onClose, onMinimize }) {
   const messagesEndRef = useRef(null)
@@ -9,29 +55,158 @@ export function ChatbotPanel({ open, onClose, onMinimize }) {
   const [conversations, setConversations] = useState([])
   const [messages, setMessages] = useState([])
   const [activeId, setActiveId] = useState(null)
+  const [loadingList, setLoadingList] = useState(false)
+  const [loadingMessages, setLoadingMessages] = useState(false)
+  const [sending, setSending] = useState(false)
+  const [error, setError] = useState('')
+  const streamAiIdRef = useRef(null)
+
+  const loadConversations = useCallback(async () => {
+    setLoadingList(true)
+    setError('')
+    try {
+      const res = await chatbotService.getConversations()
+      const raw = Array.isArray(res?.data) ? res.data : res?.data?.conversations || []
+      const convs = raw.map((c) => ({
+        id: c.id,
+        preview: c.preview || c.title || 'Chat',
+        time: formatMsgTime(c.lastMessageAt),
+        active: false,
+      }))
+      setConversations(convs)
+      setActiveId((prev) => {
+        if (prev && convs.some((x) => x.id === prev)) return prev
+        return convs[0]?.id ?? null
+      })
+    } catch (e) {
+      setConversations([])
+      setActiveId(null)
+      setError(e?.message || t('chatbot.loadError', 'Không tải được danh sách.'))
+    } finally {
+      setLoadingList(false)
+    }
+  }, [t])
+
+  const loadMessages = useCallback(
+    async (conversationId) => {
+      if (!conversationId) {
+        setMessages([])
+        return
+      }
+      setLoadingMessages(true)
+      setError('')
+      try {
+        const res = await chatbotService.getMessages(conversationId)
+        const list = res?.data?.messages || []
+        setMessages(list.map(mapApiMessage))
+      } catch (e) {
+        setMessages([])
+        setError(e?.message || t('chatbot.loadError', 'Không tải được tin nhắn.'))
+      } finally {
+        setLoadingMessages(false)
+      }
+    },
+    [t],
+  )
 
   useEffect(() => {
     if (open) {
-      rawService.getChatbot()
-        .then((res) => {
-          const convs = res?.data?.conversations || []
-          const msgs = res?.data?.messages || []
-          setConversations(convs)
-          setMessages(msgs)
-          const active = convs.find((c) => c.active) ?? convs[0]
-          setActiveId(active?.id ?? null)
-        })
-        .catch(() => {
-          setConversations([])
-          setMessages([])
-          setActiveId(null)
-        })
+      loadConversations()
     }
-  }, [open])
+  }, [open, loadConversations])
+
+  useEffect(() => {
+    if (open && activeId) {
+      loadMessages(activeId)
+    } else if (open && !activeId) {
+      setMessages([])
+    }
+  }, [open, activeId, loadMessages])
 
   useEffect(() => {
     if (open) messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
-  }, [open])
+  }, [open, messages])
+
+  const handleSend = async () => {
+    const text = inputRef.current?.value?.trim()
+    if (!text || sending) return
+    inputRef.current.value = ''
+    setSending(true)
+    setError('')
+    const optimisticId = `local-${Date.now()}`
+    const optimistic = { id: optimisticId, type: 'user', text, time: '' }
+    setMessages((prev) => [...prev, optimistic])
+    const streamAiId = `ai-stream-${Date.now()}`
+    streamAiIdRef.current = streamAiId
+    try {
+      await chatbotService.sendMessageStream(
+        activeId,
+        text,
+        { skill: 'general' },
+        (_chunk, full) => {
+          setMessages((prev) => {
+            const i = prev.findIndex((m) => m.id === streamAiId)
+            if (i === -1) return prev
+            const next = [...prev]
+            next[i] = {
+              ...next[i],
+              text: full,
+              typing: false,
+            }
+            return next
+          })
+        },
+        (meta) => {
+          const newConvId = meta?.conversationId
+          const um = mapApiMessage(meta.userMessage)
+          flushSync(() => {
+            if (newConvId) setActiveId(newConvId)
+            setMessages((prev) => {
+              const rest = prev.filter((m) => m.id !== optimisticId)
+              return [
+                ...rest,
+                um,
+                {
+                  id: streamAiId,
+                  type: 'ai',
+                  text: '',
+                  typing: true,
+                  time: '',
+                },
+              ]
+            })
+          })
+        },
+      )
+      setMessages((prev) => {
+        const i = prev.findIndex((m) => m.id === streamAiId)
+        if (i === -1) return prev
+        const next = [...prev]
+        next[i] = {
+          ...next[i],
+          time: formatMsgTime(new Date().toISOString()),
+          typing: false,
+        }
+        return next
+      })
+      await loadConversations()
+    } catch (e) {
+      setMessages((prev) => {
+        const streamAi = prev.find((m) => m.id === streamAiIdRef.current)
+        if (streamAi && streamAi.text && String(streamAi.text).trim().length > 0) {
+          return prev.map((m) =>
+            m.id === streamAiIdRef.current ? { ...m, typing: false } : m
+          ).filter((m) => m.id !== optimisticId)
+        }
+        return prev.filter((m) => m.id !== optimisticId && m.id !== streamAiIdRef.current)
+      })
+      setError(e?.message || t('chatbot.sendError', 'Gửi thất bại.'))
+    } finally {
+      streamAiIdRef.current = null
+      setSending(false)
+      inputRef.current?.focus()
+    }
+  }
 
   if (!open) return null
 
@@ -53,6 +228,12 @@ export function ChatbotPanel({ open, onClose, onMinimize }) {
             <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider px-2 py-1">{t('chatbot.conversations')}</p>
           </div>
           <div className="flex-1 overflow-y-auto custom-scrollbar min-h-0">
+            {loadingList && (
+              <p className="text-[10px] text-gray-500 px-3 py-2">…</p>
+            )}
+            {!loadingList && conversations.length === 0 && (
+              <p className="text-[10px] text-gray-500 px-3 py-2">{t('chatbot.noConversations', 'Chưa có cuộc trò chuyện')}</p>
+            )}
             {conversations.map((c) => (
               <button
                 key={c.id}
@@ -68,6 +249,16 @@ export function ChatbotPanel({ open, onClose, onMinimize }) {
                 <p className="text-[10px] text-gray-500 mt-1">{c.time}</p>
               </button>
             ))}
+            <button
+              type="button"
+              onClick={() => {
+                setActiveId(null)
+                setMessages([])
+              }}
+              className="w-full text-left px-3 py-2 mx-1.5 mt-2 text-[10px] text-primary hover:underline"
+            >
+              + {t('chatbot.newChat', 'Chat mới')}
+            </button>
           </div>
         </div>
 
@@ -102,8 +293,20 @@ export function ChatbotPanel({ open, onClose, onMinimize }) {
           </div>
         </div>
 
+        {error && (
+          <div className="px-3 py-2 text-[11px] text-red-300 bg-red-950/40 border-b border-red-900/50 shrink-0">
+            {error}
+          </div>
+        )}
+
         {/* Messages */}
         <div className="flex-1 overflow-y-auto p-4 space-y-4 custom-scrollbar min-h-0">
+          {loadingMessages && (
+            <p className="text-xs text-gray-400">{t('chatbot.loading', 'Đang tải…')}</p>
+          )}
+          {!loadingMessages && messages.length === 0 && !error && (
+            <p className="text-xs text-gray-400">{t('chatbot.emptyThread', 'Nhập tin nhắn bên dưới.')}</p>
+          )}
           {messages.map((msg) => (
             <div
               key={msg.id}
@@ -121,7 +324,16 @@ export function ChatbotPanel({ open, onClose, onMinimize }) {
                     : 'bg-[#0f2937] text-gray-100 border border-[#325a67]'
                 }`}
               >
-                <p className="text-sm leading-snug">{msg.text}</p>
+                {msg.type === 'ai' && msg.typing && !(msg.text && String(msg.text).length) ? (
+                  <TypingIndicator label={t('chatbot.typing', 'Đang soạn')} />
+                ) : msg.type === 'ai' ? (
+                  <div
+                    className="chatbot-md text-sm leading-relaxed"
+                    dangerouslySetInnerHTML={{ __html: formatBotRichText(msg.text) }}
+                  />
+                ) : (
+                  <p className="text-sm leading-snug whitespace-pre-wrap">{msg.text}</p>
+                )}
                 {msg.time && (
                   <p className="text-[10px] text-white/70 mt-1.5 text-right">{msg.time}</p>
                 )}
@@ -153,10 +365,19 @@ export function ChatbotPanel({ open, onClose, onMinimize }) {
               type="text"
               placeholder={t('chatbot.inputPlaceholder')}
               className="flex-1 bg-transparent border-none text-sm text-white placeholder-gray-500 focus:ring-0 outline-none min-w-0"
+              disabled={sending}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' && !e.shiftKey) {
+                  e.preventDefault()
+                  handleSend()
+                }
+              }}
             />
             <button
               type="button"
-              className="size-10 rounded-full bg-primary flex items-center justify-center text-white hover:brightness-110 transition-all shrink-0"
+              onClick={handleSend}
+              disabled={sending}
+              className="size-10 rounded-full bg-primary flex items-center justify-center text-white hover:brightness-110 transition-all shrink-0 disabled:opacity-50"
               aria-label={t('chatbot.send')}
             >
               <span className="material-symbols-outlined text-xl fill-icon">send</span>

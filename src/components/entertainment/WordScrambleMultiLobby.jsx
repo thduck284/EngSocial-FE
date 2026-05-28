@@ -15,9 +15,10 @@ const QUICK_MESSAGES = [
  * @param {{
  *   lobby: ReturnType<typeof import('../../hooks/useWordScrambleLobby').useWordScrambleLobby>,
  *   onBack: () => void,
+ *   onInviteClick?: () => void,
  * }} props
  */
-export function WordScrambleMultiLobby({ lobby, onBack }) {
+export function WordScrambleMultiLobby({ lobby, onBack, onInviteClick }) {
   const { t } = useTranslation()
   const [chatInput, setChatInput] = useState('')
   const [inviteCopied, setInviteCopied] = useState(false)
@@ -38,7 +39,6 @@ export function WordScrambleMultiLobby({ lobby, onBack }) {
     setReady,
     sendChat,
     startGame,
-    leaveRoom,
     inviteUrl,
   } = lobby
 
@@ -47,7 +47,6 @@ export function WordScrambleMultiLobby({ lobby, onBack }) {
   }, [chatMessages.length])
 
   const handleBack = () => {
-    leaveRoom()
     onBack()
   }
 
@@ -138,6 +137,11 @@ export function WordScrambleMultiLobby({ lobby, onBack }) {
               return (
                 <div
                   key={`slot-${idx}-${slot?.userId ?? 'empty'}`}
+                  onClick={() => {
+                    if (!slot && isHost && typeof onInviteClick === 'function') {
+                      onInviteClick()
+                    }
+                  }}
                   className={`group relative rounded-2xl border-2 p-3 flex flex-col items-center text-center gap-2 min-h-[120px] justify-center transition-all duration-300 ${
                     slot
                       ? 'border-fuchsia-500/40 bg-slate-900/60 shadow-[0_8px_32px_-12px_rgba(217,70,239,0.5)] backdrop-blur-md'
@@ -156,16 +160,11 @@ export function WordScrambleMultiLobby({ lobby, onBack }) {
                           }`}
                           onError={(e) => { e.currentTarget.src = DEFAULT_AVATAR }}
                         />
-                        {isSlotHost ? (
+                        {isSlotHost && (
                           <div className="absolute -top-1 -right-1 z-20 size-7 rounded-full bg-gradient-to-tr from-amber-600 to-yellow-400 flex items-center justify-center border-2 border-slate-900 shadow-lg animate-pulse" title={t('enter.game.wsLobbyHost')}>
                             <span className="material-symbols-outlined text-[14px] text-white font-bold">star</span>
                           </div>
-                        ) : null}
-                        {slot.ready ? (
-                          <div className="absolute -bottom-1 -right-1 z-20 size-7 rounded-full bg-gradient-to-tr from-emerald-600 to-teal-400 flex items-center justify-center border-2 border-slate-900 shadow-lg">
-                            <span className="material-symbols-outlined text-white text-[16px]">check</span>
-                          </div>
-                        ) : null}
+                        )}
                       </div>
                       <div className="space-y-0.5 z-10">
                         <p className="text-sm font-bold text-white tracking-tight line-clamp-1">{slot.name}</p>
@@ -175,11 +174,13 @@ export function WordScrambleMultiLobby({ lobby, onBack }) {
                       </div>
                     </>
                   ) : (
-                    <div className="flex flex-col items-center gap-2 text-slate-600/60 group-hover:text-slate-500/80 transition-colors">
-                      <div className="size-12 rounded-full border-2 border-dashed border-slate-700/50 flex items-center justify-center">
-                        <span className="material-symbols-outlined text-2xl">person_add</span>
+                    <div className="flex flex-col items-center gap-2 text-slate-600/60 group-hover:text-slate-500/80 transition-colors w-full">
+                      <div className="size-10 rounded-full border border-dashed border-slate-700/50 flex items-center justify-center">
+                        <span className="material-symbols-outlined text-xl">{isHost ? 'person_add' : 'person'}</span>
                       </div>
-                      <span className="text-[10px] uppercase font-bold tracking-[0.2em]">{t('enter.game.wsLobbyEmptySlot')}</span>
+                      <span className="text-[9px] uppercase font-bold tracking-[0.2em]">
+                        {isHost ? t('enter.game.wsLobbyInvite') : t('enter.game.wsLobbyWaiting')}
+                      </span>
                     </div>
                   )}
                 </div>
@@ -188,18 +189,21 @@ export function WordScrambleMultiLobby({ lobby, onBack }) {
           </div>
 
           <div className="flex flex-wrap items-center justify-center gap-3 pt-2 shrink-0">
-            <button
-              type="button"
-              onClick={() => setReady(!myReady)}
-              disabled={!connected || !seated}
-              className={`px-8 py-3 rounded-xl text-sm font-bold border transition-all ${
-                myReady
-                  ? 'border-emerald-400/50 bg-emerald-500/20 text-emerald-100'
-                  : 'border-cyan-400/40 bg-cyan-500/15 text-cyan-100 hover:bg-cyan-500/25'
-              } disabled:opacity-40`}
-            >
-              {myReady ? t('enter.game.wsLobbyUnready') : t('enter.game.wsLobbyReady')}
-            </button>
+            {!isHost && (
+              <button
+                type="button"
+                onClick={() => setReady(!myReady)}
+                disabled={!connected || !seated}
+                className={`px-8 py-3 rounded-xl text-sm font-bold border transition-all ${
+                  myReady
+                    ? 'border-emerald-400/50 bg-emerald-500/20 text-emerald-100'
+                    : 'border-cyan-400/40 bg-cyan-500/15 text-cyan-100 hover:bg-cyan-500/25'
+                } disabled:opacity-40`}
+              >
+                {myReady ? t('enter.game.wsLobbyUnready') : t('enter.game.wsLobbyReady')}
+              </button>
+            )}
+            
             {isHost ? (
               <button
                 type="button"
@@ -210,7 +214,9 @@ export function WordScrambleMultiLobby({ lobby, onBack }) {
                 {t('enter.game.wsLobbyStart')}
               </button>
             ) : (
-              <p className="text-xs text-slate-500 max-w-xs text-center">{t('enter.game.wsLobbyWaitHost')}</p>
+              <div className="flex flex-col items-center">
+                <p className="text-xs text-slate-500 max-w-xs text-center">{t('enter.game.wsLobbyWaitHost')}</p>
+              </div>
             )}
           </div>
           {isHost && !canStart && connected ? (

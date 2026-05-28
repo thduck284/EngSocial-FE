@@ -4,10 +4,10 @@ import { LEVEL_ORDER, SKILL_ORDER } from '../constants/lessons'
  * Get lesson detail URL by skill
  */
 export function getLessonLink(lesson) {
-  if (lesson.skill === 'reading') return `/lesson/reading/${lesson.id}`
-  if (lesson.skill === 'listening') return `/lesson/listening/${lesson.id}`
-  if (lesson.skill === 'writing') return `/lesson/writing/${lesson.id}`
-  return '/lesson'
+  const cat = lesson.category === 'practice' ? 'practice' : 'lesson'
+  const skill = lesson.skill || 'reading'
+  const id = lesson.slug || lesson.id
+  return `/${cat}/${skill}/${id}`
 }
 
 /**

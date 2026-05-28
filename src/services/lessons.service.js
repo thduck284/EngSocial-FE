@@ -31,6 +31,11 @@ export const lessonsService = {
     const q = new URLSearchParams(params).toString()
     return apiClient.get(`${API_ENDPOINTS.LESSONS.DETAIL(id)}/all-results${q ? `?${q}` : ''}`)
   },
+  getUserProgressByMod: (targetUserId, params = {}) => {
+    const q = new URLSearchParams(params).toString()
+    return apiClient.get(`${API_ENDPOINTS.LESSONS.USER_PROGRESS(targetUserId)}${q ? `?${q}` : ''}`)
+  },
+
   gradeWriting: (id, userId, body) => apiClient.post(`${API_ENDPOINTS.LESSONS.DETAIL(id)}/grade/${userId}`, body),
   aiGradeWriting: (id, userId) => apiClient.post(API_ENDPOINTS.LESSONS.AI_GRADE(id, userId)),
 }

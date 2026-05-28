@@ -250,10 +250,35 @@ export function useProfileVideos(userId, { pageSize = 5 } = {}) {
       const videosFromPosts = list.flatMap((post) => {
         if (post?.sharedPostId || post?.sharedPost) return []
         const postId = post?.id ?? post?._id
-        const video = typeof post?.video === 'string' ? post.video.trim() : ''
-        if (!video) return []
-        const imagesCount = Array.isArray(post?.images) ? post.images.length : 0
-        return [{ url: video, postId, mediaIdx: imagesCount }]
+        const out = []
+        
+        // 1. Check singular video field
+        if (typeof post?.video === 'string' && post.video.trim()) {
+          const imagesCount = Array.isArray(post?.images) ? post.images.length : 0
+          out.push({ url: post.video.trim(), postId, mediaIdx: imagesCount })
+        }
+
+        // 2. Check videos array
+        if (Array.isArray(post?.videos)) {
+          post.videos.forEach((v, idx) => {
+            const url = typeof v === 'string' ? v : v?.url
+            if (url && url.trim()) {
+              out.push({ url: url.trim(), postId, mediaIdx: idx })
+            }
+          })
+        }
+
+        // 3. Check media array (for polymorphic media)
+        if (Array.isArray(post?.media)) {
+          post.media.forEach((m, idx) => {
+            const isVideo = m?.type === 'video' || m?.contentType?.startsWith('video/')
+            if (isVideo && m?.url) {
+              out.push({ url: m.url, postId, mediaIdx: idx })
+            }
+          })
+        }
+
+        return out
       })
 
       postsPageRef.current = currentPage + 1

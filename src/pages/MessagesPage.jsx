@@ -15,6 +15,7 @@ import {
   AddMembersToGroupModal,
   ForwardMessageModal,
 } from '../components/messages'
+import { ReportContentModal } from '../components/ui/common/ReportContentModal'
 
 export function MessagesPage() {
   const [showGroupSettingsModal, setShowGroupSettingsModal] = useState(false)
@@ -111,6 +112,10 @@ export function MessagesPage() {
     handleForwardMessage,
     forwardingToId,
     conversations,
+    reportModal,
+    closeReportModal,
+    handleAnyReport,
+    submitReportModal,
   } = api
 
   const composerProps = {
@@ -173,13 +178,13 @@ export function MessagesPage() {
         onOpenDisappearing={(conv) => { navigate(ROUTES.MESSAGES_CONVERSATION(conv.id)); setHeaderActionPanel('disappearing') }}
         onDeleteMessages={(conv) => { navigate(ROUTES.MESSAGES_CONVERSATION(conv.id)); setShowDeleteAllConfirm(true) }}
         onBlock={(conv) => conv?.otherUserId && api.handleBlockDirect(conv.otherUserId)}
-        onReport={(conv) => {}}
+        onReport={handleAnyReport}
         onLeaveGroup={(conv) => { navigate(ROUTES.MESSAGES_CONVERSATION(conv.id)); setShowLeaveConfirm(true) }}
       />
 
-      <section className="flex-1 flex flex-col min-h-0 min-w-0 bg-background-dark relative w-full">
+      <section className="flex-1 flex flex-col min-h-0 min-w-0 bg-slate-50 dark:bg-background-dark relative w-full">
         {withUserLoading && withUserId ? (
-          <div className="flex-1 flex items-center justify-center text-gray-400">
+          <div className="flex-1 flex items-center justify-center text-slate-500 dark:text-gray-400">
             <span className="material-symbols-outlined animate-spin text-4xl">progress_activity</span>
             <span className="ml-3">{t('messages.loadingConversation')}</span>
           </div>
@@ -251,7 +256,7 @@ export function MessagesPage() {
             onDeleteAll={() => setShowDeleteAllConfirm(true)}
             onBlock={() => selected?.otherUserId && api.handleBlockDirect(selected.otherUserId)}
             onUnblock={api.handleUnblockDirect}
-            onReport={() => {}}
+            onReport={handleAnyReport}
             headerActionPanel={headerActionPanel}
             setHeaderActionPanel={setHeaderActionPanel}
             panelSearchQuery={panelSearchQuery}
@@ -269,9 +274,9 @@ export function MessagesPage() {
           />
           </div>
         ) : (
-          <div className="flex-1 flex flex-col items-center justify-center text-center px-6 text-gray-400">
+          <div className="flex-1 flex flex-col items-center justify-center text-center px-6 text-slate-500 dark:text-gray-400">
             <span className="material-symbols-outlined text-6xl mb-4 opacity-50">chat_bubble</span>
-            <h3 className="text-lg font-semibold text-white mb-2">{t('messages.chooseConversation')}</h3>
+            <h3 className="text-lg font-semibold text-slate-900 dark:text-white mb-2">{t('messages.chooseConversation')}</h3>
             <p className="text-sm max-w-sm">{t('messages.chooseConversationHint')}</p>
           </div>
         )}
@@ -307,7 +312,7 @@ export function MessagesPage() {
           downloadAttachment={downloadAttachment}
           rightBarSearchInputRef={rightBarSearchInputRef}
           onBlock={() => selected?.otherUserId && api.handleBlockDirect(selected.otherUserId)}
-          onReport={() => {}}
+          onReport={handleAnyReport}
           onOpenGroupSettings={() => setShowGroupSettingsModal(true)}
           onUploadGroupAvatar={handleUploadGroupAvatar}
           onSaveGroupName={handleSaveGroupName}
@@ -390,6 +395,12 @@ export function MessagesPage() {
         currentConversationId={selectedId}
         onForward={handleForwardMessage}
         forwarding={forwardingToId}
+      />
+      <ReportContentModal
+        open={reportModal.open}
+        titleKey={reportModal.titleKey}
+        onClose={closeReportModal}
+        onSubmit={submitReportModal}
       />
     </main>
   )

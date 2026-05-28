@@ -1,5 +1,29 @@
 import { ROUTES } from './api'
 
+/** Chỉ admin: 2 mục — Người dùng, Báo cáo */
+export function getAdminPortalNav(userId) {
+  return [
+    {
+      to: ROUTES.MANAGE_ADMIN_OVERVIEW(userId),
+      end: true,
+      icon: 'dashboard',
+      labelKey: 'staffDashboard.navAdminOverview',
+    },
+    {
+      to: ROUTES.MANAGE_ADMIN_USERS(userId),
+      end: true,
+      icon: 'group',
+      labelKey: 'staffDashboard.navAdminUsers',
+    },
+    {
+      to: ROUTES.MANAGE_ADMIN_REPORTS(userId),
+      end: true,
+      icon: 'flag',
+      labelKey: 'staffDashboard.navAdminReports',
+    },
+  ]
+}
+
 /** @param {string|number} userId */
 export function getStaffNavCore(userId) {
   return [
@@ -17,6 +41,14 @@ export function getStaffNavCore(userId) {
       icon: 'fitness_center',
       labelKey: 'staffDashboard.navPractice',
       descKey: 'staffDashboard.cardPracticeDesc',
+      adminOnly: false,
+    },
+    {
+      to: ROUTES.MANAGE_MOCK_TESTS(userId),
+      end: false,
+      icon: 'quiz',
+      labelKey: 'staffDashboard.navMockTest',
+      descKey: 'staffDashboard.cardMockTestDesc',
       adminOnly: false,
     },
   ]

@@ -68,7 +68,7 @@ export function getContentWithoutMentions(content) {
     last = r.end
   }
   out += content.slice(last)
-  return out.replace(/\s+/g, ' ').trim()
+  return out.trim()
 }
 
 /**

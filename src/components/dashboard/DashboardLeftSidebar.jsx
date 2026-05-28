@@ -27,22 +27,22 @@ export function DashboardLeftSidebar({
         <div className="flex items-center gap-4 mb-4">
           <img src={displayAvatar} alt="" className="size-14 rounded-full object-cover" />
           <div>
-            <h2 className="font-bold text-lg">{displayName}</h2>
+            <h2 className="font-bold text-lg text-slate-900 dark:text-white">{displayName}</h2>
             <p className="text-primary text-sm font-medium">{t('dashboard.level')} {profileProgress.level} · {t('dashboard.learner')}</p>
           </div>
         </div>
         <div className="space-y-2 mb-6">
-          <div className="flex justify-between text-xs font-semibold mb-1">
+          <div className="flex justify-between text-xs font-semibold mb-1 text-slate-700 dark:text-slate-200">
             <span>{t('dashboard.xpProgress')}</span>
             <span>{Math.min(100, Math.round((profileProgress.currentXp / profileProgress.xpToNextLevel) * 100))}%</span>
           </div>
-          <div className="h-2 w-full bg-[#325a67] rounded-full overflow-hidden">
+          <div className="h-2 w-full bg-slate-100 dark:bg-[#325a67] rounded-full overflow-hidden">
             <div
-              className="h-full bg-primary transition-all"
+              className="h-full bg-primary transition-all shadow-[0_0_8px_rgba(19,182,236,0.4)]"
               style={{ width: `${Math.min(100, (profileProgress.currentXp / profileProgress.xpToNextLevel) * 100)}%` }}
             />
           </div>
-          <p className="text-[10px] text-[#92bbc9]">{profileProgress.currentXp.toLocaleString()}/{profileProgress.xpToNextLevel.toLocaleString()} XP {t('dashboard.xpToLevel')} {profileProgress.level + 1}</p>
+          <p className="text-[10px] text-slate-500 dark:text-[#92bbc9]">{profileProgress.currentXp.toLocaleString()}/{profileProgress.xpToNextLevel.toLocaleString()} XP {t('dashboard.xpToLevel')} {profileProgress.level + 1}</p>
         </div>
         <Link
           to="/profile"
@@ -62,7 +62,7 @@ export function DashboardLeftSidebar({
             icon="query_stats"
             title={t('dashboard.weeklyStats')}
             rightSlot={
-              <span className="material-symbols-outlined text-slate-500 dark:text-[#92bbc9]">
+              <span className="material-symbols-outlined text-slate-400 dark:text-[#92bbc9]">
                 {weeklyStatsOpen ? 'expand_less' : 'expand_more'}
               </span>
             }
@@ -80,9 +80,9 @@ export function DashboardLeftSidebar({
                   <span className={`material-symbols-outlined ${changeColor || 'text-primary'}`}>
                     {icon}
                   </span>
-                  <span className="text-sm font-medium">{t(label)}</span>
+                  <span className="text-sm font-medium text-slate-700 dark:text-slate-200">{t(label)}</span>
                 </div>
-                <span className="font-bold text-sm">
+                <span className="font-bold text-sm text-slate-900 dark:text-white">
                   {value} <span className={`text-[10px] ml-1 ${changeColor}`}>{change}</span>
                 </span>
               </Link>
@@ -114,7 +114,7 @@ export function DashboardLeftSidebar({
           <div className={`space-y-4 overflow-y-auto pr-1 custom-scrollbar ${groupsList.length > 5 ? 'max-h-[200px]' : ''}`}>
             {groupsList.map((item, idx) => {
               if (isApiGroups) {
-                const convId = item.id ?? item._id
+                const convId = item.id || item._id
                 const name = item.name || t('dashboard.studyGroups')
                 const avatar = item.avatar || (name ? `https://ui-avatars.com/api/?name=${encodeURIComponent(name)}&background=13b6ec&color=fff` : DEFAULT_AVATAR)
                 const membersLabel = item.memberCount != null ? `${item.memberCount} ${t('dashboard.members')}` : ''
@@ -129,8 +129,8 @@ export function DashboardLeftSidebar({
                         )}
                       </div>
                       <div className="text-xs min-w-0">
-                        <p className="font-bold line-clamp-1">{name}</p>
-                        {membersLabel && <p className="text-[#92bbc9]">{membersLabel}</p>}
+                        <p className="font-bold line-clamp-1 text-slate-900 dark:text-white">{name}</p>
+                        {membersLabel && <p className="text-slate-500 dark:text-[#92bbc9]">{membersLabel}</p>}
                       </div>
                     </Link>
                     <Link
@@ -150,8 +150,8 @@ export function DashboardLeftSidebar({
                     <span className="material-symbols-outlined text-white">{g.icon || 'groups'}</span>
                   </div>
                   <div className="text-xs min-w-0">
-                    <p className="font-bold line-clamp-1">{g.title}</p>
-                    <p className="text-[#92bbc9]">{g.members}</p>
+                    <p className="font-bold line-clamp-1 text-slate-900 dark:text-white">{g.title}</p>
+                    <p className="text-slate-500 dark:text-[#92bbc9]">{g.members}</p>
                   </div>
                 </div>
               )
@@ -170,25 +170,35 @@ export function DashboardLeftSidebar({
           className="mb-4"
         />
         <div className="space-y-4">
-          {raw.featuredLessons.map(({ title, icon, skill, level, to, learners }) => (
-            <Link key={title} to={to} className="block group">
-              <div className="flex justify-between items-start">
-                <h4 className="text-sm font-semibold group-hover:text-primary transition-colors">{title}</h4>
-                <span className="px-1.5 py-0.5 bg-orange-500/10 text-orange-500 text-[9px] font-bold rounded uppercase shrink-0 ml-2">
-                  {level}
-                </span>
-              </div>
-              <div className="flex items-center gap-3 mt-1 text-[10px] text-slate-500 dark:text-[#92bbc9]">
-                <span className="flex items-center gap-1">
-                  <span className="material-symbols-outlined text-sm">
-                    {icon === 'menu_book' ? 'menu_book' : icon === 'headset' ? 'headset' : 'edit_note'}
+          {raw.featuredLessons.map((lesson) => {
+            const skill = lesson.skill?.toLowerCase() || 'reading'
+            const category = lesson.category === 'practice' ? 'practice' : 'lesson'
+            const to = `/${category}/${skill}/${lesson.slug}`
+            const icon = skill === 'reading' ? 'menu_book' : skill === 'listening' ? 'headset' : 'edit_note'
+            const learners = lesson.completionCount || 0
+
+            return (
+              <Link key={lesson.id || lesson.slug} to={to} className="block group">
+                <div className="flex justify-between items-start">
+                  <h4 className="text-sm font-semibold text-slate-800 dark:text-slate-200 group-hover:text-primary transition-colors line-clamp-2">
+                    {lesson.title}
+                  </h4>
+                  <span className="px-1.5 py-0.5 bg-orange-500/10 text-orange-500 text-[9px] font-bold rounded uppercase shrink-0 ml-2">
+                    {lesson.level}
                   </span>
-                  {t(`skills.${skill.toLowerCase()}`)}
-                </span>
-                <span>• {learners} {t('dashboard.views')}</span>
-              </div>
-            </Link>
-          ))}
+                </div>
+                <div className="flex items-center gap-3 mt-1 text-[10px] text-slate-500 dark:text-[#92bbc9]">
+                  <span className="flex items-center gap-1">
+                    <span className="material-symbols-outlined text-sm">
+                      {icon}
+                    </span>
+                    {t(`skills.${skill}`)}
+                  </span>
+                  <span>• {learners.toLocaleString()} {t('dashboard.views')}</span>
+                </div>
+              </Link>
+            )
+          })}
         </div>
         <Link
           to="/lesson"
@@ -198,21 +208,7 @@ export function DashboardLeftSidebar({
         </Link>
       </DashboardCard>
 
-      <div className="bg-primary/5 dark:bg-primary/10 rounded-xl p-5 border border-primary/20">
-        <h3 className="font-bold text-sm text-primary mb-3 flex items-center gap-2">
-          <span className="material-symbols-outlined text-lg fill-icon">emoji_events</span>
-          {t('dashboard.ongoingChallenge')}
-        </h3>
-        <div className="space-y-3">
-          <div className="text-xs">
-            <p className="font-semibold">Vua Từ Vựng Tuần 48</p>
-            <div className="flex items-center justify-between mt-1 text-[#92bbc9]">
-              <span>Kết thúc sau: 2 ngày</span>
-              <span>Top 5%</span>
-            </div>
-          </div>
-        </div>
-      </div>
+
     </aside>
   )
 }

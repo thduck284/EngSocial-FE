@@ -281,6 +281,10 @@ export function useDashboardSocket(user, setConversations, setOnlineFriends, set
           })
         )
       })
+      socket.on('achievement:unlocked', (payload) => {
+        // Dispatch a custom DOM event so any component can show a toast
+        window.dispatchEvent(new CustomEvent('achievement:unlocked', { detail: payload }))
+      })
       socket.on('conversation:userOffline', (payload) => {
         const userId = payload?.userId != null ? String(payload.userId) : null
         if (!userId) return
@@ -374,27 +378,25 @@ export function useDashboardFriends(onlineUserIds, setOnlineUserIds, allConversa
   const loadFriendTabData = (tab) => {
     setFriendTabLoading(true)
     if (tab === 'suggestions') {
-      // friendsService
-      //   .getSuggestions({ limit: 10 })
-      //   .then((res) => {
-      //     const raw = res?.data?.data ?? res?.data ?? []
-      //     const list = Array.isArray(raw) ? raw : []
-      //     setSuggestionsList(
-      //       list.map((item) =>
-      //         item?.user
-      //           ? {
-      //             ...item.user,
-      //             mutualFriendsCount:
-      //               item.mutualFriendsCount ?? item.mutualCount,
-      //           }
-      //           : item
-      //       )
-      //     )
-      //   })
-      //   .catch(() => setSuggestionsList([]))
-      //   .finally(() => setFriendTabLoading(false))
-      setSuggestionsList([])
-      setFriendTabLoading(false)
+      friendsService
+        .getSuggestions({ limit: 10 })
+        .then((res) => {
+          const raw = res?.data?.data ?? res?.data ?? []
+          const list = Array.isArray(raw) ? raw : []
+          setSuggestionsList(
+            list.map((item) =>
+              item?.user
+                ? {
+                  ...item.user,
+                  mutualFriendsCount:
+                    item.mutualFriendsCount ?? item.mutualCount,
+                }
+                : item
+            )
+          )
+        })
+        .catch(() => setSuggestionsList([]))
+        .finally(() => setFriendTabLoading(false))
     } else if (tab === 'sent') {
       friendsService
         .getSentRequests({ limit: 10 })

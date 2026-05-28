@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
+import { toast } from 'react-hot-toast'
 import { friendsService } from '../../services/friends.service'
 import { DEFAULT_AVATAR } from '../../constants/ui'
 
@@ -50,16 +51,35 @@ export function WordScrambleInviteBubble({ lobby, onClose }) {
   const filtered = friends.filter(f => f.name.toLowerCase().includes(search.toLowerCase()))
 
   const handleInvite = (friend) => {
-    if (invitedIds.has(friend.id)) return
-    
-    // Logic to "send" invite (mock or real if possible)
-    // For now, we simulate sending and record it
-    setInvitedIds(prev => new Set([...prev, friend.id]))
-    
-    // Optionally we could send a chat message if lobby is provided
-    if (lobby?.sendChat) {
-      lobby.sendChat(`📢 Invited ${friend.name} to the game!`)
+    if (invitedIds.has(friend.id)) {
+      toast(t('enter.game.inviteAlreadySent', { defaultValue: 'Đã gửi lời mời tới bạn này.' }))
+      return
     }
+
+    if (typeof lobby?.inviteFriend !== 'function') {
+      toast.error(t('enter.game.inviteUnavailable', { defaultValue: 'Chưa kết nối phòng — không thể mời.' }))
+      return
+    }
+
+    lobby.inviteFriend(String(friend.id), lobby.inviteUrl, (res) => {
+      if (!res?.ok) {
+        const key = res?.error === 'room_not_found' ? 'enter.game.inviteRoomGone' : 'enter.game.inviteFailed'
+        toast.error(t(key, { defaultValue: res?.error === 'room_not_found' ? 'Phòng không còn — tạo phòng mới rồi mời lại.' : 'Gửi lời mời thất bại.' }))
+        return
+      }
+      setInvitedIds((prev) => new Set([...prev, friend.id]))
+      if (res.friendOnline === false) {
+        toast(
+          t('enter.game.inviteSentOffline', {
+            defaultValue: 'Đã gửi lời mời; bạn chưa mở app hoặc mất kết nối — nhắn họ mở EngSocial hoặc gửi link phòng.',
+          }),
+          { duration: 5000 },
+        )
+      } else {
+        toast.success(t('enter.game.inviteSent', { defaultValue: 'Đã gửi lời mời.' }))
+      }
+      lobby.sendChat?.(`📢 Invited ${friend.name} to the game!`)
+    })
   }
 
   return (

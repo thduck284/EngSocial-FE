@@ -26,6 +26,7 @@ export { friendsService } from './friends.service.js'
 
 // Practices
 export { practicesService } from './practices.service.js'
+export { mockTestService } from './mockTest.service.js'
 
 // Raw (mock data từ BE)
 export { rawService } from './raw.service.js'
@@ -49,6 +50,12 @@ export { skillsService } from './skills.service.js'
 // Community
 export { communityService } from './community.service.js'
 
+// Reports (content moderation)
+export { reportService } from './report.service.js'
+
+// Admin API
+export { adminService } from './admin.service.js'
+
 // Notifications
 export { notificationsService } from './notifications.service.js'
 
@@ -57,6 +64,9 @@ export { challengesService } from './challenges.service.js'
 
 // Leaderboard
 export { leaderboardService } from './leaderboard.service.js'
+
+// Achievements
+export { achievementsService } from './achievements.service.js'
 
 // Chatbot
 export { chatbotService } from './chatbot.service.js'

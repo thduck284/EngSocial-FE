@@ -252,7 +252,7 @@ export function DashboardRightSidebar({
                         <span className="absolute bottom-0 right-0 size-2.5 bg-green-500 rounded-full border-2 border-white dark:border-[#111e22]" title={t('userProfile.online')} />
                       )}
                     </div>
-                    <span className="text-sm font-medium truncate">{name}</span>
+                    <span className="text-sm font-medium text-slate-700 dark:text-slate-200 truncate">{name}</span>
                   </Link>
                   <button
                     type="button"
@@ -302,13 +302,13 @@ export function DashboardRightSidebar({
                       <img
                         src={entry.avatar || DEFAULT_AVATAR}
                         alt=""
-                        className="size-8 rounded-full object-cover bg-slate-300 dark:bg-[#233f48] shrink-0"
+                        className="size-8 rounded-full object-cover bg-slate-200 dark:bg-[#233f48] shrink-0"
                       />
-                      <span className={`text-xs truncate max-w-[100px] ${entry.rank === 1 ? 'font-bold' : 'font-medium'}`}>
+                      <span className={`text-xs truncate max-w-[100px] text-slate-700 dark:text-slate-200 ${entry.rank === 1 ? 'font-bold' : 'font-medium'}`}>
                         {entry.name || 'User'}
                       </span>
                     </div>
-                    <span className="text-xs font-semibold shrink-0">{entry.xp != null ? `${Number(entry.xp).toLocaleString()} XP` : '0 XP'}</span>
+                    <span className="text-xs font-semibold text-slate-900 dark:text-white shrink-0">{entry.xp != null ? `${Number(entry.xp).toLocaleString()} XP` : '0 XP'}</span>
                   </div>
                 ))}
               </div>

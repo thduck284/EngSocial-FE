@@ -7,6 +7,7 @@ export function practiceToCard(p, skill) {
   const levelColor = LEVEL_COLORS[p.level] || 'bg-gray-600 text-gray-300'
   return {
     id: p.id,
+    slug: p.slug,
     title: p.title,
     level: p.level,
     levelColor,
@@ -23,5 +24,7 @@ export function practiceToCard(p, skill) {
     typeClass: p.type ? 'bg-primary/10 text-primary border-primary/20' : '',
     length: p.length || '',
     xpReward: p.xpReward,
+    completionCount: p.completionCount,
+    ratingCount: p.ratingCount,
   }
 }
