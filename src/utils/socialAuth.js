@@ -78,6 +78,7 @@ export async function getFacebookAccessToken() {
   return await new Promise((resolve, reject) => {
     FB.login(
       (response) => {
+        console.log('[FB.login] response:', JSON.stringify(response))
         const token = response?.authResponse?.accessToken
         if (token) resolve(token)
         else reject(new Error('Facebook login cancelled'))
