@@ -137,11 +137,11 @@ export function EntertainmentWordScramblePage() {
   useEffect(() => {
     if (mode !== 'multi-quick') return
     if (!pendingQuickMatchCapacity) return
-    if (!lobby.connected) return
+    if (!lobby.connected || !lobby.roomCode) return  // Wait for room to be created first
     lobby.findMatch(pendingQuickMatchCapacity)
     setIsMatching(true)
     setPendingQuickMatchCapacity(null)
-  }, [mode, pendingQuickMatchCapacity, lobby.connected, lobby])
+  }, [mode, pendingQuickMatchCapacity, lobby.connected, lobby.roomCode, lobby])
 
   const handleModeSelect = (/** @type {'solo' | 'multi-quick' | 'multi-private'} */ m) => {
     setMode(m)
@@ -272,6 +272,11 @@ export function EntertainmentWordScramblePage() {
               <span className="material-symbols-outlined text-xl">arrow_back</span>
               <span className="hidden sm:inline">{t('enter.game.backPickPlayers')}</span>
             </button>
+          ) : mode === 'solo' && difficulty != null ? (
+            <button type="button" onClick={resetDifficultyOnly} className="ws-link-back px-1">
+              <span className="material-symbols-outlined text-xl">arrow_back</span>
+              <span className="hidden sm:inline">{t('enter.game.backPickDifficulty')}</span>
+            </button>
           ) : mode != null ? (
             <button type="button" onClick={resetAll} className="ws-link-back px-1">
               <span className="material-symbols-outlined text-xl">arrow_back</span>
@@ -284,7 +289,7 @@ export function EntertainmentWordScramblePage() {
             </Link>
           )}
           <div className="flex items-center gap-2 flex-wrap justify-end">
-            {isInLobby && lobby.roomCode ? (
+            {isInLobby && lobby.roomCode && (
               <>
                 <span className="text-[10px] sm:text-xs font-bold uppercase tracking-wider text-fuchsia-300/80 px-2 py-1 rounded-lg border border-fuchsia-500/30 bg-fuchsia-950/40">
                   {t('enter.game.modeMultiTitle')}{lobby.capacity ? ` · ${lobby.capacity}P` : ''}
@@ -310,19 +315,6 @@ export function EntertainmentWordScramblePage() {
                   )}
                 </div>
               </>
-            ) : (
-              <>
-                {mode === 'solo' && difficulty != null && (
-                  <button type="button" onClick={resetDifficultyOnly} className="ws-chip-btn">
-                    {t('enter.game.changeDifficulty')}
-                  </button>
-                )}
-                {mode != null && (
-                  <button type="button" onClick={resetAll} className="ws-chip-btn">
-                    {t('enter.game.changeMode')}
-                  </button>
-                )}
-              </>
             )}
           </div>
         </>
@@ -336,6 +328,7 @@ export function EntertainmentWordScramblePage() {
             setPlayerCount(n)
             if (mode === 'multi-quick') {
               setPendingQuickMatchCapacity(n)
+              setIsMatching(true) // Go straight to matching UI, skip lobby
             } else {
               // multi-private: Tạo phòng luôn
               lobby.create(n)
@@ -359,7 +352,7 @@ export function EntertainmentWordScramblePage() {
             // multi-private: chỉ dừng poll + server xóa lastMatchRequest — không leaveRoom / không xóa playerCount
           }}
         />
-      ) : isMulti && (playerCount != null || pendingJoinCode) && !multiPastLobby ? (
+      ) : isMulti && mode !== 'multi-quick' && (playerCount != null || pendingJoinCode) && !multiPastLobby ? (
         <WordScrambleMultiLobby lobby={lobby} onBack={() => requestLeaveLobby()} onInviteClick={() => setIsInviteBubbleOpen(true)} />
       ) : difficulty == null && mode === 'solo' ? (
         <WordScrambleDifficultyPicker

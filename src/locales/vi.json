@@ -1,5 +1,6 @@
 {
   "common": {
+    "copied": "Đã sao chép!",
     "loading": "Đang tải...",
     "loadingResults": "Đang tải kết quả trận đấu...",
     "backToEntertainment": "Quay lại Giải trí",
@@ -971,7 +972,19 @@
     "send": "Gửi",
     "minimize": "Thu nhỏ",
     "close": "Đóng",
-    "minutesShort": "ph"
+    "minutesShort": "ph",
+    "newChat": "Đoạn chat mới",
+    "noConversations": "Chưa có cuộc trò chuyện",
+    "deleteConversation": "Xóa hội thoại",
+    "deleteConfirmTitle": "Xóa cuộc hội thoại?",
+    "deleteConfirmMessage": "Toàn bộ tin nhắn trong cuộc hội thoại này sẽ bị xóa và không thể khôi phục.",
+    "deleteConfirmAction": "Xóa",
+    "deleteError": "Không xóa được cuộc hội thoại",
+    "lessonSuggestions": "Bài học & luyện tập trên EngSocial",
+    "loadingLessons": "Đang tải bài học…",
+    "practice": "Luyện tập",
+    "lesson": "Bài học",
+    "noVerifiedLessons": "Không có bài học thật trên hệ thống khớp gợi ý trên — các link do AI tự tạo đã được ẩn."
   },
   "messages": {
     "title": "Tin nhắn",
@@ -1355,6 +1368,7 @@
       "changeMode": "Đổi chế độ",
       "changeDifficulty": "Đổi độ khó",
       "backPickMode": "Chọn lại chế độ",
+      "backPickDifficulty": "Chọn lại độ khó",
       "pickDiffTitle": "Chọn độ khó",
       "pickDiffHint": "Dễ: từ ngắn. Khó: từ dài hơn — phù hợp khi đã quen.",
       "diffEasyTitle": "Dễ",

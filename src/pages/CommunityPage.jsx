@@ -27,6 +27,7 @@ export function CommunityPage() {
     postsLoading,
     postsHasMore,
     loadMorePosts,
+    loadGroupPosts,
     handlePostReactionUpdate,
     handlePostUpdate,
     handlePostDelete,

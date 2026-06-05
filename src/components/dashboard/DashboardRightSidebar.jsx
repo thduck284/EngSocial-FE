@@ -79,7 +79,13 @@ export function DashboardRightSidebar({
             )}
           </div>
         </div>
-        <div className="space-y-4 min-h-[80px]">
+        <div className={`space-y-4 min-h-[80px] overflow-y-auto pr-1 custom-scrollbar ${
+          (friendTab === 'suggestions' && suggestionsList.length > 5) ||
+          (friendTab === 'sent' && sentRequestsList.length > 5) ||
+          (friendTab === 'received' && receivedRequestsList.length > 5)
+            ? 'max-h-[240px]'
+            : ''
+        }`}>
           {friendTabLoading ? (
             <div className="flex items-center justify-center py-6">
               <span className="material-symbols-outlined animate-spin text-2xl text-primary">progress_activity</span>

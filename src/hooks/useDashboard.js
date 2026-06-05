@@ -379,14 +379,14 @@ export function useDashboardFriends(onlineUserIds, setOnlineUserIds, allConversa
     setFriendTabLoading(true)
     if (tab === 'suggestions') {
       friendsService
-        .getSuggestions({ limit: 10 })
+        .getSuggestions({ limit: 100 })
         .then((res) => {
           const raw = res?.data?.data ?? res?.data ?? []
           const list = Array.isArray(raw) ? raw : []
           setSuggestionsList(
             list.map((item) =>
               item?.user
-                ? {
+                 ? {
                   ...item.user,
                   mutualFriendsCount:
                     item.mutualFriendsCount ?? item.mutualCount,
@@ -399,7 +399,7 @@ export function useDashboardFriends(onlineUserIds, setOnlineUserIds, allConversa
         .finally(() => setFriendTabLoading(false))
     } else if (tab === 'sent') {
       friendsService
-        .getSentRequests({ limit: 10 })
+        .getSentRequests({ limit: 100 })
         .then((res) => {
           const list = res?.data?.data ?? res?.data ?? []
           setSentRequestsList(Array.isArray(list) ? list : [])
@@ -408,7 +408,7 @@ export function useDashboardFriends(onlineUserIds, setOnlineUserIds, allConversa
         .finally(() => setFriendTabLoading(false))
     } else {
       friendsService
-        .getPendingRequests({ limit: 10 })
+        .getPendingRequests({ limit: 100 })
         .then((res) => {
           const list = res?.data?.data ?? res?.data ?? []
           setReceivedRequestsList(Array.isArray(list) ? list : [])

@@ -45,6 +45,7 @@ export const userService = {
   
   syncAchievementStats: (payload) => apiClient.put(API_ENDPOINTS.USER.SYNC_ACHIEVEMENT_STATS, payload),
 
+  getBlockedUsers: () => apiClient.get(API_ENDPOINTS.USER.BLOCKED_USERS),
   blockUser: (userId) => apiClient.post(API_ENDPOINTS.USER.BLOCK(userId)),
   unblockUser: (userId) => apiClient.request(API_ENDPOINTS.USER.UNBLOCK(userId), { method: 'DELETE' }),
 

@@ -1,5 +1,6 @@
 import { apiClient } from '../utils/api'
 import { API_ENDPOINTS, buildApiUrl } from '../constants'
+import { detectMessageLanguage } from '../utils/detectMessageLanguage'
 
 function looksLikeNgrokOrHtmlError(s) {
   if (!s || typeof s !== 'string') return false
@@ -39,6 +40,9 @@ export const chatbotService = {
   getMessages: async (conversationId) => {
     return apiClient.get(API_ENDPOINTS.CHATBOT.MESSAGES(conversationId))
   },
+  deleteConversation: async (conversationId) => {
+    return apiClient.delete(API_ENDPOINTS.CHATBOT.CONVERSATION(conversationId))
+  },
   /**
    * @param {string|null|undefined} conversationId - null/undefined để tạo hội thoại mới
    * @param {string} message
@@ -49,6 +53,7 @@ export const chatbotService = {
       conversationId: conversationId || null,
       message,
       skill: opts.skill || 'general',
+      replyLanguage: detectMessageLanguage(message),
       ...(opts.lessonId && { lessonId: opts.lessonId }),
     })
   },
@@ -67,6 +72,7 @@ export const chatbotService = {
         conversationId: conversationId || null,
         message,
         skill: opts.skill || 'general',
+        replyLanguage: detectMessageLanguage(message),
         ...(opts.lessonId && { lessonId: opts.lessonId }),
       }),
     })

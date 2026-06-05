@@ -34,6 +34,7 @@ export function CommunityHeader({
   const [withdrawJoinBusy, setWithdrawJoinBusy] = useState(false)
   const [isSearchOpen, setIsSearchOpen] = useState(false)
   const [groupSearchValue, setGroupSearchValue] = useState('')
+  const [linkCopied, setLinkCopied] = useState(false)
   const joinedMenuRef = useRef(null)
   const totalMembers = activeGroup?.memberCount ?? activeMembers.length ?? 0
   const maxAvatars = 8
@@ -154,10 +155,26 @@ export function CommunityHeader({
               {t('groups.header.invite')}
             </button>
           ) : null}
-          {/* Chia sẻ */}
-          <button className="h-9 px-3 rounded-xl bg-slate-100 dark:bg-white/5 hover:bg-slate-200 dark:hover:bg-white/10 text-xs font-black flex items-center gap-2 text-slate-700 dark:text-slate-200 border border-slate-200 dark:border-white/10 transition-all active:scale-95">
-            <span className="material-symbols-outlined text-[18px]">share</span>
-            {t('groups.header.share')}
+          {/* Chia sẻ — copy link cộng đồng */}
+          <button
+            type="button"
+            onClick={() => {
+              const gid = activeGroup?.id || activeGroup?._id
+              if (!gid) return
+              const link = `${window.location.origin}/community/group/${gid}/about`
+              navigator.clipboard.writeText(link).then(() => {
+                setLinkCopied(true)
+                setTimeout(() => setLinkCopied(false), 2000)
+              })
+            }}
+            className={`h-9 px-3 rounded-xl text-xs font-black flex items-center gap-2 border transition-all active:scale-95 ${
+              linkCopied
+                ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-500'
+                : 'bg-slate-100 dark:bg-white/5 hover:bg-slate-200 dark:hover:bg-white/10 text-slate-700 dark:text-slate-200 border-slate-200 dark:border-white/10'
+            }`}
+          >
+            <span className="material-symbols-outlined text-[18px]">{linkCopied ? 'check_circle' : 'share'}</span>
+            {linkCopied ? t('common.copied') || 'Đã sao chép!' : t('groups.header.share')}
           </button>
           {/* Đã tham gia / Tham gia nhóm — theo GET /groups/me */}
           {loadingMembership && activeGroup && !blockingJoinSlot ? (

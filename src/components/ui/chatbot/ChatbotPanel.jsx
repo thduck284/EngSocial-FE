@@ -2,6 +2,8 @@ import { useRef, useEffect, useState, useCallback } from 'react'
 import { flushSync } from 'react-dom'
 import { useTranslation } from 'react-i18next'
 import { chatbotService } from '../../../services'
+import { AlertModal } from '../common/AlertModal'
+import { ChatbotAiMessage } from './ChatbotAiMessage'
 
 function formatMsgTime(iso) {
   if (!iso) return ''
@@ -19,20 +21,6 @@ function mapApiMessage(m) {
     text: m.content || '',
     time: formatMsgTime(m.createdAt),
   }
-}
-
-/** Escape rồi render **bold**, _italic_, xuống dòng — an toàn cho XSS. */
-function formatBotRichText(raw) {
-  if (raw == null || raw === '') return ''
-  const d = document.createElement('div')
-  d.textContent = String(raw)
-  let h = d.innerHTML
-  h = h.replace(/\*\*([^*]+)\*\*/g, '<strong class="font-semibold text-white">$1</strong>')
-  h = h.replace(/_([^_\n]+)_/g, '<em class="text-gray-300 not-italic">$1</em>')
-  h = h.replace(/\n/g, '<br />')
-  h = h.replace(/<br \/>•/g, '<br /><span class="text-violet-400 mr-1 select-none" aria-hidden>•</span>')
-  h = h.replace(/<br \/>▸/g, '<br /><span class="text-sky-400 mr-1 select-none" aria-hidden>▸</span>')
-  return `<div class="space-y-1">${h}</div>`
 }
 
 function TypingIndicator({ label }) {
@@ -59,6 +47,8 @@ export function ChatbotPanel({ open, onClose, onMinimize }) {
   const [loadingMessages, setLoadingMessages] = useState(false)
   const [sending, setSending] = useState(false)
   const [error, setError] = useState('')
+  const [deleteTargetId, setDeleteTargetId] = useState(null)
+  const [deleting, setDeleting] = useState(false)
   const streamAiIdRef = useRef(null)
 
   const loadConversations = useCallback(async () => {
@@ -127,6 +117,33 @@ export function ChatbotPanel({ open, onClose, onMinimize }) {
     if (open) messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
   }, [open, messages])
 
+  const handleConfirmDelete = async () => {
+    if (!deleteTargetId || deleting) return
+    setDeleting(true)
+    setError('')
+    const removedId = deleteTargetId
+    try {
+      await chatbotService.deleteConversation(removedId)
+      setDeleteTargetId(null)
+      const next = conversations.filter((c) => c.id !== removedId)
+      setConversations(next)
+      if (activeId === removedId) {
+        const nextActive = next[0]?.id ?? null
+        setActiveId(nextActive)
+        if (nextActive) {
+          await loadMessages(nextActive)
+        } else {
+          setMessages([])
+        }
+      }
+    } catch (e) {
+      setError(e?.message || t('chatbot.deleteError'))
+      setDeleteTargetId(null)
+    } finally {
+      setDeleting(false)
+    }
+  }
+
   const handleSend = async () => {
     const text = inputRef.current?.value?.trim()
     if (!text || sending) return
@@ -144,16 +161,18 @@ export function ChatbotPanel({ open, onClose, onMinimize }) {
         text,
         { skill: 'general' },
         (_chunk, full) => {
-          setMessages((prev) => {
-            const i = prev.findIndex((m) => m.id === streamAiId)
-            if (i === -1) return prev
-            const next = [...prev]
-            next[i] = {
-              ...next[i],
-              text: full,
-              typing: false,
-            }
-            return next
+          flushSync(() => {
+            setMessages((prev) => {
+              const i = prev.findIndex((m) => m.id === streamAiId)
+              if (i === -1) return prev
+              const next = [...prev]
+              next[i] = {
+                ...next[i],
+                text: full,
+                typing: false,
+              }
+              return next
+            })
           })
         },
         (meta) => {
@@ -218,16 +237,34 @@ export function ChatbotPanel({ open, onClose, onMinimize }) {
         onClick={onClose}
       />
       <aside
-        className="fixed top-20 right-6 bottom-24 w-full max-w-[560px] bg-[#1e3b4a] rounded-2xl shadow-2xl border border-[#325a67] flex z-50 overflow-hidden"
+        className="fixed top-[5px] bottom-[calc(2rem+3.5rem+5px)] right-2 sm:right-4 left-2 sm:left-auto w-auto sm:w-[min(1100px,calc(100vw-1rem))] bg-[#1e3b4a] rounded-2xl shadow-2xl border border-[#325a67] flex z-50 overflow-hidden"
         role="dialog"
         aria-label="EngSocial AI Assistant"
       >
         {/* Left: conversation list */}
-        <div className="w-[160px] shrink-0 border-r border-[#325a67] flex flex-col bg-[#0f2937]/50">
-          <div className="p-2 border-b border-[#325a67] shrink-0">
-            <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider px-2 py-1">{t('chatbot.conversations')}</p>
+        <div className="w-[200px] sm:w-[240px] shrink-0 min-w-0 overflow-hidden border-r border-[#325a67] flex flex-col bg-[#0f2937]/50">
+          <div className="p-2.5 border-b border-[#325a67] shrink-0 space-y-2">
+            <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider px-0.5 truncate">
+              {t('chatbot.conversations')}
+            </p>
+            <button
+              type="button"
+              onClick={() => {
+                setActiveId(null)
+                setMessages([])
+                setError('')
+              }}
+              className={`w-full flex items-center justify-center gap-1.5 rounded-xl border py-2.5 text-xs font-semibold transition-all ${
+                activeId === null
+                  ? 'border-primary bg-primary/25 text-white shadow-sm shadow-primary/20'
+                  : 'border-primary/50 bg-primary/10 text-primary hover:bg-primary/20 hover:border-primary'
+              }`}
+            >
+              <span className="material-symbols-outlined text-lg">add_comment</span>
+              {t('chatbot.newChat')}
+            </button>
           </div>
-          <div className="flex-1 overflow-y-auto custom-scrollbar min-h-0">
+          <div className="flex-1 overflow-y-auto overflow-x-hidden custom-scrollbar min-h-0 px-1.5 pt-1.5">
             {loadingList && (
               <p className="text-[10px] text-gray-500 px-3 py-2">…</p>
             )}
@@ -235,30 +272,37 @@ export function ChatbotPanel({ open, onClose, onMinimize }) {
               <p className="text-[10px] text-gray-500 px-3 py-2">{t('chatbot.noConversations', 'Chưa có cuộc trò chuyện')}</p>
             )}
             {conversations.map((c) => (
-              <button
+              <div
                 key={c.id}
-                type="button"
-                onClick={() => setActiveId(c.id)}
-                className={`w-full text-left px-3 py-2.5 rounded-lg mx-1.5 mt-1 transition-colors border-l-2 ${
+                className={`group flex items-center gap-0.5 mt-1 w-full min-w-0 max-w-full rounded-lg border-l-2 ${
                   activeId === c.id
-                    ? 'bg-primary/10 border-l-primary text-white'
-                    : 'border-l-transparent text-gray-400 hover:bg-white/5 hover:text-gray-200'
+                    ? 'bg-primary/10 border-l-primary'
+                    : 'border-l-transparent hover:bg-white/5'
                 }`}
               >
-                <p className="text-xs font-medium leading-snug line-clamp-2">{c.preview}</p>
-                <p className="text-[10px] text-gray-500 mt-1">{c.time}</p>
-              </button>
+                <button
+                  type="button"
+                  onClick={() => setActiveId(c.id)}
+                  className={`flex-1 min-w-0 text-left pl-2 pr-1 py-2 transition-colors overflow-hidden ${
+                    activeId === c.id ? 'text-white' : 'text-gray-400 hover:text-gray-200'
+                  }`}
+                >
+                  <p className="text-xs font-medium leading-snug line-clamp-2 break-words">{c.preview}</p>
+                  <p className="text-[10px] text-gray-500 mt-0.5 truncate">{c.time}</p>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setDeleteTargetId(c.id)}
+                  disabled={deleting}
+                  className={`shrink-0 size-8 flex items-center justify-center rounded-md text-gray-500 hover:text-red-400 hover:bg-red-500/10 transition-all disabled:opacity-40 ${
+                    activeId === c.id ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'
+                  }`}
+                  aria-label={t('chatbot.deleteConversation')}
+                >
+                  <span className="material-symbols-outlined text-base">delete</span>
+                </button>
+              </div>
             ))}
-            <button
-              type="button"
-              onClick={() => {
-                setActiveId(null)
-                setMessages([])
-              }}
-              className="w-full text-left px-3 py-2 mx-1.5 mt-2 text-[10px] text-primary hover:underline"
-            >
-              + {t('chatbot.newChat', 'Chat mới')}
-            </button>
           </div>
         </div>
 
@@ -318,7 +362,7 @@ export function ChatbotPanel({ open, onClose, onMinimize }) {
                 </div>
               )}
               <div
-                className={`max-w-[85%] rounded-2xl px-4 py-3 ${
+                className={`max-w-[92%] rounded-2xl px-4 py-3 ${
                   msg.type === 'user'
                     ? 'bg-[#0096cc] text-white'
                     : 'bg-[#0f2937] text-gray-100 border border-[#325a67]'
@@ -327,10 +371,7 @@ export function ChatbotPanel({ open, onClose, onMinimize }) {
                 {msg.type === 'ai' && msg.typing && !(msg.text && String(msg.text).length) ? (
                   <TypingIndicator label={t('chatbot.typing', 'Đang soạn')} />
                 ) : msg.type === 'ai' ? (
-                  <div
-                    className="chatbot-md text-sm leading-relaxed"
-                    dangerouslySetInnerHTML={{ __html: formatBotRichText(msg.text) }}
-                  />
+                  <ChatbotAiMessage text={msg.text} />
                 ) : (
                   <p className="text-sm leading-snug whitespace-pre-wrap">{msg.text}</p>
                 )}
@@ -386,6 +427,18 @@ export function ChatbotPanel({ open, onClose, onMinimize }) {
         </div>
         </div>
       </aside>
+
+      <AlertModal
+        open={!!deleteTargetId}
+        title={t('chatbot.deleteConfirmTitle')}
+        message={t('chatbot.deleteConfirmMessage')}
+        cancelText={t('common.cancel')}
+        confirmText={deleting ? t('common.loading') : t('chatbot.deleteConfirmAction')}
+        onClose={() => {
+          if (!deleting) setDeleteTargetId(null)
+        }}
+        onConfirm={handleConfirmDelete}
+      />
     </>
   )
 }

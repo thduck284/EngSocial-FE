@@ -258,11 +258,13 @@ export function UserProfilePage() {
     userService
       .blockUser(userId)
       .then(() => {
-        setProfile((prev) => (prev ? { ...prev, blockedByMe: true } : prev))
+        navigate(ROUTES.HOME, { replace: true })
       })
-      .catch(() => refetchProfile())
-      .finally(() => setBlockActionLoading(false))
-  }, [userId, blockActionLoading, refetchProfile])
+      .catch(() => {
+        refetchProfile()
+        setBlockActionLoading(false)
+      })
+  }, [userId, blockActionLoading, refetchProfile, navigate])
 
   const handleUnblock = useCallback(() => {
     if (!userId || blockActionLoading) return
@@ -334,6 +336,10 @@ export function UserProfilePage() {
       .then((res) => {
         const data = res?.data
         const mapped = mapApiProfileToState(data)
+        if (mapped?.blockedByMe) {
+          navigate(ROUTES.HOME, { replace: true })
+          return
+        }
         setProfile(mapped)
         if (mapped) {
           setProfileProgress((prev) => ({
@@ -445,62 +451,15 @@ export function UserProfilePage() {
             <div className="w-full flex flex-col gap-3 relative z-10">
               <div className="flex gap-3">
                 {profile.friendStatus === 'connected' && (
-                  <>
-                    <button
-                      type="button"
-                      disabled={profile.blockedByMe}
-                      onClick={handleMessage}
-                      className="flex-1 bg-primary hover:brightness-110 disabled:opacity-50 text-white h-11 rounded-xl text-[10px] font-black uppercase tracking-widest flex items-center justify-center gap-3 shadow-lg shadow-primary/20 transition-all active:scale-95"
-                    >
-                      <span className="material-symbols-outlined text-xl">chat</span>
-                      {t('userProfile.sendMessage')}
-                    </button>
-                    <div className="relative shrink-0" ref={friendsMenuRef}>
-                      <button
-                        type="button"
-                        onClick={() => setFriendsMenuOpen((o) => !o)}
-                        className="size-11 bg-slate-50 dark:bg-white/5 hover:bg-slate-100 dark:hover:bg-white/10 text-slate-400 dark:text-gray-500 rounded-xl flex items-center justify-center transition-all border border-slate-100 dark:border-white/5"
-                        aria-expanded={friendsMenuOpen}
-                      >
-                        <span className="material-symbols-outlined text-lg transition-transform duration-300" style={{ transform: friendsMenuOpen ? 'rotate(180deg)' : 'none' }}>expand_more</span>
-                      </button>
-                      {friendsMenuOpen && (
-                        <div className="absolute right-0 top-full z-[100] mt-3 py-2 rounded-[1.5rem] border border-slate-200 dark:border-border-dark bg-white dark:bg-card-dark shadow-2xl min-w-[200px] animate-in fade-in zoom-in-95 duration-200">
-                          <button
-                            type="button"
-                            disabled={friendActionLoading}
-                            onClick={handleRemoveFriend}
-                            className="w-full flex items-center gap-3 px-5 py-3 text-[10px] font-bold uppercase tracking-widest text-left text-slate-600 dark:text-gray-300 hover:bg-slate-50 dark:hover:bg-white/5 disabled:opacity-60 transition-colors rounded-t-[1.5rem]"
-                          >
-                            <span className="material-symbols-outlined text-lg text-rose-500">person_remove</span>
-                            {t('userProfile.removeFriend')}
-                          </button>
-                          <div className="h-px bg-slate-100 dark:bg-white/5 mx-2 my-1" />
-                          {profile.blockedByMe ? (
-                            <button
-                              type="button"
-                              disabled={blockActionLoading}
-                              onClick={handleUnblock}
-                              className="w-full flex items-center gap-3 px-5 py-3 text-[10px] font-bold uppercase tracking-widest text-left text-slate-600 dark:text-gray-300 hover:bg-slate-50 dark:hover:bg-white/5 disabled:opacity-60 transition-colors rounded-b-[1.5rem]"
-                            >
-                              <span className="material-symbols-outlined text-lg text-primary">block</span>
-                              {t('messages.unblock')}
-                            </button>
-                          ) : (
-                            <button
-                              type="button"
-                              disabled={blockActionLoading}
-                              onClick={handleBlock}
-                              className="w-full flex items-center gap-3 px-5 py-3 text-[10px] font-bold uppercase tracking-widest text-left text-rose-500 hover:bg-rose-500/10 disabled:opacity-60 transition-colors rounded-b-[1.5rem]"
-                            >
-                              <span className="material-symbols-outlined text-lg">block</span>
-                              {t('userProfile.block')}
-                            </button>
-                          )}
-                        </div>
-                      )}
-                    </div>
-                  </>
+                  <button
+                    type="button"
+                    disabled={profile.blockedByMe}
+                    onClick={handleMessage}
+                    className="flex-1 bg-primary hover:brightness-110 disabled:opacity-50 text-white h-11 rounded-xl text-[10px] font-black uppercase tracking-widest flex items-center justify-center gap-3 shadow-lg shadow-primary/20 transition-all active:scale-95"
+                  >
+                    <span className="material-symbols-outlined text-xl">chat</span>
+                    {t('userProfile.sendMessage')}
+                  </button>
                 )}
                 {profile.friendStatus === 'none' && (
                   <>
@@ -558,6 +517,58 @@ export function UserProfilePage() {
                   <div className="flex-1 bg-slate-50 dark:bg-white/5 text-slate-400 dark:text-gray-600 py-3 rounded-xl text-[10px] font-black uppercase tracking-widest flex items-center justify-center gap-3 cursor-default border border-slate-100 dark:border-white/5">
                     <span className="material-symbols-outlined text-xl">schedule</span>
                     {t('userProfile.pendingRequest')}
+                  </div>
+                )}
+                
+                {viewerId && userId && String(viewerId) !== String(userId) && (
+                  <div className="relative shrink-0" ref={friendsMenuRef}>
+                    <button
+                      type="button"
+                      onClick={() => setFriendsMenuOpen((o) => !o)}
+                      className="size-11 bg-slate-50 dark:bg-white/5 hover:bg-slate-100 dark:hover:bg-white/10 text-slate-400 dark:text-gray-500 rounded-xl flex items-center justify-center transition-all border border-slate-100 dark:border-white/5"
+                      aria-expanded={friendsMenuOpen}
+                    >
+                      <span className="material-symbols-outlined text-lg transition-transform duration-300" style={{ transform: friendsMenuOpen ? 'rotate(180deg)' : 'none' }}>expand_more</span>
+                    </button>
+                    {friendsMenuOpen && (
+                      <div className="absolute right-0 top-full z-[100] mt-3 py-2 rounded-[1.5rem] border border-slate-200 dark:border-border-dark bg-white dark:bg-card-dark shadow-2xl min-w-[200px] overflow-hidden animate-in fade-in zoom-in-95 duration-200">
+                        {profile.friendStatus === 'connected' && (
+                          <>
+                            <button
+                              type="button"
+                              disabled={friendActionLoading}
+                              onClick={handleRemoveFriend}
+                              className="w-full flex items-center gap-3 px-5 py-3 text-[10px] font-bold uppercase tracking-widest text-left text-slate-600 dark:text-gray-300 hover:bg-slate-50 dark:hover:bg-white/5 disabled:opacity-60 transition-colors"
+                            >
+                              <span className="material-symbols-outlined text-lg text-rose-500">person_remove</span>
+                              {t('userProfile.removeFriend')}
+                            </button>
+                            <div className="h-px bg-slate-100 dark:bg-white/5 mx-2 my-1" />
+                          </>
+                        )}
+                        {profile.blockedByMe ? (
+                          <button
+                            type="button"
+                            disabled={blockActionLoading}
+                            onClick={handleUnblock}
+                            className="w-full flex items-center gap-3 px-5 py-3 text-[10px] font-bold uppercase tracking-widest text-left text-slate-600 dark:text-gray-300 hover:bg-slate-50 dark:hover:bg-white/5 disabled:opacity-60 transition-colors"
+                          >
+                            <span className="material-symbols-outlined text-lg text-primary">block</span>
+                            {t('messages.unblock')}
+                          </button>
+                        ) : (
+                          <button
+                            type="button"
+                            disabled={blockActionLoading}
+                            onClick={handleBlock}
+                            className="w-full flex items-center gap-3 px-5 py-3 text-[10px] font-bold uppercase tracking-widest text-left text-rose-500 hover:bg-rose-500/10 disabled:opacity-60 transition-colors"
+                          >
+                            <span className="material-symbols-outlined text-lg">block</span>
+                            {t('userProfile.block')}
+                          </button>
+                        )}
+                      </div>
+                    )}
                   </div>
                 )}
               </div>
@@ -644,13 +655,13 @@ export function UserProfilePage() {
                   navigate(`/profile/${userId}/${key}`)
                 }
               }}
-              className={`flex-1 flex items-center justify-center gap-3 px-4 py-5 text-xs font-black uppercase tracking-widest transition-all relative group/tab shrink-0 ${
+              className={`flex-1 flex items-center justify-center gap-1.5 px-3 py-3 text-[9px] font-black uppercase tracking-widest transition-all relative group/tab shrink-0 ${
                 activeTab === key
                   ? 'text-primary'
                   : 'text-slate-400 dark:text-gray-500 hover:text-slate-600 dark:hover:text-gray-300'
               }`}
             >
-              <span className={`material-symbols-outlined text-xl transition-transform group-hover/tab:scale-110 ${activeTab === key ? 'text-primary' : 'text-slate-300 dark:text-gray-700'}`}>
+              <span className={`material-symbols-outlined text-sm transition-transform group-hover/tab:scale-110 ${activeTab === key ? 'text-primary' : 'text-slate-300 dark:text-gray-700'}`}>
                 {icon}
               </span>
               {t(label)}
@@ -791,11 +802,11 @@ export function UserProfilePage() {
                 </h3>
                 <div className="flex flex-col gap-2 mb-10 text-xs font-black text-slate-500 dark:text-gray-400 uppercase tracking-widest">
                   <span>
-                    {t('profile.currentLevel')} {displayLevel || 1}
+                    {t('profile.currentLevel')} {profileProgress.level || 1}
                   </span>
                   <span>
-                    {Math.max(0, (displayXpMax || 500) - (displayXp || 0))} XP {t('profile.toLevel')}{' '}
-                    {(displayLevel || 1) + 1}
+                    {Math.max(0, (profileProgress.xpMax || 500) - (profileProgress.xp || 0))} XP {t('profile.toLevel')}{' '}
+                    {(profileProgress.level || 1) + 1}
                   </span>
                 </div>
                 {(() => {

@@ -208,7 +208,44 @@ export function SettingsPage() {
   const tabs = [
     { id: 'account', icon: 'person', label: t('settings.account') },
     { id: 'appearance', icon: 'palette', label: t('settings.appearance') },
+    { id: 'privacy', icon: 'shield', label: t('settings.privacy') },
   ]
+
+  // Blocked Users
+  const [showBlockedModal, setShowBlockedModal] = useState(false)
+  const [blockedUsers, setBlockedUsers] = useState([])
+  const [blockedLoading, setBlockedLoading] = useState(false)
+
+  const fetchBlockedUsers = async () => {
+    setBlockedLoading(true)
+    try {
+      const res = await userService.getBlockedUsers()
+      if (res?.success) {
+        setBlockedUsers(res.data.blockedUsers || [])
+      }
+    } catch (err) {
+      console.error(err)
+    } finally {
+      setBlockedLoading(false)
+    }
+  }
+
+  const handleUnblock = async (userId) => {
+    try {
+      const res = await userService.unblockUser(userId)
+      if (res?.success) {
+        setBlockedUsers(prev => prev.filter(u => u.id !== userId))
+      }
+    } catch (err) {
+      console.error(err)
+    }
+  }
+
+  useEffect(() => {
+    if (showBlockedModal) {
+      fetchBlockedUsers()
+    }
+  }, [showBlockedModal])
 
   return (
     <main className="max-w-5xl mx-auto px-4 py-10 min-h-[calc(100vh-80px)]">
@@ -631,8 +668,94 @@ export function SettingsPage() {
               </section>
             </div>
           )}
+
+          {activeTab === 'privacy' && (
+            <div className="space-y-10 animate-in fade-in slide-in-from-right-4 duration-300">
+              <section>
+                <div className="flex items-start justify-between mb-8">
+                  <div>
+                    <h3 className="text-lg font-bold text-slate-900 dark:text-white flex items-center gap-2">
+                      <span className="size-8 rounded-lg bg-red-500/10 text-red-500 flex items-center justify-center">
+                        <span className="material-symbols-outlined text-sm">block</span>
+                      </span>
+                      {isVi ? 'Người dùng đã chặn' : 'Blocked Users'}
+                    </h3>
+                    <p className="text-sm text-slate-500 dark:text-slate-400 mt-2">
+                      {isVi 
+                        ? 'Quản lý danh sách những người bạn đã chặn. Họ sẽ không thể gửi tin nhắn cho bạn.' 
+                        : 'Manage the list of users you have blocked. They will not be able to message you.'}
+                    </p>
+                  </div>
+                  <button
+                    onClick={() => setShowBlockedModal(true)}
+                    className="px-4 py-2 bg-slate-100 dark:bg-white/10 hover:bg-slate-200 dark:hover:bg-white/20 text-slate-700 dark:text-white rounded-xl font-bold text-sm transition-all"
+                  >
+                    {isVi ? 'Xem danh sách' : 'View list'}
+                  </button>
+                </div>
+              </section>
+            </div>
+          )}
         </div>
       </div>
+
+      {/* Blocked Users Modal */}
+      {showBlockedModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4 animate-in fade-in duration-200">
+          <div className="bg-white dark:bg-slate-900 rounded-3xl max-w-md w-full shadow-2xl border border-slate-200 dark:border-white/10 overflow-hidden flex flex-col max-h-[80vh]">
+            <div className="p-6 border-b border-slate-100 dark:border-white/5 flex items-center justify-between shrink-0">
+              <h3 className="text-xl font-bold text-slate-900 dark:text-white flex items-center gap-2">
+                <span className="material-symbols-outlined text-red-500">block</span>
+                {isVi ? 'Người dùng đã chặn' : 'Blocked Users'}
+              </h3>
+              <button
+                onClick={() => setShowBlockedModal(false)}
+                className="size-8 rounded-full bg-slate-100 dark:bg-white/10 flex items-center justify-center text-slate-500 hover:text-slate-900 dark:hover:text-white transition-all"
+              >
+                <span className="material-symbols-outlined text-[20px]">close</span>
+              </button>
+            </div>
+            
+            <div className="p-6 overflow-y-auto custom-scrollbar flex-1">
+              {blockedLoading ? (
+                <div className="flex flex-col items-center justify-center py-10 gap-3">
+                  <span className="material-symbols-outlined animate-spin text-primary text-3xl">progress_activity</span>
+                  <p className="text-sm text-slate-500">{t('common.loading')}</p>
+                </div>
+              ) : blockedUsers.length === 0 ? (
+                <div className="flex flex-col items-center justify-center py-10 gap-3 text-center">
+                  <div className="size-16 rounded-full bg-slate-100 dark:bg-white/5 flex items-center justify-center mb-2">
+                    <span className="material-symbols-outlined text-3xl text-slate-300 dark:text-slate-600">person_off</span>
+                  </div>
+                  <p className="text-slate-500 font-medium">
+                    {isVi ? 'Bạn chưa chặn ai.' : 'You haven\'t blocked anyone.'}
+                  </p>
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  {blockedUsers.map(u => (
+                    <div key={u.id} className="flex items-center justify-between p-3 rounded-2xl bg-slate-50 dark:bg-white/5 border border-slate-100 dark:border-white/5 group transition-colors hover:border-slate-200 dark:hover:border-white/10">
+                      <div className="flex items-center gap-3">
+                        <img src={u.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(u.name)}&background=random`} alt={u.name} className="size-10 rounded-full object-cover shadow-sm" />
+                        <div>
+                          <p className="font-bold text-sm text-slate-900 dark:text-white group-hover:text-primary transition-colors line-clamp-1">{u.name}</p>
+                          <p className="text-[11px] font-medium text-slate-500">Lv. {u.level}</p>
+                        </div>
+                      </div>
+                      <button
+                        onClick={() => handleUnblock(u.id)}
+                        className="px-3 py-1.5 rounded-lg bg-slate-200/50 dark:bg-white/10 text-slate-700 dark:text-white text-xs font-bold hover:bg-slate-300 dark:hover:bg-white/20 transition-all active:scale-95"
+                      >
+                        {isVi ? 'Bỏ chặn' : 'Unblock'}
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
     </main>
   )
 }

@@ -53,6 +53,7 @@ export const API_ENDPOINTS = {
     GOALS: '/user/goals',
     ACHIEVEMENTS: '/user/achievements',
     SYNC_ACHIEVEMENT_STATS: '/user/achievement-stats/sync',
+    BLOCKED_USERS: '/user/blocked',
     BLOCK: (userId) => `/user/block/${userId}`,
     UNBLOCK: (userId) => `/user/block/${userId}`,
   },
@@ -284,6 +285,7 @@ export const API_ENDPOINTS = {
   // Chatbot (BE: POST /chatbot/chat, không dùng .../messages cho gửi tin)
   CHATBOT: {
     CONVERSATIONS: '/chatbot/conversations',
+    CONVERSATION: (conversationId) => `/chatbot/conversations/${conversationId}`,
     MESSAGES: (conversationId) => `/chatbot/conversations/${conversationId}/messages`,
     SEND_CHAT: '/chatbot/chat',
     SEND_CHAT_STREAM: '/chatbot/chat/stream',

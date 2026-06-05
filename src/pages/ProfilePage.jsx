@@ -173,13 +173,13 @@ export function ProfilePage() {
                 key={id}
                 type="button"
                 onClick={() => handleTabChange(id)}
-                className={`flex-1 flex items-center justify-center gap-3 px-4 py-5 text-xs font-black uppercase tracking-widest transition-all relative group/tab ${
+                className={`flex-1 flex items-center justify-center gap-1.5 px-3 py-3 text-[9px] font-black uppercase tracking-widest transition-all relative group/tab ${
                   profileTab === id
                     ? 'text-primary'
                     : 'text-slate-400 dark:text-gray-500 hover:text-slate-600 dark:hover:text-gray-300'
                 }`}
               >
-                <span className={`material-symbols-outlined text-xl transition-transform group-hover/tab:scale-110 ${profileTab === id ? 'text-primary' : 'text-slate-300 dark:text-gray-700'}`}>
+                <span className={`material-symbols-outlined text-sm transition-transform group-hover/tab:scale-110 ${profileTab === id ? 'text-primary' : 'text-slate-300 dark:text-gray-700'}`}>
                   {icon}
                 </span>
                 {t(`profile.${key}`)}

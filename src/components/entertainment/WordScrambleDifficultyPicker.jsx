@@ -22,10 +22,7 @@ export function WordScrambleDifficultyPicker({
 
   return (
     <div className="flex flex-col flex-1 min-h-0 justify-center gap-6 py-4">
-      <button type="button" onClick={onBack} className="ws-link-back self-start px-1 mb-1">
-        <span className="material-symbols-outlined text-xl">arrow_back</span>
-        {t(backLabelKey)}
-      </button>
+
       <div className="text-center space-y-2 px-2">
         <h2 className="ws-font-display ws-hero-gradient text-2xl sm:text-4xl font-bold">{t('enter.game.pickDiffTitle')}</h2>
         <p className="text-sm text-slate-400/90 max-w-lg mx-auto">{t('enter.game.pickDiffHint')}</p>
