@@ -1,7 +1,9 @@
 import { buildApiUrl, API_FALLBACK_BASE_URL, ROUTES } from '../constants'
+import { isGuestSession } from './guestAuth'
 
 /** Xóa auth storage và chuyển về trang đăng nhập (khi không token hoặc token hết hạn) */
 function clearAuthAndRedirectToLogin() {
+  if (isGuestSession()) return
   ;['authToken', 'refreshToken', 'user'].forEach((key) => {
     localStorage.removeItem(key)
     sessionStorage.removeItem(key)

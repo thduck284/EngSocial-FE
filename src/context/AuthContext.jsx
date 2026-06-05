@@ -1,22 +1,26 @@
 import { createContext, useContext, useState, useMemo, useEffect, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { getStoredUser, getAuthToken, getRefreshToken, getAuthStorage } from '../utils/auth'
+import {
+  GUEST_USER,
+  isGuestSession,
+  setGuestSession,
+  clearGuestSession,
+} from '../utils/guestAuth'
 import { authService } from '../services'
 import { ROUTES } from '../constants'
 
-const REFRESH_INTERVAL_MS = 10 * 60 * 1000 
+const REFRESH_INTERVAL_MS = 10 * 60 * 1000
 
 const AuthContext = createContext(null)
 
 export function AuthProvider({ children }) {
   const navigate = useNavigate()
   const [user, setUser] = useState(null)
+  const [guestFlag, setGuestFlag] = useState(() => isGuestSession() && !getAuthToken())
   const refreshIntervalRef = useRef(null)
 
-  // Đồng bộ state với storage khi mount (sau refresh hoặc mở tab mới)
   useEffect(() => {
-    // Migration: Nếu có token ở sessionStorage nhưng chưa có ở localStorage (do logic cũ),
-    // ta chuyển sang localStorage để hỗ trợ mở tab mới.
     const sToken = sessionStorage.getItem('authToken')
     const lToken = localStorage.getItem('authToken')
     if (sToken && !lToken) {
@@ -27,13 +31,20 @@ export function AuthProvider({ children }) {
     }
 
     if (getAuthToken() && getStoredUser()) {
+      clearGuestSession()
+      setGuestFlag(false)
       setUser(getStoredUser())
+      return
+    }
+
+    if (isGuestSession()) {
+      setGuestFlag(true)
+      setUser(GUEST_USER)
     }
   }, [])
 
-  // Gia hạn access token mỗi 10 phút khi đã đăng nhập
   useEffect(() => {
-    if (!getAuthToken() || !getRefreshToken()) return
+    if (!getAuthToken() || !getRefreshToken() || guestFlag) return
 
     const refresh = async () => {
       const refreshToken = getRefreshToken()
@@ -50,7 +61,6 @@ export function AuthProvider({ children }) {
           }
         }
       } catch {
-        // Refresh thất bại (token hết hạn) → clear interval, user sẽ bị 401 khi gọi API tiếp
         if (refreshIntervalRef.current) {
           clearInterval(refreshIntervalRef.current)
           refreshIntervalRef.current = null
@@ -65,17 +75,21 @@ export function AuthProvider({ children }) {
         refreshIntervalRef.current = null
       }
     }
-  }, [user?.id])
+  }, [user?.id, guestFlag])
 
   const value = useMemo(() => {
-    const isAuthenticated = !!getAuthToken()
-    const currentUser = user ?? getStoredUser()
-    const role = currentUser?.role || 'user'
+    const hasToken = !!getAuthToken()
+    const guestActive = !hasToken && (guestFlag || isGuestSession())
+    const isGuest = guestActive
+    const isAuthenticated = hasToken
+    const canAccessApp = hasToken || guestActive
+    const currentUser = isGuest ? GUEST_USER : (user ?? getStoredUser())
 
     const setAuth = (data) => {
+      clearGuestSession()
+      setGuestFlag(false)
       if (data?.user) {
         setUser(data.user)
-        // Sync to storage so user data persists after page refresh
         const storage = getAuthStorage()
         storage.setItem('user', JSON.stringify(data.user))
       } else {
@@ -83,25 +97,43 @@ export function AuthProvider({ children }) {
       }
     }
 
+    const loginAsGuest = () => {
+      ;['authToken', 'refreshToken'].forEach((key) => {
+        localStorage.removeItem(key)
+        sessionStorage.removeItem(key)
+      })
+      setGuestSession()
+      setGuestFlag(true)
+      setUser(GUEST_USER)
+      navigate(ROUTES.LESSON, { replace: true })
+    }
+
     const logout = () => {
       ;['authToken', 'refreshToken', 'user'].forEach((key) => {
         localStorage.removeItem(key)
         sessionStorage.removeItem(key)
       })
+      clearGuestSession()
+      setGuestFlag(false)
       setUser(null)
       navigate(ROUTES.LOGIN, { replace: true })
     }
+
+    const role = currentUser?.role || 'user'
 
     return {
       user: currentUser,
       role,
       isAuthenticated,
-      isModerator: role === 'moderator',
-      isAdmin: role === 'admin',
+      isGuest,
+      canAccessApp,
+      isModerator: !isGuest && role === 'moderator',
+      isAdmin: !isGuest && role === 'admin',
       setAuth,
+      loginAsGuest,
       logout,
     }
-  }, [user, navigate])
+  }, [user, guestFlag, navigate])
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>
 }

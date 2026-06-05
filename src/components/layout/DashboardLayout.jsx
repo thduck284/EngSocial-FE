@@ -18,11 +18,11 @@ const isFullScreenGame = (pathname) =>
 
 export function DashboardLayout() {
   const location = useLocation()
-  const { isAuthenticated } = useAuth()
+  const { canAccessApp, isGuest } = useAuth()
   const fullScreenGame = isFullScreenGame(location.pathname)
-  const hideChatbot = isLessonDoingPage(location.pathname) || fullScreenGame
+  const hideChatbot = isGuest || isLessonDoingPage(location.pathname) || fullScreenGame
 
-  if (!isAuthenticated) {
+  if (!canAccessApp) {
     return <Navigate to={ROUTES.LOGIN} state={{ from: location }} replace />
   }
 

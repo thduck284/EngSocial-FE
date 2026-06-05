@@ -1166,6 +1166,16 @@
     "passwordStrengthHintStrong": "Strong password",
     "passwordsMatch": "Passwords match",
     "processing": "Processing...",
+    "guest": {
+      "loginButton": "Continue as guest",
+      "badge": "Guest",
+      "exit": "Exit guest mode",
+      "modalTitle": "Sign in to continue",
+      "modalMessage": "You are browsing as a guest. Please log in or create an account to start lessons and unlock all features.",
+      "close": "Maybe later",
+      "cardTitle": "Sign in to use this feature",
+      "cardMessage": "Guest mode only lets you browse lesson and practice lists. Log in or sign up for free to access this page."
+    },
     "validation": {
       "fullNameRequired": "Please enter your full name.",
       "fullNameMin": "Full name must be at least {{min}} characters.",

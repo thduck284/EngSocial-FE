@@ -5,7 +5,7 @@ import { useAuth } from '../context/AuthContext'
 import { SKILLS, SKILL_TABS } from '../constants'
 import { ROUTES } from '../constants'
 import { DEFAULT_AVATAR } from '../constants/ui'
-import { useSkillPractices } from '../hooks/useLessons'
+import { useSkillPractices, useGuestAuthGate } from '../hooks'
 import { useDashboardSocket, useDashboardFriends, useStudyGroups } from '../hooks'
 import { friendsService } from '../services/friends.service'
 import { userService } from '../services'
@@ -20,7 +20,8 @@ export function SkillPracticePage() {
   const { pathname } = useLocation()
   const { t } = useTranslation()
   const navigate = useNavigate()
-  const { user, isModerator } = useAuth()
+  const { user, isModerator, isGuest } = useAuth()
+  const { requireAuth, guestModal } = useGuestAuthGate()
   /** Admin trên /practice như user; CRUD qua /mod (moderator). */
   const canAddPractice = isModerator
 
@@ -29,8 +30,9 @@ export function SkillPracticePage() {
   const [userStats, setUserStats] = useState(null)
 
   useEffect(() => {
+    if (isGuest) return
     userService.getStats().then(res => setUserStats(res?.data)).catch(console.error)
-  }, [])
+  }, [isGuest])
 
   const skillStatsMap = (userStats?.skillStats || []).reduce((acc, cur) => {
     acc[cur.key] = cur
@@ -69,7 +71,7 @@ export function SkillPracticePage() {
     friendSelectRef,
   } = useDashboardFriends(onlineUserIds, setOnlineUserIds, studyGroups.allConversations)
 
-  useDashboardSocket(user, studyGroups.setConversations, undefined, setOnlineUserIds)
+  useDashboardSocket(isGuest ? null : user, studyGroups.setConversations, undefined, setOnlineUserIds)
 
   const activeOnlineCount = (onlineFriends || []).filter(f => f.isOnline).length
 
@@ -253,13 +255,14 @@ export function SkillPracticePage() {
                 )}
                 <Link
                   to={ROUTES.LESSON_REVIEWS(card.id)}
+                  onClick={(e) => { if (!requireAuth()) e.preventDefault() }}
                   className="size-8 flex items-center justify-center rounded-xl text-yellow-600 dark:text-yellow-500 hover:bg-yellow-500/10 transition-all"
                   title={t('lessons.reviews') || 'Review'}
                 >
                   <span className="material-symbols-outlined text-lg">reviews</span>
                 </Link>
                 <button
-                  onClick={() => navigate(detailUrl)}
+                  onClick={() => requireAuth(() => navigate(detailUrl))}
                   className="ml-2 px-3 py-1.5 bg-primary text-white font-bold text-[10px] rounded-lg transition-all shadow-sm hover:brightness-110"
                 >
                   {t('dashboard.viewDetail')}
@@ -276,6 +279,7 @@ export function SkillPracticePage() {
         <Link
           key={g.slug}
           to={g.path}
+          onClick={(e) => { if (!requireAuth()) e.preventDefault() }}
           className="group relative rounded-[2.5rem] border border-slate-200 dark:border-white/10 bg-white dark:bg-card-dark overflow-hidden hover:border-primary/50 transition-all duration-500 hover:-translate-y-2 hover:shadow-2xl flex flex-col h-[340px]"
         >
           {/* Image Section */}
@@ -348,6 +352,7 @@ export function SkillPracticePage() {
 
           <Link
             to="/practice/mock-test"
+            onClick={(e) => { if (!requireAuth()) e.preventDefault() }}
             className="flex items-center justify-center gap-2 w-full py-2.5 bg-indigo-600 hover:bg-indigo-500 text-white font-black rounded-xl text-xs transition-all shadow-xl shadow-indigo-900/20 border border-indigo-400/30 group"
           >
             <span className="material-symbols-outlined text-lg group-hover:rotate-12 transition-transform">school</span>
@@ -631,6 +636,7 @@ export function SkillPracticePage() {
           }
         }}
       />
+      {guestModal}
     </main>
   )
 }

@@ -2,6 +2,7 @@ import { Link } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { AuthLayout, SocialButtons } from '../components/layout/AuthLayout'
 import { useLogin } from '../hooks'
+import { useAuth } from '../context/AuthContext'
 import { isFacebookSdkBlockedOnHttp } from '../utils/socialAuth'
 
 const inputBase = 'w-full bg-slate-800/50 border text-white rounded-xl pl-10 pr-4 py-2.5 focus:ring-0 input-glow transition-all placeholder-slate-600'
@@ -10,6 +11,7 @@ const inputNormal = 'border-slate-700 focus:border-primary'
 
 export function LoginPage() {
   const { t } = useTranslation()
+  const { loginAsGuest } = useAuth()
   const {
     email,
     password,
@@ -146,6 +148,14 @@ export function LoginPage() {
           ) : (
             t('auth.login')
           )}
+        </button>
+        <button
+          type="button"
+          onClick={loginAsGuest}
+          disabled={loading}
+          className="w-full py-3 mt-3 bg-slate-100 dark:bg-white/5 hover:bg-slate-200 dark:hover:bg-white/10 disabled:opacity-60 text-slate-700 dark:text-slate-200 font-bold rounded-xl transition-all border border-slate-200 dark:border-border-dark"
+        >
+          {t('auth.guest.loginButton')}
         </button>
       </form>
       <div className="mt-8 pt-6 border-t border-slate-800 text-center">

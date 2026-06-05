@@ -1176,6 +1176,16 @@
     "passwordStrengthHintStrong": "Mật khẩu rất mạnh",
     "passwordsMatch": "Hai mật khẩu trùng khớp",
     "processing": "Đang xử lý...",
+    "guest": {
+      "loginButton": "Đăng nhập với tư cách khách",
+      "badge": "Khách",
+      "exit": "Thoát chế độ khách",
+      "modalTitle": "Cần đăng nhập để tiếp tục",
+      "modalMessage": "Bạn đang dùng chế độ khách. Vui lòng đăng nhập hoặc đăng ký tài khoản để học bài và sử dụng đầy đủ tính năng.",
+      "close": "Để sau",
+      "cardTitle": "Đăng nhập để sử dụng tính năng này",
+      "cardMessage": "Chế độ khách chỉ xem danh sách bài học/luyện tập. Hãy đăng nhập hoặc tạo tài khoản miễn phí để truy cập trang này."
+    },
     "validation": {
       "fullNameRequired": "Vui lòng nhập họ và tên.",
       "fullNameMin": "Họ và tên tối thiểu {{min}} ký tự.",
