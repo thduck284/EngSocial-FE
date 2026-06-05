@@ -5,7 +5,7 @@ import { useAuth } from '../context/AuthContext'
 import { ROUTES } from '../constants'
 import { TOPIC_OPTIONS, SKILL_TABS_LESSONS, LEVEL_COLORS } from '../constants/lessons'
 import { getLessonLink } from '../utils/lesson'
-import { useLessonsList } from '../hooks/useLessons'
+import { useLessonsList, useGuestAuthGate } from '../hooks'
 
 import { addVocabNote } from '../utils/vocabularyUserStorage'
 import { AlertModal } from '../components/ui/common/AlertModal'
@@ -35,6 +35,11 @@ export function LessonsPage() {
     deletingId,
     completedLessonIds,
   } = useLessonsList()
+  const { requireAuth, guestModal } = useGuestAuthGate()
+
+  const blockGuestNav = (e) => {
+    if (!requireAuth()) e.preventDefault()
+  }
 
   const [noteTitle, setNoteTitle] = useState('')
   const [noteContent, setNoteContent] = useState('')
@@ -217,6 +222,7 @@ export function LessonsPage() {
           <div className="flex items-center gap-2">
             <Link
               to={ROUTES.LESSON_HISTORY}
+              onClick={blockGuestNav}
               className="inline-flex items-center gap-2 px-4 py-2.5 bg-white dark:bg-card-dark hover:bg-slate-50 dark:hover:bg-gray-700 text-slate-600 dark:text-gray-300 hover:text-primary dark:hover:text-white font-bold rounded-xl text-sm transition-all border border-slate-200 dark:border-border-dark shadow-sm"
             >
               <span className="material-symbols-outlined text-lg">history</span>
@@ -288,7 +294,7 @@ export function LessonsPage() {
                 key={lesson.id}
                 className="flex flex-col sm:flex-row sm:items-center gap-4 p-4 bg-white dark:bg-card-dark rounded-xl border border-slate-200 dark:border-border-dark hover:border-primary/50 transition-all group shadow-sm hover:shadow-md"
               >
-                <Link to={getLessonLink(lesson)} className="flex flex-1 items-center gap-4 min-w-0">
+                <Link to={getLessonLink(lesson)} onClick={blockGuestNav} className="flex flex-1 items-center gap-4 min-w-0">
                   <span className="w-8 h-8 rounded-lg bg-slate-100 dark:bg-gray-700 text-slate-500 dark:text-gray-400 flex items-center justify-center text-sm font-bold shrink-0">
                     {(page - 1) * (pagination.pageSize || 10) + index + 1}
                   </span>
@@ -384,13 +390,14 @@ export function LessonsPage() {
                   
                   <Link
                     to={ROUTES.LESSON_REVIEWS(lesson.id)}
+                    onClick={blockGuestNav}
                     className="p-2 rounded-lg text-yellow-600 dark:text-yellow-500 hover:bg-yellow-500/10 transition-colors"
                     title={t('lessons.reviews') || 'Review'}
                   >
                     <span className="material-symbols-outlined text-sm">star</span>
                   </Link>
 
-                  <Link to={getLessonLink(lesson)} className="px-4 py-2 bg-primary text-white font-bold text-xs rounded-lg transition-all shadow-sm hover:brightness-110">
+                  <Link to={getLessonLink(lesson)} onClick={blockGuestNav} className="px-4 py-2 bg-primary text-white font-bold text-xs rounded-lg transition-all shadow-sm hover:brightness-110">
                     {t('dashboard.viewDetail')}
                   </Link>
                 </div>
@@ -440,6 +447,7 @@ export function LessonsPage() {
         onClose={() => setItemToDelete(null)}
         onConfirm={handleConfirmDelete}
       />
+      {guestModal}
     </main>
   )
 }

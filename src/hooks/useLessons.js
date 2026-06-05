@@ -3,6 +3,7 @@ import { useSearchParams } from 'react-router-dom'
 import { lessonsService, practicesService, rawService } from '../services'
 import { sortLessonsByLevelThenSkill, } from '../utils/lesson'
 import { practiceToCard } from '../utils/practice'
+import { isGuestSession } from '../utils/guestAuth'
 
 // ─── useLessonsList ────────────────────────────────────────────────────────────
 
@@ -58,6 +59,10 @@ export function useLessonsList() {
   }, [skillFilter, topicFilter, levelFilter, titleFilter, page])
 
   useEffect(() => {
+    if (isGuestSession()) {
+      setCompletedLessonIds(new Set())
+      return
+    }
     const params = { status: 'completed', category: 'lesson', page: 1, limit: 200 }
     if (skillFilter && skillFilter !== 'all') params.skill = skillFilter
     lessonsService
@@ -211,6 +216,10 @@ export function useSkillPractices(skill, t) {
   }, [skill])
 
   useEffect(() => {
+    if (isGuestSession()) {
+      setCompletedPracticeIds(new Set())
+      return
+    }
     const params = { status: 'completed', category: 'practice', skill, page: 1, limit: 200 }
     lessonsService
       .getMyProgress(params)

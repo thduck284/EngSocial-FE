@@ -1,4 +1,5 @@
 export { useRegister, useLogin } from './useAuth'
+export { useGuestAuthGate } from './useGuestAuthGate.js'
 export { useDashboardData, useDashboardFriends, useDashboardSocket, useStudyGroups } from './useDashboard'
 export { useSearchPage } from './useSearchPage'
 export { useLessonsList, useSkillPractices } from './useLessons'

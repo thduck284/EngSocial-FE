@@ -53,6 +53,8 @@ import { AdminOverviewPage } from './pages/AdminOverviewPage'
 import { AdminUsersPage } from './pages/AdminUsersPage'
 import { AdminReportsPage } from './pages/AdminReportsPage'
 import { GuestOnlyLayout } from './components/layout/GuestOnlyLayout'
+import { GuestRestrictedPage } from './components/auth/GuestRestrictedPage'
+import { GuestDetailGuard } from './components/auth/GuestDetailGuard'
 import { WordsNotesLayout } from './components/vocabulary/WordsNotesLayout'
 import VocabularyTopicsTab from './pages/VocabularyTopicsTab'
 import VocabularyNotesPanel from './components/vocabulary/VocabularyNotesPanel'
@@ -136,97 +138,96 @@ function App() {
         {/* Các route cần đăng nhập: DashboardLayout dùng useAuth() để redirect */}
         <Route path="/" element={<DashboardLayout />}>
           <Route index element={<Navigate to="/home" replace />} />
-          <Route path="home" element={<DashboardPage />} />
-          <Route path="post/photo/:postId" element={<PostPhotoPage />} />
-          <Route path="search" element={<SearchPage />} />
-          <Route path="messages/conversation/:conversationId" element={<MessagesPage />} />
-          <Route path="messages" element={<MessagesPage />} />
+          <Route path="home" element={<GuestRestrictedPage><DashboardPage /></GuestRestrictedPage>} />
+          <Route path="post/photo/:postId" element={<GuestRestrictedPage><PostPhotoPage /></GuestRestrictedPage>} />
+          <Route path="search" element={<GuestRestrictedPage><SearchPage /></GuestRestrictedPage>} />
+          <Route path="messages/conversation/:conversationId" element={<GuestRestrictedPage><MessagesPage /></GuestRestrictedPage>} />
+          <Route path="messages" element={<GuestRestrictedPage><MessagesPage /></GuestRestrictedPage>} />
 
           <Route path="community" element={<Navigate to="/community/group-feed" replace />} />
-          <Route path="community/group-feed" element={<CommunityPage />} />
-          <Route path="community/group/:groupId" element={<CommunityPage />} />
-          <Route path="community/group/:groupId/:tab" element={<CommunityPage />} />
-          <Route path="community/my-groups" element={<CommunityPage />} />
-          <Route path="community/discover" element={<CommunityPage />} />
-          <Route path="community/create" element={<GroupCreatePage />} />
+          <Route path="community/group-feed" element={<GuestRestrictedPage><CommunityPage /></GuestRestrictedPage>} />
+          <Route path="community/group/:groupId" element={<GuestRestrictedPage><CommunityPage /></GuestRestrictedPage>} />
+          <Route path="community/group/:groupId/:tab" element={<GuestRestrictedPage><CommunityPage /></GuestRestrictedPage>} />
+          <Route path="community/my-groups" element={<GuestRestrictedPage><CommunityPage /></GuestRestrictedPage>} />
+          <Route path="community/discover" element={<GuestRestrictedPage><CommunityPage /></GuestRestrictedPage>} />
+          <Route path="community/create" element={<GuestRestrictedPage><GroupCreatePage /></GuestRestrictedPage>} />
 
           <Route path="enter" element={<Navigate to="/practice/entertainment" replace />} />
           <Route path="practice/entertainment" element={<EntertainmentLayout />}>
             <Route index element={<EntertainmentHomePage />} />
           </Route>
-          <Route path="practice/entertainment/word-scramble" element={<EntertainmentWordScramblePage />} />
-          <Route path="practice/entertainment/word-scramble/lobby/:lobbyCode" element={<EntertainmentWordScramblePage />} />
-          <Route path="practice/entertainment/word-scramble/roomId=:roomCode" element={<EntertainmentWordScramblePage />} />
-          <Route path="practice/entertainment/word-scramble/result/:roomCode" element={<WordScrambleResultPage />} />
-          <Route path="practice/entertainment/snake-word" element={<EntertainmentSnakeWordPage />} />
-          <Route path="practice/entertainment/snake-word/lobby/:lobbyCode" element={<EntertainmentSnakeWordPage />} />
-          <Route path="practice/entertainment/snake-word/roomId=:roomCode" element={<EntertainmentSnakeWordPage />} />
-          {/* Reuse WordScrambleResultPage or create SnakeWordResultPage later */}
-          <Route path="practice/entertainment/snake-word/result/:roomCode" element={<WordScrambleResultPage />} />
+          <Route path="practice/entertainment/word-scramble" element={<GuestDetailGuard fallback="/practice/entertainment"><EntertainmentWordScramblePage /></GuestDetailGuard>} />
+          <Route path="practice/entertainment/word-scramble/lobby/:lobbyCode" element={<GuestDetailGuard fallback="/practice/entertainment"><EntertainmentWordScramblePage /></GuestDetailGuard>} />
+          <Route path="practice/entertainment/word-scramble/roomId=:roomCode" element={<GuestDetailGuard fallback="/practice/entertainment"><EntertainmentWordScramblePage /></GuestDetailGuard>} />
+          <Route path="practice/entertainment/word-scramble/result/:roomCode" element={<GuestDetailGuard fallback="/practice/entertainment"><WordScrambleResultPage /></GuestDetailGuard>} />
+          <Route path="practice/entertainment/snake-word" element={<GuestDetailGuard fallback="/practice/entertainment"><EntertainmentSnakeWordPage /></GuestDetailGuard>} />
+          <Route path="practice/entertainment/snake-word/lobby/:lobbyCode" element={<GuestDetailGuard fallback="/practice/entertainment"><EntertainmentSnakeWordPage /></GuestDetailGuard>} />
+          <Route path="practice/entertainment/snake-word/roomId=:roomCode" element={<GuestDetailGuard fallback="/practice/entertainment"><EntertainmentSnakeWordPage /></GuestDetailGuard>} />
+          <Route path="practice/entertainment/snake-word/result/:roomCode" element={<GuestDetailGuard fallback="/practice/entertainment"><WordScrambleResultPage /></GuestDetailGuard>} />
           <Route path="lesson" element={<LessonsPage />} />
-          <Route path="lesson/history" element={<LessonHistoryPage />} />
-          <Route path="lesson/:id/reviews" element={<LessonReviewPage />} />
+          <Route path="lesson/history" element={<GuestDetailGuard fallback="/lesson"><LessonHistoryPage /></GuestDetailGuard>} />
+          <Route path="lesson/:id/reviews" element={<GuestDetailGuard fallback="/lesson"><LessonReviewPage /></GuestDetailGuard>} />
           
           {/* Detail pages */}
-          <Route path="lesson/:skill/:id" element={<LessonDetailPage />} />
-          <Route path="practice/:skill/:id" element={<LessonDetailPage />} />
+          <Route path="lesson/:skill/:id" element={<GuestDetailGuard><LessonDetailPage /></GuestDetailGuard>} />
+          <Route path="practice/:skill/:id" element={<GuestDetailGuard><LessonDetailPage /></GuestDetailGuard>} />
 
           {/* Learning study pages */}
-          <Route path="lesson/reading/:id/study" element={<ReadingLessonPage />} />
-          <Route path="lesson/reading/:id/result" element={<ReadingLessonResultPage />} />
-          <Route path="lesson/listening/:id/study" element={<ListeningLessonPage />} />
-          <Route path="lesson/listening/:id/result" element={<ListeningLessonResultPage />} />
-          <Route path="lesson/writing/:id/study" element={<WritingLessonPage />} />
-          <Route path="lesson/writing/:id/result" element={<WritingLessonResultPage />} />
+          <Route path="lesson/reading/:id/study" element={<GuestDetailGuard><ReadingLessonPage /></GuestDetailGuard>} />
+          <Route path="lesson/reading/:id/result" element={<GuestDetailGuard><ReadingLessonResultPage /></GuestDetailGuard>} />
+          <Route path="lesson/listening/:id/study" element={<GuestDetailGuard><ListeningLessonPage /></GuestDetailGuard>} />
+          <Route path="lesson/listening/:id/result" element={<GuestDetailGuard><ListeningLessonResultPage /></GuestDetailGuard>} />
+          <Route path="lesson/writing/:id/study" element={<GuestDetailGuard><WritingLessonPage /></GuestDetailGuard>} />
+          <Route path="lesson/writing/:id/result" element={<GuestDetailGuard><WritingLessonResultPage /></GuestDetailGuard>} />
 
           <Route path="practice" element={<Navigate to="/practice/reading" replace />} />
-          <Route path="practice/mock-test" element={<PracticeMockTestPage />} />
-          <Route path="practice/mock-test/result/:sessionId" element={<MockTestResultPage />} />
+          <Route path="practice/mock-test" element={<GuestDetailGuard fallback="/practice/reading"><PracticeMockTestPage /></GuestDetailGuard>} />
+          <Route path="practice/mock-test/result/:sessionId" element={<GuestDetailGuard fallback="/practice/reading"><MockTestResultPage /></GuestDetailGuard>} />
           <Route path="practice/:skill" element={<SkillPracticePage />} />
           
-          <Route path="practice/reading/:id/study" element={<ReadingLessonPage />} />
-          <Route path="practice/reading/:id/result" element={<ReadingLessonResultPage />} />
-          <Route path="practice/listening/:id/study" element={<ListeningLessonPage />} />
-          <Route path="practice/listening/:id/result" element={<ListeningLessonResultPage />} />
-          <Route path="practice/writing/:id/study" element={<WritingLessonPage />} />
-          <Route path="practice/writing/:id/result" element={<WritingLessonResultPage />} />
+          <Route path="practice/reading/:id/study" element={<GuestDetailGuard><ReadingLessonPage /></GuestDetailGuard>} />
+          <Route path="practice/reading/:id/result" element={<GuestDetailGuard><ReadingLessonResultPage /></GuestDetailGuard>} />
+          <Route path="practice/listening/:id/study" element={<GuestDetailGuard><ListeningLessonPage /></GuestDetailGuard>} />
+          <Route path="practice/listening/:id/result" element={<GuestDetailGuard><ListeningLessonResultPage /></GuestDetailGuard>} />
+          <Route path="practice/writing/:id/study" element={<GuestDetailGuard><WritingLessonPage /></GuestDetailGuard>} />
+          <Route path="practice/writing/:id/result" element={<GuestDetailGuard><WritingLessonResultPage /></GuestDetailGuard>} />
           <Route path="skills" element={<Navigate to="/practice" replace />} />
           <Route path="skills/:skill" element={<SkillRedirect />} />
           <Route path="lessons" element={<Navigate to="/lesson" replace />} />
 
-          <Route path="quests" element={<QuestsPage />} />
-          <Route path="challenge" element={<QuestsPage />} />
-          <Route path="achievements" element={<AchievementsPage />} />
+          <Route path="quests" element={<GuestRestrictedPage><QuestsPage /></GuestRestrictedPage>} />
+          <Route path="challenge" element={<GuestRestrictedPage><QuestsPage /></GuestRestrictedPage>} />
+          <Route path="achievements" element={<GuestRestrictedPage><AchievementsPage /></GuestRestrictedPage>} />
 
           {/* Profile routes: own profile + user profile, each tab có URL riêng */}
-          <Route path="profile" element={<ProfilePage />} />
-          <Route path="profile/personalInfo" element={<ProfilePage />} />
-          <Route path="profile/skills" element={<ProfilePage />} />
-          <Route path="profile/posts" element={<ProfilePage />} />
-          <Route path="profile/photos" element={<ProfilePage />} />
-          <Route path="profile/video" element={<ProfilePage />} />
-          <Route path="profile/:userId" element={<UserProfilePage />} />
-          <Route path="profile/:userId/about" element={<UserProfilePage />} />
-          <Route path="profile/:userId/personalInfo" element={<UserProfilePage />} />
-          <Route path="profile/:userId/skills" element={<UserProfilePage />} />
-          <Route path="profile/:userId/posts" element={<UserProfilePage />} />
-          <Route path="profile/:userId/photos" element={<UserProfilePage />} />
-          <Route path="profile/:userId/video" element={<UserProfilePage />} />
+          <Route path="profile" element={<GuestRestrictedPage><ProfilePage /></GuestRestrictedPage>} />
+          <Route path="profile/personalInfo" element={<GuestRestrictedPage><ProfilePage /></GuestRestrictedPage>} />
+          <Route path="profile/skills" element={<GuestRestrictedPage><ProfilePage /></GuestRestrictedPage>} />
+          <Route path="profile/posts" element={<GuestRestrictedPage><ProfilePage /></GuestRestrictedPage>} />
+          <Route path="profile/photos" element={<GuestRestrictedPage><ProfilePage /></GuestRestrictedPage>} />
+          <Route path="profile/video" element={<GuestRestrictedPage><ProfilePage /></GuestRestrictedPage>} />
+          <Route path="profile/:userId" element={<GuestRestrictedPage><UserProfilePage /></GuestRestrictedPage>} />
+          <Route path="profile/:userId/about" element={<GuestRestrictedPage><UserProfilePage /></GuestRestrictedPage>} />
+          <Route path="profile/:userId/personalInfo" element={<GuestRestrictedPage><UserProfilePage /></GuestRestrictedPage>} />
+          <Route path="profile/:userId/skills" element={<GuestRestrictedPage><UserProfilePage /></GuestRestrictedPage>} />
+          <Route path="profile/:userId/posts" element={<GuestRestrictedPage><UserProfilePage /></GuestRestrictedPage>} />
+          <Route path="profile/:userId/photos" element={<GuestRestrictedPage><UserProfilePage /></GuestRestrictedPage>} />
+          <Route path="profile/:userId/video" element={<GuestRestrictedPage><UserProfilePage /></GuestRestrictedPage>} />
 
-          <Route path="words-notes" element={<WordsNotesLayout />}>
+          <Route path="words-notes" element={<GuestRestrictedPage><WordsNotesLayout /></GuestRestrictedPage>}>
             <Route index element={<Navigate to="topics" replace />} />
             <Route path="topics" element={<VocabularyTopicsTab />} />
             <Route path="notes" element={<VocabularyNotesPanel />} />
             <Route path="my-words" element={<VocabularyMyWordsPanel />} />
           </Route>
           <Route path="vocabularyhome" element={<Navigate to="/words-notes/topics" replace />} />
-          <Route path="topic/:topicId" element={<TopicDetailPage />} />
-          <Route path="topic/:topicId/flashcard" element={<FlashCardPage />} />
-          <Route path="topic/:topicId/data" element={<VocabularyDataPage />} />
-          <Route path="topic/:topicId/learn" element={<LearnPage />} />
-          <Route path="topic/:topicId/match" element={<MatchGamePage />} />
-          <Route path="topic/:topicId/test" element={<TestPage />} />
-          <Route path="settings" element={<SettingsPage />} />
+          <Route path="topic/:topicId" element={<GuestRestrictedPage><TopicDetailPage /></GuestRestrictedPage>} />
+          <Route path="topic/:topicId/flashcard" element={<GuestRestrictedPage><FlashCardPage /></GuestRestrictedPage>} />
+          <Route path="topic/:topicId/data" element={<GuestRestrictedPage><VocabularyDataPage /></GuestRestrictedPage>} />
+          <Route path="topic/:topicId/learn" element={<GuestRestrictedPage><LearnPage /></GuestRestrictedPage>} />
+          <Route path="topic/:topicId/match" element={<GuestRestrictedPage><MatchGamePage /></GuestRestrictedPage>} />
+          <Route path="topic/:topicId/test" element={<GuestRestrictedPage><TestPage /></GuestRestrictedPage>} />
+          <Route path="settings" element={<GuestRestrictedPage><SettingsPage /></GuestRestrictedPage>} />
         </Route>
 
         <Route path="/manage/*" element={<LegacyManageRedirect />} />

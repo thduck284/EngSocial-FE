@@ -29,7 +29,7 @@ export function AppHeader() {
   const navigate = useNavigate()
   const [searchParams] = useSearchParams()
   const { t } = useTranslation()
-  const { user, logout, isModerator, isAdmin } = useAuth()
+  const { user, logout, isModerator, isAdmin, isGuest } = useAuth()
   const staffWorkTo =
     (isAdmin || isModerator) && user?.id != null
       ? isAdmin
@@ -51,20 +51,20 @@ export function AppHeader() {
   const [isSearchFocused, setIsSearchFocused] = useState(false)
 
   const fetchUnreadCount = useCallback(() => {
-    if (!user) return
+    if (!user || isGuest) return
     notificationsService
       .getUnreadCount()
       .then((res) => setUnreadCount(res?.data?.unreadCount ?? 0))
       .catch(() => setUnreadCount(0))
-  }, [user])
+  }, [user, isGuest])
 
   const fetchMessagesUnreadCount = useCallback(() => {
-    if (!user) return
+    if (!user || isGuest) return
     conversationService
       .getUnreadTotal()
       .then((res) => setMessagesUnreadCount(res?.data?.total ?? 0))
       .catch(() => setMessagesUnreadCount(0))
-  }, [user])
+  }, [user, isGuest])
 
   useEffect(() => {
     fetchUnreadCount()
@@ -92,7 +92,7 @@ export function AppHeader() {
   const [incomingInvite, setIncomingInvite] = useState(null)
 
   useEffect(() => {
-    if (!SOCKET_ENABLED || !user) return
+    if (!SOCKET_ENABLED || !user || isGuest) return
     const token = getAuthToken()
     if (!token) return
     const opts = { auth: { token }, transports: ['websocket', 'polling'] }
@@ -121,7 +121,7 @@ export function AppHeader() {
       headerSocketRef.current?.disconnect()
       headerSocketRef.current = null
     }
-  }, [user, fetchMessagesUnreadCount])
+  }, [user, isGuest, fetchMessagesUnreadCount])
 
   useEffect(() => {
     if (location.pathname === ROUTES.SEARCH) {
@@ -224,6 +224,7 @@ export function AppHeader() {
         </div>
         <div className="flex items-center gap-4 shrink-0">
           <LanguageSwitcher />
+          {!isGuest && (
           <div className="flex gap-2">
             <div className="relative">
               <button
@@ -265,6 +266,7 @@ export function AppHeader() {
               )}
             </Link>
           </div>
+          )}
           <div className="relative flex items-center gap-2" ref={avatarRef}>
             <button
               type="button"
@@ -277,6 +279,32 @@ export function AppHeader() {
             </button>
             {avatarOpen && (
               <div className="absolute right-0 top-full mt-2 w-48 py-1 rounded-xl bg-white dark:bg-card-dark border border-slate-200 dark:border-border-dark shadow-xl z-50">
+                {isGuest ? (
+                  <>
+                    <div className="px-4 py-2.5 text-xs font-bold text-primary border-b border-slate-200 dark:border-border-dark">
+                      {t('auth.guest.badge')}
+                    </div>
+                    <Link
+                      to={ROUTES.LOGIN}
+                      state={{ from: location }}
+                      onClick={() => setAvatarOpen(false)}
+                      className="flex items-center gap-2 px-4 py-2.5 text-sm text-slate-600 dark:text-gray-200 hover:bg-slate-50 dark:hover:bg-gray-700/50 hover:text-primary transition-colors"
+                    >
+                      <span className="material-symbols-outlined text-lg">login</span>
+                      {t('auth.login')}
+                    </Link>
+                    <Link
+                      to={ROUTES.REGISTER}
+                      state={{ from: location }}
+                      onClick={() => setAvatarOpen(false)}
+                      className="flex items-center gap-2 px-4 py-2.5 text-sm text-slate-600 dark:text-gray-200 hover:bg-slate-50 dark:hover:bg-gray-700/50 hover:text-primary transition-colors"
+                    >
+                      <span className="material-symbols-outlined text-lg">person_add</span>
+                      {t('auth.register')}
+                    </Link>
+                  </>
+                ) : (
+                  <>
                 <Link
                   to={ROUTES.PROFILE}
                   onClick={() => setAvatarOpen(false)}
@@ -303,6 +331,8 @@ export function AppHeader() {
                   <span className="material-symbols-outlined text-lg">settings</span>
                   {t('header.settings')}
                 </Link>
+                  </>
+                )}
                 <div className="my-1 border-t border-slate-200 dark:border-border-dark" />
                 <button
                   type="button"
@@ -310,7 +340,7 @@ export function AppHeader() {
                   className="flex items-center gap-2 w-full px-4 py-2.5 text-sm text-red-500 hover:bg-red-50 dark:hover:bg-red-500/10 transition-colors text-left"
                 >
                   <span className="material-symbols-outlined text-lg">logout</span>
-                  {t('header.logout')}
+                  {isGuest ? t('auth.guest.exit') : t('header.logout')}
                 </button>
               </div>
             )}
