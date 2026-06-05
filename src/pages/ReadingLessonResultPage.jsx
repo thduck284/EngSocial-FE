@@ -6,7 +6,6 @@ import { lessonsService } from '../services'
 
 /**
  * Trang kết quả làm bài Reading: điểm số, đoạn đọc, chi tiết từng câu (đáp án user, đáp án đúng, giải thích).
- * Data: lấy từ getReadingContent + getProgress; khi backend có API result thì chuyển sang gọi API đó.
  */
 export function ReadingLessonResultPage() {
   const { t } = useTranslation()
@@ -110,47 +109,47 @@ export function ReadingLessonResultPage() {
   }
 
   return (
-    <main className="max-w-[1440px] mx-auto grid grid-cols-12 gap-10 pt-4 px-6 pb-10 lg:pt-4 lg:px-10 lg:pb-10 animate-in fade-in duration-700">
+    <main className="max-w-[1200px] mx-auto grid grid-cols-12 gap-6 pt-4 px-4 pb-10 animate-in fade-in duration-700">
       {/* Sidebar - Summary */}
-      <aside className="col-span-12 lg:col-span-4 xl:col-span-3 space-y-8">
-        <div className="bg-white dark:bg-card-dark rounded-[2.5rem] border border-slate-200 dark:border-border-dark p-10 shadow-2xl shadow-slate-200/50 dark:shadow-none sticky top-4 flex flex-col gap-10 overflow-hidden group">
-          <div className="absolute top-0 right-0 w-32 h-32 bg-primary/5 rounded-full -mr-16 -mt-16 blur-3xl" />
+      <aside className="col-span-12 lg:col-span-4 xl:col-span-3 space-y-4">
+        <div className="bg-white dark:bg-card-dark rounded-xl border border-slate-200 dark:border-border-dark p-5 shadow-lg shadow-slate-100 dark:shadow-none sticky top-4 flex flex-col gap-5 overflow-hidden group">
+          <div className="absolute top-0 right-0 w-24 h-24 bg-primary/5 rounded-full -mr-12 -mt-12 blur-2xl" />
           
-          <div className="flex flex-col gap-4 relative z-10">
-            <h1 className="text-3xl font-black text-slate-900 dark:text-white tracking-tighter leading-none uppercase">{t('lessonResult.title')}</h1>
-            <p className="text-[11px] text-slate-500 dark:text-gray-400 font-bold leading-relaxed">
-              {t('lessonResult.subtitle')} <span className="text-primary font-black italic">"{lessonTitle}"</span>.
+          <div className="flex flex-col gap-2 relative z-10">
+            <h1 className="text-base font-bold text-slate-800 dark:text-white tracking-wider leading-none uppercase">{t('lessonResult.title')}</h1>
+            <p className="text-[10px] text-slate-500 dark:text-gray-400 font-bold leading-relaxed">
+              {t('lessonResult.subtitle')} <span className="text-primary font-bold italic">"{lessonTitle}"</span>.
             </p>
           </div>
 
-          <div className="grid grid-cols-1 gap-6 relative z-10">
+          <div className="grid grid-cols-1 gap-4 relative z-10">
             {/* Score Card */}
-            <div className="bg-slate-50 dark:bg-background-dark/40 rounded-[2rem] p-8 border border-slate-100 dark:border-white/5 relative overflow-hidden group/score shadow-inner">
-              <div className="absolute top-0 left-0 w-1.5 h-full bg-primary transition-all group-hover/score:w-2" />
-              <p className="text-slate-400 dark:text-gray-500 text-[10px] font-black uppercase tracking-[0.2em] mb-4">{t('lessonResult.scoreLabel')}</p>
-              <div className="flex items-baseline gap-3">
-                <p className="text-slate-900 dark:text-white text-5xl font-black">{score}/{maxScore}</p>
-                <span className="text-emerald-500 text-[11px] font-black uppercase tracking-widest bg-emerald-500/10 px-2 py-1 rounded-full border border-emerald-500/20">
+            <div className="bg-slate-50 dark:bg-background-dark/40 rounded-xl p-4 border border-slate-100 dark:border-white/5 relative overflow-hidden group/score shadow-inner">
+              <div className="absolute top-0 left-0 w-1 h-full bg-primary transition-all group-hover/score:w-1.5" />
+              <p className="text-slate-400 dark:text-gray-500 text-[9px] font-bold uppercase tracking-widest mb-1.5">{t('lessonResult.scoreLabel')}</p>
+              <div className="flex items-center justify-between gap-2">
+                <p className="text-slate-800 dark:text-white text-xl font-bold">{score}/{maxScore}</p>
+                <span className="text-emerald-500 text-[9px] font-bold uppercase tracking-widest bg-emerald-500/10 px-2 py-0.5 rounded shadow-sm border border-emerald-500/10 shrink-0">
                   {progressPercent}%
                 </span>
               </div>
-              <div className="w-full bg-slate-200 dark:bg-card-dark h-2 rounded-full mt-6 shadow-inner">
+              <div className="w-full bg-slate-200 dark:bg-card-dark h-1.5 rounded-full mt-3 shadow-inner">
                 <div
-                  className="bg-gradient-to-r from-primary to-cyan-400 h-full rounded-full shadow-[0_0_12px_rgba(19,182,236,0.5)] transition-all duration-1000"
+                  className="bg-gradient-to-r from-primary to-cyan-400 h-full rounded-full shadow-[0_0_8px_rgba(19,182,236,0.4)] transition-all duration-1000"
                   style={{ width: `${progressPercent}%` }}
                 />
               </div>
             </div>
 
             {/* XP Card */}
-            <div className="bg-slate-50 dark:bg-background-dark/40 rounded-[2rem] p-8 border border-slate-100 dark:border-white/5 relative overflow-hidden group/xp shadow-inner">
-              <div className="absolute top-0 left-0 w-1.5 h-full bg-amber-500 transition-all group-hover/xp:w-2" />
-              <p className="text-slate-400 dark:text-gray-500 text-[10px] font-black uppercase tracking-[0.2em] mb-4">{t('lessonResult.xpEarned')}</p>
-              <div className="flex items-baseline gap-3">
-                <p className="text-slate-900 dark:text-white text-5xl font-black tracking-tight">+{displayXp} XP</p>
+            <div className="bg-slate-50 dark:bg-background-dark/40 rounded-xl p-4 border border-slate-100 dark:border-white/5 relative overflow-hidden group/xp shadow-inner">
+              <div className="absolute top-0 left-0 w-1 h-full bg-amber-500 transition-all group-hover/xp:w-1.5" />
+              <p className="text-slate-400 dark:text-gray-500 text-[9px] font-bold uppercase tracking-widest mb-1.5">{t('lessonResult.xpEarned')}</p>
+              <div className="flex items-center justify-between gap-2">
+                <p className="text-slate-800 dark:text-white text-xl font-bold tracking-tight">+{displayXp} XP</p>
                 {displayXp > 0 && (
-                  <span className="text-amber-500 text-[10px] font-black uppercase tracking-widest animate-pulse flex items-center gap-1">
-                    <span className="material-symbols-outlined text-sm">bolt</span>
+                  <span className="text-amber-500 text-[9px] font-bold uppercase tracking-widest bg-amber-500/10 px-2 py-0.5 rounded shadow-sm border border-amber-500/10 flex items-center gap-1 shrink-0 animate-pulse">
+                    <span className="material-symbols-outlined text-[10px]">bolt</span>
                     {t('lessonResult.bonus')}
                   </span>
                 )}
@@ -159,12 +158,12 @@ export function ReadingLessonResultPage() {
           </div>
 
           {/* Question Index */}
-          <div className="space-y-6 relative z-10">
-            <p className="text-slate-400 dark:text-gray-500 text-[10px] font-black uppercase tracking-[0.2em] flex items-center gap-3">
-              <span className="material-symbols-outlined text-base text-primary/50">navigation</span>
+          <div className="space-y-4 relative z-10">
+            <p className="text-slate-400 dark:text-gray-500 text-[9px] font-bold uppercase tracking-wider flex items-center gap-2">
+              <span className="material-symbols-outlined text-sm text-primary/50">navigation</span>
               {t('lessonResult.questionDetails')}
             </p>
-            <div className="flex flex-wrap gap-3">
+            <div className="flex flex-wrap gap-2">
               {questions.map((q, idx) => {
                 const userAnswer = getAnswerForQuestion(idx)
                 const userValue = userAnswer?.answer ?? userAnswer?.userAnswer
@@ -174,7 +173,7 @@ export function ReadingLessonResultPage() {
                   <button
                     key={idx}
                     onClick={() => scrollToQuestion(idx)}
-                    className={`size-10 rounded-xl flex items-center justify-center text-[11px] font-black transition-all border-2 shrink-0 hover:scale-110 active:scale-90 ${
+                    className={`size-8 rounded-lg flex items-center justify-center text-[10px] font-bold transition-all border shrink-0 hover:scale-105 active:scale-95 ${
                       isCorrect 
                         ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-500 hover:bg-emerald-500 hover:text-white' 
                         : 'bg-rose-500/10 border-rose-500/20 text-rose-500 hover:bg-rose-500 hover:text-white'
@@ -187,13 +186,13 @@ export function ReadingLessonResultPage() {
             </div>
           </div>
 
-          <div className="flex flex-col gap-4 mt-4 relative z-10">
+          <div className="flex flex-col gap-3 mt-2 relative z-10">
             <button
               type="button"
               onClick={() => navigate(`/lesson/reading/${id}`)}
-              className="w-full py-5 bg-slate-900 dark:bg-white/5 hover:bg-primary text-white dark:text-slate-400 hover:dark:text-white rounded-[1.5rem] text-[10px] font-black uppercase tracking-[0.2em] transition-all border border-transparent flex items-center justify-center gap-4 group/btn shadow-xl shadow-slate-900/10 active:scale-95"
+              className="w-full py-2 bg-slate-900 dark:bg-white/5 hover:bg-primary text-white dark:text-slate-400 hover:dark:text-white rounded-lg text-[10px] font-bold uppercase tracking-wider transition-all border border-transparent flex items-center justify-center gap-2 group/btn shadow-md active:scale-95"
             >
-              <span className="material-symbols-outlined text-lg group-hover/btn:rotate-180 transition-transform duration-500">refresh</span>
+              <span className="material-symbols-outlined text-sm group-hover/btn:rotate-180 transition-transform duration-500">refresh</span>
               {t('lessonResult.retry')}
             </button>
           </div>
@@ -201,18 +200,18 @@ export function ReadingLessonResultPage() {
       </aside>
 
       {/* Main Content */}
-      <div className="col-span-12 lg:col-span-8 xl:col-span-9 space-y-10">
+      <div className="col-span-12 lg:col-span-8 xl:col-span-9 space-y-6">
         {passageText && (
-          <section className="bg-white dark:bg-card-dark rounded-[2.5rem] border border-slate-200 dark:border-border-dark overflow-hidden shadow-2xl shadow-slate-200/50 dark:shadow-none animate-in slide-in-from-top-8 duration-700">
+          <section className="bg-white dark:bg-card-dark rounded-xl border border-slate-200 dark:border-border-dark overflow-hidden shadow-md shadow-slate-100 dark:shadow-none animate-in slide-in-from-top-8 duration-700">
             <details className="group" open>
-              <summary className="flex cursor-pointer items-center justify-between p-8 list-none hover:bg-slate-50 dark:hover:bg-white/5 transition-colors">
-                <div className="flex items-center gap-6">
-                  <div className="size-14 rounded-2xl bg-primary text-white flex items-center justify-center shadow-xl shadow-primary/20">
-                    <span className="material-symbols-outlined text-3xl">menu_book</span>
+              <summary className="flex cursor-pointer items-center justify-between p-5 list-none hover:bg-slate-50 dark:hover:bg-white/5 transition-colors">
+                <div className="flex items-center gap-3">
+                  <div className="size-10 rounded-lg bg-primary text-white flex items-center justify-center shadow-md shadow-primary/20">
+                    <span className="material-symbols-outlined text-xl">menu_book</span>
                   </div>
-                  <h3 className="text-slate-900 dark:text-white text-xl font-black uppercase tracking-tight">{t('lessonResult.passageTitle')}</h3>
+                  <h3 className="text-slate-800 dark:text-white text-base font-bold uppercase tracking-wider">{t('lessonResult.passageTitle')}</h3>
                 </div>
-                <div className="flex items-center gap-6">
+                <div className="flex items-center gap-3">
                   {translationVi && (
                     <button
                       type="button"
@@ -221,39 +220,39 @@ export function ReadingLessonResultPage() {
                         e.stopPropagation()
                         setPassageLang(prev => (prev === 'en' ? 'vi' : 'en'))
                       }}
-                      className="flex items-center gap-2.5 px-6 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all border-2 border-primary/20 bg-primary/5 text-primary hover:bg-primary hover:text-white active:scale-95 shadow-lg shadow-primary/5"
+                      className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[9px] font-bold uppercase tracking-wider border border-primary/20 bg-primary/5 text-primary hover:bg-primary hover:text-white active:scale-95 shadow-sm"
                     >
-                      <span className="material-symbols-outlined text-base">translate</span>
+                      <span className="material-symbols-outlined text-xs">translate</span>
                       {passageLang === 'en' ? 'Dịch Tiếng Việt' : 'Xem Tiếng Anh'}
                     </button>
                   )}
-                  <span className="material-symbols-outlined text-slate-300 dark:text-gray-700 text-3xl transition-transform duration-500 group-open:rotate-180">expand_more</span>
+                  <span className="material-symbols-outlined text-slate-300 dark:text-gray-700 text-xl transition-transform duration-500 group-open:rotate-180">expand_more</span>
                 </div>
               </summary>
-              <div className="p-10 pt-4 text-slate-700 dark:text-slate-300 leading-snug text-lg font-medium space-y-2 border-t-2 border-slate-100 dark:border-white/5 bg-slate-50/50 dark:bg-background-dark/20 selection:bg-primary/20">
+              <div className="p-6 pt-1 text-slate-600 dark:text-slate-300 leading-relaxed text-sm font-medium space-y-2 border-t border-slate-100 dark:border-white/5 bg-slate-50/50 dark:bg-background-dark/20 selection:bg-primary/20">
                 {(passageLang === 'vi' && translationVi ? translationVi : passageText)
                   .split('\n\n')
                   .filter(Boolean)
                   .map((p, i) => (
-                    <p key={i} className={`mb-4 last:mb-0 ${passageLang === 'vi' ? 'italic text-slate-500 dark:text-gray-400 opacity-90' : ''}`}>{p}</p>
+                    <p key={i} className={`mb-3 last:mb-0 ${passageLang === 'vi' ? 'italic text-slate-500 dark:text-gray-400 opacity-90' : ''}`}>{p}</p>
                   ))}
               </div>
             </details>
           </section>
         )}
 
-        <section className="space-y-8">
-          <div className="flex items-center justify-between px-4">
-            <h2 className="text-3xl font-black text-slate-900 dark:text-white uppercase tracking-tight flex items-center gap-4">
-              <span className="material-symbols-outlined text-primary text-4xl">fact_check</span>
+        <section className="space-y-4">
+          <div className="flex items-center justify-between px-1">
+            <h2 className="text-sm font-bold text-slate-800 dark:text-white uppercase tracking-wider flex items-center gap-2">
+              <span className="material-symbols-outlined text-primary text-lg">fact_check</span>
               {t('lessonResult.questionDetails')}
             </h2>
-            <span className="bg-white dark:bg-card-dark text-slate-400 dark:text-gray-500 text-[10px] font-black px-6 py-3 rounded-full border border-slate-200 dark:border-border-dark uppercase tracking-[0.2em] shadow-xl">
+            <span className="bg-white dark:bg-card-dark text-slate-400 dark:text-gray-500 text-[9px] font-bold px-3 py-1.5 rounded-full border border-slate-200 dark:border-border-dark uppercase tracking-wider shadow-sm">
               {t('lessonResult.showingQuestions', { count: questions.length, total: questions.length })}
             </span>
           </div>
 
-          <div className="flex flex-col gap-8">
+          <div className="flex flex-col gap-4">
             {questions.map((q, index) => {
               const userAnswer = getAnswerForQuestion(index)
               const userValue = userAnswer?.answer ?? userAnswer?.userAnswer
@@ -265,44 +264,44 @@ export function ReadingLessonResultPage() {
                 <div
                   key={q.id || index}
                   id={`question-card-${index}`}
-                  className={`bg-white dark:bg-card-dark border-2 rounded-[2.5rem] p-10 flex flex-col gap-8 shadow-2xl shadow-slate-200/50 dark:shadow-none transition-all hover:border-primary/40 group animate-in slide-in-from-right-8 duration-500 ${!isCorrect ? 'border-l-8 border-l-rose-500 dark:border-l-rose-500' : 'border-slate-200 dark:border-border-dark'}`}
+                  className={`bg-white dark:bg-card-dark border rounded-xl p-5 flex flex-col gap-4 shadow-md shadow-slate-100 dark:shadow-none transition-all hover:border-primary/40 group animate-in slide-in-from-right-8 duration-500 ${!isCorrect ? 'border-l-4 border-l-rose-500 dark:border-l-rose-500' : 'border-slate-200 dark:border-border-dark'}`}
                   style={{ animationDelay: `${index * 100}ms` }}
                 >
                   <div className="flex items-center justify-between">
-                    <span className="text-slate-400 dark:text-gray-500 font-black uppercase text-[10px] tracking-[0.3em] flex items-center gap-3">
+                    <span className="text-slate-400 dark:text-gray-500 font-black uppercase text-[11px] tracking-wider flex items-center gap-2">
                       <span className="size-2 rounded-full bg-primary" />
                       {t('lessonResult.questionNum', { num: index + 1 })}
                     </span>
                     <div
-                      className={`flex items-center gap-2.5 px-5 py-2 rounded-2xl text-[10px] font-black uppercase tracking-widest border-2 transition-all group-hover:scale-105 ${
-                        isCorrect ? 'bg-emerald-500/5 border-emerald-500/20 text-emerald-500' : 'bg-rose-500/5 border-rose-500/20 text-rose-500'
+                      className={`flex items-center gap-1.5 px-3 py-1 rounded-lg text-[10px] font-black uppercase tracking-wider border transition-all group-hover:scale-105 ${
+                        isCorrect ? 'bg-emerald-500/5 border-emerald-500/10 text-emerald-500' : 'bg-rose-500/5 border-rose-500/10 text-rose-500'
                       }`}
                     >
-                      <span className="material-symbols-outlined text-base">{isCorrect ? 'check_circle' : 'cancel'}</span>
+                      <span className="material-symbols-outlined text-xs">{isCorrect ? 'check_circle' : 'cancel'}</span>
                       {isCorrect ? t('lessonResult.correct') : t('lessonResult.incorrect')}
                     </div>
                   </div>
                   
-                  <p className="text-slate-900 dark:text-white text-2xl font-black leading-tight uppercase tracking-tight">{q.question}</p>
+                  <p className="text-slate-800 dark:text-white text-sm font-black leading-relaxed">{q.question}</p>
                   
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <div className={`p-8 rounded-[2rem] border-2 transition-colors shadow-inner ${!isCorrect ? 'bg-rose-500/5 border-rose-500/20' : 'bg-slate-50 dark:bg-white/5 border-slate-100 dark:border-white/5'}`}>
-                      <p className="text-slate-400 dark:text-gray-500 text-[10px] font-black uppercase tracking-[0.2em] mb-4">{t('lessonResult.yourAnswer')}</p>
-                      <p className={`text-lg font-black uppercase tracking-tight ${!isCorrect ? 'line-through decoration-rose-500/50 text-slate-400' : 'text-slate-900 dark:text-white'}`}>{userText || '—'}</p>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className={`p-4 rounded-lg border transition-colors shadow-inner ${!isCorrect ? 'bg-rose-500/5 border-rose-500/10' : 'bg-slate-50 dark:bg-white/5 border-slate-100 dark:border-white/5'}`}>
+                      <p className="text-slate-400 dark:text-gray-500 text-[9px] font-bold uppercase tracking-wider mb-1">{t('lessonResult.yourAnswer')}</p>
+                      <p className={`text-sm font-bold ${!isCorrect ? 'line-through decoration-rose-500/50 text-slate-400' : 'text-slate-800 dark:text-white'}`}>{userText || '—'}</p>
                     </div>
-                    <div className="p-8 rounded-[2rem] bg-emerald-500/5 border-2 border-emerald-500/20 shadow-inner">
-                      <p className="text-emerald-500/70 text-[10px] font-black uppercase tracking-[0.2em] mb-4">{t('lessonResult.correctAnswer')}</p>
-                      <p className="text-emerald-500 text-lg font-black uppercase tracking-tight">{correctText || '—'}</p>
+                    <div className="p-4 rounded-lg bg-emerald-500/5 border border-emerald-500/10 shadow-inner">
+                      <p className="text-emerald-500/70 text-[9px] font-bold uppercase tracking-wider mb-1">{t('lessonResult.correctAnswer')}</p>
+                      <p className="text-emerald-500 text-sm font-bold">{correctText || '—'}</p>
                     </div>
                   </div>
                   
                   {q.explanation && (
                     <details className="group/exp">
-                      <summary className="flex items-center gap-3 text-primary font-black text-[11px] cursor-pointer list-none hover:bg-primary/5 transition-all uppercase tracking-[0.2em] p-4 -mx-4 rounded-2xl active:scale-95">
-                        <span className="material-symbols-outlined text-xl transition-transform group-open/exp:rotate-90">info</span>
+                      <summary className="flex items-center gap-2 text-primary font-bold text-[10px] cursor-pointer list-none hover:bg-primary/5 transition-all uppercase tracking-wider p-2 -mx-2 rounded-lg active:scale-95">
+                        <span className="material-symbols-outlined text-base transition-transform group-open/exp:rotate-90">info</span>
                         {t('lessonResult.viewExplanation')}
                       </summary>
-                      <div className="mt-4 p-8 bg-primary/5 rounded-[2rem] border-l-8 border-primary text-slate-600 dark:text-gray-400 text-sm font-bold leading-relaxed italic shadow-inner animate-in slide-in-from-top-4 duration-300">
+                      <div className="mt-2 p-4 bg-primary/5 rounded-lg border-l-4 border-primary text-xs font-bold leading-relaxed italic shadow-inner animate-in slide-in-from-top-4 duration-300 text-slate-500 dark:text-gray-400">
                         {q.explanation}
                       </div>
                     </details>

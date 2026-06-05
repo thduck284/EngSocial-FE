@@ -255,14 +255,14 @@ export function ReadingLessonPage() {
       <div className="flex-1 min-w-0 flex flex-col gap-10 overflow-hidden">
         <div className="bg-white dark:bg-card-dark rounded-[2.5rem] border border-slate-200 dark:border-border-dark overflow-hidden flex flex-col flex-1 shadow-2xl shadow-slate-200/50 dark:shadow-none">
           {/* Toolbar */}
-          <div className="py-3 px-6 border-b border-slate-100 dark:border-white/5 flex justify-between items-center bg-slate-50/50 dark:bg-background-dark/30">
+          <div className="py-4 px-8 border-b border-slate-100 dark:border-white/5 flex justify-between items-center bg-slate-50/50 dark:bg-background-dark/30">
             <div className="flex gap-3">
               <button
                 type="button"
                 onClick={() => setPassageLang((prev) => (prev === 'en' ? 'vi' : 'en'))}
-                className={`flex items-center gap-2 px-4 py-2 rounded-lg text-xs font-bold transition-all border active:scale-95 ${
+                className={`flex items-center gap-2 px-6 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all border-2 active:scale-95 ${
                   passageLang === 'vi'
-                    ? 'bg-primary text-white border-primary'
+                    ? 'bg-primary text-white border-primary shadow-lg shadow-primary/20'
                     : 'bg-white dark:bg-white/5 text-primary border-primary/20 hover:bg-primary/5'
                 }`}
               >
@@ -272,9 +272,9 @@ export function ReadingLessonPage() {
               <button
                 type="button"
                 onClick={() => setHighlightOn((prev) => !prev)}
-                className={`flex items-center gap-2 px-4 py-2 rounded-lg text-xs font-bold transition-all border active:scale-95 ${
+                className={`flex items-center gap-2 px-6 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all border-2 active:scale-95 ${
                   highlightOn
-                    ? 'bg-emerald-500 text-white border-emerald-500'
+                    ? 'bg-emerald-500 text-white border-emerald-500 shadow-lg shadow-emerald-500/20'
                     : 'bg-white dark:bg-white/5 text-emerald-500 border-emerald-500/20 hover:bg-emerald-500/5'
                 }`}
               >
@@ -283,17 +283,17 @@ export function ReadingLessonPage() {
               </button>
             </div>
           </div>
-
+ 
           {/* Split View */}
           <div className="flex-1 grid grid-cols-1 md:grid-cols-2 overflow-hidden divide-x-2 divide-slate-100 dark:divide-white/5">
             {/* Reading Text */}
-            <div className="overflow-y-auto custom-scrollbar p-6 bg-slate-50/50 dark:bg-background-dark/20">
+            <div className="overflow-y-auto custom-scrollbar p-8 bg-slate-50/50 dark:bg-background-dark/20">
               {mockReadingContent.thumbnail && (
                 <div className="relative mb-10 group">
-                  <div className="absolute inset-0 bg-primary/20 rounded-3xl blur-2xl opacity-0 group-hover:opacity-40 transition-opacity" />
+                  <div className="absolute inset-0 bg-primary/20 rounded-[2rem] blur-2xl opacity-0 group-hover:opacity-40 transition-opacity" />
                   <img
                     alt={mockReadingContent.title}
-                    className="w-full h-48 object-cover rounded-3xl relative z-10 shadow-2xl transition-transform group-hover:scale-[1.02]"
+                    className="w-full h-48 object-cover rounded-[2rem] relative z-10 shadow-2xl transition-transform group-hover:scale-[1.02]"
                     src={mockReadingContent.thumbnail}
                   />
                 </div>
@@ -305,7 +305,7 @@ export function ReadingLessonPage() {
                 )
                   .split(/\n\n+/)
                   .map((paragraph, pIdx) => (
-                    <p key={pIdx} className="text-slate-800 dark:text-slate-200 leading-relaxed mb-4 text-base selection:bg-primary/30">
+                    <p key={pIdx} className="text-slate-800 dark:text-slate-200 leading-relaxed mb-6 text-base selection:bg-primary/30 font-medium">
                       {paragraph.split(/\n/).map((line, lIdx) => (
                         <span key={lIdx} className={lIdx > 0 ? 'block mt-1' : ''}>
                           {line.split(/\s+/).filter(Boolean).map((word, wordIdx) => {
@@ -344,23 +344,23 @@ export function ReadingLessonPage() {
                     onClick={() => setShowVocabTable((v) => !v)}
                     className="flex items-center justify-between w-full py-3 text-left group"
                   >
-                    <span className="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-gray-400 group-hover:text-primary transition-colors">{t('readingLesson.vocabTableTitle')}</span>
+                    <span className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 dark:text-gray-500 group-hover:text-primary transition-colors">{t('readingLesson.vocabTableTitle')}</span>
                     <span className={`material-symbols-outlined text-slate-400 dark:text-gray-500 transition-all ${showVocabTable ? 'rotate-180 text-primary' : 'group-hover:text-primary'}`}>expand_more</span>
                   </button>
                   {showVocabTable && (
-                    <div className="mt-4 overflow-hidden border border-slate-200 dark:border-border-dark rounded-xl animate-in fade-in slide-in-from-top-4 duration-300">
+                    <div className="mt-4 overflow-hidden border border-slate-200 dark:border-border-dark rounded-2xl shadow-inner bg-white dark:bg-card-dark/40 animate-in fade-in slide-in-from-top-4 duration-300">
                       <table className="w-full text-sm">
-                        <thead className="sticky top-0 bg-white dark:bg-card-dark border-b border-slate-200 dark:border-border-dark">
+                        <thead className="sticky top-0 bg-slate-50 dark:bg-background-dark/80 border-b border-slate-200 dark:border-border-dark">
                           <tr>
-                            <th className="text-left py-2.5 px-3 text-xs font-bold text-primary uppercase">{t('readingLesson.english')}</th>
-                            <th className="text-left py-2.5 px-3 text-xs font-bold text-primary uppercase">{t('readingLesson.vietnamese')}</th>
+                            <th className="text-left py-3 px-4 text-[10px] font-black text-primary uppercase tracking-wider">{t('readingLesson.english')}</th>
+                            <th className="text-left py-3 px-4 text-[10px] font-black text-primary uppercase tracking-wider">{t('readingLesson.vietnamese')}</th>
                           </tr>
                         </thead>
-                        <tbody className="bg-white dark:bg-card-dark text-slate-900 dark:text-white">
+                        <tbody className="text-slate-900 dark:text-white">
                           {vocabularyList.map((v, i) => (
-                            <tr key={i} className="border-b border-border-dark/50 hover:bg-slate-50 dark:hover:bg-background-dark/30">
-                              <td className="py-2 px-3 font-medium">{v.word || '—'}</td>
-                              <td className="py-2 px-3 text-slate-500 dark:text-gray-400">{v.meaning || v.meaningVi || '—'}</td>
+                            <tr key={i} className="border-b border-border-dark/50 hover:bg-slate-50/50 dark:hover:bg-background-dark/30">
+                              <td className="py-3 px-4 font-bold text-slate-800 dark:text-white">{v.word || '—'}</td>
+                              <td className="py-3 px-4 text-slate-500 dark:text-gray-400 font-medium">{v.meaning || v.meaningVi || '—'}</td>
                             </tr>
                           ))}
                         </tbody>
@@ -370,118 +370,120 @@ export function ReadingLessonPage() {
                 </div>
               )}
             </div>
-
+ 
             {/* Questions Section */}
-            <div className="overflow-y-auto custom-scrollbar p-6 bg-white dark:bg-card-dark/50">
-              <div className="flex items-center justify-between mb-8 flex-wrap gap-4">
-                <div className="flex flex-col">
-                  <span className="text-[10px] font-bold text-slate-500 dark:text-gray-400 uppercase tracking-widest">{t('readingLesson.progress')}</span>
-                  <span className="text-sm font-bold text-slate-900 dark:text-white">
-                    {t('readingLesson.questionCount', { current: currentQuestion + 1, total: totalQuestions })}
-                  </span>
-                </div>
-                  <div className="flex items-center gap-3">
-                    {completeMessage && (
-                      <span className="text-xs text-emerald-400">{completeMessage}</span>
-                    )}
-                    {!isMockTest && (
-                      <button
-                        type="button"
-                        onClick={() => setShowHint((v) => !v)}
-                        title={t('readingLesson.hint')}
-                        className={`h-9 w-9 inline-flex items-center justify-center rounded-lg border transition-all ${showHint ? 'bg-amber-500/20 text-amber-400 border-amber-500/40' : 'border-slate-200 dark:border-border-dark text-slate-400 dark:text-gray-500 hover:text-amber-400 hover:border-amber-500/30'}`}
-                      >
-                        <span className="material-symbols-outlined text-lg">lightbulb</span>
-                      </button>
-                    )}
-                    {!isMockTest && (
-                      <div className={`h-9 inline-flex items-center gap-2 px-3 rounded-lg border font-mono font-bold text-sm ${(countdownSeconds ?? 1) <= 0 ? 'bg-red-500/20 text-red-400 border-red-500/30' : 'bg-red-500/10 text-red-400 border-red-500/20'}`}>
-                        <span className="material-symbols-outlined text-base">timer</span>
-                        <span>{countdownSeconds != null ? formatTime(Math.max(0, countdownSeconds)) : '--:--'}</span>
-                        {(countdownSeconds ?? 1) <= 0 && <span className="text-[10px] ml-1">{t('readingLesson.timeUp')}</span>}
-                      </div>
-                    )}
-                    {!isMockTest && (
-                      <button
-                        type="button"
-                        onClick={handleComplete}
-                        disabled={completingLesson}
-                        className="h-9 px-4 inline-flex items-center justify-center rounded-lg text-sm font-semibold bg-primary/20 text-primary border border-primary/30 hover:bg-primary/30 disabled:opacity-60 disabled:cursor-not-allowed"
-                      >
-                        {completingLesson ? '...' : t('readingLesson.submit')}
-                      </button>
-                    )}
+            <div className="overflow-y-auto custom-scrollbar p-8 bg-white dark:bg-card-dark/50 flex flex-col justify-between">
+              <div>
+                <div className="flex items-center justify-between mb-8 flex-wrap gap-4">
+                  <div className="flex flex-col">
+                    <span className="text-[10px] font-black text-slate-400 dark:text-gray-500 uppercase tracking-[0.2em]">{t('readingLesson.progress')}</span>
+                    <span className="text-xl font-black text-slate-900 dark:text-white uppercase tracking-tight">
+                      {t('readingLesson.questionCount', { current: currentQuestion + 1, total: totalQuestions })}
+                    </span>
                   </div>
-              </div>
-
-              <div className="animate-in fade-in slide-in-from-right-4 duration-500">
-                <p className="text-base font-semibold text-slate-900 dark:text-white mb-6">
-                  {question?.question || t('readingLesson.chooseAnswer')}
-                </p>
-                <div className="space-y-3">
-                  {questionOptions.map((opt) => (
-                    <label
-                      key={opt.value}
-                      className={`group flex items-center p-4 rounded-xl border cursor-pointer transition-all ${
-                        selectedAnswer === opt.value
-                          ? 'border-emerald-400 bg-emerald-500/10 shadow-[0_0_15px_rgba(20,184,166,0.1)]'
-                          : 'border-slate-200 dark:border-border-dark hover:bg-slate-100 dark:hover:bg-background-dark hover:border-primary transition-colors'
-                      }`}
-                    >
-                      <input
-                        type="radio"
-                        name="answer"
-                        value={opt.value}
-                        checked={selectedAnswer === opt.value}
-                        onChange={(e) => setSelectedAnswer(e.target.value)}
-                        className="w-4 h-4 text-primary bg-slate-50 dark:bg-background-dark border-slate-200 dark:border-border-dark focus:ring-primary"
-                      />
-                      <span
-                        className={`ml-4 text-sm transition-colors ${
-                          selectedAnswer === opt.value ? 'text-primary font-bold' : 'text-slate-500 dark:text-gray-400 group-hover:text-white'
+                    <div className="flex items-center gap-3">
+                      {completeMessage && (
+                        <span className="text-xs text-emerald-400 font-black">{completeMessage}</span>
+                      )}
+                      {!isMockTest && (
+                        <button
+                          type="button"
+                          onClick={() => setShowHint((v) => !v)}
+                          title={t('readingLesson.hint')}
+                          className={`h-10 w-10 inline-flex items-center justify-center rounded-xl border transition-all ${showHint ? 'bg-amber-500/20 text-amber-400 border-amber-500/40 shadow-lg shadow-amber-500/10' : 'border-slate-200 dark:border-border-dark text-slate-400 dark:text-gray-500 hover:text-amber-400 hover:border-amber-500/30'}`}
+                        >
+                          <span className="material-symbols-outlined text-lg">lightbulb</span>
+                        </button>
+                      )}
+                      {!isMockTest && (
+                        <div className={`h-10 inline-flex items-center gap-2 px-4 rounded-xl border font-mono font-black text-sm ${(countdownSeconds ?? 1) <= 0 ? 'bg-red-500/20 text-red-400 border-red-500/30' : 'bg-red-500/10 text-red-400 border-red-500/20'}`}>
+                          <span className="material-symbols-outlined text-base">timer</span>
+                          <span>{countdownSeconds != null ? formatTime(Math.max(0, countdownSeconds)) : '--:--'}</span>
+                          {(countdownSeconds ?? 1) <= 0 && <span className="text-[10px] ml-1">{t('readingLesson.timeUp')}</span>}
+                        </div>
+                      )}
+                      {!isMockTest && (
+                        <button
+                          type="button"
+                          onClick={handleComplete}
+                          disabled={completingLesson}
+                          className="h-10 px-6 inline-flex items-center justify-center rounded-xl text-[10px] font-black uppercase tracking-widest bg-primary/20 text-primary border-2 border-primary/30 hover:bg-primary hover:text-white hover:border-primary disabled:opacity-60 disabled:cursor-not-allowed transition-all active:scale-95"
+                        >
+                          {completingLesson ? '...' : t('readingLesson.submit')}
+                        </button>
+                      )}
+                    </div>
+                </div>
+ 
+                <div className="animate-in fade-in slide-in-from-right-4 duration-500">
+                  <p className="text-2xl font-black text-slate-900 dark:text-white mb-8 leading-tight uppercase tracking-tight">
+                    {question?.question || t('readingLesson.chooseAnswer')}
+                  </p>
+                  <div className="space-y-4">
+                    {questionOptions.map((opt) => (
+                      <label
+                        key={opt.value}
+                        className={`group flex items-center p-6 rounded-[1.5rem] border-2 cursor-pointer transition-all ${
+                          selectedAnswer === opt.value
+                            ? 'border-emerald-500 bg-emerald-500/5 shadow-inner'
+                            : 'border-slate-200 dark:border-border-dark hover:bg-slate-50 dark:hover:bg-background-dark/40 hover:border-primary transition-colors'
                         }`}
                       >
-                        {opt.text}
-                      </span>
-                    </label>
-                  ))}
-                </div>
-                {showHint && question?.explanation && (
-                  <p className="mt-3 p-3 rounded-lg bg-amber-500/10 border border-amber-500/20 text-xs text-amber-600 dark:text-amber-400 italic">
-                    {question.explanation}
-                  </p>
-                )}
-                
-                {/* Embedded Navigation */}
-                <div className="mt-8 pt-6 border-t border-slate-200 dark:border-border-dark flex flex-wrap justify-between items-center gap-3 min-w-0">
-                  <button
-                    type="button"
-                    onClick={handlePrevious}
-                    disabled={currentQuestion === 0}
-                    className="px-4 py-2 rounded-xl text-xs font-bold border border-slate-200 dark:border-border-dark text-slate-500 dark:text-gray-400 hover:bg-slate-100 dark:hover:bg-card-dark hover:text-slate-900 dark:hover:text-white transition-all flex items-center gap-2 shrink-0 disabled:opacity-50 disabled:cursor-not-allowed"
-                  >
-                    <span className="material-symbols-outlined text-sm">arrow_back</span> {t('readingLesson.previous')}
-                  </button>
-
-                  <div className="flex gap-2 shrink-0 items-center flex-wrap">
-                    {currentQuestion < totalQuestions - 1 ? (
-                      <button
-                        type="button"
-                        onClick={handleNext}
-                        className="px-5 py-2 rounded-xl text-xs font-bold bg-primary text-white hover:brightness-110 shadow-lg shadow-primary/20 transition-all flex items-center gap-2 whitespace-nowrap"
-                      >
-                        {t('readingLesson.next')} <span className="material-symbols-outlined text-sm">arrow_forward</span>
-                      </button>
-                    ) : !isMockTest && (
-                      <button
-                        type="button"
-                        onClick={handleSubmit}
-                        className="px-5 py-2 rounded-xl text-xs font-bold bg-primary text-white hover:brightness-110 shadow-lg shadow-primary/20 transition-all whitespace-nowrap"
-                      >
-                        {t('readingLesson.submit')}
-                      </button>
-                    )}
+                        <input
+                          type="radio"
+                          name="answer"
+                          value={opt.value}
+                          checked={selectedAnswer === opt.value}
+                          onChange={(e) => setSelectedAnswer(e.target.value)}
+                          className="w-4 h-4 text-emerald-500 bg-slate-50 dark:bg-background-dark border-slate-200 dark:border-border-dark focus:ring-emerald-500"
+                        />
+                        <span
+                          className={`ml-4 text-base transition-colors ${
+                            selectedAnswer === opt.value ? 'text-slate-900 dark:text-white font-black' : 'text-slate-500 dark:text-gray-400 font-bold group-hover:text-slate-800 dark:group-hover:text-white'
+                          }`}
+                        >
+                          {opt.text}
+                        </span>
+                      </label>
+                    ))}
                   </div>
+                  {showHint && question?.explanation && (
+                    <div className="mt-6 p-6 rounded-[1.5rem] bg-amber-500/10 border-2 border-amber-500/20 text-sm text-amber-600 dark:text-amber-400 font-bold italic leading-relaxed shadow-inner">
+                      {question.explanation}
+                    </div>
+                  )}
+                </div>
+              </div>
+              
+              {/* Embedded Navigation */}
+              <div className="mt-12 pt-6 border-t border-slate-200 dark:border-border-dark flex flex-wrap justify-between items-center gap-4 min-w-0">
+                <button
+                  type="button"
+                  onClick={handlePrevious}
+                  disabled={currentQuestion === 0}
+                  className="px-6 py-3 rounded-xl text-[10px] font-black uppercase tracking-wider border-2 border-slate-200 dark:border-border-dark text-slate-500 dark:text-gray-400 hover:bg-slate-100 dark:hover:bg-card-dark hover:text-slate-900 dark:hover:text-white transition-all flex items-center gap-2 shrink-0 disabled:opacity-50 disabled:cursor-not-allowed active:scale-95"
+                >
+                  <span className="material-symbols-outlined text-base">arrow_back</span> {t('readingLesson.previous')}
+                </button>
+ 
+                <div className="flex gap-2 shrink-0 items-center flex-wrap">
+                  {currentQuestion < totalQuestions - 1 ? (
+                    <button
+                      type="button"
+                      onClick={handleNext}
+                      className="px-6 py-3 rounded-xl text-[10px] font-black uppercase tracking-wider bg-primary text-white border-2 border-transparent hover:brightness-110 shadow-lg shadow-primary/20 transition-all flex items-center gap-2 whitespace-nowrap active:scale-95"
+                    >
+                      {t('readingLesson.next')} <span className="material-symbols-outlined text-base">arrow_forward</span>
+                    </button>
+                  ) : !isMockTest && (
+                    <button
+                      type="button"
+                      onClick={handleSubmit}
+                      className="px-6 py-3 rounded-xl text-[10px] font-black uppercase tracking-wider bg-emerald-500 text-white border-2 border-transparent hover:brightness-110 shadow-lg shadow-emerald-500/20 transition-all whitespace-nowrap active:scale-95"
+                    >
+                      {t('readingLesson.submit')}
+                    </button>
+                  )}
                 </div>
               </div>
             </div>

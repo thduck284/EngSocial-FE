@@ -148,6 +148,7 @@ export function EntertainmentWordScramble({
     }
   }, [isMulti, roomCode, applyGameState, difficulty])
 
+  // ONLINE MULTIPLAYER TIMER
   useEffect(() => {
     if (!isMulti) return undefined
     if (!timeLeftSec || timeLeftSec <= 0) return undefined
@@ -159,6 +160,23 @@ export function EntertainmentWordScramble({
     }, 1000)
     return () => window.clearInterval(timer)
   }, [isMulti, roundId, timeLeftSec])
+
+  // SOLO / LOCAL TIMER
+  useEffect(() => {
+    if (isMulti) return undefined
+    if (!timeLeftSec || timeLeftSec <= 0 || feedback === 'correct') return undefined
+    const timer = window.setInterval(() => {
+      setTimeLeftSec((prev) => {
+        if (!prev || prev <= 1) {
+          setFeedback('timeout')
+          setStreak(0)
+          return 0
+        }
+        return prev - 1
+      })
+    }, 1000)
+    return () => window.clearInterval(timer)
+  }, [isMulti, timeLeftSec, feedback])
 
   const pickNext = useCallback(async () => {
     setLoadingWord(true)
@@ -177,6 +195,11 @@ export function EntertainmentWordScramble({
         setScrambled(scrambleLetters(word))
         setInput('')
         setFeedback(null)
+        
+        // Define time limit for solo mode (easy: 40s, medium: 30s, hard: 20s)
+        const nextLimit = Number(w.timeLimitSec) || (difficulty === 'easy' ? 40 : difficulty === 'medium' ? 30 : 20)
+        setTimeLimitSec(nextLimit)
+        setTimeLeftSec(nextLimit)
         return
       }
       setEntry(null)
@@ -215,8 +238,22 @@ export function EntertainmentWordScramble({
     return () => window.clearTimeout(timer)
   }, [wrongPulse, fullScreen])
 
+  const onNext = useCallback(() => {
+    if (isMulti && roomCode && socketRef.current) {
+      return
+    }
+    setLoadingWord(true)
+      ; (async () => {
+        await pickNext()
+        setLoadingWord(false)
+      })()
+    if (isMulti && (!roomCode || !socketRef.current)) {
+      setActivePlayer((p) => ((p % nPlayers) + 1))
+    }
+  }, [pickNext, isMulti, roomCode, nPlayers])
+
   const onCheck = useCallback(async () => {
-    if (!entry || feedback === 'correct' || gameEnded) return
+    if (!entry || feedback === 'correct' || feedback === 'timeout' || gameEnded) return
 
     if (isMulti && roomCode && socketRef.current) {
       const myNetworkPlayer = networkPlayers.find(p => String(p.userId) === String(myId))
@@ -252,10 +289,14 @@ export function EntertainmentWordScramble({
     const ok = input.trim().toLowerCase() === entry.word
     if (ok) {
       setFeedback('correct')
-      if (!isMulti) {
+      if (!isMulti && nPlayers === 1) {
         setScore((s) => s + 10 + Math.min(streak, 5) * 2)
         setStreak((s) => s + 1)
-      } else {
+        // Auto transition to next word after 1.2s
+        window.setTimeout(() => {
+          onNext()
+        }, 1200)
+      } else if (!isMulti) {
         const p = activePlayer
         const st = streaks[p] ?? 0
         const add = 10 + Math.min(st, 5) * 2
@@ -274,21 +315,7 @@ export function EntertainmentWordScramble({
       setWrongPulse(true)
       window.setTimeout(() => setWrongPulse(false), 450)
     }
-  }, [entry, feedback, input, isMulti, roomCode, streak, activePlayer, streaks, nPlayers, roundId, gameEnded, networkPlayers, myId, t])
-
-  const onNext = useCallback(() => {
-    if (isMulti && roomCode && socketRef.current) {
-      return
-    }
-    setLoadingWord(true)
-      ; (async () => {
-        await pickNext()
-        setLoadingWord(false)
-      })()
-    if (isMulti && (!roomCode || !socketRef.current)) {
-      setActivePlayer((p) => ((p % nPlayers) + 1))
-    }
-  }, [pickNext, isMulti, roomCode, nPlayers])
+  }, [entry, feedback, input, isMulti, roomCode, streak, activePlayer, streaks, nPlayers, roundId, gameEnded, networkPlayers, myId, t, onNext])
 
   const onKeyDown = (e) => {
     if (e.key === 'Enter') {
@@ -442,19 +469,17 @@ export function EntertainmentWordScramble({
         ) : null}
       </div>
 
-      {isMulti && (
-        <div
-          className={
-            fullScreen
-              ? 'ws-turn-banner px-4 py-2.5 text-center text-sm font-bold text-cyan-100 shrink-0 ws-font-display tracking-wide'
-              : 'px-4 py-2.5 bg-primary/10 border-b border-primary/20 text-center text-sm font-semibold text-primary shrink-0'
-          }
-        >
-          {timeLimitSec
-            ? `${t('enter.game.answerTimer')}: ${Math.max(0, Number(timeLeftSec ?? timeLimitSec))}s`
-            : t('enter.game.answerTimerPreparing')}
-        </div>
-      )}
+      <div
+        className={
+          fullScreen
+            ? 'ws-turn-banner px-4 py-2.5 text-center text-sm font-bold text-cyan-100 shrink-0 ws-font-display tracking-wide'
+            : 'px-4 py-2.5 bg-primary/10 border-b border-primary/20 text-center text-sm font-semibold text-primary shrink-0'
+        }
+      >
+        {timeLimitSec
+          ? `${t('enter.game.answerTimer')}: ${Math.max(0, Number(timeLeftSec ?? timeLimitSec))}s`
+          : t('enter.game.answerTimerPreparing')}
+      </div>
 
       <div
         className={fullScreen
@@ -546,7 +571,7 @@ export function EntertainmentWordScramble({
                       if (feedback === 'wrong') setFeedback(null)
                     }}
                     onKeyDown={onKeyDown}
-                    disabled={feedback === 'correct' || gameEnded}
+                    disabled={feedback === 'correct' || feedback === 'timeout' || gameEnded}
                     className={
                       fullScreen
                         ? `ws-input-game ${feedback === 'correct' ? 'opacity-60' : ''} py-4 text-lg sm:text-xl px-4`

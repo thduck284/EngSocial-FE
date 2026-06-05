@@ -45,31 +45,17 @@ export function PracticeMockTestPage() {
     loadMockHistory()
   }, [])
 
-  const loadMockHistory = async (page = 1, append = false) => {
+  const loadMockHistory = async () => {
     setLoadingHistory(true)
     try {
-      const res = await mockTestService.getUserSessions({ page, limit: 5 })
+      const res = await mockTestService.getUserSessions({ page: 1, limit: 20 })
       const list = Array.isArray(res?.data) ? res.data : []
-      
-      if (append) {
-        setMockHistory(prev => [...prev, ...list])
-      } else {
-        setMockHistory(list)
-      }
-
-      // Check if there are more pages
-      const pagination = res?.pagination || {}
-      setHasMoreHistory(pagination.currentPage < pagination.totalPages)
-      setHistoryPage(pagination.currentPage)
+      setMockHistory(list)
     } catch (error) {
       console.error('Failed to load mock history:', error)
     } finally {
       setLoadingHistory(false)
     }
-  }
-
-  const handleLoadMoreHistory = () => {
-    loadMockHistory(historyPage + 1, true)
   }
 
   const handleViewSession = (sessionId) => {
@@ -408,13 +394,13 @@ export function PracticeMockTestPage() {
             <button
               onClick={mode === 'manual' ? handleStartManual : handleGenerate}
               disabled={loading || (mode === 'manual' && !isManualValid())}
-              className="w-full mt-10 py-5 bg-primary hover:brightness-110 text-white font-black rounded-[1.5rem] shadow-2xl shadow-primary/25 transition-all active:scale-95 flex items-center justify-center gap-4 group disabled:opacity-50 disabled:active:scale-100 uppercase tracking-widest text-sm"
+              className="w-full mt-8 py-3 bg-primary hover:brightness-110 text-white font-black rounded-xl shadow-lg shadow-primary/25 transition-all active:scale-95 flex items-center justify-center gap-2 group disabled:opacity-50 disabled:active:scale-100 uppercase tracking-widest text-[11px]"
             >
               {loading ? (
-                <span className="material-symbols-outlined animate-spin text-2xl">progress_activity</span>
+                <span className="material-symbols-outlined animate-spin text-base">progress_activity</span>
               ) : (
                 <>
-                  <span className="material-symbols-outlined text-2xl group-hover:rotate-12 transition-transform">
+                  <span className="material-symbols-outlined text-base group-hover:rotate-12 transition-transform">
                     {mode === 'manual' ? 'visibility' : 'bolt'}
                   </span>
                   {mode === 'manual' ? (t('mockTest.viewDetails') || 'Xem chi tiết') : (t('mockTest.generateBtn') || 'Tạo đề thi ngay')}
@@ -752,7 +738,7 @@ export function PracticeMockTestPage() {
               {t('manageLessons.tabMockTests')}
             </h3>
 
-            <div className="space-y-4">
+            <div className="space-y-3 max-h-[400px] overflow-y-auto custom-scrollbar pr-1">
               {loadingHistory ? (
                 <div className="flex justify-center py-6">
                   <span className="material-symbols-outlined animate-spin text-primary text-2xl">progress_activity</span>
@@ -794,22 +780,6 @@ export function PracticeMockTestPage() {
               )}
             </div>
 
-            {hasMoreHistory && (
-              <button
-                onClick={handleLoadMoreHistory}
-                disabled={loadingHistory}
-                className="w-full py-4 text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 dark:text-gray-500 hover:text-primary transition-all border-t border-slate-50 dark:border-white/5 flex items-center justify-center gap-2 group"
-              >
-                {loadingHistory ? (
-                  <span className="material-symbols-outlined animate-spin text-sm">progress_activity</span>
-                ) : (
-                  <>
-                    <span className="material-symbols-outlined text-lg group-hover:rotate-180 transition-transform duration-500">add_circle</span>
-                    {t('common.showMore') || 'Xem thêm'}
-                  </>
-                )}
-              </button>
-            )}
           </div>
         </aside>
 

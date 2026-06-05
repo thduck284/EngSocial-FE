@@ -1,5 +1,6 @@
 {
   "common": {
+    "copied": "Copied!",
     "loading": "Loading...",
     "loadingResults": "Loading game results...",
     "backToEntertainment": "Back to Entertainment",
@@ -961,7 +962,19 @@
     "inputPlaceholder": "Type a message...",
     "send": "Send",
     "minimize": "Minimize",
-    "close": "Close"
+    "close": "Close",
+    "newChat": "New chat thread",
+    "noConversations": "No conversations yet",
+    "deleteConversation": "Delete conversation",
+    "deleteConfirmTitle": "Delete conversation?",
+    "deleteConfirmMessage": "All messages in this conversation will be permanently deleted.",
+    "deleteConfirmAction": "Delete",
+    "deleteError": "Could not delete conversation",
+    "lessonSuggestions": "Lessons & practice on EngSocial",
+    "loadingLessons": "Loading lessons…",
+    "practice": "Practice",
+    "lesson": "Lesson",
+    "noVerifiedLessons": "No real lessons on EngSocial matched those suggestions — AI-generated links were hidden."
   },
   "messages": {
     "title": "Messages",
@@ -1343,6 +1356,7 @@
       "changeMode": "Change mode",
       "changeDifficulty": "Change difficulty",
       "backPickMode": "Back to mode",
+      "backPickDifficulty": "Back to difficulty",
       "pickDiffTitle": "Choose difficulty",
       "pickDiffHint": "Easy: shorter words. Hard: longer words — for a tougher challenge.",
       "diffEasyTitle": "Easy",
