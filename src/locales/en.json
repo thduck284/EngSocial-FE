@@ -26,6 +26,18 @@
     "deleteSuccess": "Deleted successfully",
     "deleteError": "Delete failed"
   },
+  "levelTier": {
+    "novice": "Novice",
+    "explorer": "Explorer",
+    "practitioner": "Practitioner",
+    "scholar": "Scholar",
+    "communicator": "Communicator",
+    "fluent": "Fluent",
+    "expert": "Expert",
+    "master": "Master",
+    "mentor": "Mentor",
+    "legend": "Legend"
+  },
   "report": {
     "titlePost": "Report post",
     "titleMessage": "Report message",
@@ -2096,7 +2108,7 @@
     "playbackSpeed": "Playback speed",
     "volume": "Volume",
     "fallbackTitle": "Listening",
-    "levelLearner": "Level {{level}} Learner",
+    "levelLearner": "Level {{level}} · {{tierName}}",
     "trueLabel": "True",
     "falseLabel": "False"
   },

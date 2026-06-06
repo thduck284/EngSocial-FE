@@ -2,6 +2,7 @@ import { Link } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { ROUTES } from '../../constants'
 import { DEFAULT_AVATAR } from '../../constants/ui'
+import { getLevelTierI18nKey } from '../../data/levelXp'
 import { DashboardCard } from './DashboardCard'
 import { DashboardSectionHeader } from './DashboardSectionHeader'
 
@@ -36,7 +37,7 @@ export function DashboardLeftSidebar({
           <img src={displayAvatar} alt="" className="size-14 rounded-full object-cover" />
           <div>
             <h2 className="font-bold text-lg text-slate-900 dark:text-white">{displayName}</h2>
-            <p className="text-primary text-sm font-medium">{t('dashboard.level')} {profileProgress.level} · {t('dashboard.learner')}</p>
+            <p className="text-primary text-sm font-medium">{t('dashboard.level')} {profileProgress.level} · {t(getLevelTierI18nKey(profileProgress.level))}</p>
           </div>
         </div>
         <div className="space-y-2 mb-6">

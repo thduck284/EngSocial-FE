@@ -27,6 +27,18 @@
     "deleteSuccess": "Xóa thành công",
     "deleteError": "Xóa thất bại"
   },
+  "levelTier": {
+    "novice": "Tập sự",
+    "explorer": "Khám phá",
+    "practitioner": "Thực hành",
+    "scholar": "Học giả",
+    "communicator": "Giao tiếp",
+    "fluent": "Lưu loát",
+    "expert": "Chuyên gia",
+    "master": "Bậc thầy",
+    "mentor": "Cố vấn",
+    "legend": "Huyền thoại"
+  },
   "report": {
     "titlePost": "Báo cáo bài viết",
     "titleMessage": "Báo cáo tin nhắn",
@@ -2112,7 +2124,7 @@
     "volume": "Âm lượng",
     "fallbackTitle": "Listening",
     "xpToday": "↑ 150 XP hôm nay",
-    "levelLearner": "Level {{level}} Learner",
+    "levelLearner": "Cấp {{level}} · {{tierName}}",
     "trueLabel": "Đúng",
     "falseLabel": "Sai"
   },
