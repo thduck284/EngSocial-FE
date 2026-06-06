@@ -47,8 +47,7 @@ export function useSharePostActions({ t, postUrl, onClose }) {
 
   const sendShareToTargets = useCallback(
     async (selectedFriendIds, selectedGroupIds) => {
-      const linkText = t('dashboard.shareText') || 'Xem bài viết này:'
-      const messageContent = `${linkText} ${postUrl}`
+      const messageContent = postUrl
 
       // Gửi cho bạn bè (tạo hoặc lấy hội thoại trực tiếp)
       const friendIds = Array.from(selectedFriendIds || [])

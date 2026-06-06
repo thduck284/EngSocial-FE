@@ -1,7 +1,9 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useCallback } from 'react'
 import { useParams, useSearchParams, useNavigate, useLocation } from 'react-router-dom'
 import { communityService } from '../services'
 import { PostImageViewerModal } from '../components/ui/post/PostImageViewerModal'
+import { resolvePostPatch } from '../utils/post'
+import { usePostFeedSync } from '../context/PostFeedSyncContext'
 
 export function PostPhotoPage() {
   const { postId } = useParams()
@@ -12,6 +14,15 @@ export function PostPhotoPage() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
   const [rawResponse, setRawResponse] = useState(null)
+  const { syncPostUpdate } = usePostFeedSync() || {}
+
+  const handleUpdatePost = useCallback(
+    (_id, patch) => {
+      setPost((prev) => (prev ? resolvePostPatch(prev, patch) : prev))
+      syncPostUpdate?.(_id, patch)
+    },
+    [syncPostUpdate],
+  )
 
   const initialImageIndex = Number(searchParams.get('image') || 0) || 0
 
@@ -42,7 +53,7 @@ export function PostPhotoPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-slate-950 text-slate-100">
+      <div className="min-h-screen flex items-center justify-center bg-white dark:bg-slate-950 text-slate-700 dark:text-slate-100">
         <span>Đang tải ảnh...</span>
       </div>
     )
@@ -53,9 +64,9 @@ export function PostPhotoPage() {
     // eslint-disable-next-line no-console
     console.log('[PostPhotoPage] render error/empty', { error, post })
     return (
-      <div className="min-h-screen flex flex-col items-center justify-center bg-slate-950 text-slate-100">
-        <p className="mb-2 font-semibold text-red-400">{error || 'Không tìm thấy bài viết'}</p>
-        <pre className="mb-4 max-w-xl max-h-64 overflow-auto text-xs bg-slate-900/80 px-3 py-2 rounded-lg text-left">
+      <div className="min-h-screen flex flex-col items-center justify-center bg-white dark:bg-slate-950 text-slate-700 dark:text-slate-100">
+        <p className="mb-2 font-semibold text-red-500 dark:text-red-400">{error || 'Không tìm thấy bài viết'}</p>
+        <pre className="mb-4 max-w-xl max-h-64 overflow-auto text-xs bg-slate-100 dark:bg-slate-900/80 px-3 py-2 rounded-lg text-left text-slate-700 dark:text-slate-300">
           {JSON.stringify(
             {
               postId,
@@ -93,6 +104,7 @@ export function PostPhotoPage() {
         params.set('image', String(newIndex))
         navigate({ search: params.toString() }, { replace: true, state: location.state })
       }}
+      onUpdatePost={handleUpdatePost}
     />
   )
 }

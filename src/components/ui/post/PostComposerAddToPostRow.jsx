@@ -8,6 +8,7 @@ export function PostComposerAddToPostRow({
   onVideoSelect,
   onDocSelect,
   addons,
+  compact = false,
 }) {
   const {
     showGifPicker,
@@ -34,11 +35,11 @@ export function PostComposerAddToPostRow({
   } = addons
 
   return (
-    <div className="py-3 border-t border-slate-200 dark:border-border-dark shrink-0">
-      <p className="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-3">
+    <div className={`${compact ? 'py-0 border-t-0' : 'py-3 border-t border-slate-200 dark:border-border-dark'} shrink-0`}>
+      <p className={`text-xs font-bold text-slate-500 dark:text-slate-400 ${compact ? 'mb-1.5' : 'mb-3 uppercase tracking-wider'}`}>
         {t('dashboard.addToPost') || 'Them vao bai viet'}
       </p>
-      <div className="flex flex-wrap gap-2">
+      <div className={`flex flex-wrap ${compact ? 'gap-1.5' : 'gap-2'}`}>
         <input
           ref={imageInputRef}
           type="file"
@@ -69,7 +70,9 @@ export function PostComposerAddToPostRow({
               setShowGifPicker(false)
               setShowEmojiPicker((v) => !v)
             }}
-            className={`flex items-center gap-2 px-3 py-2 rounded-lg border transition-colors ${
+            className={`flex items-center gap-1.5 rounded-lg border transition-colors ${
+              compact ? 'px-2 py-1' : 'px-3 py-2'
+            } ${
               showEmojiPicker
                 ? 'bg-amber-500/10 dark:bg-amber-500/20 border-amber-500/30 text-amber-600 dark:text-amber-400'
                 : 'hover:bg-slate-100 dark:hover:bg-border-dark border-slate-100 dark:border-border-dark'
@@ -119,7 +122,9 @@ export function PostComposerAddToPostRow({
           type="button"
           onClick={() => imageInputRef.current?.click()}
           disabled={uploading || imagesCount >= 10}
-          className="flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-slate-100 dark:hover:bg-border-dark transition-colors border border-slate-100 dark:border-border-dark disabled:opacity-50"
+          className={`flex items-center gap-1.5 rounded-lg hover:bg-slate-100 dark:hover:bg-border-dark transition-colors border border-slate-100 dark:border-border-dark disabled:opacity-50 ${
+            compact ? 'px-2 py-1' : 'px-3 py-2'
+          }`}
         >
           <span className="material-symbols-outlined text-green-500">image</span>
           <span className="text-sm font-medium text-slate-700 dark:text-slate-300">
@@ -130,7 +135,9 @@ export function PostComposerAddToPostRow({
           type="button"
           onClick={() => videoInputRef.current?.click()}
           disabled={uploading || hasVideo}
-          className="flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-slate-100 dark:hover:bg-border-dark transition-colors border border-slate-100 dark:border-border-dark disabled:opacity-50"
+          className={`flex items-center gap-1.5 rounded-lg hover:bg-slate-100 dark:hover:bg-border-dark transition-colors border border-slate-100 dark:border-border-dark disabled:opacity-50 ${
+            compact ? 'px-2 py-1' : 'px-3 py-2'
+          }`}
         >
           <span className="material-symbols-outlined text-red-500">videocam</span>
           <span className="text-sm font-medium text-slate-700 dark:text-slate-300">
@@ -141,7 +148,9 @@ export function PostComposerAddToPostRow({
           type="button"
           onClick={() => docInputRef.current?.click()}
           disabled={uploading || documentsCount >= 5}
-          className="flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-slate-100 dark:hover:bg-border-dark transition-colors border border-slate-100 dark:border-border-dark disabled:opacity-50"
+          className={`flex items-center gap-1.5 rounded-lg hover:bg-slate-100 dark:hover:bg-border-dark transition-colors border border-slate-100 dark:border-border-dark disabled:opacity-50 ${
+            compact ? 'px-2 py-1' : 'px-3 py-2'
+          }`}
         >
           <span className="material-symbols-outlined text-blue-500">description</span>
           <span className="text-sm font-medium text-slate-700 dark:text-slate-300">
@@ -155,7 +164,9 @@ export function PostComposerAddToPostRow({
               setShowEmojiPicker(false)
               setShowGifPicker((v) => !v)
             }}
-            className={`flex items-center gap-2 px-3 py-2 rounded-lg border transition-colors ${
+            className={`flex items-center gap-1.5 rounded-lg border transition-colors ${
+              compact ? 'px-2 py-1' : 'px-3 py-2'
+            } ${
               showGifPicker
                 ? 'bg-violet-500/10 dark:bg-violet-500/20 border-violet-500/30 text-violet-600 dark:text-violet-400'
                 : 'hover:bg-slate-100 dark:hover:bg-border-dark border-slate-100 dark:border-border-dark'

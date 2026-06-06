@@ -2,7 +2,7 @@ import { useEffect } from 'react'
 import { toast } from 'react-hot-toast'
 import { DEFAULT_AVATAR } from '../constants/ui'
 import { communityService } from '../services'
-import { getContentWithoutMentions } from '../utils/postContent'
+import { getDisplayContent } from '../utils/postContent'
 import { normalizeMentions } from '../utils/post'
 
 export function useDashboardPostCard({
@@ -57,7 +57,8 @@ export function useDashboardPostCard({
   const firstMentionId =
     firstMention && (firstMention.id ?? (typeof firstMention === 'string' ? firstMention : null))
   const othersCount = hasMentions ? mentionsList.length - 1 : 0
-  const contentToShow = post?.content != null ? String(post.content) : ''
+  const rawContent = post?.content != null ? String(post.content) : ''
+  const contentToShow = getDisplayContent(rawContent, mentionsList)
   const isLongContent = contentToShow.length > maxContentPreview
   const contentPreview =
     isLongContent && !contentExpanded

@@ -19,10 +19,10 @@ export function AchievementsList({
   if (!(items || []).length) {
     return (
       <div
-        className="rounded-[2rem] border-2 border-dashed border-slate-200 dark:border-border-dark bg-slate-50/50 dark:bg-background-dark/30 px-10 py-16 text-center shadow-inner"
+        className="rounded-xl border border-dashed border-slate-200 dark:border-border-dark bg-slate-50 dark:bg-background-dark/30 px-6 py-12 text-center"
       >
-        <span className="material-symbols-outlined text-4xl text-slate-300 dark:text-gray-600 mb-4">emoji_events</span>
-        <div className="text-sm font-black text-slate-400 dark:text-gray-500 uppercase tracking-widest">
+        <span className="material-symbols-outlined text-3xl text-slate-300 dark:text-gray-600 mb-3">emoji_events</span>
+        <div className="text-xs font-bold text-slate-400 dark:text-gray-500">
           {t?.('achievementsPage.emptyList') || 'No achievements yet'}
         </div>
       </div>
@@ -40,9 +40,9 @@ export function AchievementsList({
             key={a.id}
             type="button"
             onClick={() => onSelect(a.id)}
-            className={`w-full text-left p-3 rounded-2xl border-2 transition-all duration-300 relative group/item overflow-hidden ${activeId === a.id
-                ? 'border-primary bg-primary/10 shadow-lg shadow-primary/10 scale-[1.01] z-10'
-                : 'border-slate-50 dark:border-white/5 bg-slate-50/50 dark:bg-background-dark/50 hover:border-slate-200 dark:hover:border-white/10 hover:bg-slate-100 dark:hover:bg-white/5 hover:shadow-md'
+            className={`w-full text-left p-3 rounded-xl border transition-all duration-200 relative group/item overflow-hidden ${activeId === a.id
+                ? 'border-primary bg-primary/10 shadow-sm'
+                : 'border-slate-200 dark:border-border-dark bg-slate-50 dark:bg-background-dark hover:border-primary/40 hover:bg-slate-100 dark:hover:bg-white/5'
               }`}
           >
             <div className="flex items-center gap-3.5 w-full min-w-0 relative z-10">
@@ -52,40 +52,40 @@ export function AchievementsList({
                     <img
                       src={a.badgeImage}
                       alt=""
-                      className="size-9 rounded-xl object-cover border-2 border-amber-400/30 shadow-md"
+                      className="size-8 rounded-lg object-cover border border-amber-400/30"
                     />
                   ) : (
-                    <div className="size-9 rounded-xl bg-amber-400/10 flex items-center justify-center border border-amber-400/20">
-                      <span className="material-symbols-outlined text-lg text-amber-500 dark:text-amber-400">
+                    <div className="size-8 rounded-lg bg-amber-400/10 flex items-center justify-center border border-amber-400/20">
+                      <span className="material-symbols-outlined text-base text-amber-500 dark:text-amber-400">
                         {a.badgeIcon || 'military_tech'}
                       </span>
                     </div>
                   )
                 ) : (
-                  <div className="size-9 rounded-xl bg-slate-200 dark:bg-white/5 flex items-center justify-center border border-slate-300 dark:border-white/10">
-                    <span className="material-symbols-outlined text-lg text-slate-400 dark:text-gray-600">
+                  <div className="size-8 rounded-lg bg-slate-200 dark:bg-white/5 flex items-center justify-center border border-slate-200 dark:border-border-dark">
+                    <span className="material-symbols-outlined text-base text-slate-400 dark:text-gray-600">
                       {a.icon || 'emoji_events'}
                     </span>
                   </div>
                 )}
                 {a.unlocked && (
-                  <div className="absolute -right-1.5 -top-1.5 size-5 bg-emerald-500 rounded-full flex items-center justify-center border-2 border-white dark:border-card-dark text-white shadow-md animate-in zoom-in duration-300">
-                    <span className="material-symbols-outlined text-[10px] font-black">check</span>
+                  <div className="absolute -right-1 -top-1 size-4 bg-emerald-500 rounded-full flex items-center justify-center border border-white dark:border-card-dark text-white">
+                    <span className="material-symbols-outlined text-[9px] font-bold">check</span>
                   </div>
                 )}
               </div>
 
               <div className="min-w-0 flex-1">
-                <div className={`text-xs font-bold uppercase tracking-tight truncate ${activeId === a.id ? 'text-primary' : 'text-slate-900 dark:text-white'}`}>
+                <div className={`text-xs font-bold truncate ${activeId === a.id ? 'text-primary' : 'text-slate-900 dark:text-white'}`}>
                   {pickAchievementName(a, lng)}
                 </div>
-                <div className="text-[10px] font-bold text-slate-400 dark:text-gray-500 uppercase tracking-widest truncate mt-0.5">
+                <div className="text-[10px] text-slate-500 dark:text-gray-400 truncate mt-0.5">
                   {getAchievementHowToPreview(a, lng, t)}
                 </div>
               </div>
 
               <span
-                className={`shrink-0 text-[9px] font-bold uppercase tracking-widest px-2 py-0.5 rounded-lg border-2 ${activeId === a.id ? 'border-primary/20 bg-primary/5 text-primary' : (RARITY_CLASS[(a.rarity || 'common').toLowerCase()] || RARITY_CLASS.common)} shadow-sm`}
+                className={`shrink-0 text-[9px] font-bold px-2 py-0.5 rounded-md border ${activeId === a.id ? 'border-primary/20 bg-primary/5 text-primary' : (RARITY_CLASS[(a.rarity || 'common').toLowerCase()] || RARITY_CLASS.common)}`}
               >
                 {t?.(`achievementsPage.rarity.${a.rarity}`, {
                   defaultValue: a.rarity,
@@ -94,8 +94,8 @@ export function AchievementsList({
             </div>
 
             {prog.show && (
-              <div className="w-full min-w-0 flex flex-col gap-1.5 mt-3 pt-3 border-t border-slate-100 dark:border-white/5 relative z-10">
-                <div className="flex w-full min-w-0 justify-between items-center text-[10px] font-bold uppercase tracking-[0.2em] text-slate-400 dark:text-gray-500">
+              <div className="w-full min-w-0 flex flex-col gap-1 mt-2.5 pt-2.5 border-t border-slate-100 dark:border-border-dark relative z-10">
+                <div className="flex w-full min-w-0 justify-between items-center text-[10px] font-semibold text-slate-500 dark:text-gray-400">
                   <span className="tabular-nums">
                     {t?.('achievementsPage.progressFraction', {
                       current: prog.current,
@@ -104,7 +104,7 @@ export function AchievementsList({
                     })}
                   </span>
                   {prog.completed ? (
-                    <span className="text-emerald-500 font-bold inline-flex items-center gap-1.5 bg-emerald-500/10 px-2 py-0.5 rounded-lg border border-emerald-500/20">
+                    <span className="text-emerald-500 font-bold inline-flex items-center gap-1 text-[10px] bg-emerald-500/10 px-1.5 py-0.5 rounded border border-emerald-500/20">
                       <span className="material-symbols-outlined text-xs">check_circle</span>
                       {t?.('achievementsPage.progressComplete', { defaultValue: 'DONE' })}
                     </span>
@@ -113,22 +113,22 @@ export function AchievementsList({
                   )}
                 </div>
                 <div
-                  className="relative h-2.5 w-full min-w-0 overflow-hidden rounded-full bg-slate-100 dark:bg-background-dark border border-slate-200 dark:border-white/5 p-0.5 shadow-inner"
+                  className="relative h-1.5 w-full min-w-0 overflow-hidden rounded-full bg-slate-100 dark:bg-background-dark border border-slate-200 dark:border-border-dark"
                   role="progressbar"
                   aria-valuenow={prog.rawProgress}
                   aria-valuemin={0}
                   aria-valuemax={prog.goal}
                 >
                   <div
-                    className={`absolute left-0.5 top-0.5 bottom-0.5 rounded-full transition-all duration-700 ease-out shadow-md ${prog.completed ? 'bg-emerald-500 shadow-emerald-500/40' : 'bg-primary shadow-primary/40'}`}
+                    className={`absolute left-0 top-0 bottom-0 rounded-full transition-all duration-700 ease-out ${prog.completed ? 'bg-emerald-500' : 'bg-primary'}`}
                     style={{
-                      width: `calc(${prog.percent}% - 4px)`,
-                      minWidth: prog.percent > 0 ? '6px' : undefined,
+                      width: `${prog.percent}%`,
+                      minWidth: prog.percent > 0 ? '4px' : undefined,
                     }}
                   />
                 </div>
                 {prog.milestonesLine && (
-                  <p className="text-[10px] font-bold text-slate-400 dark:text-gray-600 tracking-widest uppercase italic">
+                  <p className="text-[10px] text-slate-400 dark:text-gray-500 italic">
                     {prog.milestonesLine}
                   </p>
                 )}

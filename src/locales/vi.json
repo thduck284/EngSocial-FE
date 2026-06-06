@@ -16,6 +16,7 @@
     "user": "Người dùng",
     "showMore": "Xem thêm",
     "showLess": "Ẩn bớt",
+    "people": "người",
     "ok": "Đồng ý",
     "close": "Đóng",
     "minutesShort": "phút",
@@ -408,6 +409,8 @@
     "levelIntermediate": "Trung cấp",
     "emptyPractices": "Chưa có bài tập nào. Hãy thêm bài tập hoặc quay lại sau.",
     "confirmDeletePractice": "Xóa bài tập \"{{title}}\"?",
+    "paginationRange": "{{from}}–{{to}} / {{total}} bài luyện",
+    "paginationPage": "Trang {{current}} / {{total}}",
     "page": "Trang",
     "items": "bài",
     "entertainmentFiltersHint": "Bộ lọc áp dụng cho Reading / Listening / Writing. Trang Giải trí chỉ hiển thị danh sách game.",
@@ -655,6 +658,7 @@
     "shareDemoFriendC": "Bạn C",
     "shareDemoMore": "Xem thêm",
     "shareText": "Xem bài viết này:",
+    "shareMessageText": "Chia sẻ cái này:",
     "sharedAPost": "đã chia sẻ một bài viết",
     "originalPostBy": "Bài gốc của",
     "searchGroupsPlaceholder": "Tìm kiếm bạn bè / group để gửi...",
@@ -662,6 +666,9 @@
     "linkCopyFailed": "Copy link thất bại.",
     "shareSendFailed": "Không gửi được link qua tin nhắn. Vui lòng thử lại.",
     "shareSuccess": "Chia sẻ bài viết thành công."
+  },
+  "community": {
+    "viewAll": "Xem tất cả nhóm"
   },
   "achievementsCatalog": {
     "categories": {
@@ -783,8 +790,8 @@
     }
   },
   "groupsCreate": {
-    "breadcrumbHome": "Home",
-    "breadcrumbGroups": "Groups",
+    "breadcrumbHome": "Trang chủ",
+    "breadcrumbGroups": "Nhóm",
     "breadcrumbCreate": "Tạo nhóm mới",
     "basicInfoTitle": "Thông tin cơ bản",
     "fieldName": "Tên nhóm",
@@ -841,6 +848,7 @@
       "hiddenDesc": "Chỉ thành viên được mời mới nhìn thấy nhóm.",
       "publicDesc": "Mọi người có thể xem nội dung nhóm.",
       "searchVisibility": "Hiển thị trong tìm kiếm",
+      "visibilityLabel": "Quyền riêng tư",
       "settingsTitle": "Cài đặt",
       "settingsInvite": "Mời thành viên",
       "settingsMembers": "Thành viên & quản lý",
@@ -895,7 +903,20 @@
       "actionComment": "Bình luận",
       "actionShare": "Chia sẻ",
       "noMedia": "Chưa có ảnh nào được chia sẻ.",
-      "noFiles": "Chưa có file nào được chia sẻ."
+      "noFiles": "Chưa có file nào được chia sẻ.",
+      "aboutTitle": "Giới thiệu về nhóm này",
+      "membersTitle": "Thành viên",
+      "historyTitle": "Lịch sử",
+      "createdAt": "Đã tạo nhóm vào {{date}}.",
+      "activityToday": "Hoạt động gần đây",
+      "activityTodayHint": "bài viết / hôm nay",
+      "activityMonth": "Trong tháng này",
+      "activityMonthHint": "lượt tương tác",
+      "membersTotal": "Tổng thành viên",
+      "membersGrowth": "Ước tính tăng trưởng",
+      "membersGrowthHint": "thành viên / tháng",
+      "viewAllMembers": "Xem tất cả",
+      "downloadFile": "Tải xuống"
     },
     "settingsModal": {
       "title": "Chỉnh sửa nhóm",
@@ -922,6 +943,7 @@
       "noResults": "Không còn bạn bè nào để mời (hoặc đã ở trong nhóm).",
       "noSearchResults": "Không tìm thấy ai với từ khóa này.",
       "selected": "Đã chọn {{count}} người.",
+      "selectedCount": "Đã chọn",
       "badgeFriend": "Bạn bè",
       "badgePending": "Đang chờ kết bạn",
       "badgeOther": "Chưa là bạn bè",
@@ -938,7 +960,18 @@
       "addFriend": "Thêm bạn bè",
       "isFriend": "Đã kết bạn",
       "requestSent": "Đã gửi lời mời",
-      "message": "Nhắn tin"
+      "message": "Nhắn tin",
+      "kickConfirm": "Loại {{name}} khỏi nhóm?",
+      "kickMember": "Loại khỏi nhóm"
+    },
+    "joinRequests": {
+      "title": "Yêu cầu tham gia",
+      "hintPublic": "Mọi người bấm «Tham gia» đều chờ duyệt (kể cả nhóm công khai). Duyệt tại đây. Người được mời nhận thông báo chuông và chấp nhận trên trang nhóm.",
+      "hintPrivate": "Chỉ người tự xin vào nhóm (bấm «Tham gia»). Người được mời nhận thông báo và chấp nhận / từ chối trên trang nhóm — không nằm trong danh sách này.",
+      "loading": "Đang tải...",
+      "empty": "Hiện không có yêu cầu nào đang chờ.",
+      "reject": "Từ chối",
+      "approve": "Chấp nhận"
     }
   },
   "notifications": {
@@ -1621,7 +1654,9 @@
     "helpfulReview": "Đánh giá hữu ích",
     "allStats": "Tất cả thống kê",
     "reviewsCount": "{{count}} đánh giá",
-    "questionsCount": "{{count}} câu hỏi"
+    "questionsCount": "{{count}} câu hỏi",
+    "paginationRange": "{{from}}–{{to}} / {{total}} bài học",
+    "paginationPage": "Trang {{current}} / {{total}}"
   },
   "lesson": {
     "topicNavigation": "Topic Navigation",

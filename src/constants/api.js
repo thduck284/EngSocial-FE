@@ -82,6 +82,7 @@ export const API_ENDPOINTS = {
 
   // Lessons
   LESSONS: {
+    TOPICS: '/lessons/topics',
     LIST: '/lessons',
     MY_PROGRESS: '/lessons/my-progress',
     USER_PROGRESS: (targetUserId) => `/lessons/user-progress/${targetUserId}`,

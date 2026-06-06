@@ -1,14 +1,15 @@
 import { useState, useEffect } from 'react'
-import { Link, useParams, useNavigate } from 'react-router-dom'
+import { useParams, useNavigate, useLocation } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { useAuth } from '../context/AuthContext'
-import { ROUTES } from '../constants'
 import { lessonsService } from '../services'
+import { getLessonLink } from '../utils/lesson'
 
 export function WritingLessonResultPage() {
   const { t } = useTranslation()
   const { id } = useParams()
   const navigate = useNavigate()
+  const location = useLocation()
   const { user } = useAuth()
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
@@ -71,6 +72,16 @@ export function WritingLessonResultPage() {
   const feedback = submission.feedback || ''
   const aiFeedback = submission.aiFeedback || ''
   const aiScore = submission.aiScore || 0
+
+  const detailUrl = getLessonLink({
+    id: info.id || id,
+    slug: info.slug,
+    skill: info.skill || 'writing',
+    category:
+      info.category === 'practice' || location.pathname.startsWith('/practice')
+        ? 'practice'
+        : 'lesson',
+  })
 
   const handleAiGrade = async () => {
     if (aiLoading || !user?.id) return
@@ -139,11 +150,11 @@ export function WritingLessonResultPage() {
             {!isCompleted && (
               <button
                 type="button"
-                onClick={() => navigate(`/lesson/writing/${id}`)}
-                className="w-full py-2.5 bg-primary/10 hover:bg-primary text-primary hover:text-white rounded-xl text-sm font-bold transition-all flex items-center justify-center gap-2 group/btn"
+                onClick={() => navigate(detailUrl)}
+                className="w-full py-2 bg-slate-900 dark:bg-white/5 hover:bg-primary text-white dark:text-slate-400 hover:dark:text-white rounded-lg text-[10px] font-bold uppercase tracking-wider transition-all border border-transparent flex items-center justify-center gap-2 group/btn shadow-md active:scale-95"
               >
-                <span className="material-symbols-outlined text-base">edit</span>
-                {t('lessonResult.editWriting') || 'Edit Submission'}
+                <span className="material-symbols-outlined text-sm group-hover/btn:rotate-180 transition-transform duration-500">refresh</span>
+                {t('lessonResult.retry')}
               </button>
             )}
           </div>
@@ -215,7 +226,7 @@ export function WritingLessonResultPage() {
                 </div>
                 <span className="material-symbols-outlined text-slate-400 transition-transform duration-300 group-open/details:rotate-180">expand_more</span>
               </summary>
-              <div className="p-5 pt-4 text-slate-600 dark:text-gray-400 text-sm border-t border-slate-200 dark:border-border-dark bg-slate-50 dark:bg-background-dark/20 italic">
+              <div className="p-5 pt-4 text-slate-600 dark:text-gray-400 text-sm border-t border-slate-200 dark:border-border-dark bg-slate-50 dark:bg-background-dark/20 italic whitespace-pre-wrap leading-relaxed">
                 {info.sampleAnswer}
               </div>
             </details>

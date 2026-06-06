@@ -29,6 +29,15 @@ export function parseTextWithLinks(text) {
   return parts
 }
 
+/** First http(s) URL in text, trailing punctuation trimmed. */
+export function extractFirstUrl(text) {
+  if (!text || typeof text !== 'string') return null
+  const re = new RegExp(URL_REGEX.source, 'i')
+  const match = text.match(re)
+  if (!match?.[0]) return null
+  return match[0].replace(/[.,);!?]+$/g, '')
+}
+
 /**
  * Map API message list to UI shape.
  */

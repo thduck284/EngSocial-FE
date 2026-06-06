@@ -368,19 +368,19 @@ export function PostShareModal({ open, onClose, post, t, onRepostSuccess }) {
 
   const body = (
     <div
-      className="fixed inset-0 z-[120] flex items-center justify-center bg-black/55 backdrop-blur-sm"
+      className="fixed inset-0 z-[10050] flex items-center justify-center bg-black/55 backdrop-blur-sm"
       role="dialog"
       aria-modal="true"
       aria-label={t('dashboard.share') || 'Chia sẻ bài viết'}
       onClick={onClose}
     >
       <div
-        className="w-full max-w-[760px] rounded-2xl bg-card-dark text-slate-100 border border-border-dark shadow-2xl overflow-hidden"
+        className="w-full max-w-[760px] rounded-2xl bg-white dark:bg-card-dark text-slate-900 dark:text-slate-100 border border-slate-200 dark:border-border-dark shadow-2xl overflow-hidden"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header với tiêu đề + nút X */}
-        <div className="relative px-4 py-4 border-b border-border-dark flex justify-center items-center">
-          <h2 className="text-xl font-bold">
+        <div className="relative px-4 py-4 border-b border-slate-200 dark:border-border-dark flex justify-center items-center">
+          <h2 className="text-xl font-bold text-slate-900 dark:text-slate-100">
             {(() => {
               const raw = t('dashboard.sharePostTitle')
               return !raw || raw === 'dashboard.sharePostTitle'
@@ -391,7 +391,7 @@ export function PostShareModal({ open, onClose, post, t, onRepostSuccess }) {
           <button
             type="button"
             onClick={onClose}
-            className="absolute right-3 p-1 rounded-full hover:bg-white/10 transition-colors"
+            className="absolute right-3 p-1 rounded-full text-slate-500 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-white/10 transition-colors"
             aria-label={t('buttons.close') || 'Đóng'}
           >
             <span className="material-symbols-outlined text-[20px]">
@@ -433,24 +433,24 @@ export function PostShareModal({ open, onClose, post, t, onRepostSuccess }) {
             addons={addons}
           />
 
-          <div className="border-t border-border-dark mx-4" />
+          <div className="border-t border-slate-200 dark:border-border-dark mx-4" />
 
           {/* Gửi bằng Messenger */}
           <div className="p-4">
-            <h3 className="text-[17px] font-bold mb-4">
+            <h3 className="text-[17px] font-bold mb-4 text-slate-900 dark:text-slate-100">
               {t('dashboard.shareMessengerSection') || 'Gửi bằng Messenger'}
             </h3>
             <div className="relative group">
               <div className="flex gap-4 overflow-x-auto hide-scrollbar pb-2 relative">
                 {friendsForShareLoading ? (
-                  <div className="flex items-center justify-center h-16 px-4 text-xs text-slate-400">
+                  <div className="flex items-center justify-center h-16 px-4 text-xs text-slate-500 dark:text-slate-400">
                     <span className="material-symbols-outlined animate-spin text-[20px] mr-1">
                       progress_activity
                     </span>
                     {t('dashboard.loading') || 'Đang tải...'}
                   </div>
                 ) : friendsForShare.length === 0 ? (
-                  <div className="flex items-center justify-center h-16 px-4 text-xs text-slate-400">
+                  <div className="flex items-center justify-center h-16 px-4 text-xs text-slate-500 dark:text-slate-400">
                     {t('dashboard.noFriendsOnline') || 'Chưa có bạn bè.'}
                   </div>
                 ) : (
@@ -487,12 +487,12 @@ export function PostShareModal({ open, onClose, post, t, onRepostSuccess }) {
                               )
                             }
                           }}
-                          className="flex flex-col items-center gap-1.5 min-w-[72px] text-center"
+                          className="flex flex-col items-center gap-1.5 min-w-[72px] text-center text-slate-700 dark:text-slate-200"
                         >
                           <img
                             src={avatar}
                             alt={name}
-                            className="w-14 h-14 rounded-full border border-border-dark object-cover bg-background-dark"
+                            className="w-14 h-14 rounded-full border border-slate-200 dark:border-border-dark object-cover bg-slate-100 dark:bg-background-dark"
                           />
                           <span className="text-[12px] font-medium leading-tight truncate max-w-[72px]">
                             {name}
@@ -508,9 +508,9 @@ export function PostShareModal({ open, onClose, post, t, onRepostSuccess }) {
                           !friendsForShareLoading &&
                           loadFriendsForShare(friendsPage + 1, true)
                         }
-                        className="flex flex-col items-center gap-1.5 min-w-[72px] text-center"
+                        className="flex flex-col items-center gap-1.5 min-w-[72px] text-center text-slate-700 dark:text-slate-200"
                       >
-                        <div className="w-14 h-14 rounded-full bg-background-dark/80 hover:bg-background-dark flex items-center justify-center cursor-pointer border border-border-dark transition-colors disabled:opacity-60">
+                        <div className="w-14 h-14 rounded-full bg-slate-100 dark:bg-background-dark/80 hover:bg-slate-200 dark:hover:bg-background-dark flex items-center justify-center cursor-pointer border border-slate-200 dark:border-border-dark transition-colors disabled:opacity-60">
                           <span className="material-symbols-outlined">
                             more_horiz
                           </span>
@@ -526,14 +526,14 @@ export function PostShareModal({ open, onClose, post, t, onRepostSuccess }) {
             </div>
           </div>
 
-          <div className="border-t border-border-dark mx-4" />
+          <div className="border-t border-slate-200 dark:border-border-dark mx-4" />
 
           {/* Chia sẻ lên */}
           <div className="p-4">
-            <h3 className="text-[17px] font-bold mb-4">
+            <h3 className="text-[17px] font-bold mb-4 text-slate-900 dark:text-slate-100">
               {t('dashboard.shareExternal') || 'Chia sẻ lên'}
             </h3>
-            <div className="flex flex-wrap gap-8 text-[12px] text-slate-400">
+            <div className="flex flex-wrap gap-8 text-[12px] text-slate-500 dark:text-slate-400">
               {/* Messenger */}
               <button
                 type="button"
@@ -541,28 +541,28 @@ export function PostShareModal({ open, onClose, post, t, onRepostSuccess }) {
                   setMessengerModalMode('both')
                   setShowMessengerGroupModal(true)
                 }}
-                className="flex flex-col items-center gap-2 group"
+                className="flex flex-col items-center gap-2 group text-slate-600 dark:text-slate-400"
               >
-                <div className="w-12 h-12 bg-background-dark/80 rounded-full flex items-center justify-center hover:bg-background-dark transition-colors border border-border-dark">
+                <div className="w-12 h-12 bg-slate-100 dark:bg-background-dark/80 rounded-full flex items-center justify-center hover:bg-slate-200 dark:hover:bg-background-dark transition-colors border border-slate-200 dark:border-border-dark text-slate-700 dark:text-slate-200">
                   <span className="material-symbols-outlined text-[24px]">
                     chat_bubble
                   </span>
                 </div>
-                <span className="group-hover:text-white">Messenger</span>
+                <span className="group-hover:text-slate-900 dark:group-hover:text-white">Messenger</span>
               </button>
 
               {/* Sao chép liên kết */}
               <button
                 type="button"
                 onClick={() => handleCopyLink(true)}
-                className="flex flex-col items-center gap-2 group"
+                className="flex flex-col items-center gap-2 group text-slate-600 dark:text-slate-400"
               >
-                <div className="w-12 h-12 bg-background-dark/80 rounded-full flex items-center justify-center hover:bg-background-dark transition-colors border border-border-dark">
+                <div className="w-12 h-12 bg-slate-100 dark:bg-background-dark/80 rounded-full flex items-center justify-center hover:bg-slate-200 dark:hover:bg-background-dark transition-colors border border-slate-200 dark:border-border-dark text-slate-700 dark:text-slate-200">
                   <span className="material-symbols-outlined text-[24px]">
                     link
                   </span>
                 </div>
-                <span className="group-hover:text-white text-center leading-tight">
+                <span className="group-hover:text-slate-900 dark:group-hover:text-white text-center leading-tight">
                   {t('dashboard.shareCopyLink') || 'Sao chép liên kết'}
                 </span>
               </button>
@@ -574,14 +574,14 @@ export function PostShareModal({ open, onClose, post, t, onRepostSuccess }) {
                   setMessengerModalMode('groupsOnly')
                   setShowMessengerGroupModal(true)
                 }}
-                className="flex flex-col items-center gap-2 group"
+                className="flex flex-col items-center gap-2 group text-slate-600 dark:text-slate-400"
               >
-                <div className="w-12 h-12 bg-background-dark/80 rounded-full flex items-center justify-center hover:bg-background-dark transition-colors border border-border-dark">
+                <div className="w-12 h-12 bg-slate-100 dark:bg-background-dark/80 rounded-full flex items-center justify-center hover:bg-slate-200 dark:hover:bg-background-dark transition-colors border border-slate-200 dark:border-border-dark text-slate-700 dark:text-slate-200">
                   <span className="material-symbols-outlined text-[24px]">
                     groups
                   </span>
                 </div>
-                <span className="group-hover:text-white">Nhóm</span>
+                <span className="group-hover:text-slate-900 dark:group-hover:text-white">Nhóm</span>
               </button>
             </div>
           </div>
@@ -589,11 +589,11 @@ export function PostShareModal({ open, onClose, post, t, onRepostSuccess }) {
         </div>
 
         {/* Footer: Cancel + Share with same size */}
-        <div className="flex items-center justify-end gap-2 px-4 py-3 border-t border-border-dark">
+        <div className="flex items-center justify-end gap-2 px-4 py-3 border-t border-slate-200 dark:border-border-dark">
           <button
             type="button"
             onClick={onClose}
-            className="h-10 min-w-[120px] px-4 rounded-lg text-sm font-semibold text-slate-200 bg-background-dark/70 border border-border-dark hover:bg-background-dark"
+            className="h-10 min-w-[120px] px-4 rounded-lg text-sm font-semibold text-slate-700 dark:text-slate-200 bg-slate-100 dark:bg-background-dark/70 border border-slate-200 dark:border-border-dark hover:bg-slate-200 dark:hover:bg-background-dark"
           >
             {t('buttons.cancel') || 'Hủy'}
           </button>
@@ -601,7 +601,7 @@ export function PostShareModal({ open, onClose, post, t, onRepostSuccess }) {
             type="button"
             onClick={handleRepost}
             disabled={submitting || uploading}
-            className="h-10 min-w-[120px] px-4 rounded-lg text-sm font-semibold text-background-dark bg-primary hover:opacity-90 disabled:opacity-70 disabled:cursor-not-allowed"
+            className="h-10 min-w-[120px] px-4 rounded-lg text-sm font-semibold text-white bg-primary hover:opacity-90 disabled:opacity-70 disabled:cursor-not-allowed"
           >
             {submitting
               ? t('dashboard.sharing') || 'Dang chia se...'

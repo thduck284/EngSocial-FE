@@ -1,5 +1,6 @@
-import { useState } from 'react'
+import { useState, useCallback } from 'react'
 import { useAuth } from '../context/AuthContext'
+import { useRegisterPostFeedSync } from '../context/PostFeedSyncContext'
 import { DEFAULT_AVATAR } from '../constants/ui'
 import { useDashboardData, useDashboardFriends, useDashboardSocket, useStudyGroups } from '../hooks'
 import { DashboardLeftSidebar } from '../components/dashboard/DashboardLeftSidebar'
@@ -8,7 +9,10 @@ import { DashboardRightSidebar } from '../components/dashboard/DashboardRightSid
 
 export function DashboardPage() {
   const { user } = useAuth()
-  const [weeklyStatsOpen, setWeeklyStatsOpen] = useState(true)
+  const [weeklyStatsOpen, setWeeklyStatsOpen] = useState(false)
+  const [studyGroupsOpen, setStudyGroupsOpen] = useState(false)
+  const [featuredLessonsOpen, setFeaturedLessonsOpen] = useState(false)
+  const [weeklyLeaderboardOpen, setWeeklyLeaderboardOpen] = useState(false)
 
   const {
     raw,
@@ -29,6 +33,12 @@ export function DashboardPage() {
     feedTab,
     setFeedTab,
   } = useDashboardData()
+
+  const syncFeedPostUpdate = useCallback(
+    (postId, patch) => updatePostInFeed(postId, patch),
+    [updatePostInFeed],
+  )
+  useRegisterPostFeedSync(syncFeedPostUpdate)
 
   const [onlineUserIds, setOnlineUserIds] = useState(new Set())
   const studyGroups = useStudyGroups(setOnlineUserIds)
@@ -63,6 +73,14 @@ export function DashboardPage() {
           profileProgress={profileProgress}
           weeklyStatsOpen={weeklyStatsOpen}
           setWeeklyStatsOpen={setWeeklyStatsOpen}
+          studyGroupsOpen={studyGroupsOpen}
+          setStudyGroupsOpen={setStudyGroupsOpen}
+          featuredLessonsOpen={featuredLessonsOpen}
+          setFeaturedLessonsOpen={setFeaturedLessonsOpen}
+          weeklyLeaderboardOpen={weeklyLeaderboardOpen}
+          setWeeklyLeaderboardOpen={setWeeklyLeaderboardOpen}
+          weeklyLeaderboard={weeklyLeaderboard}
+          weeklyLeaderboardLoading={weeklyLeaderboardLoading}
           raw={raw}
           studyGroups={studyGroups}
         />
@@ -106,8 +124,6 @@ export function DashboardPage() {
           displayedFriendsList={displayedFriendsList}
           onlineUserIds={onlineUserIds}
           groupConversations={studyGroups.groupConversations}
-          weeklyLeaderboard={weeklyLeaderboard}
-          weeklyLeaderboardLoading={weeklyLeaderboardLoading}
         />
       </div>
     </main>

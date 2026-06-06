@@ -57,18 +57,18 @@ export function ProfileAchievementsCard({ t, items, loading }) {
   }, [items, lng])
 
   return (
-    <div className="bg-white dark:bg-card-dark rounded-2xl p-6 border border-slate-200 dark:border-border-dark">
-      <h4 className="font-bold mb-4 dark:text-white flex items-center gap-2">
-        <span className="material-symbols-outlined text-primary">military_tech</span>
+    <div className="bg-white dark:bg-card-dark rounded-xl p-5 border border-slate-200 dark:border-border-dark shadow-sm">
+      <h4 className="text-sm font-bold mb-3 dark:text-white flex items-center gap-2">
+        <span className="material-symbols-outlined text-primary text-lg">military_tech</span>
         {t('profile.earnedBadges')}
       </h4>
 
       {loading ? (
-        <div className="flex flex-wrap gap-3">
+        <div className="flex flex-wrap gap-2">
           {Array.from({ length: 6 }).map((_, i) => (
             <div
               key={i}
-              className="size-12 shrink-0 rounded-full bg-slate-100 dark:bg-slate-800/60 animate-pulse border border-slate-200/80 dark:border-border-dark"
+              className="size-10 shrink-0 rounded-full bg-slate-100 dark:bg-slate-800/60 animate-pulse border border-slate-200/80 dark:border-border-dark"
             />
           ))}
         </div>
@@ -77,7 +77,7 @@ export function ProfileAchievementsCard({ t, items, loading }) {
           {t('profile.earnedBadgesEmpty')}
         </p>
       ) : (
-        <ul className="flex flex-wrap gap-3 list-none p-0 m-0">
+        <ul className="flex flex-wrap gap-2 list-none p-0 m-0">
           {completedBadges.map((badge) => {
             const tip = pickLang(badge.badgeName, badge.badgeNameEn, lng) || badge.achievementName || ''
             const img =
@@ -91,16 +91,16 @@ export function ProfileAchievementsCard({ t, items, loading }) {
                   to={ROUTES.ACHIEVEMENTS}
                   title={tip}
                   aria-label={tip}
-                  className="group flex size-12 shrink-0 items-center justify-center rounded-full border-2 border-amber-400/50 bg-gradient-to-br from-amber-500/20 to-slate-900/80 text-amber-200 shadow-md ring-2 ring-transparent transition-all hover:border-amber-300 hover:ring-amber-400/30 hover:scale-105 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+                  className="group flex size-10 shrink-0 items-center justify-center rounded-full border-2 border-amber-400/50 bg-gradient-to-br from-amber-500/20 to-slate-900/80 text-amber-200 shadow-sm ring-2 ring-transparent transition-all hover:border-amber-300 hover:ring-amber-400/30 hover:scale-105 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary"
                 >
                   {img ? (
                     <img
                       src={img}
                       alt=""
-                      className="size-9 rounded-full object-cover border border-amber-400/30"
+                      className="size-7 rounded-full object-cover border border-amber-400/30"
                     />
                   ) : (
-                    <span className="material-symbols-outlined text-[26px] leading-none group-hover:scale-110 transition-transform">
+                    <span className="material-symbols-outlined text-xl leading-none group-hover:scale-110 transition-transform">
                       {icon}
                     </span>
                   )}
@@ -113,7 +113,7 @@ export function ProfileAchievementsCard({ t, items, loading }) {
 
       <Link
         to={ROUTES.ACHIEVEMENTS}
-        className="mt-4 flex w-full items-center justify-center py-2 text-[10px] font-bold text-primary hover:bg-primary/10 rounded-lg transition-colors"
+        className="mt-3 flex w-full items-center justify-center py-2 text-xs font-bold text-primary hover:bg-primary/10 rounded-lg transition-colors"
       >
         {t('profile.seeAllBadges')}
       </Link>

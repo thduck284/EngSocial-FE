@@ -221,18 +221,18 @@ export function CommunityInviteFriendsModal({ open, onClose, groupId, onInviteSe
   const statusBadge = (friendStatus) => {
     if (friendStatus === 'connected')
       return (
-        <span className="text-[10px] px-1.5 py-0.5 rounded bg-emerald-500/20 text-emerald-300 shrink-0">
+        <span className="text-[9px] px-1 py-0.5 rounded border border-emerald-500/20 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 shrink-0 font-bold">
           {t('groups.inviteModal.badgeFriend')}
         </span>
       )
     if (friendStatus === 'pending')
       return (
-        <span className="text-[10px] px-1.5 py-0.5 rounded bg-amber-500/20 text-amber-200 shrink-0">
+        <span className="text-[9px] px-1 py-0.5 rounded border border-amber-500/20 bg-amber-500/10 text-amber-600 dark:text-amber-400 shrink-0 font-bold">
           {t('groups.inviteModal.badgePending')}
         </span>
       )
     return (
-      <span className="text-[10px] px-1.5 py-0.5 rounded bg-slate-600/40 text-slate-300 shrink-0">
+      <span className="text-[9px] px-1 py-0.5 rounded border border-slate-200 dark:border-border-dark bg-slate-100 dark:bg-background-dark text-slate-500 dark:text-gray-400 shrink-0 font-bold">
         {t('groups.inviteModal.badgeOther')}
       </span>
     )
@@ -241,74 +241,58 @@ export function CommunityInviteFriendsModal({ open, onClose, groupId, onInviteSe
   if (!open) return null
 
   return (
-    <div className="fixed inset-0 z-40 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
-      <div className="bg-white dark:bg-card-dark border border-slate-200 dark:border-border-dark rounded-[2.5rem] w-full max-w-lg shadow-2xl flex flex-col max-h-[85vh] overflow-hidden">
-        <div className="px-8 py-6 border-b border-slate-100 dark:border-white/5 flex items-center justify-between shrink-0">
-          <div>
-            <p className="text-lg font-black text-slate-900 dark:text-white uppercase tracking-tight">
-              {t('groups.inviteModal.title', { defaultValue: 'Mời bạn bè vào nhóm' })}
+    <div className="fixed inset-0 z-40 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
+      <div className="bg-white dark:bg-card-dark border border-slate-200 dark:border-border-dark rounded-xl w-full max-w-md shadow-sm flex flex-col max-h-[min(85vh,calc(100dvh-2rem))] overflow-hidden">
+        <div className="px-5 py-4 border-b border-slate-100 dark:border-border-dark flex items-start justify-between gap-3 shrink-0">
+          <div className="min-w-0">
+            <p className="text-base font-bold text-slate-900 dark:text-white">
+              {t('groups.inviteModal.title')}
             </p>
-            <p className="text-xs text-slate-500 dark:text-gray-400 font-bold mt-0.5">
-              {t('groups.inviteModal.subtitle', {
-                defaultValue: 'Gợi ý bên dưới là danh sách bạn bè (chưa có trong nhóm).',
-              })}
+            <p className="text-xs text-slate-500 dark:text-gray-400 mt-0.5 leading-relaxed">
+              {t('groups.inviteModal.subtitle')}
             </p>
           </div>
           <button
             type="button"
-            className="size-10 flex items-center justify-center rounded-2xl hover:bg-slate-100 dark:hover:bg-white/10 text-slate-400 dark:text-gray-400 transition-all"
+            className="size-8 shrink-0 flex items-center justify-center rounded-lg hover:bg-slate-100 dark:hover:bg-background-dark text-slate-400 dark:text-gray-400 transition-colors"
             onClick={onClose}
+            aria-label={t('groups.inviteModal.close')}
           >
-            <span className="material-symbols-outlined text-xl">close</span>
+            <span className="material-symbols-outlined text-lg">close</span>
           </button>
         </div>
 
-        <div className="px-8 py-5 border-b border-slate-100 dark:border-white/5 space-y-3 bg-slate-50/50 dark:bg-transparent">
+        <div className="px-5 py-3 border-b border-slate-100 dark:border-border-dark space-y-2 bg-slate-50 dark:bg-background-dark/30">
           <div className="relative group">
-            <span className="material-symbols-outlined absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 text-lg group-focus-within:text-primary transition-colors">
+            <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-base group-focus-within:text-primary transition-colors">
               search
             </span>
             <input
               type="text"
               value={query}
               onChange={(e) => setQuery(e.target.value)}
-              className="w-full bg-white dark:bg-background-dark border border-slate-200 dark:border-white/10 rounded-2xl py-3 pl-11 pr-4 text-sm text-slate-900 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-gray-500 focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all outline-none shadow-sm"
-              placeholder={t('groups.inviteModal.searchPlaceholder', {
-                defaultValue: 'Tìm theo tên (mọi người dùng)...',
-              })}
+              className="w-full bg-white dark:bg-card-dark border border-slate-200 dark:border-border-dark rounded-lg py-2 pl-9 pr-3 text-sm text-slate-900 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-gray-500 focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all outline-none"
+              placeholder={t('groups.inviteModal.searchPlaceholder')}
             />
           </div>
-          <p className="text-[11px] text-slate-500 dark:text-gray-400 leading-snug font-medium italic">
-            {t('groups.inviteModal.searchHint', {
-              defaultValue:
-                'Gõ tên trong ô tìm để tìm thêm người trên EngSocial — kể cả chưa là bạn bè.',
-            })}
+          <p className="text-[10px] text-slate-500 dark:text-gray-400 leading-snug">
+            {t('groups.inviteModal.searchHint')}
           </p>
         </div>
 
-        <div className="flex-1 overflow-y-auto px-6 py-4 space-y-1.5 custom-scrollbar">
+        <div className="flex-1 overflow-y-auto px-3 py-2 space-y-1 custom-scrollbar min-h-0">
           {listLoading ? (
-            <div className="py-12 flex flex-col items-center gap-3 text-slate-400">
-              <span className="material-symbols-outlined animate-spin text-3xl text-primary">progress_activity</span>
-              <p className="text-xs font-bold uppercase tracking-widest">
-                {searching
-                  ? t('groups.inviteModal.searching', { defaultValue: 'Đang tìm...' })
-                  : t('groups.inviteModal.loading', {
-                      defaultValue: 'Đang tải danh sách bạn bè...',
-                    })}
+            <div className="py-10 flex flex-col items-center gap-2 text-slate-400">
+              <span className="material-symbols-outlined animate-spin text-2xl text-primary">progress_activity</span>
+              <p className="text-xs font-bold">
+                {searching ? t('groups.inviteModal.searching') : t('groups.inviteModal.loading')}
               </p>
             </div>
           ) : displayPeople.length === 0 ? (
-            <div className="py-12 text-center text-slate-400">
-              <span className="material-symbols-outlined text-5xl mb-3 opacity-20">person_off</span>
-              <p className="text-xs font-bold">
-                {searching
-                  ? t('groups.inviteModal.noSearchResults', {
-                      defaultValue: 'Không tìm thấy ai với từ khóa này.',
-                    })
-                  : t('groups.inviteModal.noResults', {
-                      defaultValue: 'Không còn bạn bè nào để mời (hoặc đã ở trong nhóm).',
-                    })}
+            <div className="py-10 text-center text-slate-400">
+              <span className="material-symbols-outlined text-4xl mb-2 opacity-20">person_off</span>
+              <p className="text-xs">
+                {searching ? t('groups.inviteModal.noSearchResults') : t('groups.inviteModal.noResults')}
               </p>
             </div>
           ) : (
@@ -320,12 +304,14 @@ export function CommunityInviteFriendsModal({ open, onClose, groupId, onInviteSe
                   key={id}
                   type="button"
                   onClick={() => toggleSelect(id)}
-                  className={`w-full flex items-center justify-between px-4 py-3 rounded-2xl text-left gap-3 transition-all border group ${
-                    selected ? 'bg-primary/5 border-primary shadow-sm' : 'hover:bg-slate-50 dark:hover:bg-white/5 border-transparent'
+                  className={`w-full flex items-center justify-between px-3 py-2 rounded-lg text-left gap-2 transition-colors border ${
+                    selected
+                      ? 'bg-primary/5 border-primary/30'
+                      : 'hover:bg-slate-50 dark:hover:bg-background-dark/60 border-transparent'
                   }`}
                 >
-                  <div className="flex items-center gap-4 min-w-0 flex-1">
-                    <div className="size-11 rounded-2xl overflow-hidden bg-slate-100 dark:bg-white/10 flex items-center justify-center text-xs text-slate-400 shrink-0 shadow-sm transition-transform group-hover:scale-105">
+                  <div className="flex items-center gap-2.5 min-w-0 flex-1">
+                    <div className="size-9 rounded-lg overflow-hidden bg-slate-100 dark:bg-background-dark flex items-center justify-center text-xs text-slate-400 shrink-0 border border-slate-200 dark:border-border-dark">
                       <img
                         src={f.avatar || DEFAULT_AVATAR}
                         alt=""
@@ -333,26 +319,26 @@ export function CommunityInviteFriendsModal({ open, onClose, groupId, onInviteSe
                       />
                     </div>
                     <div className="flex flex-col min-w-0 flex-1">
-                      <div className="flex items-center gap-2 min-w-0">
-                        <span className={`text-sm transition-colors ${selected ? 'font-black text-primary' : 'font-bold text-slate-900 dark:text-slate-100'}`}>
+                      <div className="flex items-center gap-1.5 min-w-0">
+                        <span className={`text-xs truncate transition-colors ${selected ? 'font-bold text-primary' : 'font-medium text-slate-900 dark:text-slate-100'}`}>
                           {f.name || f.fullName}
                         </span>
                         {searching ? statusBadge(f.friendStatus || 'none') : null}
                       </div>
                       {f.email ? (
-                        <span className="text-[11px] text-slate-500 dark:text-gray-500 truncate font-medium">{f.email}</span>
+                        <span className="text-[10px] text-slate-500 dark:text-gray-500 truncate">{f.email}</span>
                       ) : null}
                     </div>
                   </div>
                   <div
-                    className={`size-6 rounded-xl border-2 flex items-center justify-center shrink-0 transition-all ${
-                      selected ? 'border-primary bg-primary scale-110 shadow-lg shadow-primary/25' : 'border-slate-200 dark:border-white/10 bg-transparent group-hover:border-primary/40'
+                    className={`size-5 rounded-md border flex items-center justify-center shrink-0 transition-colors ${
+                      selected
+                        ? 'border-primary bg-primary'
+                        : 'border-slate-200 dark:border-border-dark bg-transparent group-hover:border-primary/40'
                     }`}
                   >
                     {selected && (
-                      <span className="material-symbols-outlined text-base font-black text-white">
-                        check
-                      </span>
+                      <span className="material-symbols-outlined text-sm text-white">check</span>
                     )}
                   </div>
                 </button>
@@ -361,32 +347,33 @@ export function CommunityInviteFriendsModal({ open, onClose, groupId, onInviteSe
           )}
         </div>
 
-        <div className="px-8 py-6 border-t border-slate-100 dark:border-white/5 flex items-center justify-between bg-slate-50/30 dark:bg-transparent shrink-0">
-          <div className="flex flex-col">
-            <p className="text-[10px] font-black uppercase tracking-widest text-slate-400 dark:text-gray-500">
-              {t('groups.inviteModal.selectedCount', { defaultValue: 'Đã chọn' })}
+        <div className="px-5 py-3 border-t border-slate-100 dark:border-border-dark flex items-center justify-between gap-3 bg-slate-50 dark:bg-background-dark/30 shrink-0">
+          <div className="min-w-0">
+            <p className="text-[10px] font-bold text-slate-400 dark:text-gray-500">
+              {t('groups.inviteModal.selectedCount')}
             </p>
-            <p className="text-sm font-black text-primary">
-              {selectedIds.length} {t('common.people', { defaultValue: 'người' })}
+            <p className="text-xs font-bold text-primary">
+              {selectedIds.length} {t('common.people')}
             </p>
           </div>
-          <div className="flex gap-3">
+          <div className="flex gap-2 shrink-0">
             <button
               type="button"
-              className="px-6 py-2.5 rounded-xl text-xs font-black uppercase tracking-widest text-slate-500 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-white/5 transition-all active:scale-95"
+              className="px-3 py-1.5 rounded-lg text-xs font-bold text-slate-500 dark:text-slate-300 border border-slate-200 dark:border-border-dark hover:bg-slate-100 dark:hover:bg-background-dark transition-colors"
               onClick={onClose}
             >
-              {t('groups.inviteModal.close', { defaultValue: 'Đóng' })}
+              {t('groups.inviteModal.close')}
             </button>
             <button
               type="button"
-              className="px-8 py-2.5 rounded-xl text-xs font-black uppercase tracking-widest bg-primary text-white hover:brightness-110 shadow-lg shadow-primary/25 transition-all active:scale-95 disabled:opacity-50 disabled:active:scale-100 disabled:shadow-none"
+              className="px-4 py-1.5 rounded-lg text-xs font-bold bg-primary text-white hover:brightness-110 transition-colors disabled:opacity-50"
               disabled={selectedIds.length === 0 || !groupId || submitting}
               onClick={async () => {
                 if (!groupId || selectedIds.length === 0 || submitting) return
                 try {
                   setSubmitting(true)
                   await groupService.addMembers(groupId, selectedIds)
+                  onInviteSent?.()
                   onClose?.()
                 } catch {
                   // Có thể thêm toast sau, tạm ignore lỗi
@@ -395,14 +382,11 @@ export function CommunityInviteFriendsModal({ open, onClose, groupId, onInviteSe
                 }
               }}
             >
-              {submitting
-                ? t('common.loading', { defaultValue: 'Đang xử lý...' })
-                : t('groups.inviteModal.add', { defaultValue: 'Gửi lời mời' })}
+              {submitting ? t('common.loading') : t('groups.inviteModal.add')}
             </button>
           </div>
         </div>
       </div>
     </div>
-
   )
 }

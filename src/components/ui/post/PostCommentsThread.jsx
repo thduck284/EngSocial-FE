@@ -7,6 +7,7 @@ import { formatReactionCount } from '../../../utils/post'
 
 export function PostCommentsThread({
   isModal,
+  modalSurface = 'dark',
   t,
   comments,
   handleFeedCommentLikeMouseEnter,
@@ -23,6 +24,7 @@ export function PostCommentsThread({
   expandAfterReply = null,
   onExpandAfterReplyConsumed,
 }) {
+  const isDarkOnlyModal = isModal && modalSurface !== 'adaptive'
   const [expandedIds, setExpandedIds] = useState([])
   const [expandedReplyIds, setExpandedReplyIds] = useState([])
   const navigate = useNavigate()
@@ -150,14 +152,14 @@ export function PostCommentsThread({
   const renderBubble = (c, imgs, docs) => (
     <div
       className={
-        isModal
+        isDarkOnlyModal
           ? 'rounded-xl bg-[#242526] border border-[#325a67] px-3 py-2'
           : 'rounded-xl bg-slate-50 dark:bg-[#242526] border border-slate-200 dark:border-[#325a67] px-3 py-2'
       }
     >
       <span
         className={
-          isModal
+          isDarkOnlyModal
             ? 'text-sm font-semibold text-slate-100 truncate block'
             : 'text-sm font-semibold text-slate-900 dark:text-slate-100 truncate block'
         }
@@ -167,7 +169,7 @@ export function PostCommentsThread({
       {c?.content ? (
         <p
           className={
-            isModal
+            isDarkOnlyModal
               ? 'mt-0.5 text-sm text-slate-200 whitespace-pre-wrap break-words'
               : 'mt-0.5 text-sm text-slate-700 dark:text-slate-200 whitespace-pre-wrap break-words'
           }
@@ -183,7 +185,7 @@ export function PostCommentsThread({
               src={url}
               alt=""
               className={
-                isModal
+                isDarkOnlyModal
                   ? 'w-full aspect-square object-cover rounded-lg border border-[#325a67]'
                   : 'w-full aspect-square object-cover rounded-lg border border-slate-200 dark:border-[#325a67]'
               }
@@ -198,7 +200,7 @@ export function PostCommentsThread({
             src={c.video}
             controls
             className={
-              isModal
+              isDarkOnlyModal
                 ? 'w-full max-h-48 rounded-lg border border-[#325a67] bg-black/30'
                 : 'w-full max-h-48 rounded-lg border border-slate-200 dark:border-[#325a67] bg-black/10 dark:bg-black/30'
             }
@@ -220,7 +222,7 @@ export function PostCommentsThread({
               target="_blank"
               rel="noopener noreferrer"
               className={
-                isModal
+                isDarkOnlyModal
                   ? 'inline-flex items-center gap-2 px-3 py-2 rounded-lg bg-[#233f48] text-sm font-medium text-primary hover:underline border border-[#325a67]'
                   : 'inline-flex items-center gap-2 px-3 py-2 rounded-lg bg-white dark:bg-[#233f48] text-sm font-medium text-primary hover:underline border border-slate-200 dark:border-[#325a67]'
               }
@@ -242,7 +244,7 @@ export function PostCommentsThread({
     <div className="flex items-center justify-between gap-2 px-1 pt-1">
       <div
         className={
-          isModal
+          isDarkOnlyModal
             ? 'flex items-center gap-3 text-xs text-[#92bbc9]'
             : 'flex items-center gap-3 text-xs text-slate-500 dark:text-[#92bbc9]'
         }
@@ -258,7 +260,7 @@ export function PostCommentsThread({
           onBlur={handleFeedCommentLikeBlur}
           onClick={() => handleToggleCommentLike(cid)}
           className={
-            isModal
+            isDarkOnlyModal
               ? `font-semibold hover:underline ${c?.liked ? 'text-primary' : 'text-[#92bbc9]'}`
               : `font-semibold hover:underline ${c?.liked ? 'text-primary' : ''}`
           }
@@ -275,7 +277,7 @@ export function PostCommentsThread({
         <button
           type="button"
           className={
-            isModal
+            isDarkOnlyModal
               ? 'font-semibold hover:underline text-[#92bbc9]'
               : 'font-semibold hover:underline'
           }
@@ -293,7 +295,7 @@ export function PostCommentsThread({
             setShowCommentReactionsModal?.(true)
           }}
           className={
-            isModal
+            isDarkOnlyModal
               ? `inline-flex items-center gap-1 px-2 py-0.5 rounded-full border text-xs shrink-0 ${
                   c?.liked
                     ? 'bg-primary text-white border-primary'
@@ -337,16 +339,14 @@ export function PostCommentsThread({
    * @param {boolean} isLast      - true nếu đây là item cuối, không kéo dây tiếp xuống
    * @param {boolean} isModal
    */
-  const ConnectorAvatar = ({ avatar, avatarSize = 28, isLast = false, isModal }) => {
-    // Khoảng cách từ trái: đường dọc nằm ở x=0, đường ngang dài connectorW, rồi đến avatar
-    const connectorW = 16   // chiều dài đường ngang
-    const radius = 8        // bán kính bo cong góc
+  const ConnectorAvatar = ({ avatar, avatarSize = 28, isLast = false }) => {
+    const connectorW = 16
+    const radius = 8
     const totalW = connectorW + avatarSize
-    // Tâm avatar theo chiều dọc = cách top bằng nửa avatarSize (canh giữa)
     const avatarCenterY = avatarSize / 2
-    const lineColor = isModal
-      ? 'rgba(148,163,184,0.35)'   // slate-400/35 trên nền dark
-      : 'rgba(100,116,139,0.3)'    // slate-500/30 trên nền light
+    const lineColor = isDarkOnlyModal
+      ? 'rgba(148,163,184,0.35)'
+      : 'rgba(100,116,139,0.3)'
 
     return (
       <div
@@ -398,7 +398,7 @@ export function PostCommentsThread({
             height: avatarSize,
           }}
           className={
-            isModal
+            isDarkOnlyModal
               ? 'rounded-full object-cover bg-slate-600'
               : 'rounded-full object-cover bg-slate-300 dark:bg-slate-600'
           }
@@ -416,7 +416,6 @@ export function PostCommentsThread({
           avatar={avatar}
           avatarSize={28}
           isLast={isLast}
-          isModal={isModal}
         />
         <div className="min-w-0 flex-1 pb-1">
           {renderBubble(c, imgs, docs)}
@@ -466,7 +465,6 @@ export function PostCommentsThread({
           avatarSize={28}
           // Kéo dây tiếp nếu có nested replies đang hiển thị hoặc còn nút xem thêm
           isLast={isLast && !hasNested}
-          isModal={isModal}
         />
         <div className="min-w-0 flex-1 pb-1">
           {renderBubble(c, imgs, docs)}
@@ -492,7 +490,7 @@ export function PostCommentsThread({
                     }
                   }}
                   className={
-                    isModal
+                    isDarkOnlyModal
                       ? 'mt-0.5 text-xs text-[#92bbc9] hover:underline text-left'
                       : 'mt-0.5 text-xs text-slate-500 dark:text-[#92bbc9] hover:underline text-left'
                   }
@@ -525,7 +523,7 @@ export function PostCommentsThread({
             src={avatar}
             alt=""
             className={
-              isModal
+              isDarkOnlyModal
                 ? 'size-8 rounded-full object-cover bg-slate-600'
                 : 'size-8 rounded-full object-cover bg-slate-300 dark:bg-slate-600'
             }
@@ -536,7 +534,7 @@ export function PostCommentsThread({
               className="flex-1 mt-1"
               style={{
                 width: 2,
-                background: isModal
+                background: isDarkOnlyModal
                   ? 'rgba(148,163,184,0.35)'
                   : 'rgba(100,116,139,0.3)',
               }}
@@ -559,7 +557,7 @@ export function PostCommentsThread({
                   type="button"
                   onClick={() => expandReplies(key)}
                   className={
-                    isModal
+                    isDarkOnlyModal
                       ? 'mt-0.5 text-xs text-[#92bbc9] hover:underline text-left'
                       : 'mt-0.5 text-xs text-slate-500 dark:text-[#92bbc9] hover:underline text-left'
                   }

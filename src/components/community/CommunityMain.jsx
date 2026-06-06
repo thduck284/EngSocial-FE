@@ -17,6 +17,7 @@ import {
   CommunityGroupAboutSettings,
   shouldShowGroupAboutSettings,
 } from './CommunityGroupAboutSettings'
+import { navigateToPostDetail } from '../../utils/postLinks'
 
 function getGroupMembersGridPreview(activeGroup, activeMembers, myId, isMemberOfActiveGroup) {
   const totalMembers = activeGroup?.memberCount ?? activeMembers.length ?? 0
@@ -56,9 +57,9 @@ function GroupMembersPreviewCard({
   const membersWord = t('groups.header.members', { defaultValue: 'thành viên' })
 
   return (
-    <div className="bg-white dark:bg-card-dark rounded-2xl p-6 space-y-4 border border-slate-200 dark:border-border-dark shadow-sm">
+    <div className="bg-white dark:bg-card-dark rounded-xl p-5 space-y-3 border border-slate-200 dark:border-border-dark shadow-sm">
       <div className="flex items-center justify-between">
-        <h2 className="text-base font-black text-slate-900 dark:text-white uppercase tracking-wider">
+        <h2 className="text-sm font-bold text-slate-900 dark:text-white">
           {t('groups.main.membersTitle', { defaultValue: 'Thành viên' })}{' '}
           <span className="text-slate-400 dark:text-gray-500 font-bold ml-1">
             · {totalMembers} {membersWord}
@@ -74,9 +75,9 @@ function GroupMembersPreviewCard({
             key={m.id}
             type="button"
             onClick={() => navigate(`/profile/${m.id}`)}
-            className="flex flex-col items-center gap-2.5 p-2 rounded-2xl hover:bg-slate-50 dark:hover:bg-white/5 border border-transparent hover:border-slate-200 dark:hover:border-white/10 transition-all text-center min-w-0 group"
+            className="flex flex-col items-center gap-2 p-2 rounded-lg hover:bg-slate-50 dark:hover:bg-background-dark/60 border border-transparent hover:border-slate-200 dark:hover:border-border-dark transition-colors text-center min-w-0 group"
           >
-            <div className="size-14 sm:size-16 rounded-full border-2 border-white dark:border-slate-800 shadow-md overflow-hidden flex items-center justify-center shrink-0 group-hover:scale-105 transition-transform">
+            <div className="size-12 sm:size-14 rounded-full border border-slate-200 dark:border-border-dark overflow-hidden flex items-center justify-center shrink-0">
               <img
                 src={m.avatar || DEFAULT_AVATAR}
                 alt=""
@@ -95,13 +96,13 @@ function GroupMembersPreviewCard({
           <button
             type="button"
             onClick={() => onOpenGroupMembersModal?.()}
-            className="inline-flex items-center gap-2 rounded-full pl-1.5 pr-5 py-1.5 bg-slate-100 dark:bg-slate-800/90 border border-slate-200 dark:border-slate-700 hover:bg-slate-200 dark:hover:bg-slate-700 transition-all shadow-sm"
+            className="inline-flex items-center gap-2 rounded-full pl-1 pr-4 py-1 bg-slate-100 dark:bg-background-dark border border-slate-200 dark:border-border-dark hover:bg-slate-200 dark:hover:bg-white/10 transition-colors"
             title={t('groups.header.viewAllMembers', { defaultValue: 'Xem tất cả thành viên' })}
           >
-            <span className="size-9 rounded-full border-2 border-white dark:border-slate-900 bg-primary flex items-center justify-center text-xs font-black text-white shrink-0 shadow-lg shadow-primary/20">
+            <span className="size-8 rounded-full border border-white dark:border-card-dark bg-primary flex items-center justify-center text-xs font-bold text-white shrink-0">
               +{remainingExtras}
             </span>
-            <span className="text-sm font-black text-slate-600 dark:text-slate-200">{membersWord}</span>
+            <span className="text-xs font-bold text-slate-600 dark:text-slate-200">{membersWord}</span>
           </button>
         </div>
       ) : null}
@@ -109,7 +110,7 @@ function GroupMembersPreviewCard({
       <button
         type="button"
         onClick={() => onOpenGroupMembersModal?.()}
-        className="w-full mt-2 py-3 rounded-xl bg-slate-50 dark:bg-slate-800/80 hover:bg-slate-100 dark:hover:bg-slate-700 text-sm font-black text-slate-600 dark:text-slate-100 text-center border border-slate-200 dark:border-slate-700/80 transition-all shadow-sm"
+        className="w-full mt-1 py-2.5 rounded-lg bg-slate-50 dark:bg-background-dark hover:bg-slate-100 dark:hover:bg-white/10 text-xs font-bold text-slate-600 dark:text-slate-100 text-center border border-slate-200 dark:border-border-dark transition-colors"
       >
         {t('groups.main.viewAllMembers', { defaultValue: 'Xem tất cả' })}
       </button>
@@ -142,7 +143,7 @@ export function CommunityMain({
   onOpenInvite,
   onRefreshGroup,
 }) {
-  const { t } = useTranslation()
+  const { t, i18n } = useTranslation()
   const navigate = useNavigate()
   const location = useLocation()
   const { user } = useAuth()
@@ -166,8 +167,8 @@ export function CommunityMain({
     return (
       <div className="space-y-6">
         {/* Card: mô tả dài về nhóm */}
-        <div className="bg-white dark:bg-card-dark rounded-2xl p-6 space-y-4 border border-slate-200 dark:border-border-dark shadow-sm">
-          <h2 className="text-base font-black text-slate-900 dark:text-white uppercase tracking-wider">
+        <div className="bg-white dark:bg-card-dark rounded-xl p-5 space-y-3 border border-slate-200 dark:border-border-dark shadow-sm">
+          <h2 className="text-sm font-bold text-slate-900 dark:text-white">
             {t('groups.main.aboutTitle', { defaultValue: 'Giới thiệu về nhóm này' })}
           </h2>
           <p className="text-sm text-slate-600 dark:text-slate-200 leading-relaxed font-medium">
@@ -176,10 +177,10 @@ export function CommunityMain({
         </div>
 
         {/* Card: Quyền riêng tư + Hiển thị */}
-        <div className="bg-white dark:bg-card-dark rounded-2xl p-6 grid grid-cols-1 md:grid-cols-2 gap-8 text-sm text-slate-700 dark:text-slate-200 border border-slate-200 dark:border-border-dark shadow-sm">
+        <div className="bg-white dark:bg-card-dark rounded-xl p-5 grid grid-cols-1 md:grid-cols-2 gap-6 text-sm text-slate-700 dark:text-slate-200 border border-slate-200 dark:border-border-dark shadow-sm">
           <div className="space-y-4">
             <div>
-              <p className="font-black text-slate-900 dark:text-white flex items-center gap-2 mb-1.5 uppercase text-[11px] tracking-widest">
+              <p className="font-bold text-slate-900 dark:text-white flex items-center gap-2 mb-1 text-xs">
                 <span className="material-symbols-outlined text-primary text-xl">public</span>
                 {t('groups.sidebar.visibilityLabel', { defaultValue: 'Quyền riêng tư' })}
               </p>
@@ -192,7 +193,7 @@ export function CommunityMain({
               </p>
             </div>
             <div>
-              <p className="font-black text-slate-900 dark:text-white flex items-center gap-2 mb-1.5 uppercase text-[11px] tracking-widest">
+              <p className="font-bold text-slate-900 dark:text-white flex items-center gap-2 mb-1 text-xs">
                 <span className="material-symbols-outlined text-primary text-xl">search</span>
                 {t('groups.sidebar.searchVisibility', { defaultValue: 'Hiển thị' })}
               </p>
@@ -210,7 +211,7 @@ export function CommunityMain({
 
           <div className="space-y-4">
             <div>
-              <p className="font-black text-slate-900 dark:text-white flex items-center gap-2 mb-1.5 uppercase text-[11px] tracking-widest">
+              <p className="font-bold text-slate-900 dark:text-white flex items-center gap-2 mb-1 text-xs">
                 <span className="material-symbols-outlined text-primary text-xl">group</span>
                 {t('groups.main.membersTitle', { defaultValue: 'Thành viên' })}
               </p>
@@ -221,14 +222,16 @@ export function CommunityMain({
             </div>
             {activeGroup?.createdAt && (
               <div>
-                <p className="font-black text-slate-900 dark:text-white flex items-center gap-2 mb-1.5 uppercase text-[11px] tracking-widest">
+                <p className="font-bold text-slate-900 dark:text-white flex items-center gap-2 mb-1 text-xs">
                   <span className="material-symbols-outlined text-primary text-xl">history</span>
                   {t('groups.main.historyTitle', { defaultValue: 'Lịch sử' })}
                 </p>
                 <p className="text-slate-500 dark:text-gray-400 font-medium leading-relaxed">
                   {t('groups.main.createdAt', {
-                    defaultValue: 'Đã tạo nhóm vào {{date}}.',
-                    date: new Date(activeGroup.createdAt).toLocaleDateString(),
+                    date: new Date(activeGroup.createdAt).toLocaleDateString(
+                      i18n.language?.startsWith('vi') ? 'vi-VN' : 'en-US',
+                      { year: 'numeric', month: 'long', day: 'numeric' }
+                    ),
                   })}
                 </p>
               </div>
@@ -242,7 +245,7 @@ export function CommunityMain({
           onOpenInvite,
           onOpenGroupMembersModal,
         }) ? (
-          <div className="lg:hidden bg-white dark:bg-card-dark rounded-2xl p-6 border border-slate-200 dark:border-border-dark shadow-sm">
+          <div className="lg:hidden bg-white dark:bg-card-dark rounded-xl p-5 border border-slate-200 dark:border-border-dark shadow-sm">
             <CommunityGroupAboutSettings
               noTopBorder
               activeGroup={activeGroup}
@@ -266,12 +269,12 @@ export function CommunityMain({
         />
 
         {/* Card: Hoạt động (mock đơn giản theo memberCount) */}
-        <div className="bg-white dark:bg-card-dark rounded-2xl p-6 grid grid-cols-2 md:grid-cols-4 gap-6 text-xs text-slate-500 dark:text-slate-300 border border-slate-200 dark:border-border-dark shadow-sm">
+        <div className="bg-white dark:bg-card-dark rounded-xl p-5 grid grid-cols-2 md:grid-cols-4 gap-4 text-xs text-slate-500 dark:text-slate-300 border border-slate-200 dark:border-border-dark shadow-sm">
           <div className="space-y-1">
-            <p className="font-black text-[10px] uppercase tracking-widest text-slate-400 dark:text-gray-500">
+            <p className="font-bold text-[10px] text-slate-400 dark:text-gray-500">
               {t('groups.main.activityToday', { defaultValue: 'Hoạt động gần đây' })}
             </p>
-            <p className="text-2xl font-black text-slate-900 dark:text-white">
+            <p className="text-xl font-bold text-slate-900 dark:text-white">
               ~{Math.max(1, Math.round((activeGroup?.memberCount || 0) * 0.02))}
             </p>
             <p className="font-bold text-slate-400 dark:text-gray-500 leading-tight">
@@ -279,10 +282,10 @@ export function CommunityMain({
             </p>
           </div>
           <div className="space-y-1">
-            <p className="font-black text-[10px] uppercase tracking-widest text-slate-400 dark:text-gray-500">
+            <p className="font-bold text-[10px] text-slate-400 dark:text-gray-500">
               {t('groups.main.activityMonth', { defaultValue: 'Trong tháng này' })}
             </p>
-            <p className="text-2xl font-black text-slate-900 dark:text-white">
+            <p className="text-xl font-bold text-slate-900 dark:text-white">
               ~{Math.max(5, Math.round((activeGroup?.memberCount || 0) * 0.3))}
             </p>
             <p className="font-bold text-slate-400 dark:text-gray-500 leading-tight">
@@ -290,18 +293,18 @@ export function CommunityMain({
             </p>
           </div>
           <div className="space-y-1">
-            <p className="font-black text-[10px] uppercase tracking-widest text-slate-400 dark:text-gray-500">
+            <p className="font-bold text-[10px] text-slate-400 dark:text-gray-500">
               {t('groups.main.membersTotal', { defaultValue: 'Tổng thành viên' })}
             </p>
-            <p className="text-2xl font-black text-slate-900 dark:text-white">
+            <p className="text-xl font-bold text-slate-900 dark:text-white">
               {activeGroup?.memberCount ?? 0}
             </p>
           </div>
           <div className="space-y-1">
-            <p className="font-black text-[10px] uppercase tracking-widest text-slate-400 dark:text-gray-500">
+            <p className="font-bold text-[10px] text-slate-400 dark:text-gray-500">
               {t('groups.main.membersGrowth', { defaultValue: 'Ước tính tăng trưởng' })}
             </p>
-            <p className="text-2xl font-black text-slate-900 dark:text-white">
+            <p className="text-xl font-bold text-slate-900 dark:text-white">
               +{Math.max(1, Math.round((activeGroup?.memberCount || 0) * 0.05))}
             </p>
             <p className="font-bold text-slate-400 dark:text-gray-500 leading-tight">
@@ -340,9 +343,9 @@ export function CommunityMain({
     const allImages = collectPostImages(posts)
 
     return (
-      <div className="bg-white dark:bg-card-dark rounded-2xl p-6 border border-slate-200 dark:border-border-dark shadow-sm">
-        <div className="flex items-center justify-between mb-6">
-          <h2 className="text-base font-black text-slate-900 dark:text-white uppercase tracking-wider">
+      <div className="bg-white dark:bg-card-dark rounded-xl p-5 border border-slate-200 dark:border-border-dark shadow-sm">
+        <div className="flex items-center justify-between mb-4">
+          <h2 className="text-sm font-bold text-slate-900 dark:text-white">
             {t('groups.header.tabMedia', { defaultValue: 'File phương tiện' })}
             <span className="text-slate-400 dark:text-gray-500 font-bold ml-2">· {allImages.length}</span>
           </h2>
@@ -396,9 +399,9 @@ export function CommunityMain({
     const allFiles = collectPostDocuments(posts)
 
     return (
-      <div className="bg-white dark:bg-card-dark rounded-2xl p-6 border border-slate-200 dark:border-border-dark shadow-sm">
-        <div className="flex items-center justify-between mb-6">
-          <h2 className="text-base font-black text-slate-900 dark:text-white uppercase tracking-wider">
+      <div className="bg-white dark:bg-card-dark rounded-xl p-5 border border-slate-200 dark:border-border-dark shadow-sm">
+        <div className="flex items-center justify-between mb-4">
+          <h2 className="text-sm font-bold text-slate-900 dark:text-white">
             {t('groups.header.tabFiles', { defaultValue: 'File' })}
             <span className="text-slate-400 dark:text-gray-500 font-bold ml-2">· {allFiles.length}</span>
           </h2>
@@ -429,7 +432,7 @@ export function CommunityMain({
                   <div
                     key={`${file.postId}-${file.docIndex}-${file.url}`}
                     className="flex items-center gap-4 p-3 rounded-xl border border-slate-100 dark:border-white/5 hover:bg-slate-50 dark:hover:bg-white/5 transition-all group cursor-pointer"
-                    onClick={() => navigate(`/post/${file.postId}`)}
+                    onClick={() => navigateToPostDetail(navigate, location, file.postId)}
                   >
                     <div
                       className={`size-12 rounded-xl flex items-center justify-center shrink-0 ${getDocumentFileColor(iconKey)}`}
@@ -476,51 +479,51 @@ export function CommunityMain({
       {!hideComposer && (
         <>
           {/* Create post */}
-          <div className="bg-white dark:bg-card-dark border border-slate-200 dark:border-border-dark rounded-2xl p-5 shadow-sm">
-            <div className="flex gap-4">
+          <div className="bg-white dark:bg-card-dark border border-slate-200 dark:border-border-dark rounded-xl p-4 shadow-sm">
+            <div className="flex gap-3">
               <div className="relative shrink-0">
-                <img src={displayAvatar} alt="" className="size-10 rounded-full object-cover border-2 border-slate-100 dark:border-slate-800" />
-                <span className="absolute bottom-0 right-0 size-3 bg-green-500 rounded-full border-2 border-white dark:border-card-dark" />
+                <img src={displayAvatar} alt="" className="size-9 rounded-full object-cover border border-slate-200 dark:border-border-dark" />
+                <span className="absolute bottom-0 right-0 size-2.5 bg-green-500 rounded-full border border-white dark:border-card-dark" />
               </div>
               <button
                 type="button"
                 onClick={onOpenCreatePost}
-                className="flex-1 text-left bg-slate-50 dark:bg-white/5 rounded-2xl px-5 py-3 text-sm text-slate-400 dark:text-gray-400 hover:bg-slate-100 dark:hover:bg-white/10 transition-all font-medium border border-slate-100 dark:border-transparent"
+                className="flex-1 text-left bg-slate-50 dark:bg-background-dark rounded-lg px-4 py-2 text-sm text-slate-400 dark:text-gray-400 hover:bg-slate-100 dark:hover:bg-white/10 transition-colors font-medium border border-slate-200 dark:border-border-dark"
               >
                 {t('groups.main.postPlaceholder', {
                   defaultValue: 'Viết gì đó cho nhóm này...',
                 })}
               </button>
             </div>
-            <div className="flex items-center justify-between pt-3 mt-4 border-t border-slate-100 dark:border-border-dark">
+            <div className="flex items-center justify-between pt-2 mt-3 border-t border-slate-100 dark:border-border-dark">
               <div className="flex gap-1 w-full">
                 <button
                   type="button"
                   onClick={onOpenCreatePost}
-                  className="flex-1 flex items-center justify-center gap-2 px-3 py-2.5 hover:bg-slate-50 dark:hover:bg-white/5 rounded-xl transition-all group"
+                  className="flex-1 flex items-center justify-center gap-1.5 px-2 py-2 hover:bg-slate-50 dark:hover:bg-background-dark/60 rounded-lg transition-colors group"
                 >
-                  <span className="material-symbols-outlined text-green-500 text-xl group-hover:scale-110 transition-transform">image</span>
-                  <span className="text-xs font-black text-slate-600 dark:text-gray-400 group-hover:text-slate-900 dark:group-hover:text-white">
+                  <span className="material-symbols-outlined text-green-500 text-lg">image</span>
+                  <span className="text-xs font-bold text-slate-600 dark:text-gray-400 group-hover:text-slate-900 dark:group-hover:text-white">
                     {t('groups.main.actionMedia', { defaultValue: 'Photo/Video' })}
                   </span>
                 </button>
                 <button
                   type="button"
                   onClick={onOpenCreatePost}
-                  className="flex-1 flex items-center justify-center gap-2 px-3 py-2.5 hover:bg-slate-50 dark:hover:bg-white/5 rounded-xl transition-all group"
+                  className="flex-1 flex items-center justify-center gap-1.5 px-2 py-2 hover:bg-slate-50 dark:hover:bg-background-dark/60 rounded-lg transition-colors group"
                 >
-                  <span className="material-symbols-outlined text-sky-500 text-xl group-hover:scale-110 transition-transform">group_add</span>
-                  <span className="text-xs font-black text-slate-600 dark:text-gray-400 group-hover:text-slate-900 dark:group-hover:text-white">
+                  <span className="material-symbols-outlined text-sky-500 text-lg">group_add</span>
+                  <span className="text-xs font-bold text-slate-600 dark:text-gray-400 group-hover:text-slate-900 dark:group-hover:text-white">
                     {t('groups.main.actionTag', { defaultValue: 'Tag friends' })}
                   </span>
                 </button>
                 <button
                   type="button"
                   onClick={onOpenCreatePost}
-                  className="flex-1 flex items-center justify-center gap-2 px-3 py-2.5 hover:bg-slate-50 dark:hover:bg-white/5 rounded-xl transition-all group"
+                  className="flex-1 flex items-center justify-center gap-1.5 px-2 py-2 hover:bg-slate-50 dark:hover:bg-background-dark/60 rounded-lg transition-colors group"
                 >
-                  <span className="material-symbols-outlined text-yellow-500 text-xl group-hover:scale-110 transition-transform">mood</span>
-                  <span className="text-xs font-black text-slate-600 dark:text-gray-400 group-hover:text-slate-900 dark:group-hover:text-white">
+                  <span className="material-symbols-outlined text-yellow-500 text-lg">mood</span>
+                  <span className="text-xs font-bold text-slate-600 dark:text-gray-400 group-hover:text-slate-900 dark:group-hover:text-white">
                     {t('groups.main.actionFeeling', { defaultValue: 'Feeling' })}
                   </span>
                 </button>
@@ -532,7 +535,7 @@ export function CommunityMain({
 
       {/* Posts list from dashboard feed logic */}
       {postsLoading ? (
-        <div className="bg-white dark:bg-card-dark border border-slate-200 dark:border-border-dark rounded-2xl p-12 text-center shadow-sm">
+        <div className="bg-white dark:bg-card-dark border border-slate-200 dark:border-border-dark rounded-xl p-8 text-center shadow-sm">
           <span className="material-symbols-outlined animate-spin text-4xl text-primary opacity-50">
             progress_activity
           </span>
@@ -541,11 +544,11 @@ export function CommunityMain({
           </p>
         </div>
       ) : !posts || posts.length === 0 ? (
-        <div className="bg-white dark:bg-card-dark border-2 border-dashed border-slate-200 dark:border-border-dark rounded-3xl p-16 text-center shadow-sm">
-          <div className="size-20 bg-slate-50 dark:bg-white/5 rounded-full flex items-center justify-center mx-auto mb-4">
-            <span className="material-symbols-outlined text-5xl text-slate-300 dark:text-gray-500">edit_note</span>
+        <div className="bg-white dark:bg-card-dark border border-dashed border-slate-200 dark:border-border-dark rounded-xl p-12 text-center shadow-sm">
+          <div className="size-16 bg-slate-50 dark:bg-background-dark rounded-full flex items-center justify-center mx-auto mb-3">
+            <span className="material-symbols-outlined text-4xl text-slate-300 dark:text-gray-500">edit_note</span>
           </div>
-          <p className="text-sm font-black text-slate-500 dark:text-gray-400 max-w-xs mx-auto">
+          <p className="text-xs text-slate-500 dark:text-gray-400 max-w-xs mx-auto">
             {t('dashboard.noPosts', {
               defaultValue: 'Chưa có bài viết trong nhóm này. Hãy viết bài đầu tiên phía trên!',
             })}
@@ -571,7 +574,7 @@ export function CommunityMain({
               <button
                 type="button"
                 onClick={loadMorePosts}
-                className="px-8 py-3 text-xs font-black text-slate-600 dark:text-slate-200 bg-white dark:bg-card-dark border border-slate-200 dark:border-border-dark rounded-xl hover:bg-slate-50 dark:hover:bg-gray-700 transition-all shadow-sm flex items-center gap-2"
+                className="px-6 py-2 text-xs font-bold text-slate-600 dark:text-slate-200 bg-white dark:bg-card-dark border border-slate-200 dark:border-border-dark rounded-lg hover:bg-slate-50 dark:hover:bg-gray-700 transition-colors flex items-center gap-2"
               >
                 <span className="material-symbols-outlined text-lg">expand_more</span>
                 {t('dashboard.loadMore', { defaultValue: 'Tải thêm bài viết' })}

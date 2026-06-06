@@ -1,6 +1,14 @@
+import { useMemo } from 'react'
 import { createPortal } from 'react-dom'
 import { useCreatePostModal } from '../../../hooks/useCreatePostModal'
 import { PostComposerAddToPostRow } from './PostComposerAddToPostRow'
+import { CompactSelect } from '../common/CompactSelect'
+
+function visibilityIcon(value) {
+  if (value === 'private') return 'lock'
+  if (value === 'friends') return 'group'
+  return 'public'
+}
 
 export function CreatePostModal({
   open,
@@ -52,6 +60,19 @@ export function CreatePostModal({
     contentBlockRef,
   } = refs
 
+  const visibilityOptions = useMemo(() => {
+    const opts = [{ value: 'public', label: t('dashboard.public') }]
+    if (forGroup) {
+      opts.push({ value: 'private', label: t('dashboard.privateOnly') })
+    } else {
+      opts.push(
+        { value: 'friends', label: t('dashboard.friendsOnly') },
+        { value: 'private', label: t('dashboard.privateOnly') }
+      )
+    }
+    return opts
+  }, [forGroup, t])
+
   if (!open) return null
 
   // Portal to body so backdrop covers full viewport (avoids fixed positioning inside transformed/scroll containers)
@@ -61,82 +82,69 @@ export function CreatePostModal({
       onClick={handleClose}
     >
       <div
-        className="w-full max-w-2xl bg-white dark:bg-card-dark rounded-xl shadow-2xl border border-slate-200 dark:border-border-dark overflow-hidden flex flex-col min-h-[80vh] max-h-[95vh]"
+        className="w-full max-w-2xl bg-white dark:bg-card-dark rounded-xl shadow-2xl border border-slate-200 dark:border-border-dark overflow-hidden flex flex-col h-[min(92vh,920px)] max-h-[96vh]"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Pinned Header */}
-        <header className="flex items-center justify-between px-6 py-4 border-b border-slate-200 dark:border-border-dark shrink-0">
-          <h2 className="text-xl font-bold text-slate-900 dark:text-slate-100">
+        <header className="flex items-center justify-between px-4 py-2.5 border-b border-slate-200 dark:border-border-dark shrink-0">
+          <h2 className="text-lg font-bold text-slate-900 dark:text-slate-100">
             {t('dashboard.createPost') || 'Tạo bài viết'}
           </h2>
           <button
             type="button"
             onClick={handleClose}
             disabled={posting || uploading}
-            className="p-2 hover:bg-slate-100 dark:hover:bg-border-dark rounded-full transition-colors text-slate-500 dark:text-slate-400 disabled:opacity-50"
+            className="p-1.5 hover:bg-slate-100 dark:hover:bg-border-dark rounded-lg transition-colors text-slate-500 dark:text-slate-400 disabled:opacity-50"
           >
             <span className="material-symbols-outlined">close</span>
           </button>
         </header>
 
         {/* User Info & Privacy (Pinned below header) */}
-        <div className="px-6 py-2 flex items-center justify-between gap-4 shrink-0">
-          <div className="flex items-center gap-3">
-            <div className="size-11 rounded-full bg-primary/20 flex items-center justify-center overflow-hidden border-2 border-primary/30 shrink-0">
-              <img
-                src={displayAvatar}
-                alt=""
-                className="w-full h-full object-cover"
-              />
-            </div>
-            <div>
-              <p className="font-semibold text-slate-900 dark:text-slate-100">
+        <div className="px-4 py-1.5 flex items-center gap-3 shrink-0">
+          <div className="size-9 rounded-full bg-primary/20 flex items-center justify-center overflow-hidden border border-primary/30 shrink-0">
+            <img
+              src={displayAvatar}
+              alt=""
+              className="w-full h-full object-cover"
+            />
+          </div>
+          <div className="min-w-0 flex flex-col items-start">
+              <p className="text-sm font-semibold text-slate-900 dark:text-slate-100 leading-tight">
                 {user?.name || 'User'}
               </p>
               {!hideVisibilitySelector && (
-                <div className="relative mt-1">
-                  <select
-                    value={visibility}
-                    onChange={(e) => setVisibility(e.target.value)}
-                    className="appearance-none bg-slate-100 dark:bg-border-dark border-none rounded-lg text-xs font-medium py-1 pl-7 pr-8 text-slate-600 dark:text-slate-300 focus:ring-1 focus:ring-primary cursor-pointer"
-                  >
-                    <option value="public">{t('dashboard.public')}</option>
-                    {forGroup ? (
-                      <option value="private">{t('dashboard.privateOnly')}</option>
-                    ) : (
-                      <>
-                        <option value="friends">{t('dashboard.friendsOnly')}</option>
-                        <option value="private">{t('dashboard.privateOnly')}</option>
-                      </>
-                    )}
-                  </select>
-                  <span className="material-symbols-outlined absolute left-1 top-1/2 -translate-y-1/2 text-[14px] pointer-events-none text-slate-500">
-                    {visibility === 'private' ? 'lock' : visibility === 'friends' ? 'group' : 'public'}
-                  </span>
-                  <span className="material-symbols-outlined absolute right-5 top-1/2 -translate-y-1/2 text-[14px] pointer-events-none text-slate-500">
-                    expand_more
-                  </span>
-                </div>
+                <CompactSelect
+                  value={visibility}
+                  onChange={setVisibility}
+                  options={visibilityOptions}
+                  matchRootWidth
+                  size="sm"
+                  leading={
+                    <span className="material-symbols-outlined text-[14px] text-slate-500 dark:text-gray-400">
+                      {visibilityIcon(visibility)}
+                    </span>
+                  }
+                  className="mt-0.5"
+                  buttonClassName="font-bold text-slate-700 dark:text-slate-200 bg-slate-50 dark:bg-background-dark border-slate-200 dark:border-border-dark shadow-none focus:ring-1 focus:ring-primary/30"
+                />
               )}
-            </div>
           </div>
         </div>
 
-        {/* Scrollable Center Body */}
-        <div className="flex-1 overflow-y-auto min-h-0 custom-scrollbar pb-2">
-          {/* Content Area */}
-          <div ref={contentBlockRef} className="px-6 pb-2 relative">
+        {/* Body: textarea fills remaining height */}
+        <div className="flex-1 min-h-0 flex flex-col overflow-hidden">
+          <div ref={contentBlockRef} className="flex-1 min-h-0 px-4 pt-1 pb-1 relative flex flex-col">
             <textarea
               ref={contentTextareaRef}
               value={content}
               onChange={handleContentChange}
               onKeyDown={handleContentKeyDown}
-              className="w-full min-h-[220px] bg-transparent border-none focus:ring-0 text-lg text-slate-900 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 resize-none p-0"
+              className="flex-1 min-h-[12rem] w-full h-full bg-transparent border-none outline-none focus:outline-none focus-visible:outline-none focus:ring-0 shadow-none text-base leading-relaxed text-slate-900 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 resize-none p-0"
               placeholder={t('dashboard.postPlaceholder')}
-              rows={8}
             />
             {showMentionDropdown && (
-              <div className="absolute left-6 right-6 top-full mt-0.5 pt-1.5 pb-2 bg-white dark:bg-card-dark rounded-xl shadow-xl border border-slate-200 dark:border-border-dark z-50 max-h-48 overflow-y-auto custom-scrollbar">
+              <div className="absolute left-4 right-4 top-full mt-0.5 pt-1 pb-1.5 bg-white dark:bg-card-dark rounded-lg shadow-lg border border-slate-200 dark:border-border-dark z-50 max-h-48 overflow-y-auto custom-scrollbar">
                 <p className="px-3 pt-0.5 pb-1 text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
                   {t('dashboard.mentionFriend') || 'Gợi ý bạn bè'}
                 </p>
@@ -171,9 +179,10 @@ export function CreatePostModal({
             )}
           </div>
 
+          <div className="shrink-0 overflow-y-auto max-h-[38vh] custom-scrollbar border-t border-slate-100 dark:border-border-dark">
           {/* Previews (Images/Videos) */}
           {(images.length > 0 || videoUrl) && (
-            <div className="px-6 pb-4 flex flex-wrap gap-2">
+            <div className="px-4 py-2 flex flex-wrap gap-2">
               {images.map((url, i) => (
                 <div key={`img-${i}-${url}`} className="relative group">
                   <img
@@ -216,7 +225,7 @@ export function CreatePostModal({
 
           {/* Previews (Documents) */}
           {documents.length > 0 && (
-            <div className="px-6 pb-4 grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div className="px-4 py-2 grid grid-cols-1 sm:grid-cols-2 gap-2">
               {documents.map((d, i) => {
                 const url = typeof d === 'string' ? d : d?.url
                 const name = typeof d === 'string' ? '' : (d?.name || '')
@@ -247,8 +256,9 @@ export function CreatePostModal({
           )}
 
           {/* Addons Panel (Add to post tools) */}
-          <div className="px-6 py-2 bg-slate-50/50 dark:bg-card-dark/20">
+          <div className="px-4 py-1.5 bg-slate-50/50 dark:bg-card-dark/20">
             <PostComposerAddToPostRow
+              compact
               t={t}
               uploading={uploading}
               imagesCount={images.length}
@@ -262,7 +272,7 @@ export function CreatePostModal({
           </div>
 
           {/* Alerts & Errors */}
-          <div className="px-6 pt-3">
+          <div className="px-4 py-1.5">
             {uploading && (
               <p className="text-xs text-slate-500 dark:text-slate-400">
                 {t('dashboard.uploading')}
@@ -314,15 +324,16 @@ export function CreatePostModal({
               <p className="text-sm text-red-500 mt-2">{error}</p>
             )}
           </div>
+          </div>
         </div>
 
         {/* Pinned Footer */}
-        <footer className="px-6 py-5 bg-slate-50 dark:bg-background-dark/30 border-t border-slate-200 dark:border-border-dark flex items-center justify-end gap-3 shrink-0">
+        <footer className="px-4 py-2.5 bg-slate-50 dark:bg-background-dark/30 border-t border-slate-200 dark:border-border-dark flex items-center justify-end gap-2 shrink-0">
           <button
             type="button"
             onClick={handleClose}
             disabled={posting}
-            className="px-6 py-2.5 rounded-xl text-sm font-bold text-slate-600 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-border-dark transition-colors disabled:opacity-50"
+            className="px-4 py-1.5 rounded-lg text-xs font-bold text-slate-600 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-border-dark transition-colors disabled:opacity-50"
           >
             {t('buttons.cancel') || 'Hủy'}
           </button>
@@ -334,7 +345,7 @@ export function CreatePostModal({
               uploading ||
               (!content?.trim() && images.length === 0 && !videoUrl && documents.length === 0)
             }
-            className="px-8 py-2.5 rounded-xl text-sm font-bold bg-primary text-white hover:opacity-90 shadow-lg shadow-primary/20 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+            className="px-5 py-1.5 rounded-lg text-xs font-bold bg-primary text-white hover:opacity-90 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {posting ? '...' : (t('dashboard.post') || 'Đăng bài')}
           </button>

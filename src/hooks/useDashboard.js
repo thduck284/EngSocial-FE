@@ -17,6 +17,7 @@ import {
 } from '../utils/dashboard'
 import { SOCKET_ENABLED, SOCKET_BASE_URL, SOCKET_FALLBACK_BASE_URL } from '../constants/api'
 import { getAuthToken } from '../utils/auth'
+import { resolvePostPatch } from '../utils/post'
 
 // ─── useDashboardData ──────────────────────────────────────────────────────────
 
@@ -180,17 +181,14 @@ export function useDashboardData() {
         const sharedId = p?.sharedPost?.id ?? p?.sharedPost?._id
 
         if (String(id) === String(postId)) {
-          return { ...p, ...(updated || {}) }
+          return resolvePostPatch(p, updated)
         }
 
         // Keep shared-post previews in sync immediately after editing original post.
         if (sharedId && String(sharedId) === String(postId)) {
           return {
             ...p,
-            sharedPost: {
-              ...(p.sharedPost || {}),
-              ...(updated || {}),
-            },
+            sharedPost: resolvePostPatch(p.sharedPost || {}, updated),
           }
         }
 

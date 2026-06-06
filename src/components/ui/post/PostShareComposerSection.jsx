@@ -39,17 +39,17 @@ export function PostShareComposerSection({
           <img
             src={avatar}
             alt={user?.name || 'avatar'}
-            className="w-10 h-10 rounded-full object-cover bg-slate-500/40"
+            className="w-10 h-10 rounded-full object-cover bg-slate-200 dark:bg-slate-500/40"
           />
           <div className="flex flex-col gap-1">
-            <span className="text-[15px] font-bold text-slate-100">
+            <span className="text-[15px] font-bold text-slate-900 dark:text-slate-100">
               {user?.name || 'User'}
             </span>
             <div className="flex gap-2 flex-wrap relative">
               <button
                 type="button"
                 onClick={() => setAudienceOpen((v) => !v)}
-                className="flex items-center gap-1 px-2.5 py-1 bg-background-dark/70 hover:bg-background-dark rounded-md text-[13px] font-semibold transition-colors border border-border-dark"
+                className="flex items-center gap-1 px-2.5 py-1 bg-slate-100 dark:bg-background-dark/70 hover:bg-slate-200 dark:hover:bg-background-dark rounded-md text-[13px] font-semibold transition-colors border border-slate-200 dark:border-border-dark text-slate-700 dark:text-slate-200"
               >
                 <span className="material-symbols-outlined text-[16px]">
                   {audience === 'public'
@@ -71,15 +71,15 @@ export function PostShareComposerSection({
               </button>
 
               {audienceOpen && (
-                <div className="absolute z-10 top-full mt-1 right-0 w-48 rounded-lg bg-card-dark border border-border-dark shadow-lg py-1">
+                <div className="absolute z-10 top-full mt-1 right-0 w-48 rounded-lg bg-white dark:bg-card-dark border border-slate-200 dark:border-border-dark shadow-lg py-1">
                   <button
                     type="button"
                     onClick={() => {
                       setAudience('public')
                       setAudienceOpen(false)
                     }}
-                    className={`flex w-full items-center gap-2 px-3 py-2 text-xs text-left hover:bg-white/10 ${
-                      audience === 'public' ? 'text-white' : 'text-slate-300'
+                    className={`flex w-full items-center gap-2 px-3 py-2 text-xs text-left hover:bg-slate-100 dark:hover:bg-white/10 ${
+                      audience === 'public' ? 'text-slate-900 dark:text-white' : 'text-slate-600 dark:text-slate-300'
                     }`}
                   >
                     <span className="material-symbols-outlined text-[18px]">
@@ -93,8 +93,8 @@ export function PostShareComposerSection({
                       setAudience('friends')
                       setAudienceOpen(false)
                     }}
-                    className={`flex w-full items-center gap-2 px-3 py-2 text-xs text-left hover:bg-white/10 ${
-                      audience === 'friends' ? 'text-white' : 'text-slate-300'
+                    className={`flex w-full items-center gap-2 px-3 py-2 text-xs text-left hover:bg-slate-100 dark:hover:bg-white/10 ${
+                      audience === 'friends' ? 'text-slate-900 dark:text-white' : 'text-slate-600 dark:text-slate-300'
                     }`}
                   >
                     <span className="material-symbols-outlined text-[18px]">
@@ -108,8 +108,8 @@ export function PostShareComposerSection({
                       setAudience('onlyMe')
                       setAudienceOpen(false)
                     }}
-                    className={`flex w-full items-center gap-2 px-3 py-2 text-xs text-left hover:bg-white/10 ${
-                      audience === 'onlyMe' ? 'text-white' : 'text-slate-300'
+                    className={`flex w-full items-center gap-2 px-3 py-2 text-xs text-left hover:bg-slate-100 dark:hover:bg-white/10 ${
+                      audience === 'onlyMe' ? 'text-slate-900 dark:text-white' : 'text-slate-600 dark:text-slate-300'
                     }`}
                   >
                     <span className="material-symbols-outlined text-[18px]">
@@ -129,7 +129,7 @@ export function PostShareComposerSection({
           <textarea
             ref={repostTextareaRef}
             rows={6}
-            className="w-full bg-transparent border-none p-0 text-[18px] focus:ring-0 resize-none placeholder:text-slate-400 min-h-[170px]"
+            className="w-full bg-transparent border-none p-0 text-[18px] text-slate-900 dark:text-slate-100 focus:ring-0 resize-none placeholder:text-slate-400 dark:placeholder:text-slate-500 min-h-[170px]"
             placeholder={
               t('dashboard.shareWriteSomething') || 'Hay noi gi do ve noi dung nay...'
             }
@@ -138,9 +138,9 @@ export function PostShareComposerSection({
             onKeyDown={onRepostTextKeyDown}
           />
           {showMentionDropdown && (
-            <div className="absolute left-0 right-0 top-full mt-1 rounded-xl bg-card-dark border border-border-dark shadow-xl z-20 max-h-44 overflow-y-auto">
+            <div className="absolute left-0 right-0 top-full mt-1 rounded-xl bg-white dark:bg-card-dark border border-slate-200 dark:border-border-dark shadow-xl z-20 max-h-44 overflow-y-auto">
               {mentionCandidates.length === 0 ? (
-                <p className="px-3 py-2 text-xs text-slate-400">
+                <p className="px-3 py-2 text-xs text-slate-500 dark:text-slate-400">
                   {t('dashboard.noFriendMatch') || 'Khong co ban be phu hop.'}
                 </p>
               ) : (
@@ -149,26 +149,26 @@ export function PostShareComposerSection({
                     key={friend.id}
                     type="button"
                     onClick={() => onInsertMention(friend)}
-                    className="w-full flex items-center gap-2 px-3 py-2 text-left hover:bg-white/10"
+                    className="w-full flex items-center gap-2 px-3 py-2 text-left hover:bg-slate-100 dark:hover:bg-white/10"
                   >
                     {friend.avatar ? (
                       <img
                         src={friend.avatar}
                         alt={friend.name}
-                        className="w-7 h-7 rounded-full object-cover bg-background-dark"
+                        className="w-7 h-7 rounded-full object-cover bg-slate-100 dark:bg-background-dark"
                       />
                     ) : (
                       <span className="w-7 h-7 rounded-full bg-primary/20 text-primary flex items-center justify-center text-xs font-bold">
                         {friend.name.charAt(0).toUpperCase()}
                       </span>
                     )}
-                    <span className="text-sm text-slate-100 truncate">{friend.name}</span>
+                    <span className="text-sm text-slate-900 dark:text-slate-100 truncate">{friend.name}</span>
                   </button>
                 ))
               )}
             </div>
           )}
-          <button className="absolute bottom-2 right-0 text-slate-400 hover:text-white">
+          <button className="absolute bottom-2 right-0 text-slate-400 hover:text-slate-600 dark:hover:text-white">
             <span className="material-symbols-outlined text-[24px]">
               mood
             </span>
@@ -184,7 +184,7 @@ export function PostShareComposerSection({
                     <img
                       src={url}
                       alt=""
-                      className="w-20 h-20 object-cover rounded-lg border border-border-dark"
+                      className="w-20 h-20 object-cover rounded-lg border border-slate-200 dark:border-border-dark"
                     />
                     <button
                       type="button"
@@ -199,7 +199,7 @@ export function PostShareComposerSection({
                   <div className="relative group">
                     <video
                       src={videoUrl}
-                      className="w-20 h-20 object-cover rounded-lg border border-border-dark bg-background-dark"
+                      className="w-20 h-20 object-cover rounded-lg border border-slate-200 dark:border-border-dark bg-slate-100 dark:bg-background-dark"
                       muted
                       preload="metadata"
                       playsInline
@@ -227,20 +227,20 @@ export function PostShareComposerSection({
                   return (
                     <div
                       key={`share-doc-${i}`}
-                      className="flex items-center justify-between p-2.5 rounded-lg border border-border-dark bg-background-dark/40"
+                      className="flex items-center justify-between p-2.5 rounded-lg border border-slate-200 dark:border-border-dark bg-slate-50 dark:bg-background-dark/40"
                     >
                       <div className="flex items-center gap-2 min-w-0">
-                        <span className="material-symbols-outlined text-blue-400 shrink-0">
+                        <span className="material-symbols-outlined text-blue-500 dark:text-blue-400 shrink-0">
                           description
                         </span>
-                        <span className="text-xs text-slate-200 truncate" title={name || undefined}>
+                        <span className="text-xs text-slate-700 dark:text-slate-200 truncate" title={name || undefined}>
                           {name || `${t('dashboard.document') || 'Document'} ${i + 1}`}
                         </span>
                       </div>
                       <button
                         type="button"
                         onClick={() => onRemoveDoc(i)}
-                        className="text-slate-400 hover:text-red-400 transition-colors shrink-0"
+                        className="text-slate-400 hover:text-red-500 dark:hover:text-red-400 transition-colors shrink-0"
                       >
                         <span className="material-symbols-outlined text-sm">close</span>
                       </button>
@@ -265,7 +265,7 @@ export function PostShareComposerSection({
         />
 
         {uploading && (
-          <p className="text-xs text-slate-400 -mt-2">
+          <p className="text-xs text-slate-500 dark:text-slate-400 -mt-2">
             {t('dashboard.uploading') || 'Dang upload...'}
           </p>
         )}
@@ -274,11 +274,10 @@ export function PostShareComposerSection({
       </div>
 
       {error ? (
-        <p className="px-4 pb-3 text-xs text-red-400 whitespace-pre-wrap break-words">
+        <p className="px-4 pb-3 text-xs text-red-500 dark:text-red-400 whitespace-pre-wrap break-words">
           {error}
         </p>
       ) : null}
     </>
   )
 }
-

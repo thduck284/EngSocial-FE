@@ -395,21 +395,21 @@ export function UserProfilePage() {
   const xpPercent = profileProgress.xpMax ? Math.min(100, Math.round((profileProgress.xp / profileProgress.xpMax) * 100)) : 0
 
   return (
-    <main className="max-w-[1440px] mx-auto px-6 lg:px-10 py-10">
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-10">
+    <main className="max-w-[1440px] mx-auto p-6">
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
         {/* Left: Profile card & Friends */}
-        <div className="lg:col-span-4 space-y-10">
-          <div className="bg-white dark:bg-card-dark border border-slate-200 dark:border-border-dark rounded-[2.5rem] p-8 flex flex-col items-center text-center shadow-2xl shadow-slate-200/50 dark:shadow-none relative">
-            <div className="absolute top-0 left-0 w-full h-24 bg-gradient-to-b from-primary/10 to-transparent rounded-t-[2.5rem]" />
-            <div className="relative mb-6 z-10">
-              <div className="size-40 rounded-full border-4 border-white dark:border-card-dark shadow-2xl overflow-hidden ring-4 ring-primary/20">
+        <div className="lg:col-span-3 space-y-4">
+          <div className="bg-white dark:bg-card-dark border border-slate-200 dark:border-border-dark rounded-xl p-5 flex flex-col items-center text-center shadow-sm relative">
+            <div className="absolute top-0 left-0 w-full h-16 bg-gradient-to-b from-primary/10 to-transparent rounded-t-xl" />
+            <div className="relative mb-4 z-10">
+              <div className="size-28 rounded-full border-2 border-white dark:border-card-dark shadow-sm overflow-hidden ring-2 ring-primary/20">
                 <img alt={profile.name} className="w-full h-full rounded-full object-cover" src={displayAvatar} />
               </div>
               {(() => {
                 const isOnline = Boolean(userId && onlineUserIds && onlineUserIds.has(String(userId)))
                 return (
                   <div
-                    className={`absolute bottom-3 right-3 size-6 rounded-full border-4 border-white dark:border-card-dark shadow-lg ${isOnline ? 'bg-green-500' : 'bg-slate-300 dark:bg-gray-600'}`}
+                    className={`absolute bottom-1 right-1 size-4 rounded-full border-2 border-white dark:border-card-dark shadow-sm ${isOnline ? 'bg-green-500' : 'bg-slate-300 dark:bg-gray-600'}`}
                     title={isOnline ? t('userProfile.online') : t('profile.offline')}
                   >
                     <div className={`w-full h-full rounded-full ${isOnline ? 'animate-pulse bg-green-400' : ''}`} />
@@ -417,47 +417,47 @@ export function UserProfilePage() {
                 )
               })()}
             </div>
-            <h1 className="text-2xl font-bold text-slate-900 dark:text-white mb-2 relative z-10">{profile.name}</h1>
-            <div className="flex items-center gap-3 mb-8 relative z-10">
-              <span className="bg-primary text-white text-[10px] font-black px-3 py-1 rounded-full uppercase tracking-widest shadow-lg shadow-primary/20">
+            <h1 className="text-base font-bold text-slate-900 dark:text-white mb-1.5 relative z-10">{profile.name}</h1>
+            <div className="flex items-center gap-2 mb-4 relative z-10">
+              <span className="bg-primary text-white text-[10px] font-bold px-2 py-0.5 rounded-full uppercase tracking-wide">
                 {t('userProfile.levelLabel', { level: profileProgress.level || 1 })}
               </span>
-              <span className="text-slate-300 dark:text-gray-700 font-black">•</span>
-              <span className="text-[10px] font-black text-slate-400 dark:text-gray-500 uppercase tracking-widest">{profileProgress.xp || 0} XP</span>
+              <span className="text-slate-300 dark:text-gray-700">•</span>
+              <span className="text-[10px] font-bold text-slate-400 dark:text-gray-500 uppercase tracking-wide">{profileProgress.xp || 0} XP</span>
             </div>
             
-            <div className="w-full mb-8 bg-slate-50 dark:bg-background-dark/50 p-6 rounded-3xl border border-slate-100 dark:border-white/5 relative z-10">
-              <div className="flex justify-between text-[10px] font-black uppercase tracking-[0.2em] mb-3 text-slate-400 dark:text-gray-500">
+            <div className="w-full mb-4 bg-slate-50 dark:bg-background-dark/50 p-4 rounded-xl border border-slate-100 dark:border-white/5 relative z-10">
+              <div className="flex justify-between text-[10px] font-bold uppercase tracking-wide mb-2 text-slate-400 dark:text-gray-500">
                 <span>{t('userProfile.levelProgress')}</span>
                 <span className="text-primary">{xpPercent}%</span>
               </div>
-              <div className="h-2.5 w-full bg-slate-200 dark:bg-card-dark rounded-full overflow-hidden shadow-inner">
-                <div className="h-full bg-gradient-to-r from-primary to-cyan-400 transition-all duration-1000 shadow-[0_0_10px_rgba(19,182,236,0.5)]" style={{ width: `${xpPercent}%` }} />
+              <div className="h-2 w-full bg-slate-200 dark:bg-card-dark rounded-full overflow-hidden">
+                <div className="h-full bg-gradient-to-r from-primary to-cyan-400 transition-all duration-1000" style={{ width: `${xpPercent}%` }} />
               </div>
-              <p className="text-[10px] font-black text-slate-400 dark:text-gray-600 uppercase tracking-widest mt-4 italic">{t('userProfile.levelUpSoon')}</p>
+              <p className="text-[10px] font-medium text-slate-400 dark:text-gray-600 mt-2">{t('userProfile.levelUpSoon')}</p>
             </div>
 
             {profile.mutualFriendsCount > 0 && (
               <button
                 type="button"
                 onClick={() => setShowMutualFriendsModal(true)}
-                className="text-[10px] font-black text-slate-400 dark:text-gray-500 uppercase tracking-widest flex items-center justify-center gap-2 mb-8 bg-slate-50 dark:bg-white/5 px-4 py-2 rounded-full border border-slate-100 dark:border-white/5 relative z-10 transition-all hover:bg-slate-100 dark:hover:bg-white/10 hover:text-primary dark:hover:text-primary group mx-auto"
+                className="text-[10px] font-bold text-slate-400 dark:text-gray-500 uppercase tracking-wide flex items-center justify-center gap-1.5 mb-4 bg-slate-50 dark:bg-white/5 px-3 py-1.5 rounded-full border border-slate-100 dark:border-white/5 relative z-10 transition-all hover:bg-slate-100 dark:hover:bg-white/10 hover:text-primary dark:hover:text-primary group mx-auto"
               >
-                <span className="material-symbols-outlined text-base text-primary group-hover:scale-110 transition-transform">group</span>
+                <span className="material-symbols-outlined text-sm text-primary group-hover:scale-110 transition-transform">group</span>
                 {t('userProfile.mutualFriends', { count: profile.mutualFriendsCount })}
               </button>
             )}
 
-            <div className="w-full flex flex-col gap-3 relative z-10">
-              <div className="flex gap-3">
+            <div className="w-full flex flex-col gap-2 relative z-10">
+              <div className="flex gap-2">
                 {profile.friendStatus === 'connected' && (
                   <button
                     type="button"
                     disabled={profile.blockedByMe}
                     onClick={handleMessage}
-                    className="flex-1 bg-primary hover:brightness-110 disabled:opacity-50 text-white h-11 rounded-xl text-[10px] font-black uppercase tracking-widest flex items-center justify-center gap-3 shadow-lg shadow-primary/20 transition-all active:scale-95"
+                    className="flex-1 bg-primary hover:brightness-110 disabled:opacity-50 text-white h-9 rounded-lg text-[10px] font-bold uppercase tracking-wide flex items-center justify-center gap-2 shadow-sm transition-all active:scale-95"
                   >
-                    <span className="material-symbols-outlined text-xl">chat</span>
+                    <span className="material-symbols-outlined text-lg">chat</span>
                     {t('userProfile.sendMessage')}
                   </button>
                 )}
@@ -467,12 +467,12 @@ export function UserProfilePage() {
                       type="button"
                       disabled={friendActionLoading}
                       onClick={handleAddFriend}
-                      className="flex-1 bg-primary hover:brightness-110 disabled:opacity-60 text-white py-3 rounded-xl text-[10px] font-black uppercase tracking-widest flex items-center justify-center gap-3 shadow-lg shadow-primary/20 transition-all active:scale-95"
+                      className="flex-1 bg-primary hover:brightness-110 disabled:opacity-60 text-white py-2 rounded-lg text-[10px] font-bold uppercase tracking-wide flex items-center justify-center gap-2 shadow-sm transition-all active:scale-95"
                     >
                       {friendActionLoading ? (
-                        <span className="material-symbols-outlined text-xl animate-spin">progress_activity</span>
+                        <span className="material-symbols-outlined text-lg animate-spin">progress_activity</span>
                       ) : (
-                        <span className="material-symbols-outlined text-xl">person_add</span>
+                        <span className="material-symbols-outlined text-lg">person_add</span>
                       )}
                       {t('userProfile.addFriend')}
                     </button>
@@ -480,9 +480,9 @@ export function UserProfilePage() {
                       type="button"
                       disabled={profile.blockedByMe}
                       onClick={handleMessage}
-                      className="flex-1 bg-slate-100 dark:bg-white/10 hover:bg-slate-200 dark:hover:bg-white/20 disabled:opacity-50 text-slate-600 dark:text-white py-3 rounded-xl text-[10px] font-black uppercase tracking-widest flex items-center justify-center gap-3 transition-all active:scale-95 border border-slate-200 dark:border-white/10"
+                      className="flex-1 bg-slate-100 dark:bg-white/10 hover:bg-slate-200 dark:hover:bg-white/20 disabled:opacity-50 text-slate-600 dark:text-white py-2 rounded-lg text-[10px] font-bold uppercase tracking-wide flex items-center justify-center gap-2 transition-all active:scale-95 border border-slate-200 dark:border-white/10"
                     >
-                      <span className="material-symbols-outlined text-xl">chat</span>
+                      <span className="material-symbols-outlined text-lg">chat</span>
                       {t('userProfile.sendMessage')}
                     </button>
                   </>
@@ -493,12 +493,12 @@ export function UserProfilePage() {
                       type="button"
                       disabled={friendActionLoading}
                       onClick={handleCancelRequest}
-                      className="flex-1 bg-amber-500 hover:brightness-110 disabled:opacity-60 text-white py-3 rounded-xl text-[10px] font-black uppercase tracking-widest flex items-center justify-center gap-3 shadow-lg shadow-amber-500/20 transition-all active:scale-95"
+                      className="flex-1 bg-amber-500 hover:brightness-110 disabled:opacity-60 text-white py-2 rounded-lg text-[10px] font-bold uppercase tracking-wide flex items-center justify-center gap-2 shadow-sm transition-all active:scale-95"
                     >
                       {friendActionLoading ? (
-                        <span className="material-symbols-outlined text-xl animate-spin">progress_activity</span>
+                        <span className="material-symbols-outlined text-lg animate-spin">progress_activity</span>
                       ) : (
-                        <span className="material-symbols-outlined text-xl">person_remove</span>
+                        <span className="material-symbols-outlined text-lg">person_remove</span>
                       )}
                       {t('userProfile.cancelRequest')}
                     </button>
@@ -506,16 +506,16 @@ export function UserProfilePage() {
                       type="button"
                       disabled={profile.blockedByMe}
                       onClick={handleMessage}
-                      className="flex-1 bg-slate-100 dark:bg-white/10 hover:bg-slate-200 dark:hover:bg-white/20 disabled:opacity-50 text-slate-600 dark:text-white py-3 rounded-xl text-[10px] font-black uppercase tracking-widest flex items-center justify-center gap-3 transition-all active:scale-95 border border-slate-200 dark:border-white/10"
+                      className="flex-1 bg-slate-100 dark:bg-white/10 hover:bg-slate-200 dark:hover:bg-white/20 disabled:opacity-50 text-slate-600 dark:text-white py-2 rounded-lg text-[10px] font-bold uppercase tracking-wide flex items-center justify-center gap-2 transition-all active:scale-95 border border-slate-200 dark:border-white/10"
                     >
-                      <span className="material-symbols-outlined text-xl">chat</span>
+                      <span className="material-symbols-outlined text-lg">chat</span>
                       {t('userProfile.sendMessage')}
                     </button>
                   </>
                 )}
                 {profile.friendStatus === 'pending' && !profile.pendingSentByMe && (
-                  <div className="flex-1 bg-slate-50 dark:bg-white/5 text-slate-400 dark:text-gray-600 py-3 rounded-xl text-[10px] font-black uppercase tracking-widest flex items-center justify-center gap-3 cursor-default border border-slate-100 dark:border-white/5">
-                    <span className="material-symbols-outlined text-xl">schedule</span>
+                  <div className="flex-1 bg-slate-50 dark:bg-white/5 text-slate-400 dark:text-gray-600 py-2 rounded-lg text-[10px] font-bold uppercase tracking-wide flex items-center justify-center gap-2 cursor-default border border-slate-100 dark:border-white/5">
+                    <span className="material-symbols-outlined text-lg">schedule</span>
                     {t('userProfile.pendingRequest')}
                   </div>
                 )}
@@ -525,13 +525,13 @@ export function UserProfilePage() {
                     <button
                       type="button"
                       onClick={() => setFriendsMenuOpen((o) => !o)}
-                      className="size-11 bg-slate-50 dark:bg-white/5 hover:bg-slate-100 dark:hover:bg-white/10 text-slate-400 dark:text-gray-500 rounded-xl flex items-center justify-center transition-all border border-slate-100 dark:border-white/5"
+                      className="size-9 bg-slate-50 dark:bg-white/5 hover:bg-slate-100 dark:hover:bg-white/10 text-slate-400 dark:text-gray-500 rounded-lg flex items-center justify-center transition-all border border-slate-100 dark:border-white/5"
                       aria-expanded={friendsMenuOpen}
                     >
                       <span className="material-symbols-outlined text-lg transition-transform duration-300" style={{ transform: friendsMenuOpen ? 'rotate(180deg)' : 'none' }}>expand_more</span>
                     </button>
                     {friendsMenuOpen && (
-                      <div className="absolute right-0 top-full z-[100] mt-3 py-2 rounded-[1.5rem] border border-slate-200 dark:border-border-dark bg-white dark:bg-card-dark shadow-2xl min-w-[200px] overflow-hidden animate-in fade-in zoom-in-95 duration-200">
+                      <div className="absolute right-0 top-full z-[100] mt-2 py-1.5 rounded-xl border border-slate-200 dark:border-border-dark bg-white dark:bg-card-dark shadow-lg min-w-[180px] overflow-hidden animate-in fade-in zoom-in-95 duration-200">
                         {profile.friendStatus === 'connected' && (
                           <>
                             <button
@@ -576,7 +576,7 @@ export function UserProfilePage() {
                 <button
                   type="button"
                   onClick={() => setShowReportUserModal(true)}
-                  className="w-full text-slate-400 dark:text-gray-600 hover:text-rose-500 py-3 text-[10px] font-black uppercase tracking-[0.2em] flex items-center justify-center gap-2 transition-colors mt-2"
+                  className="w-full text-slate-400 dark:text-gray-600 hover:text-rose-500 py-2 text-[10px] font-bold uppercase tracking-wide flex items-center justify-center gap-1.5 transition-colors mt-1"
                 >
                   <span className="material-symbols-outlined text-sm">report</span>
                   {t('userProfile.report')}
@@ -586,7 +586,7 @@ export function UserProfilePage() {
 
           </div>
 
-          <div className="bg-white dark:bg-card-dark border border-slate-200 dark:border-border-dark rounded-[2.5rem] p-8 shadow-2xl shadow-slate-200/50 dark:shadow-none">
+          <div className="bg-white dark:bg-card-dark border border-slate-200 dark:border-border-dark rounded-xl p-5 shadow-sm">
             <ProfileFriendsListModal
               t={t}
               show={friendsModalOpen}
@@ -601,30 +601,30 @@ export function UserProfilePage() {
               myPendingSentUserIds={myPendingSentUserIds}
               onSendFriendRequest={handleSendFriendRequestFromModal}
             />
-            <div className="flex justify-between items-center mb-8">
-              <h3 className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-900 dark:text-white flex items-center gap-2">
-                <span className="size-2 rounded-full bg-primary" />
+            <div className="flex justify-between items-center mb-4">
+              <h3 className="text-xs font-bold uppercase tracking-wide text-slate-900 dark:text-white flex items-center gap-2">
+                <span className="size-1.5 rounded-full bg-primary" />
                 {t('userProfile.friendsCount', { count: profile.friendsCount })}
               </h3>
               <button
                 type="button"
                 onClick={() => setFriendsModalOpen(true)}
-                className="text-[10px] font-black uppercase tracking-widest text-primary hover:underline"
+                className="text-xs font-bold text-primary hover:underline"
               >
                 {t('userProfile.viewAllFriends')}
               </button>
             </div>
-            <div className="grid grid-cols-3 gap-6">
+            <div className="grid grid-cols-3 gap-3">
               {profile.friends.slice(0, 6).map((friend) => (
                 <Link
                   key={friend.id}
                   to={`/profile/${friend.id}`}
-                  className="flex flex-col items-center gap-3 text-center group"
+                  className="flex flex-col items-center gap-2 text-center group"
                 >
-                  <div className="size-16 rounded-2xl bg-slate-50 dark:bg-white/5 border border-slate-100 dark:border-white/5 overflow-hidden shadow-sm group-hover:scale-105 transition-transform group-hover:shadow-lg group-hover:shadow-primary/10">
+                  <div className="size-12 rounded-lg bg-slate-50 dark:bg-white/5 border border-slate-100 dark:border-white/5 overflow-hidden shadow-sm group-hover:scale-105 transition-transform">
                     <img alt="" className="w-full h-full object-cover group-hover:opacity-90 transition-opacity" src={friend.avatar} />
                   </div>
-                  <span className="text-[10px] font-black text-slate-500 dark:text-gray-400 uppercase tracking-widest truncate w-full group-hover:text-primary transition-colors">{friend.name}</span>
+                  <span className="text-[10px] font-bold text-slate-500 dark:text-gray-400 uppercase tracking-wide truncate w-full group-hover:text-primary transition-colors">{friend.name}</span>
                 </Link>
               ))}
             </div>
@@ -632,7 +632,7 @@ export function UserProfilePage() {
         </div>
 
         {/* Right: Tabs & Content */}
-        <div className="lg:col-span-8 lg:flex-1 min-w-0 bg-white dark:bg-card-dark rounded-[2.5rem] border border-slate-200 dark:border-border-dark overflow-hidden shadow-2xl shadow-slate-200/50 dark:shadow-none flex flex-col">
+        <div className="lg:col-span-9 min-w-0 bg-white dark:bg-card-dark rounded-xl border border-slate-200 dark:border-border-dark overflow-hidden shadow-sm flex flex-col">
           <nav className="flex w-full border-b border-slate-100 dark:border-white/5 overflow-x-auto no-scrollbar">
             {[
               { key: 'about', label: 'userProfile.tabAbout', icon: 'info' },
@@ -655,54 +655,54 @@ export function UserProfilePage() {
                   navigate(`/profile/${userId}/${key}`)
                 }
               }}
-              className={`flex-1 flex items-center justify-center gap-1.5 px-3 py-3 text-[9px] font-black uppercase tracking-widest transition-all relative group/tab shrink-0 ${
+              className={`flex-1 flex items-center justify-center gap-1.5 px-2 py-2.5 text-xs font-bold transition-all relative group/tab shrink-0 ${
                 activeTab === key
                   ? 'text-primary'
-                  : 'text-slate-400 dark:text-gray-500 hover:text-slate-600 dark:hover:text-gray-300'
+                  : 'text-slate-500 dark:text-gray-400 hover:text-slate-700 dark:hover:text-gray-300'
               }`}
             >
-              <span className={`material-symbols-outlined text-sm transition-transform group-hover/tab:scale-110 ${activeTab === key ? 'text-primary' : 'text-slate-300 dark:text-gray-700'}`}>
+              <span className={`material-symbols-outlined text-base transition-transform group-hover/tab:scale-110 ${activeTab === key ? 'text-primary' : 'text-slate-400 dark:text-gray-600'}`}>
                 {icon}
               </span>
               {t(label)}
               {activeTab === key && (
-                <div className="absolute bottom-0 left-0 right-0 h-1 bg-primary rounded-full shadow-[0_-4px_10px_rgba(19,182,236,0.5)]" />
+                <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-primary rounded-full" />
               )}
               </button>
             ))}
           </nav>
 
-          <div className="p-10 w-full flex-1 flex flex-col space-y-10 animate-in fade-in slide-in-from-right-4 duration-500">
+          <div className="p-5 w-full flex-1 flex flex-col space-y-4 animate-in fade-in slide-in-from-right-4 duration-500">
             {activeTab === 'about' && (
               <>
-                <div className="bg-slate-50 dark:bg-white/5 border border-slate-100 dark:border-white/10 rounded-[2rem] p-8 shadow-inner">
-                  <h3 className="text-xs font-black text-slate-900 dark:text-white mb-6 uppercase tracking-[0.2em] flex items-center gap-3">
-                    <span className="material-symbols-outlined text-primary">person</span>
+                <div className="bg-white dark:bg-card-dark border border-slate-200 dark:border-border-dark rounded-xl p-5 shadow-sm">
+                  <h3 className="text-sm font-bold text-slate-900 dark:text-white mb-3 flex items-center gap-2">
+                    <span className="material-symbols-outlined text-primary text-lg">person</span>
                     {t('userProfile.bioTitle')}
                   </h3>
-                  <p className="text-sm font-medium text-slate-600 dark:text-gray-300 leading-relaxed mb-8 px-2">
+                  <p className="text-sm text-slate-600 dark:text-gray-300 leading-relaxed mb-4">
                     {profile.bio || t('userProfile.noBio')}
                   </p>
-                  <div className="flex items-center gap-3 text-xs font-black text-slate-400 dark:text-gray-600 uppercase tracking-widest border-t border-slate-200 dark:border-white/5 pt-6">
+                  <div className="flex items-center gap-2 text-xs font-medium text-slate-500 dark:text-gray-500 border-t border-slate-100 dark:border-white/5 pt-3">
                     <span className="material-symbols-outlined text-base">calendar_month</span>
                     {t('userProfile.joinedSince', { date: profile.joinedAt })}
                   </div>
                 </div>
 
-                <div className="bg-slate-50 dark:bg-white/5 border border-slate-100 dark:border-white/10 rounded-[2rem] p-8 shadow-inner">
-                  <div className="flex justify-between items-center mb-8">
-                    <h3 className="text-xs font-black text-slate-900 dark:text-white flex items-center gap-3 uppercase tracking-[0.2em]">
-                      <span className="material-symbols-outlined text-amber-500">emoji_events</span>
+                <div className="bg-white dark:bg-card-dark border border-slate-200 dark:border-border-dark rounded-xl p-5 shadow-sm">
+                  <div className="flex justify-between items-center mb-4">
+                    <h3 className="text-sm font-bold text-slate-900 dark:text-white flex items-center gap-2">
+                      <span className="material-symbols-outlined text-amber-500 text-lg">emoji_events</span>
                       {t('userProfile.achievements')}
                     </h3>
                   </div>
-                  <div className="flex flex-wrap gap-8 px-2">
+                  <div className="flex flex-wrap gap-4">
                     {userAchievementsLoading ? (
-                      <div className="flex flex-wrap gap-8 w-full">
+                      <div className="flex flex-wrap gap-4 w-full">
                         {Array.from({ length: 5 }).map((_, i) => (
-                          <div key={i} className="flex flex-col items-center gap-3 animate-pulse">
-                            <div className="size-14 rounded-full bg-slate-200 dark:bg-white/5" />
-                            <div className="h-2 w-12 bg-slate-200 dark:bg-white/5 rounded" />
+                          <div key={i} className="flex flex-col items-center gap-2 animate-pulse">
+                            <div className="size-10 rounded-full bg-slate-200 dark:bg-white/5" />
+                            <div className="h-2 w-10 bg-slate-200 dark:bg-white/5 rounded" />
                           </div>
                         ))}
                       </div>
@@ -718,9 +718,9 @@ export function UserProfilePage() {
                         )
                       )
                       if (unlockedWithBadges.length === 0) return (
-                        <div className="w-full flex flex-col items-center justify-center py-10 opacity-40">
-                          <span className="material-symbols-outlined text-6xl text-slate-300 dark:text-gray-700">workspace_premium</span>
-                          <p className="text-xs font-black uppercase tracking-[0.2em] text-slate-400 dark:text-gray-600 mt-4">{t('userProfile.noAchievements') || 'No achievements yet'}</p>
+                        <div className="w-full flex flex-col items-center justify-center py-6 opacity-40">
+                          <span className="material-symbols-outlined text-4xl text-slate-300 dark:text-gray-700">workspace_premium</span>
+                          <p className="text-xs font-bold text-slate-400 dark:text-gray-600 mt-3">{t('userProfile.noAchievements') || 'No achievements yet'}</p>
                         </div>
                       )
                       
@@ -747,16 +747,15 @@ export function UserProfilePage() {
                         return badges.map(badge => {
                           const img = badge.image && !String(badge.image).startsWith('blob:') ? String(badge.image) : ''
                           return (
-                            <div key={badge.id} className="flex flex-col items-center text-center gap-2.5 group cursor-pointer">
-                              <div className="size-14 rounded-full border-[3px] border-amber-400/50 bg-gradient-to-br from-amber-500/20 to-slate-900/80 text-amber-200 shadow-lg ring-2 ring-transparent transition-all group-hover:scale-110 group-hover:rotate-6 flex items-center justify-center relative overflow-hidden">
+                            <div key={badge.id} className="flex flex-col items-center text-center gap-1.5 group cursor-pointer">
+                              <div className="size-10 rounded-full border-2 border-amber-400/50 bg-gradient-to-br from-amber-500/20 to-slate-900/80 text-amber-200 shadow-sm transition-all group-hover:scale-105 flex items-center justify-center relative overflow-hidden">
                                 {img ? (
                                   <img src={img} alt="" className="w-full h-full object-cover" />
                                 ) : (
-                                  <span className="material-symbols-outlined text-2xl">{badge.icon}</span>
+                                  <span className="material-symbols-outlined text-lg">{badge.icon}</span>
                                 )}
-                                <div className="absolute inset-0 bg-gradient-to-tr from-white/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
                               </div>
-                              <span className="text-[9px] font-black text-slate-500 dark:text-gray-400 uppercase tracking-widest group-hover:text-primary transition-colors line-clamp-1 max-w-[70px]">{badge.name}</span>
+                              <span className="text-[10px] font-bold text-slate-500 dark:text-gray-400 group-hover:text-primary transition-colors line-clamp-1 max-w-[64px]">{badge.name}</span>
                             </div>
                           )
                         })
@@ -765,27 +764,27 @@ export function UserProfilePage() {
                   </div>
                 </div>
 
-                <div className="bg-slate-50 dark:bg-white/5 border border-slate-100 dark:border-white/10 rounded-[2rem] p-8 shadow-inner">
-                  <h3 className="text-xs font-black text-slate-900 dark:text-white mb-8 uppercase tracking-[0.2em] flex items-center gap-3">
-                    <span className="material-symbols-outlined text-primary">analytics</span>
+                <div className="bg-white dark:bg-card-dark border border-slate-200 dark:border-border-dark rounded-xl p-5 shadow-sm">
+                  <h3 className="text-sm font-bold text-slate-900 dark:text-white mb-4 flex items-center gap-2">
+                    <span className="material-symbols-outlined text-primary text-lg">analytics</span>
                     {t('profile.skillStats')}
                   </h3>
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
                     {userSkillStats.map(({ icon, label, value, change, changeColor }) => (
                       <div
                         key={label}
-                        className="bg-white dark:bg-card-dark p-6 rounded-2xl border border-slate-100 dark:border-white/10 flex flex-col items-center text-center shadow-sm"
+                        className="bg-slate-50 dark:bg-background-dark/50 p-4 rounded-lg border border-slate-100 dark:border-border-dark flex flex-col items-center text-center"
                       >
-                        <span className={`material-symbols-outlined text-3xl mb-4 ${changeColor || 'text-primary'}`}>
+                        <span className={`material-symbols-outlined text-2xl mb-2 ${changeColor || 'text-primary'}`}>
                           {icon}
                         </span>
-                        <span className="text-[10px] font-black text-slate-400 dark:text-gray-500 uppercase tracking-widest mb-2">{t(label)}</span>
-                        <div className="flex items-baseline gap-2">
-                          <span className="text-2xl font-bold text-slate-900 dark:text-white">{value}</span>
-                          <span className="text-[10px] font-black text-slate-400">XP</span>
+                        <span className="text-[10px] font-bold text-slate-500 dark:text-gray-500 uppercase tracking-wide mb-1">{t(label)}</span>
+                        <div className="flex items-baseline gap-1">
+                          <span className="text-lg font-bold text-slate-900 dark:text-white">{value}</span>
+                          <span className="text-[10px] font-bold text-slate-400">XP</span>
                         </div>
                         {change && (
-                          <span className={`text-[10px] font-bold mt-2 ${changeColor}`}>{change}</span>
+                          <span className={`text-[10px] font-bold mt-1 ${changeColor}`}>{change}</span>
                         )}
                       </div>
                     ))}
@@ -795,12 +794,12 @@ export function UserProfilePage() {
             )}
 
             {activeTab === 'personalInfo' && (
-              <div className="bg-slate-50 dark:bg-white/5 border border-slate-100 dark:border-white/10 rounded-[2rem] p-10 shadow-inner">
-                <h3 className="text-xs font-black text-slate-900 dark:text-white mb-10 uppercase tracking-[0.2em] flex items-center gap-3">
-                  <span className="material-symbols-outlined text-primary">badge</span>
+              <div className="bg-white dark:bg-card-dark border border-slate-200 dark:border-border-dark rounded-xl p-5 shadow-sm">
+                <h3 className="text-sm font-bold text-slate-900 dark:text-white mb-4 flex items-center gap-2">
+                  <span className="material-symbols-outlined text-primary text-lg">badge</span>
                   {t('userProfile.personalInfoTitle')}
                 </h3>
-                <div className="flex flex-col gap-2 mb-10 text-xs font-black text-slate-500 dark:text-gray-400 uppercase tracking-widest">
+                <div className="flex flex-col gap-1 mb-5 text-xs font-medium text-slate-500 dark:text-gray-400">
                   <span>
                     {t('profile.currentLevel')} {profileProgress.level || 1}
                   </span>
@@ -823,14 +822,14 @@ export function UserProfilePage() {
                     return Number.isNaN(d.getTime()) ? val : d.toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit', year: 'numeric' })
                   }
                   const genderLabel = gender ? t(`auth.gender${gender.charAt(0).toUpperCase() + gender.slice(1)}`) : ''
-                  const labelClass = 'text-xs font-black text-slate-400 dark:text-gray-500 uppercase tracking-widest mb-2 flex items-center gap-2'
-                  const valueClass = 'text-sm font-bold text-slate-700 dark:text-white px-1'
-                  const emptyClass = 'text-sm font-bold text-slate-300 dark:text-gray-700 italic px-1'
+                  const labelClass = 'text-xs font-bold text-slate-500 dark:text-gray-500 mb-1 flex items-center gap-1.5'
+                  const valueClass = 'text-sm font-medium text-slate-800 dark:text-white'
+                  const emptyClass = 'text-sm font-medium text-slate-300 dark:text-gray-600 italic'
                   
                   const InfoItem = ({ label, value, icon, isEmpty, colSpan = 1 }) => (
-                    <div className={`space-y-2 ${colSpan === 2 ? 'md:col-span-2' : ''}`}>
+                    <div className={`space-y-1 ${colSpan === 2 ? 'md:col-span-2' : ''}`}>
                       <div className={labelClass}>
-                        <span className="material-symbols-outlined text-sm text-primary/50">{icon}</span>
+                        <span className="material-symbols-outlined text-sm text-primary/60">{icon}</span>
                         {label}
                       </div>
                       <div className={isEmpty ? emptyClass : valueClass}>{value || '—'}</div>
@@ -838,7 +837,7 @@ export function UserProfilePage() {
                   )
 
                   return (
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-y-10 gap-x-12">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-y-5 gap-x-8">
                       <InfoItem label={t('profile.displayName')} value={name} icon="person" isEmpty={!name} />
                       <InfoItem label={t('auth.email')} value={email} icon="mail" isEmpty={!email} />
                       <InfoItem label={t('profile.phone')} value={phone} icon="call" isEmpty={!phone} />
@@ -852,10 +851,18 @@ export function UserProfilePage() {
               </div>
             )}
 
-            {activeTab === 'skills' && <ProfileSkillsTab readOnly initialData={profile?.profileSkills} />}
+            {activeTab === 'skills' && (
+              <div className="bg-white dark:bg-card-dark border border-slate-200 dark:border-border-dark rounded-xl p-5 shadow-sm">
+                <ProfileSkillsTab readOnly initialData={profile?.profileSkills} />
+              </div>
+            )}
 
             {activeTab === 'posts' && (
-              <div className="animate-in fade-in slide-in-from-bottom-4 duration-500">
+              <div className="bg-white dark:bg-card-dark border border-slate-200 dark:border-border-dark rounded-xl p-5 shadow-sm">
+                <h3 className="text-sm font-bold text-slate-900 dark:text-white mb-4 flex items-center gap-2">
+                  <span className="material-symbols-outlined text-primary text-lg">article</span>
+                  {t('userProfile.tabPosts')}
+                </h3>
                 <ProfilePostsList
                   posts={userPosts}
                   loading={userPostsLoading}
@@ -865,23 +872,35 @@ export function UserProfilePage() {
             )}
 
             {activeTab === 'photos' && (
-              <ProfilePhotosGrid
-                photos={userPhotos}
-                loading={userPhotosLoading}
-                error={userPhotosError}
-                hasMore={userPhotosHasMore}
-                loadMore={loadMoreUserPhotos}
-              />
+              <div className="bg-white dark:bg-card-dark border border-slate-200 dark:border-border-dark rounded-xl p-5 shadow-sm">
+                <h3 className="text-sm font-bold text-slate-900 dark:text-white mb-4 flex items-center gap-2">
+                  <span className="material-symbols-outlined text-primary text-lg">photo_library</span>
+                  {t('userProfile.tabPhotos')}
+                </h3>
+                <ProfilePhotosGrid
+                  photos={userPhotos}
+                  loading={userPhotosLoading}
+                  error={userPhotosError}
+                  hasMore={userPhotosHasMore}
+                  loadMore={loadMoreUserPhotos}
+                />
+              </div>
             )}
 
             {activeTab === 'video' && (
-              <ProfileVideosGrid
-                videos={userVideos}
-                loading={userVideosLoading}
-                error={userVideosError}
-                hasMore={userVideosHasMore}
-                loadMore={loadMoreUserVideos}
-              />
+              <div className="bg-white dark:bg-card-dark border border-slate-200 dark:border-border-dark rounded-xl p-5 shadow-sm">
+                <h3 className="text-sm font-bold text-slate-900 dark:text-white mb-4 flex items-center gap-2">
+                  <span className="material-symbols-outlined text-primary text-lg">movie</span>
+                  {t('userProfile.tabVideo')}
+                </h3>
+                <ProfileVideosGrid
+                  videos={userVideos}
+                  loading={userVideosLoading}
+                  error={userVideosError}
+                  hasMore={userVideosHasMore}
+                  loadMore={loadMoreUserVideos}
+                />
+              </div>
             )}
           </div>
         </div>

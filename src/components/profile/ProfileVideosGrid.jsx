@@ -51,7 +51,7 @@ export function ProfileVideosGrid({ videos, loading, error, hasMore, loadMore })
 
   return (
     <div className="w-full">
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
         {videos.map((item, index) => (
           <button
             key={`${item.postId || 'post'}-${index}-${item.url}`}
@@ -64,16 +64,16 @@ export function ProfileVideosGrid({ videos, loading, error, hasMore, loadMore })
                 })
               }
             }}
-            className="relative group overflow-hidden rounded-xl border border-slate-200 dark:border-border-dark bg-black cursor-pointer block w-full outline-none focus:ring-2 focus:ring-primary"
+            className="relative group overflow-hidden rounded-lg border border-slate-200 dark:border-border-dark bg-black cursor-pointer block w-full outline-none focus:ring-2 focus:ring-primary"
           >
             <video
               src={item.url}
               preload="metadata"
-              className="w-full h-56 object-cover pointer-events-none"
+              className="w-full h-40 object-cover pointer-events-none"
             />
             <div className="absolute inset-0 bg-black/20 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
-              <div className="w-12 h-12 rounded-full bg-white/20 backdrop-blur-md flex items-center justify-center border border-white/30 scale-90 group-hover:scale-100 transition-transform">
-                <span className="material-symbols-outlined text-white text-3xl">play_arrow</span>
+              <div className="size-10 rounded-full bg-white/20 backdrop-blur-md flex items-center justify-center border border-white/30 scale-90 group-hover:scale-100 transition-transform">
+                <span className="material-symbols-outlined text-white text-2xl">play_arrow</span>
               </div>
             </div>
           </button>

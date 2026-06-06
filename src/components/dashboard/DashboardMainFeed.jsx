@@ -318,42 +318,40 @@ export function DashboardMainFeed({
         </div>
       )}
 
-      <div className="flex items-center gap-4 p-1.5 rounded-2xl bg-white dark:bg-card-dark border border-slate-200 dark:border-border-dark shadow-sm">
-        <div className="flex gap-1.5 p-1 w-full">
-          <button
-            type="button"
-            onClick={() => setFeedTab?.('all')}
-            className={`flex-1 px-6 py-2.5 rounded-xl text-xs font-black uppercase tracking-wider transition-all ${
-              feedTab === 'all'
-                ? 'bg-primary text-white shadow-lg shadow-primary/25 scale-[1.02]'
-                : 'text-slate-500 dark:text-[#92bbc9] hover:bg-slate-50 dark:hover:bg-white/5'
-            }`}
-          >
-            {t('dashboard.all')}
-          </button>
-          <button
-            type="button"
-            onClick={() => setFeedTab?.('following')}
-            className={`flex-1 px-6 py-2.5 rounded-xl text-xs font-black uppercase tracking-wider transition-all ${
-              feedTab === 'following'
-                ? 'bg-primary text-white shadow-lg shadow-primary/25 scale-[1.02]'
-                : 'text-slate-500 dark:text-[#92bbc9] hover:bg-slate-50 dark:hover:bg-white/5'
-            }`}
-          >
-            {t('dashboard.following')}
-          </button>
-          <button
-            type="button"
-            onClick={() => setFeedTab?.('popular')}
-            className={`flex-1 px-6 py-2.5 rounded-xl text-xs font-black uppercase tracking-wider transition-all ${
-              feedTab === 'popular'
-                ? 'bg-primary text-white shadow-lg shadow-primary/25 scale-[1.02]'
-                : 'text-slate-500 dark:text-[#92bbc9] hover:bg-slate-50 dark:hover:bg-white/5'
-            }`}
-          >
-            {t('dashboard.popular')}
-          </button>
-        </div>
+      <div className="flex gap-0.5 p-1 rounded-lg w-1/2 min-w-[220px] bg-white dark:bg-card-dark border border-slate-100 dark:border-border-dark">
+        <button
+          type="button"
+          onClick={() => setFeedTab?.('all')}
+          className={`flex-1 min-w-0 px-2 py-1.5 rounded-md text-xs font-bold transition-all ${
+            feedTab === 'all'
+              ? 'bg-primary text-white'
+              : 'text-slate-500 dark:text-[#92bbc9] hover:bg-slate-50 dark:hover:bg-white/5'
+          }`}
+        >
+          {t('dashboard.all')}
+        </button>
+        <button
+          type="button"
+          onClick={() => setFeedTab?.('following')}
+          className={`flex-1 min-w-0 px-2 py-1.5 rounded-md text-xs font-bold transition-all ${
+            feedTab === 'following'
+              ? 'bg-primary text-white'
+              : 'text-slate-500 dark:text-[#92bbc9] hover:bg-slate-50 dark:hover:bg-white/5'
+          }`}
+        >
+          {t('dashboard.following')}
+        </button>
+        <button
+          type="button"
+          onClick={() => setFeedTab?.('popular')}
+          className={`flex-1 min-w-0 px-2 py-1.5 rounded-md text-xs font-bold transition-all ${
+            feedTab === 'popular'
+              ? 'bg-primary text-white'
+              : 'text-slate-500 dark:text-[#92bbc9] hover:bg-slate-50 dark:hover:bg-white/5'
+          }`}
+        >
+          {t('dashboard.popular')}
+        </button>
       </div>
 
       {postsLoading ? (

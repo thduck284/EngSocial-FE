@@ -9,6 +9,12 @@ import { hasGiphyKey } from '../../../services/giphy.service'
 
 export function PostCommentsSectionBase({
   variant = 'feed', // 'feed' | 'modal'
+  /** 'dark' = always dark (image viewer); 'adaptive' = follow light/dark theme (view post modal) */
+  modalSurface = 'dark',
+  /** Pin composer to bottom; comments list scrolls above (image viewer sidebar) */
+  stickyComposer = false,
+  /** Scroll post body + comments together; composer sticks to bottom of sidebar */
+  unifiedScroll = false,
   t,
   comments,
   commentsLoading,
@@ -67,6 +73,9 @@ export function PostCommentsSectionBase({
   onExpandAfterReplyConsumed,
 }) {
   const isModal = variant === 'modal'
+  const isDarkOnlyModal = isModal && modalSurface !== 'adaptive'
+  const useStickyComposer = isModal && stickyComposer
+  const useUnifiedScroll = useStickyComposer && unifiedScroll
   const rootSentinelRef = useRef(null)
 
   useEffect(() => {
@@ -89,18 +98,30 @@ export function PostCommentsSectionBase({
   }, [isModal, loadMoreRootComments, rootHasMore])
 
   return (
-    <div className={isModal ? 'flex-1 flex flex-col min-h-0' : ''}>
+    <div
+      className={
+        isModal
+          ? useUnifiedScroll
+            ? 'min-w-0 overflow-x-hidden'
+            : 'flex-1 flex flex-col min-h-0 min-w-0 overflow-x-hidden'
+          : ''
+      }
+    >
       <div
         className={
           isModal
-            ? 'flex-1 px-3 pt-2 pb-2'
+            ? useUnifiedScroll
+              ? 'px-3 pt-2 pb-2'
+              : useStickyComposer
+                ? 'flex-1 min-h-0 overflow-y-auto overflow-x-hidden px-3 pt-2 pb-2 custom-scrollbar'
+                : 'flex-1 px-3 pt-2 pb-2'
             : 'mt-2 pt-3 border-t border-slate-100 dark:border-[#325a67]'
         }
       >
         {commentsLoading ? (
           <div
             className={
-              isModal
+              isDarkOnlyModal
                 ? 'py-6 text-center text-sm text-[#92bbc9]'
                 : 'py-4 text-center text-sm text-slate-500 dark:text-[#92bbc9]'
             }
@@ -110,12 +131,12 @@ export function PostCommentsSectionBase({
         ) : comments.length === 0 ? (
           <div
             className={
-              isModal
+              isDarkOnlyModal
                 ? 'flex flex-col items-center justify-center text-center text-slate-300 py-8'
                 : 'py-4 text-center text-sm text-slate-500 dark:text-[#92bbc9]'
             }
           >
-            {isModal ? (
+            {isDarkOnlyModal ? (
               <>
                 <span className="material-symbols-outlined text-4xl mb-2 text-[#325a67]">
                   description
@@ -141,6 +162,7 @@ export function PostCommentsSectionBase({
           >
             <PostCommentsThread
               isModal={isModal}
+              modalSurface={modalSurface}
               t={t}
               comments={comments}
               handleFeedCommentLikeMouseEnter={handleFeedCommentLikeMouseEnter}
@@ -197,14 +219,18 @@ export function PostCommentsSectionBase({
       <div
         className={
           isModal
-            ? 'px-2 py-0.5 border-t border-[#325a67] bg-[#0f191c]'
+            ? useStickyComposer
+              ? useUnifiedScroll
+                ? 'sticky bottom-0 z-10 px-2 py-2 border-t border-slate-200 dark:border-[#325a67] bg-white dark:bg-[#111e22] shadow-[0_-6px_16px_rgba(15,23,42,0.08)] dark:shadow-[0_-6px_20px_rgba(0,0,0,0.45)]'
+                : 'shrink-0 z-10 px-2 py-2 border-t border-slate-200 dark:border-[#325a67] bg-white dark:bg-[#111e22] shadow-[0_-6px_16px_rgba(15,23,42,0.08)] dark:shadow-[0_-6px_20px_rgba(0,0,0,0.45)]'
+              : 'px-2 py-0.5 border-t border-slate-200 dark:border-[#325a67] bg-slate-50 dark:bg-[#0f191c]'
             : 'mt-3'
         }
       >
         <div
           className={
             isModal
-              ? 'flex items-center gap-1 px-3 py-1 rounded-xl bg-[#233f48]'
+              ? 'flex items-center gap-1 px-3 py-1 rounded-xl bg-white dark:bg-[#233f48] border border-slate-200 dark:border-[#325a67]'
               : 'flex items-center gap-2 px-3 py-2 rounded-xl bg-slate-50 dark:bg-[#233f48] border border-slate-200 dark:border-[#325a67]'
           }
         >
@@ -212,7 +238,7 @@ export function PostCommentsSectionBase({
             {replyToComment && (
               <div
                 className={
-                  isModal
+                  isDarkOnlyModal
                     ? 'mb-1 flex items-center justify-between text-xs text-[#92bbc9]'
                     : 'mb-1 flex items-center justify-between text-xs text-slate-600 dark:text-[#92bbc9]'
                 }
@@ -231,7 +257,7 @@ export function PostCommentsSectionBase({
                   type="button"
                   onClick={cancelReplyToComment}
                   className={
-                    isModal
+                    isDarkOnlyModal
                       ? 'ml-2 inline-flex items-center gap-1 px-2 py-0.5 rounded-full border border-[#325a67] hover:bg-[#2b3b44] transition-colors'
                       : 'ml-2 inline-flex items-center gap-1 px-2 py-0.5 rounded-full border border-slate-200 dark:border-[#325a67] hover:bg-slate-100 dark:hover:bg-[#2b3b44] transition-colors'
                   }
@@ -255,7 +281,7 @@ export function PostCommentsSectionBase({
                       src={url}
                       alt=""
                       className={
-                        isModal
+                        isDarkOnlyModal
                           ? 'w-10 h-10 rounded-lg object-cover border border-[#325a67]'
                           : 'w-10 h-10 rounded-lg object-cover border border-slate-200 dark:border-[#325a67]'
                       }
@@ -278,7 +304,7 @@ export function PostCommentsSectionBase({
                     type="button"
                     onClick={removeCommentVideo}
                     className={
-                      isModal
+                      isDarkOnlyModal
                         ? 'inline-flex items-center gap-1 px-2 py-1 rounded-lg border border-[#325a67] bg-[#0f191c] text-xs text-[#92bbc9] hover:bg-[#2b3b44] transition-colors'
                         : 'inline-flex items-center gap-1 px-2 py-1 rounded-lg border border-slate-200 dark:border-[#325a67] bg-white/70 dark:bg-[#0f191c] text-xs text-slate-600 dark:text-[#92bbc9] hover:bg-slate-100 dark:hover:bg-[#2b3b44] transition-colors'
                     }
@@ -293,7 +319,7 @@ export function PostCommentsSectionBase({
                     type="button"
                     onClick={removeCommentAudio}
                     className={
-                      isModal
+                      isDarkOnlyModal
                         ? 'inline-flex items-center gap-1 px-2 py-1 rounded-lg border border-[#325a67] bg-[#0f191c] text-xs text-[#92bbc9] hover:bg-[#2b3b44] transition-colors'
                         : 'inline-flex items-center gap-1 px-2 py-1 rounded-lg border border-slate-200 dark:border-[#325a67] bg-white/70 dark:bg-[#0f191c] text-xs text-slate-600 dark:text-[#92bbc9] hover:bg-slate-100 dark:hover:bg-[#2b3b44] transition-colors'
                     }
@@ -311,7 +337,7 @@ export function PostCommentsSectionBase({
                     type="button"
                     onClick={() => removeCommentDoc(i)}
                     className={
-                      isModal
+                      isDarkOnlyModal
                         ? 'inline-flex items-center gap-1 px-2 py-1 rounded-lg border border-[#325a67] bg-[#0f191c] text-xs text-[#92bbc9] hover:bg-[#2b3b44] transition-colors max-w-full'
                         : 'inline-flex items-center gap-1 px-2 py-1 rounded-lg border border-slate-200 dark:border-[#325a67] bg-white/70 dark:bg-[#0f191c] text-xs text-slate-600 dark:text-[#92bbc9] hover:bg-slate-100 dark:hover:bg-[#2b3b44] transition-colors max-w-full'
                     }
@@ -331,7 +357,7 @@ export function PostCommentsSectionBase({
               rows={1}
               placeholder={t('dashboard.writeComment') || 'Viết bình luận...'}
               className={
-                isModal
+                isDarkOnlyModal
                   ? 'w-full bg-transparent text-slate-100 placeholder:text-[#92bbc9] text-sm leading-snug focus:outline-none resize-none overflow-y-auto'
                   : 'w-full bg-transparent text-slate-900 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-[#92bbc9] text-sm leading-snug focus:outline-none resize-none overflow-y-auto'
               }
@@ -349,7 +375,7 @@ export function PostCommentsSectionBase({
             {commentError ? (
               <p
                 className={
-                  isModal ? 'text-xs text-red-300' : 'text-xs text-red-500'
+                  isDarkOnlyModal ? 'text-xs text-red-300' : 'text-xs text-red-500'
                 }
               >
                 {commentError}
@@ -357,7 +383,7 @@ export function PostCommentsSectionBase({
             ) : null}
             <div
               className={
-                isModal
+                isDarkOnlyModal
                   ? 'flex items-center gap-1 text-[#92bbc9]'
                   : 'flex items-center gap-1 text-slate-500 dark:text-[#92bbc9]'
               }
@@ -392,7 +418,7 @@ export function PostCommentsSectionBase({
                 className="hidden"
                 onChange={handleCommentDocSelect}
               />
-              {isModal && (
+              {isDarkOnlyModal && (
                 <button
                   type="button"
                   className="p-0.5 rounded-full text-[#9ca3af] hover:bg-[#2b3b44] transition-colors"
@@ -408,7 +434,7 @@ export function PostCommentsSectionBase({
                 onClick={() => commentImageInputRef.current?.click()}
                 disabled={commentUploading || commentImages.length >= 10}
                 className={
-                  isModal
+                  isDarkOnlyModal
                     ? 'p-0.5 rounded-full text-[#9ca3af] hover:bg-[#2b3b44] transition-colors'
                     : 'p-1 rounded-full hover:bg-slate-200 dark:hover:bg-[#2b3b44] transition-colors'
                 }
@@ -421,7 +447,7 @@ export function PostCommentsSectionBase({
                 onClick={() => commentDocInputRef.current?.click()}
                 disabled={commentUploading || commentDocuments.length >= 5}
                 className={
-                  isModal
+                  isDarkOnlyModal
                     ? 'p-0.5 rounded-full text-[#9ca3af] hover:bg-[#2b3b44] transition-colors'
                     : 'p-1 rounded-full hover:bg-slate-200 dark:hover:bg-[#2b3b44] transition-colors'
                 }
@@ -436,7 +462,7 @@ export function PostCommentsSectionBase({
                 onClick={() => commentVideoInputRef.current?.click()}
                 disabled={commentUploading || Boolean(commentVideo)}
                 className={
-                  isModal
+                  isDarkOnlyModal
                     ? 'p-0.5 rounded-full text-[#9ca3af] hover:bg-[#2b3b44] transition-colors'
                     : 'p-1 rounded-full hover:bg-slate-200 dark:hover:bg-[#2b3b44] transition-colors'
                 }
@@ -451,7 +477,7 @@ export function PostCommentsSectionBase({
                 onClick={() => commentAudioInputRef.current?.click()}
                 disabled={commentUploading || Boolean(commentAudio)}
                 className={
-                  isModal
+                  isDarkOnlyModal
                     ? 'p-0.5 rounded-full text-[#9ca3af] hover:bg-[#2b3b44] transition-colors'
                     : 'p-1 rounded-full hover:bg-slate-200 dark:hover:bg-[#2b3b44] transition-colors'
                 }
@@ -466,7 +492,7 @@ export function PostCommentsSectionBase({
                 onClick={() => setShowGifPicker((v) => !v)}
                 disabled={commentUploading || commentImages.length >= 10}
                 className={
-                  isModal
+                  isDarkOnlyModal
                     ? 'p-0.5 rounded-full text-[#9ca3af] hover:bg-[#2b3b44] transition-colors'
                     : 'p-1 rounded-full hover:bg-slate-200 dark:hover:bg-[#2b3b44] transition-colors'
                 }
@@ -479,7 +505,7 @@ export function PostCommentsSectionBase({
                 onClick={handleSendComment}
                 disabled={commentUploading || commentSending}
                 className={
-                  (isModal
+                  (isDarkOnlyModal
                     ? 'ml-auto p-1 rounded-full text-primary hover:bg-[#314750] transition-colors shrink-0'
                     : 'ml-auto p-1.5 rounded-full text-primary hover:bg-slate-200 dark:hover:bg-[#314750] transition-colors') +
                   (commentUploading || commentSending
@@ -501,14 +527,14 @@ export function PostCommentsSectionBase({
             {showGifPicker && (
               <div
                 className={
-                  isModal
+                  isDarkOnlyModal
                     ? 'mt-1 rounded-xl border border-[#325a67] bg-[#0f191c] overflow-hidden'
                     : 'mt-1 rounded-xl border border-slate-200 dark:border-[#325a67] bg-white dark:bg-[#0f191c] overflow-hidden'
                 }
               >
                 <div
                   className={
-                    isModal
+                    isDarkOnlyModal
                       ? 'p-2 border-b border-[#325a67]'
                       : 'p-2 border-b border-slate-200 dark:border-[#325a67]'
                   }
@@ -523,7 +549,7 @@ export function PostCommentsSectionBase({
                         (e.preventDefault(), handleGifSearch())
                       }
                       className={
-                        isModal
+                        isDarkOnlyModal
                           ? 'w-full bg-[#233f48] border border-[#325a67] rounded-lg px-3 py-2 text-sm text-slate-100 placeholder:text-[#92bbc9] focus:outline-none'
                           : 'w-full bg-slate-50 dark:bg-[#233f48] border border-slate-200 dark:border-[#325a67] rounded-lg px-3 py-2 text-sm text-slate-900 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-[#92bbc9] focus:outline-none'
                       }
@@ -543,11 +569,11 @@ export function PostCommentsSectionBase({
                 </div>
                 <div className="p-2 grid grid-cols-2 gap-2 max-h-56 overflow-y-auto custom-scrollbar">
                   {!hasGiphyKey ? (
-                    <div className="col-span-2 py-4 text-center text-xs text-[#92bbc9]">
+                    <div className="col-span-2 py-4 text-center text-xs text-slate-500 dark:text-[#92bbc9]">
                       {t('messages.giphyKeyRequired')}
                     </div>
                   ) : gifLoading && gifResults.length === 0 ? (
-                    <div className="col-span-2 py-6 text-center text-sm text-[#92bbc9]">
+                    <div className="col-span-2 py-6 text-center text-sm text-slate-500 dark:text-[#92bbc9]">
                       {t('common.loading') || 'Đang tải...'}
                     </div>
                   ) : (
@@ -557,7 +583,7 @@ export function PostCommentsSectionBase({
                         type="button"
                         onClick={() => handleSelectGif(g.url)}
                         className={
-                          isModal
+                          isDarkOnlyModal
                             ? 'h-24 rounded-lg overflow-hidden border border-[#325a67] hover:ring-2 ring-primary'
                             : 'h-24 rounded-lg overflow-hidden border border-slate-200 dark:border-[#325a67] hover:ring-2 ring-primary'
                         }

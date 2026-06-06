@@ -90,7 +90,7 @@ body {
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 1rem;
+  padding: 0.5rem;
   background-color: rgba(0, 0, 0, 0.6);
 }
 

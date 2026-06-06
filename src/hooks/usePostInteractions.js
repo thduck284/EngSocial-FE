@@ -188,7 +188,7 @@ export function usePostReactionPicker() {
 
 // ─── Dashboard post comments (feed) ───────────────────────────────────────────
 
-export function useDashboardPostComments(postId, t) {
+export function useDashboardPostComments(postId, t, onCommentAdded) {
   const [showCommentsPanel, setShowCommentsPanel] = useState(false)
   const [comments, setComments] = useState([])
   const [commentsLoading, setCommentsLoading] = useState(false)
@@ -555,6 +555,7 @@ export function useDashboardPostComments(postId, t) {
       if (newComment) {
         if (parentIdForExpand) pendingExpandParentIdRef.current = String(parentIdForExpand)
         setComments((prev) => [...prev, newComment])
+        if (typeof onCommentAdded === 'function') onCommentAdded(newComment)
       }
       setCommentText('')
       setCommentImages([])

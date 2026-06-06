@@ -198,8 +198,7 @@ export function CommunityGroupMembersList({
   const handleKickMember = async (userId, displayName) => {
     if (!groupId || !userId || kickBusyId) return
     const msg = t('groups.membersModal.kickConfirm', {
-      defaultValue: 'Loại {{name}} khỏi nhóm?',
-      name: displayName || t('groups.membersModal.unnamed', { defaultValue: 'Thành viên' }),
+      name: displayName || t('groups.membersModal.unnamed'),
     })
     if (!window.confirm(msg)) return
     setKickBusyId(userId)
@@ -214,19 +213,21 @@ export function CommunityGroupMembersList({
     }
   }
 
-  const membersWord = t('groups.header.members', { defaultValue: 'thành viên' })
+  const membersWord = t('groups.header.members')
 
   const listInner =
     loading ? (
-      <p className="text-xs text-slate-500 px-2 py-4">
-        {t('groups.membersModal.loading', { defaultValue: 'Đang tải...' })}
-      </p>
+      <div className="py-10 flex flex-col items-center gap-2 text-slate-400">
+        <span className="material-symbols-outlined animate-spin text-2xl text-primary">progress_activity</span>
+        <p className="text-xs font-bold">{t('groups.membersModal.loading')}</p>
+      </div>
     ) : members.length === 0 ? (
-      <p className="text-xs text-slate-500 px-2 py-4">
-        {t('groups.membersModal.empty', { defaultValue: 'Chưa có thành viên.' })}
-      </p>
+      <div className="py-10 text-center text-slate-400">
+        <span className="material-symbols-outlined text-4xl mb-2 opacity-20">group_off</span>
+        <p className="text-xs">{t('groups.membersModal.empty')}</p>
+      </div>
     ) : (
-      <ul className="space-y-1 w-full">
+      <ul className="space-y-0.5 w-full">
         {members.map((m) => {
           const isSelf = myId && String(m.id) === myId
           const isFriend = connectedIds.has(String(m.id))
@@ -237,14 +238,14 @@ export function CommunityGroupMembersList({
           return (
             <li
               key={m.id}
-              className="flex w-full items-center gap-3 px-2 py-2.5 rounded-xl hover:bg-slate-900/80"
+              className="flex w-full items-center gap-2 px-2 py-2 rounded-lg hover:bg-slate-50 dark:hover:bg-background-dark/60 transition-colors"
             >
               <button
                 type="button"
-                className="flex items-center gap-3 min-w-0 flex-1 text-left"
+                className="flex items-center gap-2.5 min-w-0 flex-1 text-left"
                 onClick={() => goProfile(m.id)}
               >
-                <div className="size-10 rounded-full border border-slate-700 bg-slate-800 overflow-hidden flex items-center justify-center shrink-0">
+                <div className="size-9 rounded-lg border border-slate-200 dark:border-border-dark bg-slate-100 dark:bg-background-dark overflow-hidden flex items-center justify-center shrink-0">
                   <img
                     src={m.avatar || DEFAULT_AVATAR}
                     alt=""
@@ -252,38 +253,38 @@ export function CommunityGroupMembersList({
                   />
                 </div>
                 <div className="min-w-0 flex-1">
-                  <p className="text-sm font-medium text-slate-100 truncate">
-                    {m.name || t('groups.membersModal.unnamed', { defaultValue: 'Thành viên' })}
+                  <p className="text-xs font-medium text-slate-900 dark:text-slate-100 truncate">
+                    {m.name || t('groups.membersModal.unnamed')}
                   </p>
                   {isSelf ? (
-                    <p className="text-[11px] text-slate-500">
-                      {t('groups.membersModal.you', { defaultValue: 'Bạn' })}
+                    <p className="text-[10px] text-slate-500 dark:text-gray-400">
+                      {t('groups.membersModal.you')}
                     </p>
                   ) : null}
                 </div>
               </button>
 
-              <div className="flex items-center gap-1.5 shrink-0">
+              <div className="flex items-center gap-1 shrink-0">
                 {!isSelf && !isFriend && !pendingSent ? (
                   <button
                     type="button"
                     disabled={!!friendActionUserId}
                     onClick={() => handleAddFriend(m.id)}
-                    className="px-2.5 py-1.5 rounded-lg text-[11px] font-semibold bg-slate-800 text-slate-100 hover:bg-slate-700 border border-slate-600 disabled:opacity-50"
+                    className="px-2 py-1 rounded-md text-[10px] font-bold bg-slate-100 dark:bg-background-dark text-slate-700 dark:text-slate-200 hover:bg-slate-200 dark:hover:bg-white/10 border border-slate-200 dark:border-border-dark disabled:opacity-50"
                   >
                     {friendActionUserId === m.id
-                      ? t('common.loading', { defaultValue: '...' })
-                      : t('groups.membersModal.addFriend', { defaultValue: 'Thêm bạn bè' })}
+                      ? t('common.loading')
+                      : t('groups.membersModal.addFriend')}
                   </button>
                 ) : null}
                 {!isSelf && isFriend ? (
-                  <span className="text-[10px] text-slate-500 px-1 max-w-[4.5rem] truncate">
-                    {t('groups.membersModal.isFriend', { defaultValue: 'Đã kết bạn' })}
+                  <span className="text-[10px] text-slate-500 dark:text-gray-400 px-1 max-w-[4.5rem] truncate">
+                    {t('groups.membersModal.isFriend')}
                   </span>
                 ) : null}
                 {!isSelf && pendingSent && !isFriend ? (
-                  <span className="text-[10px] text-amber-400/90 px-1 max-w-[5rem]">
-                    {t('groups.membersModal.requestSent', { defaultValue: 'Đã gửi lời mời' })}
+                  <span className="text-[10px] text-amber-600 dark:text-amber-400 px-1 max-w-[5rem] truncate">
+                    {t('groups.membersModal.requestSent')}
                   </span>
                 ) : null}
                 {!isSelf ? (
@@ -291,11 +292,11 @@ export function CommunityGroupMembersList({
                     type="button"
                     disabled={!!messageBusyId}
                     onClick={() => openMessage(m.id)}
-                    className="size-9 rounded-full flex items-center justify-center text-slate-200 hover:bg-slate-800 border border-slate-700 disabled:opacity-50"
-                    title={t('groups.membersModal.message', { defaultValue: 'Nhắn tin' })}
-                    aria-label={t('groups.membersModal.message', { defaultValue: 'Nhắn tin' })}
+                    className="size-8 rounded-lg flex items-center justify-center text-slate-500 dark:text-slate-300 hover:bg-primary/10 hover:text-primary border border-transparent hover:border-primary/20 disabled:opacity-50 transition-colors"
+                    title={t('groups.membersModal.message')}
+                    aria-label={t('groups.membersModal.message')}
                   >
-                    <span className="material-symbols-outlined text-[20px]">chat</span>
+                    <span className="material-symbols-outlined text-lg">chat</span>
                   </button>
                 ) : null}
                 {showKick ? (
@@ -303,11 +304,11 @@ export function CommunityGroupMembersList({
                     type="button"
                     disabled={!!kickBusyId}
                     onClick={() => handleKickMember(m.id, m.name)}
-                    className="size-9 rounded-full flex items-center justify-center text-rose-300 hover:bg-rose-950/50 border border-rose-900/60 disabled:opacity-50"
-                    title={t('groups.membersModal.kickMember', { defaultValue: 'Loại khỏi nhóm' })}
-                    aria-label={t('groups.membersModal.kickMember', { defaultValue: 'Loại khỏi nhóm' })}
+                    className="size-8 rounded-lg flex items-center justify-center text-rose-500 hover:bg-rose-500/10 border border-transparent hover:border-rose-500/20 disabled:opacity-50 transition-colors"
+                    title={t('groups.membersModal.kickMember')}
+                    aria-label={t('groups.membersModal.kickMember')}
                   >
-                    <span className="material-symbols-outlined text-[20px]">person_remove</span>
+                    <span className="material-symbols-outlined text-lg">person_remove</span>
                   </button>
                 ) : null}
               </div>
@@ -325,16 +326,16 @@ export function CommunityGroupMembersList({
 
   /* Tab People: list dọc trong card có max-height, cuộn bên trong */
   return (
-    <div className="w-full bg-slate-900/80 border border-slate-800 rounded-xl flex flex-col overflow-hidden min-h-0 max-h-[min(70vh,calc(100dvh-10rem))] sm:max-h-[min(75vh,calc(100dvh-9rem))]">
-      <div className="px-5 py-4 border-b border-slate-800 shrink-0">
-        <h2 className="text-base font-bold text-slate-100">
-          {t('groups.main.membersTitle', { defaultValue: 'Thành viên' })}{' '}
-          <span className="text-slate-400 font-normal">
+    <div className="w-full bg-white dark:bg-card-dark border border-slate-200 dark:border-border-dark rounded-xl shadow-sm flex flex-col overflow-hidden min-h-0 max-h-[min(70vh,calc(100dvh-10rem))] sm:max-h-[min(75vh,calc(100dvh-9rem))]">
+      <div className="px-5 py-3 border-b border-slate-100 dark:border-border-dark shrink-0">
+        <h2 className="text-sm font-bold text-slate-900 dark:text-white">
+          {t('groups.main.membersTitle')}{' '}
+          <span className="text-slate-400 dark:text-gray-500 font-normal text-xs">
             · {loading ? '…' : members.length} {membersWord}
           </span>
         </h2>
       </div>
-      <div className="flex-1 min-h-0 overflow-y-auto px-3 py-3 sm:px-4 sm:py-4 custom-scrollbar">
+      <div className="flex-1 min-h-0 overflow-y-auto px-2 py-2 custom-scrollbar">
         {listInner}
       </div>
     </div>

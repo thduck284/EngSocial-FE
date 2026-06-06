@@ -199,10 +199,10 @@ export function NotificationPopover({ open, onClose, anchorRef, unreadCount, onM
   return (
     <div
       ref={panelRef}
-      className="absolute right-0 mt-3 w-[380px] bg-card-dark border border-border-dark rounded-2xl shadow-2xl overflow-hidden z-[100] notification-popover-enter"
+      className="absolute right-0 mt-3 w-[380px] bg-white dark:bg-card-dark border border-slate-200 dark:border-border-dark rounded-2xl shadow-2xl overflow-hidden z-[100] notification-popover-enter"
     >
-      <div className="p-4 border-b border-border-dark flex items-center justify-between">
-        <h3 className="font-bold text-lg text-white">
+      <div className="p-4 border-b border-slate-200 dark:border-border-dark flex items-center justify-between">
+        <h3 className="font-bold text-lg text-slate-900 dark:text-white">
           {t('notifications.title')}
           {unreadCount > 0 && (
             <span className="ml-2 text-sm font-normal text-primary">({unreadCount})</span>
@@ -220,9 +220,9 @@ export function NotificationPopover({ open, onClose, anchorRef, unreadCount, onM
       </div>
       <div className="max-h-[420px] overflow-y-auto custom-scrollbar">
         {loading ? (
-          <div className="p-6 text-center text-gray-400 text-sm">{t('notifications.loading', { defaultValue: 'Loading...' })}</div>
+          <div className="p-6 text-center text-slate-500 dark:text-gray-400 text-sm">{t('notifications.loading', { defaultValue: 'Loading...' })}</div>
         ) : notifications.length === 0 ? (
-          <div className="p-6 text-center text-gray-400 text-sm">{t('notifications.empty', { defaultValue: 'No notifications.' })}</div>
+          <div className="p-6 text-center text-slate-500 dark:text-gray-400 text-sm">{t('notifications.empty', { defaultValue: 'No notifications.' })}</div>
         ) : (
           notifications.map((n) => {
             const link = getNotificationLink(n)
@@ -235,12 +235,12 @@ export function NotificationPopover({ open, onClose, anchorRef, unreadCount, onM
                     </span>
                   </div>
                 ) : (
-                  <div className="w-11 h-11 rounded-full bg-gray-600/50 flex items-center justify-center shrink-0">
-                    <span className="material-symbols-outlined text-gray-400">notifications</span>
+                  <div className="w-11 h-11 rounded-full bg-slate-200 dark:bg-gray-600/50 flex items-center justify-center shrink-0">
+                    <span className="material-symbols-outlined text-slate-500 dark:text-gray-400">notifications</span>
                   </div>
                 )}
                 <div className="flex-1 min-w-0">
-                  <p className="text-sm leading-snug text-gray-200">{renderNotificationContent(n, t)}</p>
+                  <p className="text-sm leading-snug text-slate-700 dark:text-gray-200">{renderNotificationContent(n, t)}</p>
                   
                   {n.type === 'group_invite' && !joinedGroupIds.has(String(n.data?.groupId || n.relatedId)) && (
                     <div className="flex items-center gap-2 mt-2">
@@ -279,7 +279,7 @@ export function NotificationPopover({ open, onClose, anchorRef, unreadCount, onM
                             window.alert(err?.message || 'Failed')
                           }
                         }}
-                        className="px-3 py-1.5 rounded-lg bg-gray-700 text-gray-200 text-[11px] font-bold hover:bg-gray-600"
+                        className="px-3 py-1.5 rounded-lg bg-slate-200 dark:bg-gray-700 text-slate-700 dark:text-gray-200 text-[11px] font-bold hover:bg-slate-300 dark:hover:bg-gray-600"
                       >
                         {t('groups.header.inviteDecline', { defaultValue: 'Từ chối' })}
                       </button>
@@ -287,7 +287,7 @@ export function NotificationPopover({ open, onClose, anchorRef, unreadCount, onM
                   )}
 
                   <div className="flex items-center justify-between mt-1">
-                    <span className="text-xs text-gray-500">{formatPostTime(n.createdAt)}</span>
+                    <span className="text-xs text-slate-500 dark:text-gray-500">{formatPostTime(n.createdAt)}</span>
                     {n.read === false && <span className="size-2 bg-primary rounded-full shrink-0" />}
                   </div>
                 </div>
@@ -301,15 +301,19 @@ export function NotificationPopover({ open, onClose, anchorRef, unreadCount, onM
               n.type === 'like' ||
               n.relatedType === 'post'
 
+            const itemClass = `w-full text-left p-4 transition-colors border-b border-slate-100 dark:border-border-dark last:border-b-0 ${
+              n.read === false
+                ? 'bg-primary/5 border-l-4 border-l-primary hover:bg-slate-50 dark:hover:bg-gray-800/50'
+                : 'hover:bg-slate-50 dark:hover:bg-gray-800/50'
+            }`
+
             if (isPostNotif && onOpenPostModal) {
               return (
                 <button
                   key={n.id}
                   type="button"
                   onClick={(e) => handleItemClick(n, e)}
-                  className={`w-full text-left p-4 transition-colors border-b border-border-dark last:border-b-0 ${
-                    n.read === false ? 'bg-primary/5 border-l-4 border-l-primary hover:bg-gray-800/50' : 'hover:bg-gray-800/50'
-                  }`}
+                  className={itemClass}
                 >
                   {content}
                 </button>
@@ -321,9 +325,7 @@ export function NotificationPopover({ open, onClose, anchorRef, unreadCount, onM
                 key={n.id}
                 to={link}
                 onClick={(e) => handleItemClick(n, e)}
-                className={`block w-full text-left p-4 transition-colors border-b border-border-dark last:border-b-0 ${
-                  n.read === false ? 'bg-primary/5 border-l-4 border-l-primary hover:bg-gray-800/50' : 'hover:bg-gray-800/50'
-                }`}
+                className={`block ${itemClass}`}
               >
                 {content}
               </Link>
@@ -332,9 +334,7 @@ export function NotificationPopover({ open, onClose, anchorRef, unreadCount, onM
                 key={n.id}
                 type="button"
                 onClick={(e) => handleItemClick(n, e)}
-                className={`w-full text-left p-4 transition-colors border-b border-border-dark last:border-b-0 ${
-                  n.read === false ? 'bg-primary/5 border-l-4 border-l-primary hover:bg-gray-800/50' : 'hover:bg-gray-800/50'
-                }`}
+                className={itemClass}
               >
                 {content}
               </button>
@@ -342,7 +342,7 @@ export function NotificationPopover({ open, onClose, anchorRef, unreadCount, onM
           })
         )}
       </div>
-      <div className="p-3 text-center border-t border-border-dark">
+      <div className="p-3 text-center border-t border-slate-200 dark:border-border-dark">
         <Link
           to="/notifications"
           onClick={onClose}

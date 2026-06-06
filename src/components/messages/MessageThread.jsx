@@ -264,10 +264,10 @@ export function MessageThread({
                 </div>
               )}
               {selected?.isGroup && !selected?.avatar ? (
-                <div className="w-full h-full rounded-full bg-[#4a4a4a] flex items-center justify-center border border-white/10 relative">
+                <div className="w-full h-full rounded-full bg-slate-200 dark:bg-[#4a4a4a] flex items-center justify-center border border-slate-200 dark:border-white/10 relative">
                   <span className="material-symbols-outlined text-[22px] text-slate-500 dark:text-gray-400" aria-hidden>group</span>
                   {canEditGroupAvatar && (
-                    <span className="absolute bottom-0 right-0 w-5 h-5 rounded-full bg-[#3a3a3a] border border-background-dark flex items-center justify-center" aria-hidden>
+                    <span className="absolute bottom-0 right-0 w-5 h-5 rounded-full bg-slate-100 dark:bg-[#3a3a3a] border border-white dark:border-background-dark flex items-center justify-center" aria-hidden>
                       <span className="material-symbols-outlined text-slate-900 dark:text-white text-sm">photo_camera</span>
                     </span>
                   )}
@@ -276,7 +276,7 @@ export function MessageThread({
                 <img src={selected?.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(selected?.name || '')}&background=13b6ec&color=fff`} alt="" className="w-10 h-10 rounded-full object-cover" />
               )}
             </div>
-            {!selected?.isGroup && selected?.online && <span className="absolute bottom-0 right-0 w-3 h-3 bg-green-500 border-2 border-background-dark rounded-full" />}
+            {!selected?.isGroup && selected?.online && <span className="absolute bottom-0 right-0 w-3 h-3 bg-green-500 border-2 border-white dark:border-background-dark rounded-full" />}
           </div>
           <div className="min-w-0 flex-1">
             <div className="flex items-center gap-2 flex-wrap">
@@ -299,7 +299,7 @@ export function MessageThread({
                 <button
                   type="button"
                   onClick={startEditingGroupName}
-                  className="flex items-center gap-1.5 text-left group rounded px-1 -mx-1 hover:bg-white/5 cursor-pointer"
+                  className="flex items-center gap-1.5 text-left group rounded px-1 -mx-1 hover:bg-slate-100 dark:hover:bg-white/5 cursor-pointer"
                   title={t('messages.editGroupName')}
                 >
                   <h3 className="font-bold text-base text-slate-900 dark:text-white leading-none truncate">{selected?.name}</h3>
@@ -309,7 +309,7 @@ export function MessageThread({
                 <h3 className="font-bold text-base text-slate-900 dark:text-white leading-none truncate">{selected?.name}</h3>
               )}
             </div>
-            <span className={`text-xs font-medium ${selected?.online ? 'text-green-500' : 'text-gray-500'}`}>
+            <span className={`text-xs font-medium ${selected?.online ? 'text-green-500' : 'text-slate-500 dark:text-gray-500'}`}>
               {selected?.isGroup ? (
                 <>
                   {selected?.online ? t('messages.activeNow') : (selected?.lastActiveDate ? formatGroupActiveAgo(selected.lastActiveDate, t) : t('messages.groupOffline'))}
@@ -349,43 +349,43 @@ export function MessageThread({
             {headerMenuOpen && (
               <div className="absolute right-0 top-full mt-1 py-1 min-w-[200px] rounded-xl bg-white dark:bg-card-dark border border-slate-200 dark:border-border-dark shadow-xl z-30">
                 {!selected?.isGroup && selected?.otherUserId && onViewProfile && (
-                  <button type="button" onClick={() => { onViewProfile(); setHeaderMenuOpen(false) }} className="w-full px-4 py-2.5 text-left text-sm text-slate-900 dark:text-white hover:bg-white/10 flex items-center gap-3">
+                  <button type="button" onClick={() => { onViewProfile(); setHeaderMenuOpen(false) }} className="w-full px-4 py-2.5 text-left text-sm text-slate-900 dark:text-white hover:bg-slate-50 dark:hover:bg-white/10 flex items-center gap-3">
                     <span className="material-symbols-outlined text-lg">person</span>
                     {t('messages.viewProfile')}
                   </button>
                 )}
                 {onSearchMessages && (
-                  <button type="button" onClick={() => { onSearchMessages(); setHeaderMenuOpen(false) }} className="w-full px-4 py-2.5 text-left text-sm text-slate-900 dark:text-white hover:bg-white/10 flex items-center gap-3">
+                  <button type="button" onClick={() => { onSearchMessages(); setHeaderMenuOpen(false) }} className="w-full px-4 py-2.5 text-left text-sm text-slate-900 dark:text-white hover:bg-slate-50 dark:hover:bg-white/10 flex items-center gap-3">
                     <span className="material-symbols-outlined text-lg">search</span>
                     {t('messages.searchInChat')}
                   </button>
                 )}
                 {onOpenMute && (
-                  <button type="button" onClick={() => { onOpenMute(); setHeaderMenuOpen(false) }} className="w-full px-4 py-2.5 text-left text-sm text-slate-900 dark:text-white hover:bg-white/10 flex items-center gap-3">
+                  <button type="button" onClick={() => { onOpenMute(); setHeaderMenuOpen(false) }} className="w-full px-4 py-2.5 text-left text-sm text-slate-900 dark:text-white hover:bg-slate-50 dark:hover:bg-white/10 flex items-center gap-3">
                     <span className="material-symbols-outlined text-lg">{selected?.muted ? 'notifications' : 'notifications_off'}</span>
                     {t('messages.muteNotifications')}
                   </button>
                 )}
                 {onOpenDisappearing && (
-                  <button type="button" onClick={() => { onOpenDisappearing(); setHeaderMenuOpen(false) }} className="w-full px-4 py-2.5 text-left text-sm text-slate-900 dark:text-white hover:bg-white/10 flex items-center gap-3">
+                  <button type="button" onClick={() => { onOpenDisappearing(); setHeaderMenuOpen(false) }} className="w-full px-4 py-2.5 text-left text-sm text-slate-900 dark:text-white hover:bg-slate-50 dark:hover:bg-white/10 flex items-center gap-3">
                     <span className="material-symbols-outlined text-lg">timer</span>
                     {t('messages.disappearingMessages')}
                   </button>
                 )}
                 {onDeleteAll && (
-                  <button type="button" onClick={() => { onDeleteAll(); setHeaderMenuOpen(false) }} className="w-full px-4 py-2.5 text-left text-sm text-slate-900 dark:text-white hover:bg-white/10 flex items-center gap-3">
+                  <button type="button" onClick={() => { onDeleteAll(); setHeaderMenuOpen(false) }} className="w-full px-4 py-2.5 text-left text-sm text-slate-900 dark:text-white hover:bg-slate-50 dark:hover:bg-white/10 flex items-center gap-3">
                     <span className="material-symbols-outlined text-lg">delete_sweep</span>
                     {t('messages.deleteAllMessages')}
                   </button>
                 )}
                 {!selected?.isGroup && onBlock && (
-                  <button type="button" onClick={() => { onBlock(); setHeaderMenuOpen(false) }} className="w-full px-4 py-2.5 text-left text-sm text-slate-900 dark:text-white hover:bg-white/10 flex items-center gap-3">
+                  <button type="button" onClick={() => { onBlock(); setHeaderMenuOpen(false) }} className="w-full px-4 py-2.5 text-left text-sm text-slate-900 dark:text-white hover:bg-slate-50 dark:hover:bg-white/10 flex items-center gap-3">
                     <span className="material-symbols-outlined text-lg">block</span>
                     {t('messages.block')}
                   </button>
                 )}
                 {!selected?.isGroup && onReport && (
-                  <button type="button" onClick={() => { onReport(); setHeaderMenuOpen(false) }} className="w-full px-4 py-2.5 text-left text-sm text-slate-900 dark:text-white hover:bg-white/10 flex items-center gap-3">
+                  <button type="button" onClick={() => { onReport(); setHeaderMenuOpen(false) }} className="w-full px-4 py-2.5 text-left text-sm text-slate-900 dark:text-white hover:bg-slate-50 dark:hover:bg-white/10 flex items-center gap-3">
                     <span className="material-symbols-outlined text-lg">report</span>
                     {t('messages.report')}
                   </button>
@@ -399,14 +399,14 @@ export function MessageThread({
       </div>
 
       {headerActionPanel && (
-        <div className="shrink-0 border-b border-slate-200 dark:border-border-dark bg-card-dark/80 p-4">
+        <div className="shrink-0 border-b border-slate-200 dark:border-border-dark bg-slate-50 dark:bg-card-dark/80 p-4">
           <div className="flex items-center justify-between mb-3">
             <span className="text-sm font-semibold text-slate-900 dark:text-white">
               {headerActionPanel === 'search' && t('messages.searchInChat')}
               {headerActionPanel === 'mute' && t('messages.muteNotifications')}
               {headerActionPanel === 'disappearing' && t('messages.disappearingMessages')}
             </span>
-            <button type="button" onClick={() => setHeaderActionPanel(null)} className="p-1.5 rounded-full hover:bg-white/10 text-slate-500 dark:text-gray-400 hover:text-slate-900 dark:hover:text-white">
+            <button type="button" onClick={() => setHeaderActionPanel(null)} className="p-1.5 rounded-full hover:bg-slate-50 dark:hover:bg-white/10 text-slate-500 dark:text-gray-400 hover:text-slate-900 dark:hover:text-white">
               <span className="material-symbols-outlined text-lg">close</span>
             </button>
           </div>
@@ -435,7 +435,7 @@ export function MessageThread({
                         onClick={() => { scrollToMessage(r.id); setHeaderActionPanel(null) }}
                         className="w-full text-left p-2.5 rounded-lg hover:bg-slate-100 dark:hover:bg-background-dark border border-transparent hover:border-border-dark transition-colors"
                       >
-                        <p className={`text-sm truncate ${r.fromMe ? 'text-primary' : 'text-gray-200'}`}>{r.preview || '—'}</p>
+                        <p className={`text-sm truncate ${r.fromMe ? 'text-primary' : 'text-slate-800 dark:text-gray-200'}`}>{r.preview || '—'}</p>
                         <span className="text-xs text-slate-400 dark:text-gray-500">{r.time}</span>
                       </button>
                     ))
@@ -447,15 +447,15 @@ export function MessageThread({
           {headerActionPanel === 'mute' && (
             <div className="space-y-1">
               {selected?.muted ? (
-                <button type="button" onClick={() => { applyConversationSettings({ mutedUntil: null }); setHeaderActionPanel(null) }} className="w-full px-4 py-2.5 rounded-xl text-left text-sm text-slate-900 dark:text-white hover:bg-white/10 flex items-center gap-2">
+                <button type="button" onClick={() => { applyConversationSettings({ mutedUntil: null }); setHeaderActionPanel(null) }} className="w-full px-4 py-2.5 rounded-xl text-left text-sm text-slate-900 dark:text-white hover:bg-slate-50 dark:hover:bg-white/10 flex items-center gap-2">
                   <span className="material-symbols-outlined text-lg">notifications</span>
                   {t('messages.turnNotificationsOn')}
                 </button>
               ) : (
                 <>
-                  <button type="button" onClick={() => { applyConversationSettings({ mutedUntil: getSettingsUntil('1h') }); setHeaderActionPanel(null) }} className="w-full px-4 py-2.5 rounded-xl text-left text-sm text-slate-900 dark:text-white hover:bg-white/10">{t('messages.muteFor1h')}</button>
-                  <button type="button" onClick={() => { applyConversationSettings({ mutedUntil: getSettingsUntil('8h') }); setHeaderActionPanel(null) }} className="w-full px-4 py-2.5 rounded-xl text-left text-sm text-slate-900 dark:text-white hover:bg-white/10">{t('messages.muteFor8h')}</button>
-                  <button type="button" onClick={() => { applyConversationSettings({ mutedUntil: getSettingsUntil('forever') }); setHeaderActionPanel(null) }} className="w-full px-4 py-2.5 rounded-xl text-left text-sm text-slate-900 dark:text-white hover:bg-white/10">{t('messages.muteUntilTurnOn')}</button>
+                  <button type="button" onClick={() => { applyConversationSettings({ mutedUntil: getSettingsUntil('1h') }); setHeaderActionPanel(null) }} className="w-full px-4 py-2.5 rounded-xl text-left text-sm text-slate-900 dark:text-white hover:bg-slate-50 dark:hover:bg-white/10">{t('messages.muteFor1h')}</button>
+                  <button type="button" onClick={() => { applyConversationSettings({ mutedUntil: getSettingsUntil('8h') }); setHeaderActionPanel(null) }} className="w-full px-4 py-2.5 rounded-xl text-left text-sm text-slate-900 dark:text-white hover:bg-slate-50 dark:hover:bg-white/10">{t('messages.muteFor8h')}</button>
+                  <button type="button" onClick={() => { applyConversationSettings({ mutedUntil: getSettingsUntil('forever') }); setHeaderActionPanel(null) }} className="w-full px-4 py-2.5 rounded-xl text-left text-sm text-slate-900 dark:text-white hover:bg-slate-50 dark:hover:bg-white/10">{t('messages.muteUntilTurnOn')}</button>
                 </>
               )}
             </div>
@@ -463,16 +463,16 @@ export function MessageThread({
           {headerActionPanel === 'disappearing' && (
             <div className="space-y-1">
               {selected?.disappearing ? (
-                <button type="button" onClick={() => { applyConversationSettings({ disappearingUntil: null }); setHeaderActionPanel(null) }} className="w-full px-4 py-2.5 rounded-xl text-left text-sm text-slate-900 dark:text-white hover:bg-white/10 flex items-center gap-2">
+                <button type="button" onClick={() => { applyConversationSettings({ disappearingUntil: null }); setHeaderActionPanel(null) }} className="w-full px-4 py-2.5 rounded-xl text-left text-sm text-slate-900 dark:text-white hover:bg-slate-50 dark:hover:bg-white/10 flex items-center gap-2">
                   <span className="material-symbols-outlined text-lg">timer_off</span>
                   {t('messages.disappearingOff')}
                 </button>
               ) : (
                 <>
-                  <button type="button" onClick={() => { applyConversationSettings({ disappearingUntil: getSettingsUntil('1h'), disappearingDurationSeconds: getDisappearingDurationSeconds('1h') }); setHeaderActionPanel(null) }} className="w-full px-4 py-2.5 rounded-xl text-left text-sm text-slate-900 dark:text-white hover:bg-white/10">{t('messages.muteFor1h')}</button>
-                  <button type="button" onClick={() => { applyConversationSettings({ disappearingUntil: getSettingsUntil('8h'), disappearingDurationSeconds: getDisappearingDurationSeconds('8h') }); setHeaderActionPanel(null) }} className="w-full px-4 py-2.5 rounded-xl text-left text-sm text-slate-900 dark:text-white hover:bg-white/10">{t('messages.muteFor8h')}</button>
-                  <button type="button" onClick={() => { applyConversationSettings({ disappearingUntil: getSettingsUntil('24h'), disappearingDurationSeconds: getDisappearingDurationSeconds('24h') }); setHeaderActionPanel(null) }} className="w-full px-4 py-2.5 rounded-xl text-left text-sm text-slate-900 dark:text-white hover:bg-white/10">{t('messages.muteFor24h')}</button>
-                  <button type="button" onClick={() => { applyConversationSettings({ disappearingUntil: getSettingsUntil('forever'), disappearingDurationSeconds: getDisappearingDurationSeconds('forever') }); setHeaderActionPanel(null) }} className="w-full px-4 py-2.5 rounded-xl text-left text-sm text-slate-900 dark:text-white hover:bg-white/10">{t('messages.disappearingUntilTurnOff')}</button>
+                  <button type="button" onClick={() => { applyConversationSettings({ disappearingUntil: getSettingsUntil('1h'), disappearingDurationSeconds: getDisappearingDurationSeconds('1h') }); setHeaderActionPanel(null) }} className="w-full px-4 py-2.5 rounded-xl text-left text-sm text-slate-900 dark:text-white hover:bg-slate-50 dark:hover:bg-white/10">{t('messages.muteFor1h')}</button>
+                  <button type="button" onClick={() => { applyConversationSettings({ disappearingUntil: getSettingsUntil('8h'), disappearingDurationSeconds: getDisappearingDurationSeconds('8h') }); setHeaderActionPanel(null) }} className="w-full px-4 py-2.5 rounded-xl text-left text-sm text-slate-900 dark:text-white hover:bg-slate-50 dark:hover:bg-white/10">{t('messages.muteFor8h')}</button>
+                  <button type="button" onClick={() => { applyConversationSettings({ disappearingUntil: getSettingsUntil('24h'), disappearingDurationSeconds: getDisappearingDurationSeconds('24h') }); setHeaderActionPanel(null) }} className="w-full px-4 py-2.5 rounded-xl text-left text-sm text-slate-900 dark:text-white hover:bg-slate-50 dark:hover:bg-white/10">{t('messages.muteFor24h')}</button>
+                  <button type="button" onClick={() => { applyConversationSettings({ disappearingUntil: getSettingsUntil('forever'), disappearingDurationSeconds: getDisappearingDurationSeconds('forever') }); setHeaderActionPanel(null) }} className="w-full px-4 py-2.5 rounded-xl text-left text-sm text-slate-900 dark:text-white hover:bg-slate-50 dark:hover:bg-white/10">{t('messages.disappearingUntilTurnOff')}</button>
                 </>
               )}
             </div>
@@ -498,7 +498,7 @@ export function MessageThread({
             <div key={msg.id} className="contents">
               {shouldShowTimeDivider(messages, index) && (
                 <div className="flex justify-center py-2">
-                  <span className="text-xs text-gray-300 bg-white dark:bg-card-dark px-3 py-1.5 rounded-full uppercase tracking-wider font-semibold">
+                  <span className="text-xs text-slate-500 dark:text-gray-300 bg-slate-100 dark:bg-card-dark px-3 py-1.5 rounded-full uppercase tracking-wider font-semibold border border-slate-200 dark:border-transparent">
                     {formatMessageDateBubble(msg.createdAt, i18n.language)}
                   </span>
                 </div>
@@ -529,7 +529,7 @@ export function MessageThread({
       </div>
 
       {!selected?.isGroup && selected?.iBlockedThem && (
-        <div className="shrink-0 border-t border-slate-200 dark:border-border-dark bg-card-dark/90 p-4 flex flex-col gap-3">
+        <div className="shrink-0 border-t border-slate-200 dark:border-border-dark bg-slate-100 dark:bg-card-dark/90 p-4 flex flex-col gap-3">
           <p className="text-sm font-semibold text-slate-900 dark:text-white text-center">
             {t('messages.youBlockedUser', { name: selected?.name || 'User' })}
           </p>
@@ -540,7 +540,7 @@ export function MessageThread({
             <button
               type="button"
               onClick={() => onUnblock(selected.otherUserId)}
-              className="w-full py-2.5 rounded-xl bg-white/10 text-slate-900 dark:text-white hover:bg-white/20 text-sm font-medium transition-colors"
+              className="w-full py-2.5 rounded-xl bg-slate-200 dark:bg-white/10 text-slate-900 dark:text-white hover:bg-slate-300 dark:hover:bg-white/20 text-sm font-medium transition-colors"
             >
               {t('messages.unblock')}
             </button>

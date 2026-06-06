@@ -16,6 +16,11 @@ function formToGroupType(contentVisibility, searchable) {
   return contentVisibility === 'private' ? 'private' : 'public'
 }
 
+const fieldClass =
+  'w-full bg-slate-50 dark:bg-background-dark border border-slate-200 dark:border-border-dark rounded-lg px-3 py-2 text-sm text-slate-900 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-gray-500 focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-colors'
+
+const labelClass = 'block text-xs font-bold text-slate-500 dark:text-gray-400 mb-1.5'
+
 export function CommunityGroupSettingsModal({ open, onClose, activeGroup, onSaved }) {
   const { t } = useTranslation()
   const groupId = activeGroup?.id ?? activeGroup?._id
@@ -44,7 +49,7 @@ export function CommunityGroupSettingsModal({ open, onClose, activeGroup, onSave
     e.preventDefault()
     const trimmed = name.trim()
     if (!trimmed) {
-      setError(t('groups.settingsModal.nameRequired', { defaultValue: 'Vui lòng nhập tên nhóm.' }))
+      setError(t('groups.settingsModal.nameRequired'))
       return
     }
     setSaving(true)
@@ -58,172 +63,176 @@ export function CommunityGroupSettingsModal({ open, onClose, activeGroup, onSave
         type,
       }
       await groupService.update(groupId, payload)
-      showEngSuccessToast(t('groups.settingsModal.saveSuccess', { defaultValue: 'Đã lưu thông tin nhóm.' }))
+      showEngSuccessToast(t('groups.settingsModal.saveSuccess'))
       await onSaved?.()
       onClose?.()
     } catch (err) {
       setError(
-        typeof err?.message === 'string'
-          ? err.message
-          : t('groups.settingsModal.saveFailed', { defaultValue: 'Không lưu được. Thử lại sau.' })
+        typeof err?.message === 'string' ? err.message : t('groups.settingsModal.saveFailed')
       )
     } finally {
       setSaving(false)
     }
   }
 
+  const privacyOption = (checked, onChange, title, desc) => (
+    <label
+      className={`flex items-start gap-3 cursor-pointer rounded-lg border px-3 py-2.5 transition-colors ${
+        checked
+          ? 'border-primary/40 bg-primary/5'
+          : 'border-slate-200 dark:border-border-dark hover:bg-slate-50 dark:hover:bg-background-dark/60'
+      }`}
+    >
+      <input type="radio" name="gvis" checked={checked} onChange={onChange} className="mt-0.5 shrink-0 accent-primary" />
+      <span className="min-w-0">
+        <span className="block text-xs font-bold text-slate-900 dark:text-slate-100">{title}</span>
+        {desc ? (
+          <span className="block text-[10px] text-slate-500 dark:text-gray-400 mt-0.5 leading-snug">{desc}</span>
+        ) : null}
+      </span>
+    </label>
+  )
+
   const modal = (
     <div
-      className="fixed inset-0 z-[10000] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm"
+      className="fixed inset-0 z-[210] flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm"
       role="dialog"
       aria-modal="true"
       aria-labelledby="group-settings-title"
       onClick={onClose}
     >
       <div
-        className="w-full max-w-lg max-h-[90vh] overflow-y-auto rounded-xl border border-slate-800 bg-slate-900 shadow-2xl"
+        className="w-full max-w-md max-h-[min(90vh,calc(100dvh-2rem))] overflow-hidden rounded-xl border border-slate-200 dark:border-border-dark bg-white dark:bg-card-dark shadow-sm flex flex-col"
         onClick={(e) => e.stopPropagation()}
       >
-        <header className="flex items-center justify-between px-5 py-4 border-b border-slate-800">
-          <h2 id="group-settings-title" className="text-lg font-bold text-slate-100">
-            {t('groups.settingsModal.title', { defaultValue: 'Chỉnh sửa nhóm' })}
+        <header className="flex items-center justify-between px-5 py-4 border-b border-slate-100 dark:border-border-dark shrink-0">
+          <h2 id="group-settings-title" className="text-base font-bold text-slate-900 dark:text-white">
+            {t('groups.settingsModal.title')}
           </h2>
           <button
             type="button"
             onClick={onClose}
             disabled={saving}
-            className="p-2 rounded-lg text-slate-400 hover:bg-slate-800 hover:text-slate-200 disabled:opacity-50"
+            className="size-8 flex items-center justify-center rounded-lg text-slate-400 dark:text-gray-400 hover:bg-slate-100 dark:hover:bg-background-dark disabled:opacity-50 transition-colors"
+            aria-label={t('groups.settingsModal.cancel')}
           >
-            <span className="material-symbols-outlined">close</span>
+            <span className="material-symbols-outlined text-lg">close</span>
           </button>
         </header>
 
-        <form onSubmit={handleSubmit} className="p-5 space-y-4">
-          <div>
-            <label className="block text-sm font-medium text-slate-300 mb-1.5">
-              {t('groups.settingsModal.fieldName', { defaultValue: 'Tên nhóm' })}
-            </label>
-            <input
-              type="text"
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              maxLength={100}
-              className="w-full bg-slate-950 border border-slate-800 rounded-lg px-3 py-2.5 text-sm text-slate-100 focus:ring-2 focus:ring-primary/40 focus:border-primary outline-none"
-            />
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-slate-300 mb-1.5">
-              {t('groups.settingsModal.fieldDescription', { defaultValue: 'Mô tả' })}
-            </label>
-            <textarea
-              value={description}
-              onChange={(e) => setDescription(e.target.value)}
-              rows={4}
-              maxLength={500}
-              className="w-full bg-slate-950 border border-slate-800 rounded-lg px-3 py-2.5 text-sm text-slate-100 resize-none focus:ring-2 focus:ring-primary/40 focus:border-primary outline-none"
-            />
-          </div>
-
-          <div>
-            <span className="block text-sm font-medium text-slate-300 mb-2">
-              {t('groups.settingsModal.fieldIcon', { defaultValue: 'Ảnh nhóm' })}
-            </span>
-            <div className="flex items-center gap-3 bg-slate-950 border border-slate-800 rounded-xl px-3 py-2.5">
-              <div className="size-12 rounded-xl overflow-hidden border border-slate-800 bg-slate-800 shrink-0">
-                {icon ? (
-                  <img src={icon} alt="" className="w-full h-full object-cover" />
-                ) : (
-                  <div className="w-full h-full flex items-center justify-center text-slate-600">
-                    <span className="material-symbols-outlined">image</span>
-                  </div>
-                )}
-              </div>
-              <label className="text-xs font-semibold text-primary cursor-pointer">
-                {t('groups.settingsModal.uploadIcon', { defaultValue: 'Tải ảnh' })}
-                <input
-                  type="file"
-                  accept="image/*"
-                  className="hidden"
-                  disabled={saving}
-                  onChange={async (ev) => {
-                    const file = ev.target.files?.[0]
-                    if (!file) return
-                    try {
-                      const data = await uploadService.uploadMedia(file)
-                      const url = data?.url
-                      if (url) setIcon(String(url))
-                    } catch {
-                      setError(t('groups.settingsModal.uploadFailed', { defaultValue: 'Tải ảnh thất bại.' }))
-                    } finally {
-                      ev.target.value = ''
-                    }
-                  }}
-                />
-              </label>
+        <form onSubmit={handleSubmit} className="flex flex-col min-h-0 flex-1 overflow-y-auto custom-scrollbar">
+          <div className="p-5 space-y-4">
+            <div>
+              <label className={labelClass}>{t('groups.settingsModal.fieldName')}</label>
+              <input
+                type="text"
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                maxLength={100}
+                className={fieldClass}
+              />
             </div>
-          </div>
 
-          <div className="space-y-2">
-            <span className="block text-sm font-medium text-slate-300">
-              {t('groups.settingsModal.privacyTitle', { defaultValue: 'Quyền riêng tư' })}
-            </span>
-            <div className="flex flex-col gap-2 text-sm text-slate-200">
-              <label className="flex items-center gap-2 cursor-pointer">
-                <input
-                  type="radio"
-                  name="gvis"
-                  checked={contentVisibility === 'public' && searchable}
-                  onChange={() => {
+            <div>
+              <label className={labelClass}>{t('groups.settingsModal.fieldDescription')}</label>
+              <textarea
+                value={description}
+                onChange={(e) => setDescription(e.target.value)}
+                rows={3}
+                maxLength={500}
+                className={`${fieldClass} resize-none`}
+              />
+            </div>
+
+            <div>
+              <span className={labelClass}>{t('groups.settingsModal.fieldIcon')}</span>
+              <div className="flex items-center gap-3 bg-slate-50 dark:bg-background-dark border border-slate-200 dark:border-border-dark rounded-lg px-3 py-2.5">
+                <div className="size-11 rounded-lg overflow-hidden border border-slate-200 dark:border-border-dark bg-white dark:bg-card-dark shrink-0">
+                  {icon ? (
+                    <img src={icon} alt="" className="w-full h-full object-cover" />
+                  ) : (
+                    <div className="w-full h-full flex items-center justify-center text-slate-400">
+                      <span className="material-symbols-outlined text-xl">image</span>
+                    </div>
+                  )}
+                </div>
+                <label className="text-xs font-bold text-primary cursor-pointer hover:underline">
+                  {t('groups.settingsModal.uploadIcon')}
+                  <input
+                    type="file"
+                    accept="image/*"
+                    className="hidden"
+                    disabled={saving}
+                    onChange={async (ev) => {
+                      const file = ev.target.files?.[0]
+                      if (!file) return
+                      try {
+                        const data = await uploadService.uploadMedia(file)
+                        const url = data?.url
+                        if (url) setIcon(String(url))
+                      } catch {
+                        setError(t('groups.settingsModal.uploadFailed'))
+                      } finally {
+                        ev.target.value = ''
+                      }
+                    }}
+                  />
+                </label>
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <span className={labelClass}>{t('groups.settingsModal.privacyTitle')}</span>
+              <div className="flex flex-col gap-2">
+                {privacyOption(
+                  contentVisibility === 'public' && searchable,
+                  () => {
                     setContentVisibility('public')
                     setSearchable(true)
-                  }}
-                />
-                {t('groups.sidebar.public')}
-              </label>
-              <label className="flex items-center gap-2 cursor-pointer">
-                <input
-                  type="radio"
-                  name="gvis"
-                  checked={contentVisibility === 'private' && searchable}
-                  onChange={() => {
+                  },
+                  t('groups.sidebar.public'),
+                  t('groups.sidebar.publicDesc')
+                )}
+                {privacyOption(
+                  contentVisibility === 'private' && searchable,
+                  () => {
                     setContentVisibility('private')
                     setSearchable(true)
-                  }}
-                />
-                {t('groups.sidebar.private')}
-              </label>
-              <label className="flex items-center gap-2 cursor-pointer">
-                <input
-                  type="radio"
-                  name="gvis"
-                  checked={!searchable}
-                  onChange={() => setSearchable(false)}
-                />
-                {t('groups.sidebar.hidden')} — {t('groupsCreate.privacySearchOff', { defaultValue: 'Ẩn khỏi tìm kiếm' })}
-              </label>
+                  },
+                  t('groups.sidebar.private'),
+                  t('groups.sidebar.privateDesc')
+                )}
+                {privacyOption(
+                  !searchable,
+                  () => setSearchable(false),
+                  t('groups.sidebar.hidden'),
+                  t('groupsCreate.privacySearchOff')
+                )}
+              </div>
             </div>
+
+            {error ? (
+              <p className="text-xs text-rose-600 dark:text-rose-400 bg-rose-500/10 border border-rose-500/20 rounded-lg px-3 py-2">
+                {error}
+              </p>
+            ) : null}
           </div>
 
-          {error ? <p className="text-sm text-rose-400">{error}</p> : null}
-
-          <div className="flex justify-end gap-2 pt-2">
+          <div className="flex justify-end gap-2 px-5 py-3 border-t border-slate-100 dark:border-border-dark bg-slate-50 dark:bg-background-dark/30 shrink-0">
             <button
               type="button"
               onClick={onClose}
               disabled={saving}
-              className="px-4 py-2 rounded-lg text-sm font-semibold text-slate-300 bg-slate-800 border border-slate-700 hover:bg-slate-700 disabled:opacity-50"
+              className="px-3 py-1.5 rounded-lg text-xs font-bold text-slate-500 dark:text-slate-300 border border-slate-200 dark:border-border-dark hover:bg-slate-100 dark:hover:bg-background-dark disabled:opacity-50 transition-colors"
             >
-              {t('groups.settingsModal.cancel', { defaultValue: 'Hủy' })}
+              {t('groups.settingsModal.cancel')}
             </button>
             <button
               type="submit"
               disabled={saving}
-              className="px-4 py-2 rounded-lg text-sm font-semibold text-white bg-primary border border-primary/50 hover:opacity-90 disabled:opacity-50"
+              className="px-4 py-1.5 rounded-lg text-xs font-bold text-white bg-primary hover:brightness-110 disabled:opacity-50 transition-colors"
             >
-              {saving
-                ? t('groups.settingsModal.saving', { defaultValue: 'Đang lưu...' })
-                : t('groups.settingsModal.save', { defaultValue: 'Lưu' })}
+              {saving ? t('groups.settingsModal.saving') : t('groups.settingsModal.save')}
             </button>
           </div>
         </form>

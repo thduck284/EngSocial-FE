@@ -9,25 +9,25 @@ export function ProfileLeftStatsSection({
 }) {
   return (
     <>
-      <div className="bg-white dark:bg-card-dark rounded-2xl p-6 border border-slate-200 dark:border-border-dark">
-        <h4 className="font-bold mb-4 dark:text-white flex items-center gap-2">
-          <span className="material-symbols-outlined text-primary">analytics</span>
+      <div className="bg-white dark:bg-card-dark rounded-xl p-5 border border-slate-200 dark:border-border-dark shadow-sm">
+        <h4 className="text-sm font-bold mb-3 dark:text-white flex items-center gap-2">
+          <span className="material-symbols-outlined text-primary text-lg">analytics</span>
           {t('profile.skillStats')}
         </h4>
-        <div className="space-y-4">
+        <div className="space-y-2">
           {profileSkillStats.map(({ icon, label, value, change, changeColor, to }) => (
             <Link
               key={label}
               to={to}
-              className="flex items-center justify-between p-3 rounded-xl bg-slate-50 dark:bg-slate-800/50 border border-slate-100 dark:border-border-dark hover:bg-slate-100 dark:hover:bg-slate-700/50 transition-colors"
+              className="flex items-center justify-between p-2.5 rounded-lg bg-slate-50 dark:bg-slate-800/50 border border-slate-100 dark:border-border-dark hover:bg-slate-100 dark:hover:bg-slate-700/50 transition-colors"
             >
-              <div className="flex items-center gap-3">
-                <span className={`material-symbols-outlined ${changeColor || 'text-primary'}`}>
+              <div className="flex items-center gap-2 min-w-0">
+                <span className={`material-symbols-outlined text-lg shrink-0 ${changeColor || 'text-primary'}`}>
                   {icon}
                 </span>
-                <span className="text-xs font-medium">{t(label)}</span>
+                <span className="text-xs font-medium truncate">{t(label)}</span>
               </div>
-              <span className="font-bold text-xs">
+              <span className="font-bold text-xs shrink-0 ml-2">
                 {value}{' '}
                 {change && (
                   <span className={`text-[9px] ml-1 ${changeColor}`}>{change}</span>

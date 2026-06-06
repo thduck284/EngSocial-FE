@@ -7,7 +7,7 @@ import { DashboardCard } from './DashboardCard'
 import { DashboardSectionHeader } from './DashboardSectionHeader'
 
 /**
- * Right sidebar: friend suggestions (dropdown + list), friends (All/Online), weekly leaderboard.
+ * Right sidebar: friend suggestions (dropdown + list), friends (All/Online).
  */
 export function DashboardRightSidebar({
   friendSelectRef,
@@ -24,8 +24,6 @@ export function DashboardRightSidebar({
   setFriendsFilterTab,
   displayedFriendsList,
   onlineUserIds,
-  weeklyLeaderboard = { list: [], currentUser: null },
-  weeklyLeaderboardLoading = false,
 }) {
   const { t } = useTranslation()
   const navigate = useNavigate()
@@ -273,65 +271,6 @@ export function DashboardRightSidebar({
             })
           )}
         </div>
-      </DashboardCard>
-
-      <DashboardCard className="p-5">
-        <DashboardSectionHeader
-          icon={null}
-          title={t('dashboard.weeklyLeaderboard')}
-          rightSlot={
-            <span className="material-symbols-outlined text-yellow-500 text-lg">
-              military_tech
-            </span>
-          }
-          className="mb-4"
-        />
-        {weeklyLeaderboardLoading ? (
-          <div className="flex justify-center py-6">
-            <span className="material-symbols-outlined animate-spin text-2xl text-primary">progress_activity</span>
-          </div>
-        ) : (
-          <>
-            {(weeklyLeaderboard.list || []).length === 0 ? (
-              <p className="text-xs text-slate-500 dark:text-[#92bbc9] py-4 text-center">{t('dashboard.noLeaderboardData')}</p>
-            ) : (
-              <div className="space-y-3">
-                {(weeklyLeaderboard.list || []).slice(0, 3).map((entry, index) => (
-                  <div
-                    key={entry.userId ?? entry.id ?? `lb-${index}-${entry.rank}`}
-                    className={`flex items-center justify-between ${entry.rank === 1 ? 'p-2 bg-yellow-500/5 rounded-lg border border-yellow-500/10' : 'px-2 py-1'}`}
-                  >
-                    <div className="flex items-center gap-3">
-                      <span className={`font-bold w-4 text-xs shrink-0 ${entry.rank === 1 ? 'text-yellow-500' : 'text-slate-400 dark:text-[#92bbc9]'}`}>
-                        {entry.rank}
-                      </span>
-                      <img
-                        src={entry.avatar || DEFAULT_AVATAR}
-                        alt=""
-                        className="size-8 rounded-full object-cover bg-slate-200 dark:bg-[#233f48] shrink-0"
-                      />
-                      <span className={`text-xs truncate max-w-[100px] text-slate-700 dark:text-slate-200 ${entry.rank === 1 ? 'font-bold' : 'font-medium'}`}>
-                        {entry.name || 'User'}
-                      </span>
-                    </div>
-                    <span className="text-xs font-semibold text-slate-900 dark:text-white shrink-0">{entry.xp != null ? `${Number(entry.xp).toLocaleString()} XP` : '0 XP'}</span>
-                  </div>
-                ))}
-              </div>
-            )}
-            {weeklyLeaderboard.currentUser && (
-              <div className="mt-4 pt-4 border-t border-slate-100 dark:border-[#325a67]">
-                <div className="flex items-center justify-between px-2 text-primary font-bold">
-                  <div className="flex items-center gap-3">
-                    <span className="w-4 text-xs">{weeklyLeaderboard.currentUser.rank}</span>
-                    <span className="text-xs">{t('dashboard.yourRank')}</span>
-                  </div>
-                  <span className="text-xs">{Number(weeklyLeaderboard.currentUser.xp ?? 0).toLocaleString()} XP</span>
-                </div>
-              </div>
-            )}
-          </>
-        )}
       </DashboardCard>
     </aside>
   )

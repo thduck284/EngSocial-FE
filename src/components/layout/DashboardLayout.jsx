@@ -3,6 +3,7 @@ import { useAuth } from '../../context/AuthContext'
 import { ROUTES } from '../../constants'
 import { AppHeader } from './AppHeader'
 import { ChatbotButton } from '../ui/chatbot/ChatbotButton'
+import { useMainScrollRestore } from '../../hooks/useMainScrollRestore'
 
 // Hide chatbot button on lesson/practice doing pages (reading/listening/writing by id), show on result and others
 const isLessonDoingPage = (pathname) =>
@@ -19,6 +20,7 @@ const isFullScreenGame = (pathname) =>
 export function DashboardLayout() {
   const location = useLocation()
   const { canAccessApp, isGuest } = useAuth()
+  useMainScrollRestore()
   const fullScreenGame = isFullScreenGame(location.pathname)
   const hideChatbot = isGuest || isLessonDoingPage(location.pathname) || fullScreenGame
 
@@ -30,6 +32,7 @@ export function DashboardLayout() {
     <div className="bg-background-light dark:bg-background-dark text-slate-900 dark:text-white h-screen flex flex-col w-full min-w-0 overflow-hidden">
       {!fullScreenGame && <AppHeader />}
       <div
+        data-app-main-scroll
         className={
           fullScreenGame
             ? 'flex-1 min-h-0 overflow-hidden flex flex-col'

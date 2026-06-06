@@ -88,22 +88,6 @@ export function GroupCreatePage() {
 
   return (
     <main className="flex-1 max-w-[1400px] mx-auto w-full px-1.5 sm:px-2 lg:px-3 py-6 h-[calc(100vh-80px)] overflow-hidden flex flex-col">
-      <nav className="flex items-center gap-2 text-sm text-slate-500 mb-4 shrink-0">
-        <span className="hover:text-primary transition-colors cursor-pointer" onClick={() => navigate('/home')}>
-          {t('groupsCreate.breadcrumbHome', { defaultValue: 'Home' })}
-        </span>
-        <span className="material-symbols-outlined text-base">chevron_right</span>
-        <span className="hover:text-primary transition-colors cursor-pointer" onClick={() => navigate('/community')}>
-          {t('groupsCreate.breadcrumbGroups', { defaultValue: 'Groups' })}
-        </span>
-        <span className="material-symbols-outlined text-base text-primary">chevron_right</span>
-        <span className="text-slate-300 font-medium">
-          {t('groupsCreate.breadcrumbCreate', { defaultValue: 'Tạo nhóm mới' })}
-        </span>
-      </nav>
-
-      <div className="mb-2 shrink-0" />
-
       <form
         className="flex-1 min-h-0 grid grid-cols-1 lg:grid-cols-12 gap-6"
         onSubmit={handleSubmit}
