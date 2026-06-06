@@ -15,6 +15,7 @@
     "user": "User",
     "showMore": "Show more",
     "showLess": "Show less",
+    "people": "people",
     "ok": "OK",
     "close": "Close",
     "minutesShort": "mins",
@@ -24,6 +25,18 @@
     "notification": "Notification",
     "deleteSuccess": "Deleted successfully",
     "deleteError": "Delete failed"
+  },
+  "levelTier": {
+    "novice": "Novice",
+    "explorer": "Explorer",
+    "practitioner": "Practitioner",
+    "scholar": "Scholar",
+    "communicator": "Communicator",
+    "fluent": "Fluent",
+    "expert": "Expert",
+    "master": "Master",
+    "mentor": "Mentor",
+    "legend": "Legend"
   },
   "report": {
     "titlePost": "Report post",
@@ -402,6 +415,8 @@
     "levelIntermediate": "Intermediate",
     "emptyPractices": "No practices yet. Add one or check back later.",
     "confirmDeletePractice": "Delete practice \"{{title}}\"?",
+    "paginationRange": "{{from}}–{{to}} of {{total}} practices",
+    "paginationPage": "Page {{current}} / {{total}}",
     "page": "Page",
     "items": "items",
     "entertainmentFiltersHint": "Filters apply to Reading / Listening / Writing. Entertainment only lists games.",
@@ -646,6 +661,7 @@
     "shareDemoFriendC": "Friend C",
     "shareDemoMore": "See more",
     "shareText": "Check out this post:",
+    "shareMessageText": "Share this:",
     "sharedAPost": "shared a post",
     "originalPostBy": "Original post by",
     "searchGroupsPlaceholder": "Search friends / groups to share...",
@@ -653,6 +669,9 @@
     "linkCopyFailed": "Failed to copy link.",
     "shareSendFailed": "Failed to send link via message. Please try again.",
     "shareSuccess": "Post shared successfully."
+  },
+  "community": {
+    "viewAll": "View all groups"
   },
   "achievementsCatalog": {
     "categories": {
@@ -832,6 +851,7 @@
       "hiddenDesc": "Only invited members can see this group.",
       "publicDesc": "Everyone can see the group's content.",
       "searchVisibility": "Search visibility",
+      "visibilityLabel": "Privacy",
       "settingsTitle": "Settings",
       "settingsInvite": "Invite members",
       "settingsMembers": "Members & management",
@@ -886,7 +906,20 @@
       "actionComment": "Comment",
       "actionShare": "Share",
       "noMedia": "No photos shared yet.",
-      "noFiles": "No files shared yet."
+      "noFiles": "No files shared yet.",
+      "aboutTitle": "About this group",
+      "membersTitle": "Members",
+      "historyTitle": "History",
+      "createdAt": "Group created on {{date}}.",
+      "activityToday": "Recent activity",
+      "activityTodayHint": "posts / today",
+      "activityMonth": "This month",
+      "activityMonthHint": "interactions",
+      "membersTotal": "Total members",
+      "membersGrowth": "Estimated growth",
+      "membersGrowthHint": "members / month",
+      "viewAllMembers": "View all",
+      "downloadFile": "Download"
     },
     "settingsModal": {
       "title": "Edit group",
@@ -913,6 +946,7 @@
       "noResults": "No friends left to invite (or they are already in the group).",
       "noSearchResults": "No users match this search.",
       "selected": "Selected {{count}} people.",
+      "selectedCount": "Selected",
       "badgeFriend": "Friend",
       "badgePending": "Friend request pending",
       "badgeOther": "Not friends yet",
@@ -929,7 +963,18 @@
       "addFriend": "Add friend",
       "isFriend": "Friends",
       "requestSent": "Request sent",
-      "message": "Message"
+      "message": "Message",
+      "kickConfirm": "Remove {{name}} from the group?",
+      "kickMember": "Remove from group"
+    },
+    "joinRequests": {
+      "title": "Join requests",
+      "hintPublic": "Everyone who clicks Join must be approved (even in public groups). Review requests here. Invited users get a notification and accept on the group page.",
+      "hintPrivate": "Only people who request to join (click Join) appear here. Invited users get a notification and accept or decline on the group page — they are not listed here.",
+      "loading": "Loading...",
+      "empty": "No pending requests right now.",
+      "reject": "Decline",
+      "approve": "Approve"
     }
   },
   "notifications": {
@@ -1606,7 +1651,9 @@
     "helpfulReview": "Helpful review",
     "allStats": "All stats",
     "reviewsCount": "{{count}} reviews",
-    "questionsCount": "{{count}} questions"
+    "questionsCount": "{{count}} questions",
+    "paginationRange": "{{from}}–{{to}} of {{total}} lessons",
+    "paginationPage": "Page {{current}} / {{total}}"
   },
   "lesson": {
     "topicNavigation": "Topic Navigation",
@@ -2061,7 +2108,7 @@
     "playbackSpeed": "Playback speed",
     "volume": "Volume",
     "fallbackTitle": "Listening",
-    "levelLearner": "Level {{level}} Learner",
+    "levelLearner": "Level {{level}} · {{tierName}}",
     "trueLabel": "True",
     "falseLabel": "False"
   },

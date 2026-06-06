@@ -51,6 +51,16 @@ export function ConversationSidebar({
 
   const closeMenu = () => setOpenConvMenuId(null)
 
+  const tabBtnClass = (active) =>
+    active
+      ? 'bg-primary text-white'
+      : 'bg-white dark:bg-card-dark text-slate-600 dark:text-gray-400 border border-slate-200 dark:border-border-dark hover:bg-primary/10 dark:hover:bg-primary/20'
+
+  const tabBadgeClass = (active) =>
+    active
+      ? 'bg-white/25 text-white'
+      : 'bg-primary/10 text-primary dark:bg-primary/30'
+
   return (
     <aside className="w-full md:w-[280px] lg:w-[340px] flex-shrink-0 min-h-0 border-r border-slate-200 dark:border-border-dark flex flex-col bg-slate-50 dark:bg-background-dark overflow-hidden">
       <div className="p-5 space-y-4">
@@ -78,18 +88,18 @@ export function ConversationSidebar({
           <button
             type="button"
             onClick={() => setTab('all')}
-            className={`h-8 min-w-[4.5rem] px-3 rounded-full text-sm font-semibold transition-colors flex items-center justify-center shrink-0 ${tab === 'all' ? 'bg-primary text-background-dark' : 'bg-card-dark text-gray-400 hover:bg-primary/20'}`}
+            className={`h-8 min-w-[4.5rem] px-3 rounded-full text-sm font-semibold transition-colors flex items-center justify-center shrink-0 ${tabBtnClass(tab === 'all')}`}
           >
             {t('messages.all')}
           </button>
           <button
             type="button"
             onClick={() => setTab('unread')}
-            className={`h-8 min-w-[4.5rem] px-3 rounded-full text-sm font-semibold transition-colors flex items-center justify-center gap-1.5 shrink-0 overflow-hidden ${totalUnread > 0 ? 'max-w-[5.5rem]' : ''} ${tab === 'unread' ? 'bg-primary text-background-dark' : 'bg-card-dark text-gray-400 hover:bg-primary/20'}`}
+            className={`h-8 min-w-[4.5rem] px-3 rounded-full text-sm font-semibold transition-colors flex items-center justify-center gap-1.5 shrink-0 overflow-hidden ${totalUnread > 0 ? 'max-w-[5.5rem]' : ''} ${tabBtnClass(tab === 'unread')}`}
           >
             <span className="truncate min-w-0">{t('messages.unread')}</span>
             {totalUnread > 0 && (
-              <span className={`min-w-[1.25rem] h-5 px-1.5 rounded-full text-xs font-bold flex items-center justify-center shrink-0 ${tab === 'unread' ? 'bg-background-dark/30 text-background-dark' : 'bg-primary/30 text-primary'}`}>
+              <span className={`min-w-[1.25rem] h-5 px-1.5 rounded-full text-xs font-bold flex items-center justify-center shrink-0 ${tabBadgeClass(tab === 'unread')}`}>
                 {totalUnread > 99 ? '99+' : totalUnread}
               </span>
             )}
@@ -97,11 +107,11 @@ export function ConversationSidebar({
           <button
             type="button"
             onClick={() => setTab('groups')}
-            className={`h-8 min-w-[4.5rem] px-3 rounded-full text-sm font-semibold transition-colors flex items-center justify-center gap-1.5 shrink-0 overflow-hidden ${totalUnreadGroups > 0 ? 'max-w-[5.5rem]' : ''} ${tab === 'groups' ? 'bg-primary text-background-dark' : 'bg-card-dark text-gray-400 hover:bg-primary/20'}`}
+            className={`h-8 min-w-[4.5rem] px-3 rounded-full text-sm font-semibold transition-colors flex items-center justify-center gap-1.5 shrink-0 overflow-hidden ${totalUnreadGroups > 0 ? 'max-w-[5.5rem]' : ''} ${tabBtnClass(tab === 'groups')}`}
           >
             <span className="truncate min-w-0">{t('messages.groups')}</span>
             {totalUnreadGroups > 0 && (
-              <span className={`min-w-[1.25rem] h-5 px-1.5 rounded-full text-xs font-bold flex items-center justify-center shrink-0 ${tab === 'groups' ? 'bg-background-dark/30 text-background-dark' : 'bg-primary/30 text-primary'}`}>
+              <span className={`min-w-[1.25rem] h-5 px-1.5 rounded-full text-xs font-bold flex items-center justify-center shrink-0 ${tabBadgeClass(tab === 'groups')}`}>
                 {totalUnreadGroups > 99 ? '99+' : totalUnreadGroups}
               </span>
             )}
@@ -140,7 +150,7 @@ export function ConversationSidebar({
                     alt=""
                     className="w-10 h-10 rounded-full object-cover"
                   />
-                  <span className="text-sm font-medium text-gray-200 truncate">{friend.name || 'User'}</span>
+                  <span className="text-sm font-medium text-slate-900 dark:text-gray-200 truncate">{friend.name || 'User'}</span>
                   <span className="material-symbols-outlined text-lg text-slate-400 dark:text-gray-500 shrink-0">chat</span>
                 </button>
               ))
@@ -164,7 +174,7 @@ export function ConversationSidebar({
                   type="button"
                   onClick={() => navigate(ROUTES.MESSAGES_CONVERSATION(conv.id))}
                   className={`flex-1 flex items-center gap-4 p-3 rounded-xl text-left transition-colors min-w-0 ${
-                    selectedId === conv.id ? '' : 'hover:bg-card-dark'
+                    selectedId === conv.id ? '' : 'hover:bg-slate-100 dark:hover:bg-card-dark'
                   }`}
                 >
                   <div className="relative flex-shrink-0">
@@ -180,12 +190,12 @@ export function ConversationSidebar({
                       />
                     )}
                     {conv.online && (
-                      <span className="absolute bottom-0 right-0 w-3.5 h-3.5 bg-green-500 border-2 border-background-dark rounded-full" />
+                      <span className="absolute bottom-0 right-0 w-3.5 h-3.5 bg-green-500 border-2 border-white dark:border-background-dark rounded-full" />
                     )}
                   </div>
                   <div className="flex-1 min-w-0">
                     <div className="flex justify-between items-center gap-1.5 mb-0.5">
-                      <span className={`flex items-center gap-1.5 min-w-0 flex-1 ${conv.unread ? 'font-bold text-white' : 'font-medium text-gray-300'}`}>
+                      <span className={`flex items-center gap-1.5 min-w-0 flex-1 ${conv.unread ? 'font-bold text-slate-900 dark:text-white' : 'font-medium text-slate-600 dark:text-gray-300'}`}>
                         {conv.isGroup && (
                           <i className="fa-solid fa-people-group text-base text-slate-500 dark:text-gray-400 shrink-0" aria-hidden />
                         )}
@@ -194,7 +204,7 @@ export function ConversationSidebar({
                       <span className="text-xs text-slate-400 dark:text-gray-500 shrink-0">{conv.time || ''}</span>
                     </div>
                     <div className="flex justify-between items-center gap-2 min-w-0">
-                      <p className={`text-sm truncate min-w-0 flex-1 ${conv.unread ? 'font-semibold text-gray-200' : 'text-gray-500'}`}>
+                      <p className={`text-sm truncate min-w-0 flex-1 ${conv.unread ? 'font-semibold text-slate-700 dark:text-gray-200' : 'text-slate-500 dark:text-gray-500'}`}>
                         {conv.lastMessageFromMe
                           ? `${t('messages.you')}: ${displayLastMessage(conv.lastMessage) || ''}`.trim() || t('messages.noMessagesYet')
                           : (displayLastMessage(conv.lastMessage) || t('messages.noMessagesYet'))}
@@ -214,7 +224,7 @@ export function ConversationSidebar({
                 <button
                   type="button"
                   onClick={(e) => { e.stopPropagation(); setOpenConvMenuId((prev) => (prev === conv.id ? null : conv.id)) }}
-                  className={`absolute right-2 top-1/2 -translate-y-1/2 p-1.5 rounded-lg text-gray-400 hover:text-white hover:bg-card-dark transition-colors z-10 ${openConvMenuId === conv.id ? 'opacity-100' : 'opacity-0 group-hover/conversation:opacity-100'}`}
+                  className={`absolute right-2 top-1/2 -translate-y-1/2 p-1.5 rounded-lg text-slate-400 dark:text-gray-400 hover:text-slate-700 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-card-dark transition-colors z-10 ${openConvMenuId === conv.id ? 'opacity-100' : 'opacity-0 group-hover/conversation:opacity-100'}`}
                   aria-label={t('messages.options')}
                 >
                   <span className="material-symbols-outlined text-xl">more_vert</span>
@@ -222,44 +232,44 @@ export function ConversationSidebar({
                 {openConvMenuId === conv.id && (
                   <div className="absolute right-2 top-full mt-1 py-1 min-w-[200px] rounded-xl bg-white dark:bg-card-dark border border-slate-200 dark:border-border-dark shadow-xl z-30">
                     {!conv.isGroup && onViewProfile && (
-                      <button type="button" onClick={() => { onViewProfile(conv); closeMenu() }} className="w-full px-4 py-2.5 text-left text-sm text-slate-900 dark:text-white hover:bg-white/10 flex items-center gap-3">
+                      <button type="button" onClick={() => { onViewProfile(conv); closeMenu() }} className="w-full px-4 py-2.5 text-left text-sm text-slate-900 dark:text-white hover:bg-slate-50 dark:hover:bg-white/10 flex items-center gap-3">
                         <span className="material-symbols-outlined text-lg">person</span>
                         {t('messages.viewProfile')}
                       </button>
                     )}
                     {onOpenMute && (
-                      <button type="button" onClick={() => { onOpenMute(conv); closeMenu() }} className="w-full px-4 py-2.5 text-left text-sm text-slate-900 dark:text-white hover:bg-white/10 flex items-center gap-3">
+                      <button type="button" onClick={() => { onOpenMute(conv); closeMenu() }} className="w-full px-4 py-2.5 text-left text-sm text-slate-900 dark:text-white hover:bg-slate-50 dark:hover:bg-white/10 flex items-center gap-3">
                         <span className="material-symbols-outlined text-lg">{conv.muted ? 'notifications' : 'notifications_off'}</span>
                         {t('messages.muteNotifications')}
                       </button>
                     )}
                     {onOpenDisappearing && (
-                      <button type="button" onClick={() => { onOpenDisappearing(conv); closeMenu() }} className="w-full px-4 py-2.5 text-left text-sm text-slate-900 dark:text-white hover:bg-white/10 flex items-center gap-3">
+                      <button type="button" onClick={() => { onOpenDisappearing(conv); closeMenu() }} className="w-full px-4 py-2.5 text-left text-sm text-slate-900 dark:text-white hover:bg-slate-50 dark:hover:bg-white/10 flex items-center gap-3">
                         <span className="material-symbols-outlined text-lg">timer</span>
                         {t('messages.disappearingMessages')}
                       </button>
                     )}
                     <div className="border-t border-slate-200 dark:border-border-dark my-1" />
                     {onDeleteMessages && (
-                      <button type="button" onClick={() => { onDeleteMessages(conv); closeMenu() }} className="w-full px-4 py-2.5 text-left text-sm text-slate-900 dark:text-white hover:bg-white/10 flex items-center gap-3">
+                      <button type="button" onClick={() => { onDeleteMessages(conv); closeMenu() }} className="w-full px-4 py-2.5 text-left text-sm text-slate-900 dark:text-white hover:bg-slate-50 dark:hover:bg-white/10 flex items-center gap-3">
                         <span className="material-symbols-outlined text-lg">delete</span>
                         {t('messages.deleteAllMessages')}
                       </button>
                     )}
                     {conv.isGroup && onLeaveGroup && (
-                      <button type="button" onClick={() => { onLeaveGroup(conv); closeMenu() }} className="w-full px-4 py-2.5 text-left text-sm text-slate-900 dark:text-white hover:bg-white/10 flex items-center gap-3">
+                      <button type="button" onClick={() => { onLeaveGroup(conv); closeMenu() }} className="w-full px-4 py-2.5 text-left text-sm text-slate-900 dark:text-white hover:bg-slate-50 dark:hover:bg-white/10 flex items-center gap-3">
                         <span className="material-symbols-outlined text-lg">exit_to_app</span>
                         {t('messages.leaveGroup')}
                       </button>
                     )}
                     {!conv.isGroup && onBlock && (
-                      <button type="button" onClick={() => { onBlock(conv); closeMenu() }} className="w-full px-4 py-2.5 text-left text-sm text-slate-900 dark:text-white hover:bg-white/10 flex items-center gap-3">
+                      <button type="button" onClick={() => { onBlock(conv); closeMenu() }} className="w-full px-4 py-2.5 text-left text-sm text-slate-900 dark:text-white hover:bg-slate-50 dark:hover:bg-white/10 flex items-center gap-3">
                         <span className="material-symbols-outlined text-lg">block</span>
                         {t('messages.block')}
                       </button>
                     )}
                     {onReport && (
-                      <button type="button" onClick={() => { onReport(conv); closeMenu() }} className="w-full px-4 py-2.5 text-left text-sm text-slate-900 dark:text-white hover:bg-white/10 flex items-center gap-3">
+                      <button type="button" onClick={() => { onReport(conv); closeMenu() }} className="w-full px-4 py-2.5 text-left text-sm text-slate-900 dark:text-white hover:bg-slate-50 dark:hover:bg-white/10 flex items-center gap-3">
                         <span className="material-symbols-outlined text-lg">flag</span>
                         {t('messages.report')}
                       </button>

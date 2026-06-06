@@ -68,7 +68,23 @@ export function getContentWithoutMentions(content) {
     last = r.end
   }
   out += content.slice(last)
-  return out.trim()
+  return out
+    .replace(/[ \t]+\n/g, '\n')
+    .replace(/\n{3,}/g, '\n\n')
+    .replace(/[ \t]{2,}/g, ' ')
+    .trim()
+}
+
+/**
+ * Post body for UI when @mentions are shown separately in the header.
+ * @param {string} content
+ * @param {Array} mentions
+ */
+export function getDisplayContent(content, mentions = []) {
+  const raw = content != null ? String(content) : ''
+  if (!raw) return ''
+  if (!Array.isArray(mentions) || mentions.length === 0) return raw
+  return getContentWithoutMentions(raw)
 }
 
 /**

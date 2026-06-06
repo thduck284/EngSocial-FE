@@ -46,10 +46,16 @@ export function PostImageViewerCommentsSection({
   cancelReplyToComment,
   expandAfterReply,
   onExpandAfterReplyConsumed,
+  modalSurface = 'adaptive',
+  stickyComposer = true,
+  unifiedScroll = true,
 }) {
   return (
     <PostCommentsSectionBase
       variant="modal"
+      modalSurface={modalSurface}
+      stickyComposer={stickyComposer}
+      unifiedScroll={unifiedScroll}
       t={t}
       comments={comments}
       commentsLoading={commentsLoading}

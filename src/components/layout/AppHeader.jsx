@@ -8,10 +8,11 @@ import { LanguageSwitcher } from '../ui/common/LanguageSwitcher'
 import { NAV_ITEMS, ROUTES } from '../../constants'
 import { SOCKET_ENABLED, SOCKET_BASE_URL, SOCKET_FALLBACK_BASE_URL } from '../../constants/api'
 import { getAuthToken } from '../../utils/auth'
-import { notificationsService, conversationService, communityService } from '../../services'
+import { notificationsService, conversationService } from '../../services'
 import { LogoutConfirmModal } from './LogoutConfirmModal'
-import { PostDetailModal } from '../ui/post/PostDetailModal'
 import { WordScrambleIncomingInviteModal } from '../entertainment/WordScrambleIncomingInviteModal'
+import { navigateToPostDetail, postDetailPath } from '../../utils/postLinks'
+import { captureMainScrollY } from '../../utils/scrollRestore'
 
 const LogoIcon = () => (
   <div className="size-8">
@@ -45,9 +46,6 @@ export function AppHeader() {
   const [searchValue, setSearchValue] = useState(() => (location.pathname === ROUTES.SEARCH ? searchParams.get('q') || '' : ''))
   const notifButtonRef = useRef(null)
   const avatarRef = useRef(null)
-  const [selectedPost, setSelectedPost] = useState(null)
-  const [showPostModal, setShowPostModal] = useState(false)
-  const [postModalLoading, setPostModalLoading] = useState(false)
   const [isSearchFocused, setIsSearchFocused] = useState(false)
 
   const fetchUnreadCount = useCallback(() => {
@@ -145,22 +143,30 @@ export function AppHeader() {
     setLogoutConfirmOpen(true)
   }
 
-  const handleOpenPostModal = useCallback(async (postId) => {
-    if (!postId) return
-    setPostModalLoading(true)
-    try {
-      const res = await communityService.getPost(postId)
-      const p = res?.data?.post ?? res?.data
-      if (p) {
-        setSelectedPost(p)
-        setShowPostModal(true)
-      }
-    } catch (err) {
-      console.error('Failed to fetch post for modal', err)
-    } finally {
-      setPostModalLoading(false)
+  const handleOpenPostModal = useCallback(
+    (postId) => {
+      navigateToPostDetail(navigate, location, postId)
+    },
+    [navigate, location]
+  )
+
+  const postIdFromQuery = searchParams.get('post')
+
+  useEffect(() => {
+    if (!postIdFromQuery) return
+    const bgParams = new URLSearchParams(location.search)
+    bgParams.delete('post')
+    const bgSearch = bgParams.toString()
+    const background = {
+      ...location,
+      search: bgSearch ? `?${bgSearch}` : '',
     }
-  }, [])
+    navigate(postDetailPath(postIdFromQuery), {
+      replace: true,
+      state: { background, scrollY: captureMainScrollY() },
+      preventScrollReset: true,
+    })
+  }, [postIdFromQuery, navigate, location])
 
   const confirmLogout = () => {
     setLogoutConfirmOpen(false)
@@ -353,19 +359,6 @@ export function AppHeader() {
       onCancel={() => setLogoutConfirmOpen(false)}
       onConfirm={confirmLogout}
     />
-    <PostDetailModal
-      open={showPostModal}
-      onClose={() => setShowPostModal(false)}
-      post={selectedPost}
-    />
-    {postModalLoading && (
-      <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/20 backdrop-blur-[2px]">
-        <div className="bg-card-dark p-4 rounded-xl shadow-2xl border border-border-dark flex items-center gap-3">
-          <span className="material-symbols-outlined animate-spin text-primary">progress_activity</span>
-          <span className="text-sm font-medium text-gray-200">Đang tải bài viết...</span>
-        </div>
-      </div>
-    )}
     </>
   )
 }

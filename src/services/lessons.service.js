@@ -2,6 +2,10 @@ import { apiClient } from '../utils/api'
 import { API_ENDPOINTS } from '../constants'
 
 export const lessonsService = {
+  getTopics: async (filters = {}) => {
+    const params = new URLSearchParams(filters).toString()
+    return apiClient.get(`${API_ENDPOINTS.LESSONS.TOPICS}${params ? `?${params}` : ''}`)
+  },
   getLessons: async (filters = {}) => {
     const params = new URLSearchParams(filters).toString()
     return apiClient.get(`${API_ENDPOINTS.LESSONS.LIST}${params ? `?${params}` : ''}`)

@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from 'react'
+import { useState, useRef, useEffect, useCallback } from 'react'
 import { createPortal } from 'react-dom'
 import { Link } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
@@ -8,8 +8,10 @@ import {
   formatReactionCount, 
   getPostReactionTotal, 
   getPostVisibilityLabel, 
-  normalizeMentions 
+  normalizeMentions,
+  incrementCommentCountPatch,
 } from '../../../utils/post'
+import { getDisplayContent } from '../../../utils/postContent'
 import { usePostReactionPicker, useDashboardPostComments } from '../../../hooks/usePostInteractions'
 import { PostContentBody } from './PostContentBody'
 import { PostCommentsSectionBase } from './PostCommentsSectionBase'
@@ -17,6 +19,7 @@ import { ReactionsModal } from './ReactionsModal'
 import { MentionedUsersModal } from './MentionedUsersModal'
 import { PostInteractionsModal } from './PostInteractionsModal'
 import { SharedPostPreviewCard } from './SharedPostPreviewCard'
+import { PostShareModal } from './PostShareModal'
 
 export function PostDetailModal({ 
   open, 
@@ -32,9 +35,15 @@ export function PostDetailModal({
   const [showMentionsModal, setShowMentionsModal] = useState(false)
   const [showInteractionsModal, setShowInteractionsModal] = useState(false)
   const [interactionsType, setInteractionsType] = useState('comments')
+  const [showShareModal, setShowShareModal] = useState(false)
   const [contentExpanded, setContentExpanded] = useState(true) // Default expanded in modal
 
   const postId = post?.id ?? post?._id
+
+  const handleCommentAdded = useCallback(() => {
+    if (!postId || typeof onUpdatePost !== 'function') return
+    onUpdatePost(postId, incrementCommentCountPatch)
+  }, [postId, onUpdatePost])
 
   const {
     likeAreaRef,
@@ -103,7 +112,7 @@ export function PostDetailModal({
     expandAfterReply,
     onExpandAfterReplyConsumed,
     setShowCommentsPanel,
-  } = useDashboardPostComments(postId, t)
+  } = useDashboardPostComments(postId, t, handleCommentAdded)
 
   // Force loading comments since modal is open
   useEffect(() => {
@@ -112,11 +121,26 @@ export function PostDetailModal({
     }
   }, [open, postId, setShowCommentsPanel])
 
+  useEffect(() => {
+    if (!open) return
+    document.documentElement.style.overflowX = 'hidden'
+    document.body.style.overflowX = 'hidden'
+    return () => {
+      document.documentElement.style.overflowX = ''
+      document.body.style.overflowX = ''
+    }
+  }, [open])
+
   if (!open || !post) return null
 
   const author = post.author || {}
   const authorAvatar = author.avatar || (author.name ? `https://ui-avatars.com/api/?name=${encodeURIComponent(author.name)}&background=13b6ec&color=fff` : '/default-avatar.png')
   const mentionsList = normalizeMentions(post.mentions)
+  const hasMentions = mentionsList.length > 0
+  const firstMention = hasMentions ? mentionsList[0] : null
+  const firstMentionId = firstMention?.id ?? (typeof firstMention === 'string' ? firstMention : null)
+  const othersCount = hasMentions ? mentionsList.length - 1 : 0
+  const displayContent = getDisplayContent(post.content, mentionsList)
   const isLiked = Boolean(post.liked)
   const reactionTotal = getPostReactionTotal(post)
   const userReaction = post.userReaction || null
@@ -134,9 +158,9 @@ export function PostDetailModal({
   }
 
   const modalContent = (
-    <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/70 backdrop-blur-sm p-4 overflow-y-auto custom-scrollbar" onClick={onClose}>
+    <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/70 backdrop-blur-sm p-4 overflow-y-auto overflow-x-hidden custom-scrollbar" onClick={onClose}>
       <div 
-        className="bg-white dark:bg-[#111e22] rounded-2xl shadow-2xl w-full max-w-2xl max-h-[95vh] flex flex-col overflow-hidden border border-slate-200 dark:border-[#325a67]"
+        className="bg-white dark:bg-[#111e22] rounded-2xl shadow-2xl w-full max-w-2xl max-h-[95vh] flex flex-col overflow-hidden min-w-0 border border-slate-200 dark:border-[#325a67]"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
@@ -153,8 +177,8 @@ export function PostDetailModal({
         </div>
 
         {/* Scrollable Content Area */}
-        <div className="flex-1 overflow-y-auto custom-scrollbar">
-          <div className="p-5">
+        <div className="flex-1 overflow-y-auto overflow-x-hidden min-w-0 custom-scrollbar">
+          <div className="p-5 min-w-0 overflow-x-hidden">
             {/* Author Info */}
             <div className="flex gap-3 mb-4">
               <Link to={author.id || author._id ? ROUTES.PROFILE_USER(author.id || author._id) : '#'}>
@@ -165,6 +189,35 @@ export function PostDetailModal({
                   <Link to={author.id || author._id ? ROUTES.PROFILE_USER(author.id || author._id) : '#'}>
                     {author.name || 'User'}
                   </Link>
+                  {firstMention && firstMentionId && (
+                    <>
+                      {' '}
+                      <span className="text-sm font-medium text-slate-500 dark:text-slate-300">
+                        {t('dashboard.with')}
+                      </span>{' '}
+                      <Link
+                        to={ROUTES.PROFILE_USER(firstMentionId)}
+                        className="text-sm font-bold text-primary hover:underline"
+                      >
+                        {firstMention.name || firstMentionId}
+                      </Link>
+                      {othersCount > 0 && (
+                        <>
+                          {' '}
+                          <span className="text-sm font-medium text-slate-500 dark:text-slate-300">
+                            {t('dashboard.and')}
+                          </span>{' '}
+                          <button
+                            type="button"
+                            onClick={() => setShowMentionsModal(true)}
+                            className="text-sm font-bold text-primary hover:underline"
+                          >
+                            {t('dashboard.othersCount', { count: othersCount })}
+                          </button>
+                        </>
+                      )}
+                    </>
+                  )}
                 </h4>
                 <p className="text-xs text-slate-500 dark:text-[#92bbc9]">
                   {formatPostTime(post.createdAt)} • {getPostVisibilityLabel(post.visibility, t)}
@@ -173,8 +226,8 @@ export function PostDetailModal({
             </div>
 
             {/* Post Content */}
-            <div className="text-base leading-relaxed text-slate-800 dark:text-slate-200 mb-4 whitespace-pre-wrap">
-              <PostContentBody content={post.content || ''} mentions={mentionsList} />
+            <div className="text-base leading-relaxed text-slate-800 dark:text-slate-200 mb-4 whitespace-pre-wrap break-words [overflow-wrap:anywhere]">
+              <PostContentBody content={displayContent} mentions={hasMentions ? [] : mentionsList} />
             </div>
 
             {/* Shared Post */}
@@ -189,16 +242,16 @@ export function PostDetailModal({
 
             {/* Media */}
             {imagesList.length > 0 && (
-              <div className="mt-4 grid grid-cols-1 sm:grid-cols-2 gap-1 rounded-xl overflow-hidden border border-slate-200 dark:border-[#325a67]">
+              <div className="mt-4 grid grid-cols-1 sm:grid-cols-2 gap-1 rounded-xl overflow-hidden border border-slate-200 dark:border-[#325a67] max-w-full">
                 {imagesList.map((url, i) => (
-                  <img key={i} src={url} alt="" className="w-full h-auto object-cover max-h-[400px]" />
+                  <img key={i} src={url} alt="" className="w-full max-w-full h-auto object-cover max-h-[400px]" />
                 ))}
               </div>
             )}
             
             {post.video && (
-              <div className="mt-4 rounded-xl overflow-hidden border border-slate-200 dark:border-[#325a67]">
-                <video src={post.video} controls className="w-full max-h-96 bg-black" />
+              <div className="mt-4 rounded-xl overflow-hidden border border-slate-200 dark:border-[#325a67] max-w-full">
+                <video src={post.video} controls className="w-full max-w-full max-h-96 bg-black" />
               </div>
             )}
 
@@ -273,16 +326,21 @@ export function PostDetailModal({
                 <span className="material-symbols-outlined text-xl text-primary">chat_bubble</span>
                 {t('dashboard.comment')}
               </button>
-              <button className="flex-1 h-full flex items-center justify-center gap-2 text-sm font-bold text-slate-600 dark:text-[#92bbc9] hover:bg-slate-50 dark:hover:bg-[#233f48] rounded-md transition-colors">
+              <button
+                type="button"
+                onClick={() => setShowShareModal(true)}
+                className="flex-1 h-full flex items-center justify-center gap-2 text-sm font-bold text-slate-600 dark:text-[#92bbc9] hover:bg-slate-50 dark:hover:bg-[#233f48] rounded-md transition-colors"
+              >
                 <span className="material-symbols-outlined text-xl">share</span>
                 {t('dashboard.share')}
               </button>
             </div>
 
             {/* Comments Section */}
-            <div className="mt-2">
+            <div className="mt-2 min-w-0 overflow-x-hidden">
               <PostCommentsSectionBase 
-                variant="feed"
+                variant="modal"
+                modalSurface="adaptive"
                 t={t}
                 comments={comments}
                 commentsLoading={commentsLoading}
@@ -392,6 +450,19 @@ export function PostDetailModal({
         onClose={() => setShowInteractionsModal(false)}
         postId={postId}
         type={interactionsType}
+      />
+
+      <PostShareModal
+        open={showShareModal}
+        onClose={() => setShowShareModal(false)}
+        post={post}
+        t={t}
+        onRepostSuccess={(sharedPostId) => {
+          if (!sharedPostId || typeof onUpdatePost !== 'function') return
+          const cur = Number(post?.shareCount)
+          const base = Number.isFinite(cur) ? cur : 0
+          onUpdatePost(sharedPostId, { shareCount: base + 1 })
+        }}
       />
     </div>
   )

@@ -44,35 +44,27 @@ export function AchievementsPage({ embedded = false }) {
     <main
       className={
         embedded
-          ? 'max-w-[1440px] mx-auto px-6 lg:px-10 pt-2 pb-6 min-h-[min(920px,calc(100dvh-7rem))] flex flex-col overflow-hidden'
-          : 'max-w-[1440px] mx-auto px-6 lg:px-10 pt-2 pb-6 h-[calc(100vh-80px)] overflow-hidden flex flex-col'
+          ? 'max-w-[1440px] mx-auto p-6 min-h-[min(920px,calc(100dvh-7rem))] flex flex-col overflow-hidden'
+          : 'max-w-[1440px] mx-auto p-6 h-[calc(100vh-80px)] overflow-hidden flex flex-col'
       }
     >
-      <div className="mb-3 shrink-0 rounded-2xl border border-slate-200 dark:border-border-dark bg-white dark:bg-card-dark px-5 py-3 shadow-xl shadow-slate-200/50 dark:shadow-none relative overflow-hidden group">
-        <div className="absolute top-0 right-0 w-64 h-full bg-gradient-to-l from-primary/5 dark:from-primary/10 to-transparent pointer-events-none" />
-        
-        <div className="flex items-start gap-6 relative z-10">
-          <div className="hidden sm:flex size-14 rounded-2xl bg-slate-50 dark:bg-black/40 border border-slate-200 dark:border-white/10 items-center justify-center shadow-lg transition-transform group-hover:scale-110">
-            <span className="material-symbols-outlined text-4xl text-amber-500 dark:text-amber-300 drop-shadow-sm dark:drop-shadow-[0_0_18px_rgba(250,204,21,0.65)]">
-              emoji_events
-            </span>
+      <div className="mb-4 shrink-0 rounded-xl border border-slate-200 dark:border-border-dark bg-white dark:bg-card-dark px-5 py-4 shadow-sm">
+        <div className="flex items-start gap-4">
+          <div className="hidden sm:flex size-10 rounded-xl bg-slate-50 dark:bg-background-dark border border-slate-200 dark:border-border-dark items-center justify-center shrink-0">
+            <span className="material-symbols-outlined text-2xl text-amber-500">emoji_events</span>
           </div>
           <div className="min-w-0 flex-1 space-y-1">
-            <h1 className="text-lg font-bold text-slate-900 dark:text-white tracking-tight uppercase">
-              {t('header.achievements')}
-            </h1>
-            <p className="text-[10px] font-medium text-slate-500 dark:text-slate-300/80 max-w-2xl">
-              {t('achievementsPage.subtitle')}
-            </p>
+            <h1 className="text-2xl font-bold text-slate-900 dark:text-white">{t('header.achievements')}</h1>
+            <p className="text-xs text-slate-500 dark:text-gray-400 max-w-2xl">{t('achievementsPage.subtitle')}</p>
           </div>
-          <div className="hidden md:flex flex-col items-end gap-2 text-right">
-            <span className="text-xs font-black text-slate-900 dark:text-white uppercase tracking-widest">
+          <div className="hidden md:flex flex-col items-end gap-0.5 text-right shrink-0">
+            <span className="text-xs font-bold text-slate-900 dark:text-white">
               {t('achievementsPage.categoryCount', {
                 count: (activeCategory?.items || []).length,
                 defaultValue: `${(activeCategory?.items || []).length} Achievements`,
               })}
             </span>
-            <span className="text-[10px] font-black text-slate-400 dark:text-slate-300/60 uppercase tracking-[0.2em]">
+            <span className="text-[10px] text-slate-500 dark:text-gray-400">
               {t('achievementsPage.currentCategory', {
                 title: activeCategory?.title || '',
                 defaultValue: `Category: ${activeCategory?.title || ''}`,
@@ -82,18 +74,16 @@ export function AchievementsPage({ embedded = false }) {
         </div>
       </div>
 
-      <div className="flex-1 min-h-0 grid grid-cols-1 lg:grid-cols-11 gap-3">
-        <section className="lg:col-span-5 bg-white dark:bg-card-dark border border-slate-200 dark:border-border-dark rounded-[1.5rem] p-5 space-y-4 h-full min-h-0 shadow-xl shadow-slate-200/50 dark:shadow-none overflow-hidden flex flex-col">
-          <div className="flex flex-col gap-4 shrink-0">
-            <div className="flex items-center justify-between gap-4">
-              <h2 className="text-base font-black text-slate-900 dark:text-white uppercase tracking-tight">
+      <div className="flex-1 min-h-0 grid grid-cols-1 lg:grid-cols-11 gap-6">
+        <section className="lg:col-span-5 bg-white dark:bg-card-dark border border-slate-200 dark:border-border-dark rounded-xl p-5 space-y-4 h-full min-h-0 shadow-sm overflow-hidden flex flex-col">
+          <div className="flex flex-col gap-3 shrink-0">
+            <div className="flex items-center justify-between gap-3">
+              <h2 className="text-sm font-bold text-slate-900 dark:text-white">
                 {activeCategory?.title ||
                   t('achievementsPage.listTitle', { defaultValue: 'Achievements' })}
               </h2>
-              <span className="inline-flex items-center gap-2 rounded-xl border border-slate-100 dark:border-slate-800 bg-slate-50 dark:bg-background-dark/50 px-3 py-1.5 text-[9px] font-black uppercase tracking-widest text-slate-500 dark:text-slate-300 shadow-inner">
-                <span className="material-symbols-outlined text-lg text-amber-500 dark:text-amber-400">
-                  stars
-                </span>
+              <span className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 dark:border-border-dark bg-slate-50 dark:bg-background-dark px-2.5 py-1 text-[10px] font-bold text-slate-500 dark:text-gray-400">
+                <span className="material-symbols-outlined text-sm text-amber-500">stars</span>
                 {t('achievementsPage.categoryCount', {
                   count: (activeCategory?.items || []).length,
                   defaultValue: `${(activeCategory?.items || []).length} items`,
@@ -124,7 +114,7 @@ export function AchievementsPage({ embedded = false }) {
           </div>
         </section>
 
-        <section className="lg:col-span-6 bg-white dark:bg-gradient-to-br dark:from-slate-900 dark:via-slate-950 dark:to-black border border-slate-200 dark:border-border-dark rounded-[1.5rem] p-5 h-full min-h-0 shadow-xl shadow-slate-200/50 dark:shadow-none overflow-y-auto overflow-x-hidden custom-scrollbar">
+        <section className="lg:col-span-6 bg-white dark:bg-card-dark border border-slate-200 dark:border-border-dark rounded-xl p-5 h-full min-h-0 shadow-sm overflow-y-auto overflow-x-hidden custom-scrollbar">
           <AchievementDetails
             t={t}
             achievement={achievement}

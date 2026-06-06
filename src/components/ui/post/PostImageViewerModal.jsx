@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useRef, useState, useCallback } from 'react'
 import { createPortal } from 'react-dom'
 import { Link } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
@@ -10,7 +10,9 @@ import {
   getPostReactionTotal,
   getPostVisibilityLabel,
   normalizeMentions,
+  incrementCommentCountPatch,
 } from '../../../utils/post'
+import { getDisplayContent } from '../../../utils/postContent'
 import { usePostReactionPicker, usePostImageViewer } from '../../../hooks/usePostInteractions'
 import { usePostImageViewerComments } from '../../../hooks/usePostImageViewerComments'
 import { PostImageViewerLeft } from './PostImageViewerLeft'
@@ -20,8 +22,9 @@ import { PostContentBody } from './PostContentBody'
 import { MentionedUsersModal } from './MentionedUsersModal'
 import { PostImageViewerCommentsSection } from './PostImageViewerCommentsSection'
 import { PostInteractionsModal } from './PostInteractionsModal'
+import { PostShareModal } from './PostShareModal'
 
-export function PostImageViewerModal({ open, onClose, post, initialImageIndex = 0, onLikeClick, likeLoading = false, onReactionClick, onIndexChange }) {
+export function PostImageViewerModal({ open, onClose, post, initialImageIndex = 0, onLikeClick, likeLoading = false, onReactionClick, onIndexChange, onUpdatePost }) {
   const { t } = useTranslation()
   const [showMentionsModal, setShowMentionsModal] = useState(false)
   const [optionsMenuOpen, setOptionsMenuOpen] = useState(false)
@@ -47,6 +50,7 @@ export function PostImageViewerModal({ open, onClose, post, initialImageIndex = 
   const [commentReactionsModalCommentId, setCommentReactionsModalCommentId] = useState(null)
   const [showInteractionsModal, setShowInteractionsModal] = useState(false)
   const [interactionsType, setInteractionsType] = useState('comments')
+  const [showShareModal, setShowShareModal] = useState(false)
 
   const imagesList = [
     ...(Array.isArray(post?.images) ? post.images.filter((url) => typeof url === 'string' && url.trim()) : []),
@@ -56,7 +60,7 @@ export function PostImageViewerModal({ open, onClose, post, initialImageIndex = 
   const author = post?.author ?? {}
   const authorAvatar = author.avatar || (author.name ? `https://ui-avatars.com/api/?name=${encodeURIComponent(author.name)}&background=13b6ec&color=fff` : DEFAULT_AVATAR)
   const mentionsList = normalizeMentions(post?.mentions)
-  const contentToShow = post?.content != null ? String(post.content) : ''
+  const contentToShow = getDisplayContent(post?.content, mentionsList)
   const isLikedInModal = Boolean(post?.liked)
   const reactionTotalInModal = post ? getPostReactionTotal(post) : 0
   const userReactionInModal = post?.userReaction || null
@@ -79,6 +83,11 @@ export function PostImageViewerModal({ open, onClose, post, initialImageIndex = 
   const currentSrc = imagesList[currentIndex] || null
   const isLongContent = contentToShow.length > 300
   const contentPreview = isLongContent && !contentExpanded ? contentToShow.slice(0, 300) : contentToShow
+
+  const handleCommentAdded = useCallback(() => {
+    if (!postId || typeof onUpdatePost !== 'function') return
+    onUpdatePost(postId, incrementCommentCountPatch)
+  }, [postId, onUpdatePost])
 
   // Hook comment + reaction cho modal ảnh
   const {
@@ -121,6 +130,7 @@ export function PostImageViewerModal({ open, onClose, post, initialImageIndex = 
     handleCommentLikeMouseLeave,
     handleCommentReactionBubbleEnter,
     handleCommentReactionBubbleLeave,
+    closeCommentReactionPicker,
     handleFeedCommentLikeMouseEnter,
     handleFeedCommentLikeMouseLeave,
     replyToComment,
@@ -128,7 +138,7 @@ export function PostImageViewerModal({ open, onClose, post, initialImageIndex = 
     cancelReplyToComment,
     expandAfterReply,
     onExpandAfterReplyConsumed,
-  } = usePostImageViewerComments(postId, t, open)
+  } = usePostImageViewerComments(postId, t, open, handleCommentAdded)
 
   useEffect(() => {
     if (!optionsMenuOpen) return
@@ -156,12 +166,12 @@ export function PostImageViewerModal({ open, onClose, post, initialImageIndex = 
 
   const modalContent = (
     <div
-      className="fixed inset-0 z-[100] flex flex-col bg-background-dark text-white"
+      className="fixed inset-0 z-[9999] flex flex-col bg-white dark:bg-[#0a1518] text-slate-900 dark:text-white"
       role="dialog"
       aria-modal="true"
       aria-label="Xem ảnh bài viết"
     >
-      <div className="flex flex-1 min-h-0 w-full flex-col md:flex-row">
+      <div className="flex flex-1 min-h-0 h-full w-full flex-col md:flex-row">
         {/* Left: image viewer */}
         <PostImageViewerLeft
           currentSrc={currentSrc}
@@ -179,21 +189,22 @@ export function PostImageViewerModal({ open, onClose, post, initialImageIndex = 
 
         {/* Right: post context + actions + comments (hidden in fullscreen) */}
         {!fullscreen && (
-        <aside className="w-full md:max-w-[520px] lg:max-w-[580px] flex-1 flex flex-col bg-[#111e22] border-t md:border-t-0 md:border-l border-[#325a67] overflow-y-auto pt-4">
-          <div className="border-b border-[#325a67] px-4 py-2">
+        <aside className="w-full md:max-w-[420px] lg:max-w-[460px] shrink-0 flex flex-col min-h-0 overflow-hidden bg-white dark:bg-[#111e22] border-t md:border-t-0 md:border-l border-slate-200 dark:border-[#325a67]">
+          <div className="flex-1 min-h-0 overflow-y-auto overflow-x-hidden custom-scrollbar">
+          <div className="border-b border-slate-200 dark:border-[#325a67] px-4 py-2">
             <div className="flex items-start justify-between gap-2">
               <Link to={author.id ?? author._id ? ROUTES.PROFILE_USER(author.id ?? author._id) : '#'}>
-                <img src={authorAvatar} alt="" className="size-9 rounded-full object-cover bg-slate-600 shrink-0 hover:opacity-80 transition-opacity" />
+                <img src={authorAvatar} alt="" className="size-9 rounded-full object-cover bg-slate-200 dark:bg-slate-600 shrink-0 hover:opacity-80 transition-opacity" />
               </Link>
               <div className="min-w-0 flex-1">
-                <p className="text-sm text-slate-100">
+                <p className="text-sm text-slate-900 dark:text-slate-100">
                   <Link to={author.id ?? author._id ? ROUTES.PROFILE_USER(author.id ?? author._id) : '#'} className="font-bold hover:text-primary transition-colors">
                     {author.name || 'User'}
                   </Link>
                   {mentionsList.length > 0 && (
                     <>
                       {' '}
-                      <span className="font-medium text-slate-400">{t('dashboard.with') || 'cùng với'}</span>{' '}
+                      <span className="font-medium text-slate-500 dark:text-slate-400">{t('dashboard.with') || 'cùng với'}</span>{' '}
                       {mentionsList.slice(0, 1).map((m) => {
                         const id = m?.id ?? (typeof m === 'string' ? m : '')
                         const name = (m?.name ?? id) || '—'
@@ -206,7 +217,7 @@ export function PostImageViewerModal({ open, onClose, post, initialImageIndex = 
                       {mentionsList.length > 1 && (
                         <>
                           {' '}
-                          <span className="font-medium text-slate-400">{t('dashboard.and') || 'và'}</span>{' '}
+                          <span className="font-medium text-slate-500 dark:text-slate-400">{t('dashboard.and') || 'và'}</span>{' '}
                           <button
                             type="button"
                             onClick={() => setShowMentionsModal(true)}
@@ -219,7 +230,7 @@ export function PostImageViewerModal({ open, onClose, post, initialImageIndex = 
                     </>
                   )}
                 </p>
-                <p className="text-xs text-[#92bbc9]">
+                <p className="text-xs text-slate-500 dark:text-[#92bbc9]">
                   {formatPostTime(post?.createdAt)} · {getPostVisibilityLabel(post?.visibility, t)}
                 </p>
               </div>
@@ -227,18 +238,18 @@ export function PostImageViewerModal({ open, onClose, post, initialImageIndex = 
                 <button
                   type="button"
                   onClick={() => setOptionsMenuOpen((v) => !v)}
-                  className="p-1 rounded hover:bg-[#233f48] text-[#92bbc9] hover:text-slate-300 transition-colors"
+                  className="p-1 rounded hover:bg-slate-100 dark:hover:bg-[#233f48] text-slate-500 dark:text-[#92bbc9] hover:text-slate-700 dark:hover:text-slate-300 transition-colors"
                   aria-label="Tùy chọn"
                   aria-expanded={optionsMenuOpen}
                 >
                   <span className="material-symbols-outlined">more_horiz</span>
                 </button>
                 {optionsMenuOpen && (
-                  <div className="absolute right-0 top-full z-10 mt-1 min-w-[180px] rounded-xl border border-[#325a67] bg-[#111e22] py-1 shadow-xl">
+                  <div className="absolute right-0 top-full z-10 mt-1 min-w-[180px] rounded-xl border border-slate-200 dark:border-[#325a67] bg-white dark:bg-[#111e22] py-1 shadow-xl">
                     <button
                       type="button"
                       onClick={() => setOptionsMenuOpen(false)}
-                      className="flex w-full items-center gap-2 px-4 py-2 text-left text-sm text-slate-200 hover:bg-[#233f48]"
+                      className="flex w-full items-center gap-2 px-4 py-2 text-left text-sm text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-[#233f48]"
                     >
                       <span className="material-symbols-outlined text-lg">bookmark</span>
                       {t('dashboard.savePost') || 'Lưu bài viết'}
@@ -249,10 +260,10 @@ export function PostImageViewerModal({ open, onClose, post, initialImageIndex = 
             </div>
           </div>
           {(contentToShow.trim() || mentionsList.length > 0) ? (
-            <div className="border-b border-[#325a67] px-4 py-2">
-              <div className="text-sm leading-relaxed text-slate-300">
+            <div className="border-b border-slate-200 dark:border-[#325a67] px-4 py-2">
+              <div className="text-sm leading-relaxed text-slate-700 dark:text-slate-300">
                 <p className="whitespace-pre-wrap break-words">
-                  <PostContentBody content={contentPreview} mentions={mentionsList} />
+                  <PostContentBody content={contentPreview} mentions={mentionsList.length > 0 ? [] : mentionsList} />
                   {isLongContent && !contentExpanded && ' ... '}
                 </p>
                 {isLongContent && (
@@ -328,7 +339,7 @@ export function PostImageViewerModal({ open, onClose, post, initialImageIndex = 
               </button>
             </div>
           </div>
-          <div className="flex w-full items-center justify-between border-b border-[#325a67] px-3 py-1.5">
+          <div className="flex w-full items-center justify-between border-b border-slate-200 dark:border-[#325a67] px-3 py-1.5">
             <div
               ref={cardLikeAreaRef}
               className="flex flex-1 items-center justify-center"
@@ -342,7 +353,7 @@ export function PostImageViewerModal({ open, onClose, post, initialImageIndex = 
                 onClick={() => typeof onLikeClick === 'function' && !likeLoading && onLikeClick()}
                 disabled={likeLoading}
                 className={`w-full flex items-center justify-center gap-1 py-0.5 text-sm font-medium transition-colors rounded-lg ${
-                  isLikedInModal ? 'text-red-400' : 'text-[#92bbc9] hover:text-red-400'
+                  isLikedInModal ? 'text-red-500' : 'text-slate-600 dark:text-[#92bbc9] hover:text-red-500'
                 } ${likeLoading ? 'opacity-70 pointer-events-none' : ''}`}
                 aria-pressed={isLikedInModal}
                 aria-haspopup="true"
@@ -366,20 +377,22 @@ export function PostImageViewerModal({ open, onClose, post, initialImageIndex = 
             </div>
             <button
               type="button"
-              className="flex flex-1 items-center justify-center gap-1 py-0.5 text-sm font-medium text-[#92bbc9] hover:text-primary transition-colors"
+              className="flex flex-1 items-center justify-center gap-1 py-0.5 text-sm font-medium text-slate-600 dark:text-[#92bbc9] hover:text-primary transition-colors"
             >
-              <span className="material-symbols-outlined text-xl">chat_bubble</span>
+              <span className="material-symbols-outlined text-xl text-primary">chat_bubble</span>
               {t('dashboard.comment') || 'Bình luận'}
             </button>
             <button
               type="button"
-              className="flex flex-1 items-center justify-center gap-1 py-0.5 text-sm font-medium text-[#92bbc9] hover:text-primary transition-colors"
+              onClick={() => setShowShareModal(true)}
+              className="flex flex-1 items-center justify-center gap-1 py-0.5 text-sm font-medium text-slate-600 dark:text-[#92bbc9] hover:text-primary transition-colors"
             >
               <span className="material-symbols-outlined text-xl">share</span>
               {t('dashboard.share') || 'Chia sẻ'}
             </button>
           </div>
           <PostImageViewerCommentsSection
+            modalSurface="adaptive"
             t={t}
             comments={comments}
             commentsLoading={commentsLoading}
@@ -426,12 +439,13 @@ export function PostImageViewerModal({ open, onClose, post, initialImageIndex = 
             expandAfterReply={expandAfterReply}
             onExpandAfterReplyConsumed={onExpandAfterReplyConsumed}
           />
+          </div>
         </aside>
         )}
       </div>
       {commentReactionPicker.open && commentReactionPicker.anchorRect && createPortal(
         <div
-          className="fixed z-[101] flex items-center gap-1 rounded-full bg-white dark:bg-[#1a353d] border border-slate-200 dark:border-[#325a67] shadow-lg p-[5px]"
+          className="fixed z-[10001] flex items-center gap-1 rounded-full bg-white dark:bg-[#1a353d] border border-slate-200 dark:border-[#325a67] shadow-lg p-[5px]"
           style={{
             left: commentReactionPicker.anchorRect.left + commentReactionPicker.anchorRect.width / 2,
             top: commentReactionPicker.anchorRect.top - 8,
@@ -462,7 +476,7 @@ export function PostImageViewerModal({ open, onClose, post, initialImageIndex = 
       )}
       {cardShowReactionPicker && cardReactionBubbleRect && createPortal(
         <div
-          className="fixed z-[100] flex items-center gap-1 rounded-full bg-white dark:bg-[#1a353d] border border-slate-200 dark:border-[#325a67] shadow-lg p-[5px]"
+          className="fixed z-[10001] flex items-center gap-1 rounded-full bg-white dark:bg-[#1a353d] border border-slate-200 dark:border-[#325a67] shadow-lg p-[5px]"
           style={{
             left: cardReactionBubbleRect.left + cardReactionBubbleRect.width / 2,
             top: cardReactionBubbleRect.top - 8,
@@ -480,7 +494,7 @@ export function PostImageViewerModal({ open, onClose, post, initialImageIndex = 
               role="menuitem"
               onClick={() => typeof onReactionClick === 'function' && onReactionClick(reactionType)}
               className={`w-11 h-11 flex items-center justify-center rounded-full text-2xl hover:bg-slate-100 dark:hover:bg-[#233f48] transition-colors ${
-                userReactionInModal === reactionType ? 'ring-2 ring-primary ring-offset-2 dark:ring-offset-[#111e22]' : ''
+                userReactionInModal === reactionType ? 'ring-2 ring-primary ring-offset-2 ring-offset-white dark:ring-offset-[#111e22]' : ''
               }`}
               title={reactionType}
             >
@@ -518,6 +532,18 @@ export function PostImageViewerModal({ open, onClose, post, initialImageIndex = 
         onClose={() => setShowInteractionsModal(false)}
         postId={postId}
         type={interactionsType}
+      />
+      <PostShareModal
+        open={showShareModal}
+        onClose={() => setShowShareModal(false)}
+        post={post}
+        t={t}
+        onRepostSuccess={(sharedPostId) => {
+          if (!sharedPostId || typeof onUpdatePost !== 'function') return
+          const cur = Number(post?.shareCount)
+          const base = Number.isFinite(cur) ? cur : 0
+          onUpdatePost(sharedPostId, { shareCount: base + 1 })
+        }}
       />
     </div>
   )

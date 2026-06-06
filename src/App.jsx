@@ -1,6 +1,7 @@
 import { useEffect } from 'react'
 import { Routes, Route, Navigate, useLocation, useParams } from 'react-router-dom'
 import { AuthProvider, useAuth } from './context/AuthContext'
+import { PostFeedSyncProvider } from './context/PostFeedSyncContext'
 import { Toaster } from 'react-hot-toast'
 import { ROUTES } from './constants'
 import { LoginPage } from './pages/LoginPage'
@@ -10,6 +11,7 @@ import { ResetPasswordPage } from './pages/ResetPasswordPage'
 import { TermPage } from './pages/TermPage'
 import { DashboardPage } from './pages/DashboardPage'
 import { PostPhotoPage } from './pages/PostPhotoPage'
+import { PostDetailPage } from './pages/PostDetailPage'
 import { EntertainmentLayout } from './pages/EntertainmentLayout'
 import { EntertainmentHomePage } from './pages/EntertainmentHomePage'
 import { EntertainmentWordScramblePage } from './pages/EntertainmentWordScramblePage'
@@ -122,6 +124,7 @@ function App() {
 
   return (
     <AuthProvider>
+      <PostFeedSyncProvider>
       <Toaster position="top-center" reverseOrder={false} />
       <GlobalGameInviteListener />
       <AchievementUnlockedToast />
@@ -140,6 +143,7 @@ function App() {
           <Route index element={<Navigate to="/home" replace />} />
           <Route path="home" element={<GuestRestrictedPage><DashboardPage /></GuestRestrictedPage>} />
           <Route path="post/photo/:postId" element={<GuestRestrictedPage><PostPhotoPage /></GuestRestrictedPage>} />
+          <Route path="post/:postId" element={<GuestRestrictedPage><PostDetailPage /></GuestRestrictedPage>} />
           <Route path="search" element={<GuestRestrictedPage><SearchPage /></GuestRestrictedPage>} />
           <Route path="messages/conversation/:conversationId" element={<GuestRestrictedPage><MessagesPage /></GuestRestrictedPage>} />
           <Route path="messages" element={<GuestRestrictedPage><MessagesPage /></GuestRestrictedPage>} />
@@ -272,8 +276,10 @@ function App() {
       {background && (
         <Routes>
           <Route path="post/photo/:postId" element={<PostPhotoPage />} />
+          <Route path="post/:postId" element={<PostDetailPage />} />
         </Routes>
       )}
+      </PostFeedSyncProvider>
     </AuthProvider>
   )
 }

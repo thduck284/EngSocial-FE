@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from 'react'
 import { groupService } from '../services/group.service'
 import { communityService } from '../services/community.service'
+import { resolvePostPatch } from '../utils/post'
 
 export function useCommunityGroups() {
   const [groups, setGroups] = useState([])
@@ -254,15 +255,12 @@ export function useCommunityGroups() {
       const id = p?.id ?? p?._id
       const sharedId = p?.sharedPost?.id ?? p?.sharedPost?._id
 
-      if (String(id) === String(postId)) return { ...p, ...(updated || {}) }
+      if (String(id) === String(postId)) return resolvePostPatch(p, updated)
 
       if (sharedId && String(sharedId) === String(postId)) {
         return {
           ...p,
-          sharedPost: {
-            ...(p.sharedPost || {}),
-            ...(updated || {}),
-          },
+          sharedPost: resolvePostPatch(p.sharedPost || {}, updated),
         }
       }
 

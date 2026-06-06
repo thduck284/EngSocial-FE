@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { useTranslation } from 'react-i18next'
 import { DashboardPostCard } from '../dashboard/DashboardPostCard'
+import { resolvePostPatch } from '../../utils/post'
 
 export function ProfilePostsList({ posts, loading, error }) {
   const { t } = useTranslation()
@@ -34,7 +35,7 @@ export function ProfilePostsList({ posts, loading, error }) {
       prev.map((p) => {
         const id = p?.id ?? p?._id
         if (String(id) !== String(postId)) return p
-        return { ...p, ...(updated || {}) }
+        return resolvePostPatch(p, updated)
       }),
     )
   }
@@ -79,7 +80,7 @@ export function ProfilePostsList({ posts, loading, error }) {
   }
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-3">
       {localPosts.map((post) => (
         <DashboardPostCard
           key={post?.id ?? post?._id}

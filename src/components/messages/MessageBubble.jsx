@@ -1,4 +1,6 @@
 import { TextWithLinks } from './TextWithLinks'
+import { MessageLinkPreview } from './MessageLinkPreview'
+import { extractFirstUrl } from '../../utils/messages'
 import { MESSAGE_REACTION_EMOJIS } from '../../constants'
 
 export function MessageBubble({
@@ -26,7 +28,7 @@ export function MessageBubble({
   if (msg.isSystem) {
     return (
       <div className="flex justify-center py-2 w-full" data-message-id={msg.id}>
-        <span className="text-xs text-slate-500 dark:text-gray-400 bg-card-dark/60 px-3 py-1.5 rounded-full max-w-[90%] text-center">
+        <span className="text-xs text-slate-500 dark:text-gray-400 bg-slate-100 dark:bg-card-dark/60 px-3 py-1.5 rounded-full max-w-[90%] text-center border border-slate-200 dark:border-transparent">
           {msg.text}
         </span>
       </div>
@@ -39,6 +41,12 @@ export function MessageBubble({
   }, {})
   const totalCount = (msg.reactions || []).length
   const emojiList = Object.keys(byEmoji)
+  const messageText = msg.text ? String(msg.text).replace(/\[\d+\s*file\]/gi, '').trim() : ''
+  const previewUrl = extractFirstUrl(messageText)
+  const isUrlOnlyMessage =
+    previewUrl &&
+    messageText.replace(previewUrl, '').trim() === '' &&
+    (msg.attachments || []).length === 0
 
   return (
     <div
@@ -63,8 +71,12 @@ export function MessageBubble({
             <div className="relative">
               <div className={`flex flex-col gap-0.5 w-fit shrink-0 ${msg.fromMe ? 'items-start' : 'items-end'}`}>
                 <div
-                  className={`p-4 rounded-2xl text-sm leading-relaxed w-fit max-w-full break-words whitespace-pre-wrap ${
-                    msg.fromMe ? 'bg-[#333C4E] text-white font-medium rounded-br-none shadow-lg shadow-black/10' : 'bg-card-dark text-white rounded-bl-none'
+                  className={`rounded-2xl text-sm leading-relaxed w-fit max-w-full break-words whitespace-pre-wrap ${
+                    isUrlOnlyMessage ? 'p-2' : 'p-4'
+                  } ${
+                    msg.fromMe
+                      ? 'bg-primary dark:bg-[#333C4E] text-white font-medium rounded-br-none shadow-sm'
+                      : 'bg-white dark:bg-card-dark text-slate-900 dark:text-white border border-slate-200 dark:border-transparent rounded-bl-none shadow-sm'
                   }`}
                 >
                   {(msg.attachments || []).length > 0 && (
@@ -95,10 +107,10 @@ export function MessageBubble({
                       ))}
                     </div>
                   )}
-                  {(() => {
-                    const text = msg.text ? String(msg.text).replace(/\[\d+\s*file\]/gi, '').trim() : ''
-                    return text ? <TextWithLinks text={text} /> : null
-                  })()}
+                  {!isUrlOnlyMessage && messageText ? (
+                    <TextWithLinks text={messageText} fromMe={msg.fromMe} />
+                  ) : null}
+                  {previewUrl ? <MessageLinkPreview url={previewUrl} fromMe={msg.fromMe} /> : null}
                 </div>
               </div>
               {(msg.reactions || []).length > 0 && (
@@ -106,10 +118,10 @@ export function MessageBubble({
                   <button
                     type="button"
                     onClick={() => onOpenReactionDetail && onOpenReactionDetail(msg)}
-                    className={`flex items-center gap-0.5 py-0.5 px-1.5 rounded-full bg-card-dark border border-border-dark hover:bg-white/10 cursor-pointer shadow-lg min-w-0 max-w-full ${msg.fromMe ? 'flex-row' : 'flex-row-reverse'}`}
+                    className={`flex items-center gap-0.5 py-0.5 px-1.5 rounded-full bg-white dark:bg-card-dark border border-slate-200 dark:border-border-dark hover:bg-slate-50 dark:hover:bg-slate-100 dark:hover:bg-white/10 cursor-pointer shadow-sm min-w-0 max-w-full ${msg.fromMe ? 'flex-row' : 'flex-row-reverse'}`}
                     title={t('messages.whoReacted')}
                   >
-                    {msg.fromMe && <span className="text-xs font-medium text-gray-300 min-w-[1ch]">{totalCount}</span>}
+                    {msg.fromMe && <span className="text-xs font-medium text-slate-600 dark:text-gray-300 min-w-[1ch]">{totalCount}</span>}
                     <div className="flex items-center -space-x-2">
                       {emojiList.map((emoji) => (
                         <span key={emoji} className="w-6 h-6 rounded-full bg-slate-50 dark:bg-background-dark border-2 border-slate-200 dark:border-border-dark flex items-center justify-center text-sm flex-shrink-0">
@@ -117,7 +129,7 @@ export function MessageBubble({
                         </span>
                       ))}
                     </div>
-                    {!msg.fromMe && <span className="text-xs font-medium text-gray-300 min-w-[1ch]">{totalCount}</span>}
+                    {!msg.fromMe && <span className="text-xs font-medium text-slate-600 dark:text-gray-300 min-w-[1ch]">{totalCount}</span>}
                   </button>
                 </div>
               )}
@@ -126,28 +138,28 @@ export function MessageBubble({
               {msg.fromMe ? (
                 <>
                   <div className="relative">
-                    <button type="button" onClick={() => setOpenMessageMenuId(isMenuOpen ? null : msg.id)} className="p-1 rounded-full hover:bg-white/10 text-slate-500 dark:text-gray-400 hover:text-slate-900 dark:hover:text-white transition-colors" title={t('messages.moreOptions')}>
+                    <button type="button" onClick={() => setOpenMessageMenuId(isMenuOpen ? null : msg.id)} className="p-1 rounded-full hover:bg-slate-100 dark:hover:bg-slate-100 dark:hover:bg-white/10 text-slate-500 dark:text-gray-400 hover:text-slate-900 dark:hover:text-white transition-colors" title={t('messages.moreOptions')}>
                       <span className="material-symbols-outlined text-lg">more_vert</span>
                     </button>
                     {isMenuOpen && (
                       <div className="absolute top-full mt-0.5 py-1 min-w-[180px] bg-white dark:bg-card-dark border border-slate-200 dark:border-border-dark rounded-xl shadow-xl z-20 right-0">
-                        <button type="button" onClick={() => handleMessageAction('deleteForMe', msg)} className="w-full px-4 py-2 text-left text-sm text-gray-200 hover:bg-white/5 flex items-center gap-2">
+                        <button type="button" onClick={() => handleMessageAction('deleteForMe', msg)} className="w-full px-4 py-2 text-left text-sm text-slate-900 dark:text-gray-200 hover:bg-slate-50 dark:hover:bg-white/5 flex items-center gap-2">
                           <span className="material-symbols-outlined text-lg">delete_outline</span>
                           {t('messages.deleteForMe')}
                         </button>
                         {!msg.read && (
-                          <button type="button" onClick={() => handleMessageAction('deleteForBoth', msg)} className="w-full px-4 py-2 text-left text-sm text-gray-200 hover:bg-white/5 flex items-center gap-2">
+                          <button type="button" onClick={() => handleMessageAction('deleteForBoth', msg)} className="w-full px-4 py-2 text-left text-sm text-slate-900 dark:text-gray-200 hover:bg-slate-50 dark:hover:bg-white/5 flex items-center gap-2">
                             <span className="material-symbols-outlined text-lg">delete_forever</span>
                             {t('messages.deleteForBoth')}
                           </button>
                         )}
                         {!msg.read && (
-                          <button type="button" onClick={() => handleMessageAction('edit', msg)} className="w-full px-4 py-2 text-left text-sm text-gray-200 hover:bg-white/5 flex items-center gap-2">
+                          <button type="button" onClick={() => handleMessageAction('edit', msg)} className="w-full px-4 py-2 text-left text-sm text-slate-900 dark:text-gray-200 hover:bg-slate-50 dark:hover:bg-white/5 flex items-center gap-2">
                             <span className="material-symbols-outlined text-lg">edit</span>
                             {t('messages.edit')}
                           </button>
                         )}
-                        <button type="button" onClick={() => handleMessageAction('forward', msg)} className="w-full px-4 py-2 text-left text-sm text-gray-200 hover:bg-white/5 flex items-center gap-2">
+                        <button type="button" onClick={() => handleMessageAction('forward', msg)} className="w-full px-4 py-2 text-left text-sm text-slate-900 dark:text-gray-200 hover:bg-slate-50 dark:hover:bg-white/5 flex items-center gap-2">
                           <span className="material-symbols-outlined text-lg">forward</span>
                           {t('messages.forward')}
                         </button>
@@ -155,13 +167,13 @@ export function MessageBubble({
                     )}
                   </div>
                   <div className="relative">
-                    <button type="button" onClick={() => setOpenReactionPickerId(openReactionPickerId === msg.id ? null : msg.id)} className="p-1 rounded-full hover:bg-white/10 text-slate-500 dark:text-gray-400 hover:text-slate-900 dark:hover:text-white transition-colors" title={t('messages.messageReaction')}>
+                    <button type="button" onClick={() => setOpenReactionPickerId(openReactionPickerId === msg.id ? null : msg.id)} className="p-1 rounded-full hover:bg-slate-100 dark:hover:bg-white/10 text-slate-500 dark:text-gray-400 hover:text-slate-900 dark:hover:text-white transition-colors" title={t('messages.messageReaction')}>
                       <span className="material-symbols-outlined text-lg">mood</span>
                     </button>
                     {openReactionPickerId === msg.id && (
                       <div className="absolute bottom-full right-0 mb-1 py-1.5 px-2 rounded-xl bg-white dark:bg-card-dark border border-slate-200 dark:border-border-dark shadow-xl z-20 flex items-center gap-0.5">
                         {MESSAGE_REACTION_EMOJIS.map((emoji) => (
-                          <button key={emoji} type="button" onClick={() => handleReaction(msg, emoji)} className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-white/10 text-xl">
+                          <button key={emoji} type="button" onClick={() => handleReaction(msg, emoji)} className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-slate-100 dark:hover:bg-white/10 text-xl">
                             {emoji}
                           </button>
                         ))}
@@ -172,13 +184,13 @@ export function MessageBubble({
               ) : (
                 <>
                   <div className="relative">
-                    <button type="button" onClick={() => setOpenReactionPickerId(openReactionPickerId === msg.id ? null : msg.id)} className="p-1 rounded-full hover:bg-white/10 text-slate-500 dark:text-gray-400 hover:text-slate-900 dark:hover:text-white transition-colors" title={t('messages.messageReaction')}>
+                    <button type="button" onClick={() => setOpenReactionPickerId(openReactionPickerId === msg.id ? null : msg.id)} className="p-1 rounded-full hover:bg-slate-100 dark:hover:bg-white/10 text-slate-500 dark:text-gray-400 hover:text-slate-900 dark:hover:text-white transition-colors" title={t('messages.messageReaction')}>
                       <span className="material-symbols-outlined text-lg">mood</span>
                     </button>
                     {openReactionPickerId === msg.id && (
                       <div className="absolute bottom-full left-0 mb-1 py-1.5 px-2 rounded-xl bg-white dark:bg-card-dark border border-slate-200 dark:border-border-dark shadow-xl z-20 flex items-center gap-0.5">
                         {MESSAGE_REACTION_EMOJIS.map((emoji) => (
-                          <button key={emoji} type="button" onClick={() => handleReaction(msg, emoji)} className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-white/10 text-xl">
+                          <button key={emoji} type="button" onClick={() => handleReaction(msg, emoji)} className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-slate-100 dark:hover:bg-white/10 text-xl">
                             {emoji}
                           </button>
                         ))}
@@ -186,20 +198,20 @@ export function MessageBubble({
                     )}
                   </div>
                   <div className="relative">
-                    <button type="button" onClick={() => setOpenMessageMenuId(isMenuOpen ? null : msg.id)} className="p-1 rounded-full hover:bg-white/10 text-slate-500 dark:text-gray-400 hover:text-slate-900 dark:hover:text-white transition-colors" title={t('messages.moreOptions')}>
+                    <button type="button" onClick={() => setOpenMessageMenuId(isMenuOpen ? null : msg.id)} className="p-1 rounded-full hover:bg-slate-100 dark:hover:bg-slate-100 dark:hover:bg-white/10 text-slate-500 dark:text-gray-400 hover:text-slate-900 dark:hover:text-white transition-colors" title={t('messages.moreOptions')}>
                       <span className="material-symbols-outlined text-lg">more_vert</span>
                     </button>
                     {isMenuOpen && (
                       <div className="absolute top-full mt-0.5 py-1 min-w-[180px] bg-white dark:bg-card-dark border border-slate-200 dark:border-border-dark rounded-xl shadow-xl z-20 left-0">
-                        <button type="button" onClick={() => handleMessageAction('deleteForMe', msg)} className="w-full px-4 py-2 text-left text-sm text-gray-200 hover:bg-white/5 flex items-center gap-2">
+                        <button type="button" onClick={() => handleMessageAction('deleteForMe', msg)} className="w-full px-4 py-2 text-left text-sm text-slate-900 dark:text-gray-200 hover:bg-slate-50 dark:hover:bg-white/5 flex items-center gap-2">
                           <span className="material-symbols-outlined text-lg">delete_outline</span>
                           {t('messages.deleteForMe')}
                         </button>
-                        <button type="button" onClick={() => handleMessageAction('forward', msg)} className="w-full px-4 py-2 text-left text-sm text-gray-200 hover:bg-white/5 flex items-center gap-2">
+                        <button type="button" onClick={() => handleMessageAction('forward', msg)} className="w-full px-4 py-2 text-left text-sm text-slate-900 dark:text-gray-200 hover:bg-slate-50 dark:hover:bg-white/5 flex items-center gap-2">
                           <span className="material-symbols-outlined text-lg">forward</span>
                           {t('messages.forward')}
                         </button>
-                        <button type="button" onClick={() => handleMessageAction('report', msg)} className="w-full px-4 py-2 text-left text-sm text-gray-200 hover:bg-white/5 flex items-center gap-2">
+                        <button type="button" onClick={() => handleMessageAction('report', msg)} className="w-full px-4 py-2 text-left text-sm text-slate-900 dark:text-gray-200 hover:bg-slate-50 dark:hover:bg-white/5 flex items-center gap-2">
                           <span className="material-symbols-outlined text-lg">flag</span>
                           {t('messages.report')}
                         </button>
@@ -215,7 +227,7 @@ export function MessageBubble({
               <div className="flex items-center gap-1">
                 <span className="text-[10px] text-slate-400 dark:text-gray-500">{msg.time}</span>
                 {msg.fromMe && (
-                  <span className={`material-symbols-outlined text-[12px] text-white/90 ${msg.read ? 'fill' : ''}`} title={msg.read ? t('messages.read') : t('messages.sent')}>
+                  <span className={`material-symbols-outlined text-[12px] ${msg.fromMe ? 'text-white/90' : 'text-slate-400 dark:text-gray-500'} ${msg.read ? 'fill' : ''}`} title={msg.read ? t('messages.read') : t('messages.sent')}>
                     {msg.read ? 'done_all' : 'done'}
                   </span>
                 )}

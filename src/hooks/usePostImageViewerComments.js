@@ -8,7 +8,7 @@ import {
   REACTION_PICKER_LEAVE_DELAY,
 } from './usePostInteractions'
 
-export function usePostImageViewerComments(postId, t, open) {
+export function usePostImageViewerComments(postId, t, open, onCommentAdded) {
   const [comments, setComments] = useState([])
   const [commentsLoading, setCommentsLoading] = useState(false)
   const [commentSending, setCommentSending] = useState(false)
@@ -320,6 +320,7 @@ export function usePostImageViewerComments(postId, t, open) {
       if (newComment) {
         if (parentIdForExpand) pendingExpandParentIdRef.current = String(parentIdForExpand)
         setComments((prev) => [...prev, newComment])
+        if (typeof onCommentAdded === 'function') onCommentAdded(newComment)
       }
       setCommentText('')
       setCommentImages([])
@@ -416,6 +417,7 @@ export function usePostImageViewerComments(postId, t, open) {
     handleCommentLikeMouseLeave,
     handleCommentReactionBubbleEnter,
     handleCommentReactionBubbleLeave,
+    closeCommentReactionPicker,
     handleFeedCommentLikeMouseEnter,
     handleFeedCommentLikeMouseLeave,
     replyToComment,

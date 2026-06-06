@@ -68,7 +68,7 @@ function SkillBar({ skill, level, onChange, t }) {
           >
             {skill.icon}
           </span>
-          <span className="text-sm font-semibold text-slate-700 dark:text-slate-200">
+          <span className="text-xs font-semibold text-slate-700 dark:text-slate-200">
             {skill.label}
           </span>
         </div>
@@ -306,15 +306,16 @@ export function ProfileSkillsTab({ readOnly = false, initialData = null }) {
   }
 
   return (
-    <div className="w-full flex flex-col gap-8">
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+    <div className="w-full flex flex-col gap-4">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div>
-          <h2 className="text-xl font-bold text-slate-800 dark:text-slate-100 tracking-tight">
+          <h2 className="text-sm font-bold text-slate-900 dark:text-white flex items-center gap-2">
+            <span className="material-symbols-outlined text-primary text-lg">psychology</span>
             {readOnly
               ? t('profileSkillsTab.userTitle')
               : t('profileSkillsTab.myTitle')}
           </h2>
-          <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">
+          <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
             {readOnly
               ? t('profileSkillsTab.readonlySubtitle')
               : t('profileSkillsTab.subtitle')}
@@ -322,21 +323,21 @@ export function ProfileSkillsTab({ readOnly = false, initialData = null }) {
         </div>
 
         <div
-          className="flex items-center gap-3 px-4 py-3 rounded-2xl border shrink-0"
+          className="flex items-center gap-2 px-3 py-2 rounded-lg border shrink-0"
           style={{ background: overallBg, borderColor: overallColor + '40' }}
         >
           <div>
-            <div className="text-[10px] uppercase tracking-widest font-semibold text-slate-400 dark:text-slate-500 mb-0.5">
+            <div className="text-[10px] uppercase tracking-wide font-bold text-slate-400 dark:text-slate-500 mb-0.5">
               {t('profileSkillsTab.overallLevel')}
             </div>
-            <div className="flex items-baseline gap-2">
+            <div className="flex items-baseline gap-1.5">
               <span
-                className="text-2xl font-black"
+                className="text-lg font-bold"
                 style={{ color: overallColor }}
               >
                 {overall}
               </span>
-              <span className="text-sm font-medium text-slate-500 dark:text-slate-400">
+              <span className="text-xs font-medium text-slate-500 dark:text-slate-400">
                 {overallLabel}
               </span>
             </div>
@@ -347,23 +348,23 @@ export function ProfileSkillsTab({ readOnly = false, initialData = null }) {
         <div className="text-xs text-slate-400">{t('profileSkillsTab.loading')}</div>
       )}
 
-      <div className="flex flex-wrap gap-2">
+      <div className="flex flex-wrap gap-1.5">
         {CEFR_LEVELS.map((lvl) => {
           const { color, bg, labelKey } = CEFR_META[lvl]
           return (
             <span
               key={lvl}
-              className="inline-flex items-center gap-1.5 text-[11px] px-2.5 py-1 rounded-full font-semibold"
+              className="inline-flex items-center gap-1 text-[10px] px-2 py-0.5 rounded-full font-semibold"
               style={{ color, background: bg, border: `1px solid ${color}30` }}
             >
-              <span className="font-black">{lvl}</span>
+              <span className="font-bold">{lvl}</span>
               <span className="font-normal opacity-70">{t(`profileSkillsTab.${labelKey}`)}</span>
             </span>
           )
         })}
       </div>
 
-      <div className="flex flex-col gap-4">
+      <div className="flex flex-col gap-3">
         <div className="flex items-center gap-2">
           {[
             { id: 'bars', label: t('profileSkillsTab.views.bars') },
@@ -372,10 +373,10 @@ export function ProfileSkillsTab({ readOnly = false, initialData = null }) {
             <button
               key={v.id}
               onClick={() => setActiveView(v.id)}
-              className={`px-4 py-1.5 rounded-lg text-sm font-semibold transition-all border ${
+              className={`px-3 py-1 rounded-lg text-xs font-bold transition-all border ${
                 activeView === v.id
-                  ? 'bg-indigo-500 text-white border-indigo-500'
-                  : 'text-slate-500 dark:text-slate-400 border-slate-200 dark:border-slate-700 hover:border-indigo-300'
+                  ? 'bg-primary text-white border-primary'
+                  : 'text-slate-500 dark:text-slate-400 border-slate-200 dark:border-border-dark hover:border-primary/40'
               }`}
             >
               {v.label}
@@ -384,7 +385,7 @@ export function ProfileSkillsTab({ readOnly = false, initialData = null }) {
         </div>
 
         {activeView === 'bars' ? (
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 p-6 bg-slate-50 dark:bg-white/[.03] rounded-2xl border border-slate-100 dark:border-white/[.06]">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 p-4 bg-slate-50 dark:bg-background-dark/50 rounded-lg border border-slate-100 dark:border-border-dark">
             {translatedSkills.map((skill) => (
               <SkillBar
                 key={skill.id}
@@ -396,12 +397,12 @@ export function ProfileSkillsTab({ readOnly = false, initialData = null }) {
             ))}
           </div>
         ) : (
-          <div className="p-6 bg-slate-50 dark:bg-white/[.03] rounded-2xl border border-slate-100 dark:border-white/[.06] flex flex-col sm:flex-row items-center gap-6">
+          <div className="p-4 bg-slate-50 dark:bg-background-dark/50 rounded-lg border border-slate-100 dark:border-border-dark flex flex-col sm:flex-row items-center gap-4">
             <RadarChart skills={skills} t={t} />
-            <div className="flex flex-col gap-2 w-full">
+            <div className="flex flex-col gap-1.5 w-full">
               {translatedSkills.map((s) => (
                 <div key={s.id} className="flex items-center justify-between">
-                  <div className="flex items-center gap-2 text-sm text-slate-600 dark:text-slate-300">
+                  <div className="flex items-center gap-2 text-xs text-slate-600 dark:text-slate-300">
                     <span
                       className="material-symbols-outlined text-[16px]"
                       style={{ color: CEFR_META[skills[s.id]].color }}
@@ -418,40 +419,41 @@ export function ProfileSkillsTab({ readOnly = false, initialData = null }) {
         )}
       </div>
 
-      <div className="flex flex-col gap-3">
+      <div className="flex flex-col gap-2">
         <div>
-          <h3 className="text-base font-bold text-slate-700 dark:text-slate-200">
+          <h3 className="text-sm font-bold text-slate-900 dark:text-white">
             {t('profileSkillsTab.learningGoals')}
           </h3>
-          <p className="text-xs text-slate-400 dark:text-slate-500 mt-0.5">
+          <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
             {readOnly
               ? t('profileSkillsTab.readonlyGoalsSubtitle')
               : t('profileSkillsTab.goalsSubtitle')}
           </p>
         </div>
-        <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+        <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
           {translatedGoals.map((g) => {
             const active = goals.includes(g.id)
             return (
               <button
                 key={g.id}
                 onClick={() => toggleGoal(g.id)}
-                className={`flex items-center gap-2.5 px-4 py-3 rounded-xl border text-sm font-medium transition-all text-left ${
+                disabled={readOnly}
+                className={`flex items-center gap-2 px-3 py-2 rounded-lg border text-xs font-medium transition-all text-left ${
                   active
-                    ? 'bg-indigo-50 dark:bg-indigo-500/10 border-indigo-400 text-indigo-600 dark:text-indigo-300'
-                    : 'border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-400 hover:border-indigo-300 hover:text-indigo-500'
-                }`}
+                    ? 'bg-primary/10 border-primary/40 text-primary dark:text-primary'
+                    : 'border-slate-200 dark:border-border-dark text-slate-600 dark:text-slate-400 hover:border-primary/30'
+                } ${readOnly ? 'cursor-default' : ''}`}
               >
                 <span
-                  className={`material-symbols-outlined text-[20px] shrink-0 ${
-                    active ? 'text-indigo-500' : 'text-slate-400'
+                  className={`material-symbols-outlined text-base shrink-0 ${
+                    active ? 'text-primary' : 'text-slate-400'
                   }`}
                 >
                   {g.icon}
                 </span>
                 {g.label}
                 {active && (
-                  <span className="ml-auto material-symbols-outlined text-[16px] text-indigo-500">
+                  <span className="ml-auto material-symbols-outlined text-sm text-primary">
                     check_circle
                   </span>
                 )}
@@ -462,21 +464,21 @@ export function ProfileSkillsTab({ readOnly = false, initialData = null }) {
       </div>
 
       {!readOnly && (
-      <div className="flex items-center gap-3 pt-2 border-t border-slate-100 dark:border-white/[.06]">
+      <div className="flex items-center gap-2 pt-2 border-t border-slate-100 dark:border-border-dark">
         <button
           onClick={handleSave}
-          className="flex items-center gap-2 px-6 py-2.5 rounded-xl bg-indigo-500 hover:bg-indigo-600 text-white text-sm font-bold transition-all shadow-sm"
+          className="flex items-center gap-1.5 px-4 py-2 rounded-lg bg-primary hover:bg-primary/90 text-white text-xs font-bold transition-all shadow-sm"
         >
-          <span className="material-symbols-outlined text-[18px]">
+          <span className="material-symbols-outlined text-base">
             {saved ? 'check_circle' : 'save'}
           </span>
           {saved ? t('profileSkillsTab.saved') : t('profileSkillsTab.saveChanges')}
         </button>
         <button
           onClick={handleReset}
-          className="flex items-center gap-2 px-5 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 text-slate-500 dark:text-slate-400 text-sm font-medium hover:text-red-500 hover:border-red-200 transition-all"
+          className="flex items-center gap-1.5 px-3 py-2 rounded-lg border border-slate-200 dark:border-border-dark text-slate-500 dark:text-slate-400 text-xs font-medium hover:text-red-500 hover:border-red-200 transition-all"
         >
-          <span className="material-symbols-outlined text-[18px]">
+          <span className="material-symbols-outlined text-base">
             restart_alt
           </span>
           {t('profileSkillsTab.reset')}

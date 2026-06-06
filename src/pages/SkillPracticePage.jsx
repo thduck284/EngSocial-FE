@@ -1,15 +1,18 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import { Link, useParams, useNavigate, useLocation } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { useAuth } from '../context/AuthContext'
 import { SKILLS, SKILL_TABS } from '../constants'
 import { ROUTES } from '../constants'
 import { DEFAULT_AVATAR } from '../constants/ui'
+import { getVisiblePageNumbers } from '../utils/pagination'
+import { getLessonLink } from '../utils/lesson'
 import { useSkillPractices, useGuestAuthGate } from '../hooks'
 import { useDashboardSocket, useDashboardFriends, useStudyGroups } from '../hooks'
 import { friendsService } from '../services/friends.service'
 import { userService } from '../services'
 import { AlertModal } from '../components/ui/common/AlertModal'
+import { CompactSelect } from '../components/ui/common/CompactSelect'
 import { ENTERTAINMENT_GAMES } from '../constants/entertainmentGames'
 
 // Stable no-op so socket effect does not re-run every render (no group conversations on skills page)
@@ -92,7 +95,28 @@ export function SkillPracticePage() {
     deletingId,
     rawData,
     cards,
+    topicOptions,
   } = useSkillPractices(skill, t)
+
+  const topicSelectOptions = useMemo(
+    () => [
+      { value: '', label: t('skills.filterAll') },
+      ...topicOptions.map((topic) => ({ value: topic, label: topic })),
+    ],
+    [topicOptions, t]
+  )
+
+  const perPage = pagination.perPage || 6
+  const rangeFrom = pagination.total > 0 ? (page - 1) * perPage + 1 : 0
+  const rangeTo = pagination.total > 0 ? Math.min(page * perPage, pagination.total) : 0
+  const visiblePages = useMemo(
+    () => getVisiblePageNumbers(page, pagination.totalPages),
+    [page, pagination.totalPages]
+  )
+
+  const blockGuestNav = (e) => {
+    if (!requireAuth()) e.preventDefault()
+  }
 
   const [reviewModalOpen, setReviewModalOpen] = useState(false)
   const [selectedLessonForReview, setSelectedLessonForReview] = useState(null)
@@ -142,133 +166,144 @@ export function SkillPracticePage() {
       const isReadingType = skillType === 'reading'
       const isListeningType = skillType === 'listening'
       const isWritingType = skillType === 'writing'
-      
-      const detailUrl = `/practice/${skillType}/${card.slug || card.id}`
+
+      const detailUrl = getLessonLink({ ...card, category: 'practice', skill: skillType })
       const typeLabel = isReadingType ? t('skills.readingTask') : isListeningType ? t('skills.audioContent') : t('skills.writingTask')
       const typeIcon = isReadingType ? 'book_5' : isListeningType ? 'equalizer' : 'description'
       const overlayIcon = isReadingType ? 'visibility' : isListeningType ? 'play_circle' : 'edit_note'
 
       return (
         <div className="bg-white dark:bg-card-dark rounded-3xl border border-slate-200 dark:border-border-dark overflow-hidden group hover:border-primary/50 transition-all shadow-sm hover:shadow-2xl flex flex-col h-full hover:-translate-y-1 duration-300">
-          <div className="h-40 bg-slate-100 dark:bg-background-dark relative overflow-hidden">
-            {card.img ? (
-              <img src={card.img} alt="" className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" />
-            ) : (
-              <div className="w-full h-full flex items-center justify-center opacity-20">
-                <span className="material-symbols-outlined text-6xl">{typeIcon}</span>
+          <Link
+            to={detailUrl}
+            onClick={blockGuestNav}
+            className="flex flex-col flex-1 min-h-0 outline-none focus-visible:ring-2 focus-visible:ring-primary/40 rounded-t-3xl"
+          >
+            <div className="h-40 bg-slate-100 dark:bg-background-dark relative overflow-hidden">
+              {card.img ? (
+                <img src={card.img} alt="" className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" />
+              ) : (
+                <div className="w-full h-full flex items-center justify-center opacity-20">
+                  <span className="material-symbols-outlined text-6xl">{typeIcon}</span>
+                </div>
+              )}
+              <div className="absolute inset-0 bg-primary/20 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center backdrop-blur-[2px]">
+                <span className="material-symbols-outlined text-white text-5xl drop-shadow-lg scale-75 group-hover:scale-100 transition-transform duration-300">{overlayIcon}</span>
               </div>
-            )}
-            <div className="absolute inset-0 bg-primary/20 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center backdrop-blur-[2px]">
-              <span className="material-symbols-outlined text-white text-5xl drop-shadow-lg scale-75 group-hover:scale-100 transition-transform duration-300">{overlayIcon}</span>
-            </div>
-            <div className="absolute top-3 left-3 flex items-center gap-2">
-              <div className="px-2 py-1 bg-black/60 backdrop-blur-md rounded-lg text-[10px] font-bold text-white flex items-center gap-1 shadow-lg border border-white/10">
-                <span className="material-symbols-outlined text-xs text-primary">{typeIcon}</span>
-                {typeLabel}
+              <div className="absolute top-3 left-3 flex items-center gap-2">
+                <div className="px-2 py-1 bg-black/60 backdrop-blur-md rounded-lg text-[10px] font-bold text-white flex items-center gap-1 shadow-lg border border-white/10">
+                  <span className="material-symbols-outlined text-xs text-primary">{typeIcon}</span>
+                  {typeLabel}
+                </div>
               </div>
-            </div>
-            {card.isCompleted && (
-              <div className="absolute top-3 right-3 size-8 rounded-xl bg-emerald-500 text-white flex items-center justify-center shadow-lg shadow-emerald-500/30 border border-white/20">
-                <span className="material-symbols-outlined text-base font-black">check</span>
-              </div>
-            )}
-          </div>
-
-          <div className="p-3 flex flex-col flex-1">
-            <div className="flex justify-between items-start gap-3 mb-2">
-              <h5 className="font-bold text-xs text-slate-900 dark:text-white group-hover:text-primary transition-colors line-clamp-2 leading-tight">
-                {card.title}
-              </h5>
-              <span className={`px-2 py-0.5 ${card.levelColor} text-[9px] font-bold rounded shadow-sm shrink-0 mt-0.5`}>
-                {card.level}
-              </span>
+              {card.isCompleted && (
+                <div className="absolute top-3 right-3 size-8 rounded-xl bg-emerald-500 text-white flex items-center justify-center shadow-lg shadow-emerald-500/30 border border-white/20">
+                  <span className="material-symbols-outlined text-base font-black">check</span>
+                </div>
+              )}
             </div>
 
-            {isListeningType && card.accent && (
-              <div className="flex items-center gap-2 mb-3">
-                <span className={`px-2.5 py-1 ${card.accentClass} text-[10px] font-bold rounded-lg border shadow-sm`}>
-                  {card.accent}
+            <div className="p-3 pb-2 flex flex-col flex-1">
+              <div className="flex justify-between items-start gap-3 mb-2">
+                <h5 className="font-bold text-xs text-slate-900 dark:text-white group-hover:text-primary transition-colors line-clamp-2 leading-tight">
+                  {card.title}
+                </h5>
+                <span className={`px-2 py-0.5 ${card.levelColor} text-[9px] font-bold rounded shadow-sm shrink-0 mt-0.5`}>
+                  {card.level}
                 </span>
               </div>
-            )}
-            
-            {isWritingType && card.type && (
-              <div className="flex items-center gap-2 mb-3">
-                <span className={`px-2.5 py-1 ${card.typeClass} text-[10px] font-bold rounded-lg border shadow-sm`}>
-                  {card.type}
-                </span>
-              </div>
-            )}
 
-            <p className="text-[11px] text-slate-500 dark:text-gray-400 line-clamp-2 leading-relaxed mb-4 font-medium">
-              {card.desc}
-            </p>
-
-            <div className="flex flex-wrap gap-2 mb-4 mt-auto">
-              {card.topic && (
-                <div className="px-2 py-0.5 bg-slate-50 dark:bg-white/5 text-slate-600 dark:text-gray-400 text-[9px] rounded flex items-center gap-1 border border-slate-100 dark:border-white/5">
-                  <span className="material-symbols-outlined text-[10px]">category</span> {card.topic}
-                </div>
-              )}
-              {card.time && (
-                <div className="px-2 py-0.5 bg-slate-50 dark:bg-white/5 text-slate-600 dark:text-gray-400 text-[9px] rounded flex items-center gap-1 border border-slate-100 dark:border-white/5">
-                  <span className="material-symbols-outlined text-[10px]">timer</span> {card.time}
-                </div>
-              )}
-              {(isReadingType || isListeningType) && card.questions && (
-                <div className="px-2 py-0.5 bg-slate-50 dark:bg-white/5 text-slate-600 dark:text-gray-400 text-[9px] rounded flex items-center gap-1 border border-slate-100 dark:border-white/5">
-                  <span className="material-symbols-outlined text-[10px]">quiz</span> {card.questions}
-                </div>
-              )}
-              {isWritingType && card.length && (
-                <div className="px-2 py-0.5 bg-slate-50 dark:bg-white/5 text-slate-600 dark:text-gray-400 text-[9px] rounded flex items-center gap-1 border border-slate-100 dark:border-white/5">
-                  <span className="material-symbols-outlined text-[10px]">straighten</span> {card.length}
-                </div>
-              )}
-              {card.xpReward != null && (
-                <div className="px-2 py-0.5 bg-yellow-50 dark:bg-yellow-500/10 text-yellow-600 dark:text-yellow-500 text-[9px] rounded flex items-center gap-1 font-bold border border-yellow-200/50 dark:border-yellow-500/20">
-                  <span className="material-symbols-outlined text-[11px] fill-icon">star</span> {card.xpReward} XP
-                </div>
-              )}
-            </div>
-
-            <div className="flex items-center justify-between pt-4 border-t border-slate-100 dark:border-white/5">
-              <div className="flex items-center gap-1">
-                <span className="material-symbols-outlined text-yellow-500 text-sm fill-icon">star</span>
-                <span className="text-[10px] font-bold text-slate-700 dark:text-slate-300">
-                  {card.rating} 
-                  <span className="text-slate-400 dark:text-gray-500 font-medium ml-1">
-                    ({t('lessons.reviewsCount', { count: card.ratingCount || 0 })})
+              {isListeningType && card.accent && (
+                <div className="flex items-center gap-2 mb-3">
+                  <span className={`px-2.5 py-1 ${card.accentClass} text-[10px] font-bold rounded-lg border shadow-sm`}>
+                    {card.accent}
                   </span>
+                </div>
+              )}
+
+              {isWritingType && card.type && (
+                <div className="flex items-center gap-2 mb-3">
+                  <span className={`px-2.5 py-1 ${card.typeClass} text-[10px] font-bold rounded-lg border shadow-sm`}>
+                    {card.type}
+                  </span>
+                </div>
+              )}
+
+              <p className="text-[11px] text-slate-500 dark:text-gray-400 line-clamp-2 leading-relaxed mb-4 font-medium">
+                {card.desc}
+              </p>
+
+              <div className="flex flex-wrap gap-2 mb-2 mt-auto">
+                {card.topic && (
+                  <div className="px-2 py-0.5 bg-slate-50 dark:bg-white/5 text-slate-600 dark:text-gray-400 text-[9px] rounded flex items-center gap-1 border border-slate-100 dark:border-white/5">
+                    <span className="material-symbols-outlined text-[10px]">category</span> {card.topic}
+                  </div>
+                )}
+                {card.time && (
+                  <div className="px-2 py-0.5 bg-slate-50 dark:bg-white/5 text-slate-600 dark:text-gray-400 text-[9px] rounded flex items-center gap-1 border border-slate-100 dark:border-white/5">
+                    <span className="material-symbols-outlined text-[10px]">timer</span> {card.time}
+                  </div>
+                )}
+                {(isReadingType || isListeningType) && card.questions && (
+                  <div className="px-2 py-0.5 bg-slate-50 dark:bg-white/5 text-slate-600 dark:text-gray-400 text-[9px] rounded flex items-center gap-1 border border-slate-100 dark:border-white/5">
+                    <span className="material-symbols-outlined text-[10px]">quiz</span> {card.questions}
+                  </div>
+                )}
+                {isWritingType && card.length && (
+                  <div className="px-2 py-0.5 bg-slate-50 dark:bg-white/5 text-slate-600 dark:text-gray-400 text-[9px] rounded flex items-center gap-1 border border-slate-100 dark:border-white/5">
+                    <span className="material-symbols-outlined text-[10px]">straighten</span> {card.length}
+                  </div>
+                )}
+                {card.xpReward != null && (
+                  <div className="px-2 py-0.5 bg-yellow-50 dark:bg-yellow-500/10 text-yellow-600 dark:text-yellow-500 text-[9px] rounded flex items-center gap-1 font-bold border border-yellow-200/50 dark:border-yellow-500/20">
+                    <span className="material-symbols-outlined text-[11px] fill-icon">star</span> {card.xpReward} XP
+                  </div>
+                )}
+              </div>
+              <div className="flex flex-wrap items-center gap-x-3 gap-y-1 pl-1 text-[10px] text-slate-500 dark:text-gray-400">
+                <span className="flex items-center gap-1">
+                  <span className="material-symbols-outlined text-xs">reviews</span>
+                  {t('lessons.reviewsCount', { count: card.ratingCount || 0 })}
+                </span>
+                <span className="flex items-center gap-1">
+                  <span className="material-symbols-outlined text-xs">group</span>
+                  {(card.completionCount ?? 0).toLocaleString()} {t('dashboard.views')}
                 </span>
               </div>
-              <div className="flex items-center gap-2">
-                {canAddPractice && user?.id != null && card.id && (
-                  <>
-                    <Link to={`${ROUTES.MANAGE_SKILLS(user.id)}/${card.id}`} className="size-8 flex items-center justify-center rounded-xl text-slate-400 hover:bg-slate-100 dark:hover:bg-white/5 hover:text-primary transition-all" title={t('quests.edit')}>
-                      <span className="material-symbols-outlined text-lg">edit</span>
-                    </Link>
-                    <button type="button" onClick={() => setItemToDelete(card)} disabled={deletingId === card.id} className="size-8 flex items-center justify-center rounded-xl text-slate-400 hover:bg-red-500/10 hover:text-red-400 transition-all disabled:opacity-50" title={t('quests.delete')}>
-                      <span className="material-symbols-outlined text-lg">delete</span>
-                    </button>
-                  </>
-                )}
-                <Link
-                  to={ROUTES.LESSON_REVIEWS(card.id)}
-                  onClick={(e) => { if (!requireAuth()) e.preventDefault() }}
-                  className="size-8 flex items-center justify-center rounded-xl text-yellow-600 dark:text-yellow-500 hover:bg-yellow-500/10 transition-all"
-                  title={t('lessons.reviews') || 'Review'}
-                >
-                  <span className="material-symbols-outlined text-lg">reviews</span>
-                </Link>
-                <button
-                  onClick={() => requireAuth(() => navigate(detailUrl))}
-                  className="ml-2 px-3 py-1.5 bg-primary text-white font-bold text-[10px] rounded-lg transition-all shadow-sm hover:brightness-110"
-                >
-                  {t('dashboard.viewDetail')}
-                </button>
-              </div>
             </div>
+          </Link>
+
+          <div className="flex items-center justify-end gap-2 px-3 py-2 border-t border-slate-100 dark:border-white/5 mx-3">
+              {canAddPractice && user?.id != null && card.id && (
+                <>
+                  <Link
+                    to={`${ROUTES.MANAGE_SKILLS(user.id)}/${card.id}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    onClick={(e) => e.stopPropagation()}
+                    className="size-8 flex items-center justify-center rounded-xl text-slate-400 hover:bg-slate-100 dark:hover:bg-white/5 hover:text-primary transition-all"
+                    title={t('quests.edit')}
+                  >
+                    <span className="material-symbols-outlined text-lg">edit</span>
+                  </Link>
+                  <button
+                    type="button"
+                    onClick={() => setItemToDelete(card)}
+                    disabled={deletingId === card.id}
+                    className="size-8 flex items-center justify-center rounded-xl text-slate-400 hover:bg-red-500/10 hover:text-red-400 transition-all disabled:opacity-50"
+                    title={t('quests.delete')}
+                  >
+                    <span className="material-symbols-outlined text-lg">delete</span>
+                  </button>
+                </>
+              )}
+              <Link
+                to={detailUrl}
+                onClick={blockGuestNav}
+                className="px-3 py-1.5 bg-primary text-white font-bold text-[10px] rounded-lg transition-all shadow-sm hover:brightness-110"
+              >
+                {t('dashboard.viewDetail')}
+              </Link>
           </div>
         </div>
       )
@@ -410,19 +445,14 @@ export function SkillPracticePage() {
               </div>
               <div>
                 <label className="block text-[9px] font-black text-slate-400 uppercase mb-1.5 px-1 tracking-wider">{t('skills.filterTopic')}</label>
-                <select
+                <CompactSelect
                   value={filterTopic}
-                  onChange={(e) => setFilterTopic(e.target.value)}
-                  className="w-full bg-slate-50 dark:bg-background-dark border border-slate-200 dark:border-border-dark text-xs rounded-xl focus:ring-2 focus:ring-primary outline-none px-3 py-2 text-slate-900 dark:text-white transition-all shadow-sm"
-                >
-                  <option value="">{t('skills.filterAll')}</option>
-                  <option value="Work">{t('skills.topicWork')}</option>
-                  <option value="Study">{t('skills.topicStudy')}</option>
-                  <option value="Travel">{t('skills.topicTravel')}</option>
-                  <option value="Food and drink">{t('skills.topicFood')}</option>
-                  <option value="Transport">{t('skills.topicTransport')}</option>
-                  <option value="Business">{t('skills.topicBusiness')}</option>
-                </select>
+                  onChange={setFilterTopic}
+                  options={topicSelectOptions}
+                  placement="up"
+                  className="w-full"
+                  buttonClassName="bg-slate-50 dark:bg-background-dark text-xs"
+                />
               </div>
             </div>
             <div className="flex gap-2 pt-2">
@@ -463,29 +493,57 @@ export function SkillPracticePage() {
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">{renderCards()}</div>
 
-        {!loading && pagination.total > 0 && (
-          <div className="flex flex-wrap items-center justify-center gap-3 pt-6 pb-2">
-            <button
-              type="button"
-              disabled={page <= 1}
-              onClick={() => setPage((p) => Math.max(1, p - 1))}
-              className="px-5 py-2.5 rounded-xl bg-white dark:bg-card-dark border border-slate-200 dark:border-border-dark text-sm font-black text-slate-700 dark:text-slate-300 shadow-sm disabled:opacity-50 disabled:cursor-not-allowed hover:bg-slate-50 dark:hover:bg-gray-700 transition-all flex items-center gap-2"
-            >
-              <span className="material-symbols-outlined text-lg">chevron_left</span>
-              {t('buttons.prev') || 'Trước'}
-            </button>
-            <span className="px-6 py-2.5 text-sm font-black text-slate-500 dark:text-gray-400 bg-white dark:bg-background-dark rounded-xl border border-slate-200 dark:border-border-dark shadow-sm">
-              {page} / {pagination.totalPages}
-            </span>
-            <button
-              type="button"
-              disabled={page >= pagination.totalPages}
-              onClick={() => setPage((p) => Math.min(pagination.totalPages, p + 1))}
-              className="px-5 py-2.5 rounded-xl bg-white dark:bg-card-dark border border-slate-200 dark:border-border-dark text-sm font-black text-slate-700 dark:text-slate-300 shadow-sm disabled:opacity-50 disabled:cursor-not-allowed hover:bg-slate-50 dark:hover:bg-gray-700 transition-all flex items-center gap-2"
-            >
-              {t('buttons.next') || 'Sau'}
-              <span className="material-symbols-outlined text-lg">chevron_right</span>
-            </button>
+        {skill !== 'entertainment' && pagination.totalPages > 1 && (
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 pt-6 pb-2">
+            <p className="text-xs text-slate-500 dark:text-gray-400 text-center sm:text-left">
+              {t('skills.paginationRange', { from: rangeFrom, to: rangeTo, total: pagination.total })}
+            </p>
+            <div className="flex flex-wrap items-center justify-center gap-1.5">
+              <button
+                type="button"
+                disabled={page <= 1}
+                onClick={() => setPage(page - 1)}
+                className="inline-flex items-center gap-1 px-3 py-2 rounded-xl bg-white dark:bg-card-dark border border-slate-200 dark:border-border-dark text-xs font-black text-slate-700 dark:text-slate-300 shadow-sm disabled:opacity-50 disabled:cursor-not-allowed hover:bg-slate-50 dark:hover:bg-gray-700 transition-all"
+              >
+                <span className="material-symbols-outlined text-base">chevron_left</span>
+                {t('buttons.prev') || 'Trước'}
+              </button>
+              {visiblePages.map((item, idx) =>
+                item === '…' ? (
+                  <span
+                    key={`ellipsis-${idx}`}
+                    className="px-2 py-2 text-xs text-slate-400 dark:text-gray-500 select-none"
+                  >
+                    …
+                  </span>
+                ) : (
+                  <button
+                    key={item}
+                    type="button"
+                    onClick={() => setPage(item)}
+                    className={`min-w-[2.25rem] px-2.5 py-2 rounded-xl text-xs font-black border transition-all ${
+                      item === page
+                        ? 'bg-primary text-white border-primary shadow-sm'
+                        : 'bg-white dark:bg-card-dark border-slate-200 dark:border-border-dark text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-gray-700'
+                    }`}
+                  >
+                    {item}
+                  </button>
+                )
+              )}
+              <button
+                type="button"
+                disabled={page >= pagination.totalPages}
+                onClick={() => setPage(page + 1)}
+                className="inline-flex items-center gap-1 px-3 py-2 rounded-xl bg-white dark:bg-card-dark border border-slate-200 dark:border-border-dark text-xs font-black text-slate-700 dark:text-slate-300 shadow-sm disabled:opacity-50 disabled:cursor-not-allowed hover:bg-slate-50 dark:hover:bg-gray-700 transition-all"
+              >
+                {t('buttons.next') || 'Sau'}
+                <span className="material-symbols-outlined text-base">chevron_right</span>
+              </button>
+            </div>
+            <p className="text-xs text-slate-500 dark:text-gray-400 text-center sm:text-right">
+              {t('skills.paginationPage', { current: page, total: pagination.totalPages })}
+            </p>
           </div>
         )}
       </section>

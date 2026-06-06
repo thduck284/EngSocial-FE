@@ -8,9 +8,19 @@ import {
 import { AlertModal } from '../ui/common/AlertModal'
 import { useAchievementSync } from '../../hooks/useAchievementSync'
 
-/** Độ dài tối đa phần xem trước trong danh sách; dài hơn thì có nút xem chi tiết */
 const PREVIEW_MAX_CHARS = 220
 const PREVIEW_MAX_LINES = 5
+
+const labelClass =
+  'block text-[9px] font-black text-slate-400 dark:text-gray-500 uppercase mb-1.5 px-1 tracking-wider'
+const inputClass =
+  'w-full bg-slate-50 dark:bg-background-dark border border-slate-200 dark:border-border-dark text-xs rounded-xl focus:ring-2 focus:ring-primary outline-none px-3 py-2 text-slate-900 dark:text-white transition-all shadow-sm placeholder:text-slate-400 dark:placeholder:text-gray-600'
+const cardClass =
+  'bg-white dark:bg-card-dark rounded-xl border border-slate-200 dark:border-border-dark shadow-sm'
+const sectionTitleClass =
+  'text-xs font-black text-slate-900 dark:text-white uppercase tracking-widest flex items-center gap-2'
+const modalShellClass =
+  'bg-white dark:bg-card-dark rounded-xl shadow-xl w-full max-w-lg max-h-[min(90vh,720px)] flex flex-col border border-slate-200 dark:border-border-dark'
 
 function buildNotePreview(content) {
   const raw = content ?? ''
@@ -90,8 +100,7 @@ export default function VocabularyNotesPanel() {
   const openComposer = () => setComposerOpen(true)
 
   return (
-    <div className="max-w-6xl mx-auto w-full px-4 mb-20">
-      {/* Thẻ tóm tắt — bấm vào mở modal thêm ghi chú */}
+    <div className="space-y-6">
       <div
         role="button"
         tabIndex={0}
@@ -102,85 +111,95 @@ export default function VocabularyNotesPanel() {
             openComposer()
           }
         }}
-        className="group relative bg-white/80 dark:bg-[#1f2e36]/80 backdrop-blur-sm rounded-3xl shadow-xl border border-gray-200 dark:border-gray-700 p-6 md:p-8 cursor-pointer transition-all hover:border-purple-400 dark:hover:border-purple-500 hover:shadow-2xl outline-none mb-10 overflow-hidden"
+        className={`${cardClass} p-5 cursor-pointer transition-all hover:border-primary/50 hover:shadow-md outline-none group`}
       >
-        <div className="flex flex-col md:flex-row items-center justify-between gap-8 relative z-10">
-          <div className="text-center md:text-left">
-            <h2 className="text-3xl font-black text-transparent bg-clip-text bg-gradient-to-r from-purple-600 to-pink-600 mb-3 flex items-center justify-center md:justify-start gap-4">
-              <span className="material-symbols-outlined text-purple-600 dark:text-purple-400 text-4xl">note_alt</span>
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div className="min-w-0">
+            <h2 className={`${sectionTitleClass} mb-1`}>
+              <span className="material-symbols-outlined text-sm text-primary">note_alt</span>
               {t('vocabulary.notesTitle')}
             </h2>
-            <p className="text-gray-600 dark:text-gray-400 text-base max-w-lg mb-4">
+            <p className="text-xs text-slate-500 dark:text-gray-400 mb-1">
               {t('vocabulary.notesIntro')}
             </p>
-            <p className="text-xs text-gray-500 dark:text-gray-500">
+            <p className="text-[10px] text-slate-400 dark:text-gray-500">
               {t('vocabulary.notesOpenComposerHint')}
             </p>
           </div>
-          
-          <div className="flex items-center gap-2 px-6 py-3 rounded-2xl bg-gradient-to-r from-purple-600 to-pink-600 text-white font-bold shadow-lg shadow-purple-500/20 hover:shadow-xl hover:shadow-purple-500/30 active:scale-95 transition-all">
-            <span className="material-symbols-outlined">add_circle</span>
+
+          <div className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-primary text-white text-xs font-black uppercase tracking-widest shadow-lg shadow-primary/25 shrink-0 group-hover:brightness-110 active:scale-95 transition-all">
+            <span className="material-symbols-outlined text-lg">add_circle</span>
             {t('vocabulary.notesAddNote')}
           </div>
         </div>
-        <div className="absolute inset-0 rounded-3xl bg-gradient-to-r from-purple-400 to-pink-400 opacity-0 group-hover:opacity-5 transition-opacity duration-300" />
       </div>
 
       {savedHint && (
-        <p className="text-sm text-emerald-600 dark:text-emerald-400 mt-3 text-center sm:text-left animate-bounce">{savedHint}</p>
+        <p className="text-xs font-medium text-emerald-600 dark:text-emerald-400 px-1">
+          {savedHint}
+        </p>
       )}
 
-      <div className="mt-12 space-y-6">
-        <div className="flex items-center justify-between px-2">
-          <h3 className="text-xl font-black text-white flex items-center gap-3">
-            <span className="material-symbols-outlined text-primary">description</span>
+      <div className={`${cardClass} overflow-hidden`}>
+        <div className="px-5 py-4 border-b border-slate-100 dark:border-border-dark bg-slate-50/50 dark:bg-background-dark/30">
+          <h3 className={sectionTitleClass}>
+            <span className="material-symbols-outlined text-sm text-primary">description</span>
             {t('vocabulary.notesSavedList', { count: notes.length })}
           </h3>
-          <div className="h-[1px] flex-1 mx-4 bg-gradient-to-r from-white/10 to-transparent" />
         </div>
 
         {notes.length === 0 ? (
-          <div className="py-20 text-center flex flex-col items-center justify-center bg-white/5 rounded-3xl border-2 border-dashed border-white/5">
-            <span className="material-symbols-outlined text-6xl text-gray-700 mb-4">folder_open</span>
-            <p className="text-gray-500 text-lg font-medium">
+          <div className="py-16 px-6 text-center flex flex-col items-center">
+            <div className="size-16 bg-slate-50 dark:bg-white/5 rounded-full flex items-center justify-center mb-4 border border-slate-200 dark:border-border-dark">
+              <span className="material-symbols-outlined text-3xl text-slate-300 dark:text-gray-600">
+                folder_open
+              </span>
+            </div>
+            <p className="text-xs text-slate-500 dark:text-gray-400 font-medium italic">
               {t('vocabulary.notesEmpty')}
             </p>
           </div>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {notes.map((n, idx) => {
+          <div className="p-5 grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+            {notes.map((n) => {
               const { preview, truncated } = buildNotePreview(n.content)
               const displayBody = preview || t('vocabulary.dash')
 
               return (
                 <div
                   key={n.id}
-                  className="group relative bg-white/80 dark:bg-[#1f2e36]/80 backdrop-blur-sm rounded-3xl shadow-xl border border-gray-200 dark:border-gray-700 p-6 flex flex-col gap-6 transition-all duration-300 hover:shadow-2xl hover:-translate-y-1 hover:border-purple-400 dark:hover:border-purple-500 overflow-hidden"
+                  className="group bg-white dark:bg-card-dark rounded-xl border border-slate-200 dark:border-border-dark p-4 flex flex-col gap-3 transition-all hover:border-primary/50 hover:shadow-md"
                 >
-                  <div className="flex-1 min-w-0 flex flex-col gap-3 relative z-10">
-                    <div className="flex items-start justify-between mb-1">
-                      <h4 className="font-bold text-lg text-gray-800 dark:text-gray-100 group-hover:text-purple-600 dark:group-hover:text-purple-400 transition-colors line-clamp-1">
+                  <div className="flex-1 min-w-0 flex flex-col gap-2">
+                    <div className="flex items-start justify-between gap-2">
+                      <h4 className="font-bold text-xs text-slate-900 dark:text-white group-hover:text-primary transition-colors line-clamp-1">
                         {n.title || t('vocabulary.notesTitle')}
                       </h4>
-                      <span className="material-symbols-outlined text-gray-400 transition-colors text-xl">push_pin</span>
+                      <span className="material-symbols-outlined text-slate-300 dark:text-gray-600 text-base shrink-0">
+                        push_pin
+                      </span>
                     </div>
-                    
-                    <p className="text-gray-600 dark:text-gray-400 text-sm leading-relaxed whitespace-pre-wrap line-clamp-6 mb-2">
+
+                    <p className="text-[11px] text-slate-500 dark:text-gray-400 leading-relaxed whitespace-pre-wrap line-clamp-5">
                       {displayBody}
                     </p>
                   </div>
 
-                  <div className="flex items-center justify-between pt-4 border-t border-gray-100 dark:border-gray-700 relative z-10">
-                    <span className="text-[10px] font-bold text-gray-500 uppercase tracking-widest mt-1">
-                      {new Date(n.createdAt).toLocaleDateString(dateLocale, { month: 'short', day: 'numeric', year: 'numeric' })}
+                  <div className="flex items-center justify-between pt-3 border-t border-slate-100 dark:border-border-dark">
+                    <span className="text-[10px] font-bold text-slate-400 dark:text-gray-500 uppercase tracking-wider">
+                      {new Date(n.createdAt).toLocaleDateString(dateLocale, {
+                        month: 'short',
+                        day: 'numeric',
+                        year: 'numeric',
+                      })}
                     </span>
-                    
-                    <div className="flex items-center gap-3">
+
+                    <div className="flex items-center gap-1.5">
                       {truncated && (
                         <button
                           type="button"
                           onClick={() => setDetailNote(n)}
-                          className="size-8 rounded-full bg-purple-100 dark:bg-purple-900/30 text-purple-600 dark:text-purple-400 flex items-center justify-center hover:bg-gradient-to-r from-purple-600 to-pink-600 hover:text-white transition-all transform hover:scale-110 shadow-sm"
+                          className="size-8 rounded-xl text-slate-400 hover:bg-primary/10 hover:text-primary flex items-center justify-center transition-all"
                           title={t('vocabulary.notesViewDetail')}
                         >
                           <span className="material-symbols-outlined text-lg">visibility</span>
@@ -188,17 +207,14 @@ export default function VocabularyNotesPanel() {
                       )}
                       <button
                         type="button"
-                        onClick={() => {
-                          setItemToDelete(n)
-                        }}
-                        className="size-8 rounded-full bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400 flex items-center justify-center hover:bg-red-600 hover:text-white transition-all transform hover:scale-110 shadow-sm"
+                        onClick={() => setItemToDelete(n)}
+                        className="size-8 rounded-xl text-slate-400 hover:bg-red-500/10 hover:text-red-400 flex items-center justify-center transition-all"
                         title={t('vocabulary.delete')}
                       >
                         <span className="material-symbols-outlined text-lg">delete</span>
                       </button>
                     </div>
                   </div>
-                  <div className="absolute inset-0 rounded-3xl bg-gradient-to-r from-purple-400 to-pink-400 opacity-0 group-hover:opacity-5 transition-opacity duration-300" />
                 </div>
               )
             })}
@@ -206,69 +222,74 @@ export default function VocabularyNotesPanel() {
         )}
       </div>
 
-      {/* Modal thêm ghi chú */}
       {composerOpen ? (
         <div
-          className="fixed inset-0 z-[101] flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm"
+          className="fixed inset-0 z-[101] flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm"
           role="dialog"
           aria-modal="true"
           aria-labelledby="vocab-note-composer-title"
           onClick={closeComposer}
         >
-          <div
-            className="bg-[#131f26] rounded-3xl shadow-2xl w-full max-w-lg max-h-[min(90vh,720px)] flex flex-col border border-white/10"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <div className="p-6 border-b border-white/5 shrink-0 flex items-start justify-between gap-3 bg-gradient-to-br from-[#131f26] to-[#0b1115]">
+          <div className={modalShellClass} onClick={(e) => e.stopPropagation()}>
+            <div className="px-5 py-4 border-b border-slate-100 dark:border-border-dark shrink-0 flex items-start justify-between gap-3">
               <div>
-                <h3
-                  id="vocab-note-composer-title"
-                  className="text-lg font-black text-white flex items-center gap-2"
-                >
-                  <span className="material-symbols-outlined text-purple-400">note_alt</span>
+                <h3 id="vocab-note-composer-title" className={sectionTitleClass}>
+                  <span className="material-symbols-outlined text-sm text-primary">note_alt</span>
                   {t('vocabulary.notesTitle')}
                 </h3>
-                <p className="text-xs text-gray-500 mt-1">
+                <p className="text-xs text-slate-500 dark:text-gray-400 mt-1">
                   {t('vocabulary.notesIntro')}
                 </p>
               </div>
               <button
                 type="button"
                 onClick={closeComposer}
-                className="shrink-0 p-2 rounded-xl text-gray-500 hover:bg-white/5 transition-colors"
+                className="shrink-0 size-8 rounded-xl text-slate-400 hover:bg-slate-100 dark:hover:bg-white/5 flex items-center justify-center transition-colors"
                 aria-label={t('vocabulary.notesCloseDetail')}
               >
-                <span className="material-symbols-outlined text-xl">close</span>
+                <span className="material-symbols-outlined text-lg">close</span>
               </button>
             </div>
-            <div className="p-6 overflow-y-auto flex-1 min-h-0 space-y-4">
-              <input
-                type="text"
-                value={title}
-                onChange={(e) => setTitle(e.target.value)}
-                placeholder={t('vocabulary.notesTitlePlaceholder')}
-                className="w-full rounded-2xl border border-white/5 bg-[#0b1115]/50 px-5 py-3.5 text-white placeholder:text-gray-600 focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all outline-none"
-              />
-              <textarea
-                value={content}
-                onChange={(e) => setContent(e.target.value)}
-                placeholder={t('vocabulary.notesContentPlaceholder')}
-                rows={5}
-                className="w-full rounded-2xl border border-white/5 bg-[#0b1115]/50 px-5 py-4 text-white placeholder:text-gray-600 focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all outline-none resize-none min-h-[160px]"
-              />
+            <div className="p-5 overflow-y-auto flex-1 min-h-0 space-y-4">
+              <div>
+                <label className={labelClass} htmlFor="vocab-note-title">
+                  {t('vocabulary.notesTitlePlaceholder')}
+                </label>
+                <input
+                  id="vocab-note-title"
+                  type="text"
+                  value={title}
+                  onChange={(e) => setTitle(e.target.value)}
+                  placeholder={t('vocabulary.notesTitlePlaceholder')}
+                  className={inputClass}
+                />
+              </div>
+              <div>
+                <label className={labelClass} htmlFor="vocab-note-content">
+                  {t('vocabulary.notesContentPlaceholder')}
+                </label>
+                <textarea
+                  id="vocab-note-content"
+                  value={content}
+                  onChange={(e) => setContent(e.target.value)}
+                  placeholder={t('vocabulary.notesContentPlaceholder')}
+                  rows={5}
+                  className={`${inputClass} resize-none min-h-[120px]`}
+                />
+              </div>
             </div>
-            <div className="p-5 border-t border-white/5 shrink-0 flex flex-wrap justify-end gap-3 bg-black/20">
+            <div className="px-5 py-4 border-t border-slate-100 dark:border-border-dark shrink-0 flex flex-wrap justify-end gap-2">
               <button
                 type="button"
                 onClick={closeComposer}
-                className="px-6 py-2.5 rounded-xl border border-white/5 text-gray-400 text-sm font-bold hover:bg-white/5 transition-all"
+                className="px-5 py-2 rounded-xl bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-border-dark text-[10px] font-black text-slate-600 dark:text-gray-300 uppercase tracking-widest hover:bg-slate-100 dark:hover:bg-white/10 transition-all"
               >
                 {t('common.cancel')}
               </button>
               <button
                 type="button"
                 onClick={handleSave}
-                className="px-5 py-2.5 rounded-xl bg-gradient-to-r from-purple-600 to-pink-600 text-white text-sm font-semibold hover:opacity-95"
+                className="px-6 py-2 bg-primary text-white font-black text-[10px] rounded-xl uppercase tracking-widest hover:brightness-110 transition-all shadow-lg shadow-primary/20"
               >
                 {t('vocabulary.notesSave')}
               </button>
@@ -279,45 +300,45 @@ export default function VocabularyNotesPanel() {
 
       {detailNote ? (
         <div
-          className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm"
+          className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm"
           role="dialog"
           aria-modal="true"
           aria-labelledby="vocab-note-detail-title"
           onClick={closeDetail}
         >
           <div
-            className="bg-[#131f26] rounded-3xl shadow-2xl w-full max-w-lg max-h-[min(85vh,640px)] flex flex-col border border-white/10"
+            className={`${modalShellClass} max-h-[min(85vh,640px)]`}
             onClick={(e) => e.stopPropagation()}
           >
-            <div className="p-6 border-b border-white/5 shrink-0 bg-gradient-to-br from-[#131f26] to-[#0b1115] relative">
+            <div className="px-5 py-4 border-b border-slate-100 dark:border-border-dark shrink-0 relative">
               <h3
                 id="vocab-note-detail-title"
-                className="text-lg font-black text-white pr-10"
+                className="text-sm font-bold text-slate-900 dark:text-white pr-10 line-clamp-2"
               >
                 {detailNote.title?.trim() ? detailNote.title : t('vocabulary.notesTitle')}
               </h3>
               <button
                 type="button"
                 onClick={closeDetail}
-                className="absolute right-4 top-4 p-2 rounded-xl text-gray-500 hover:bg-white/5 transition-colors"
+                className="absolute right-3 top-3 size-8 rounded-xl text-slate-400 hover:bg-slate-100 dark:hover:bg-white/5 flex items-center justify-center transition-colors"
                 aria-label={t('vocabulary.notesCloseDetail')}
               >
-                <span className="material-symbols-outlined text-xl">close</span>
+                <span className="material-symbols-outlined text-lg">close</span>
               </button>
             </div>
-            <div className="p-6 overflow-y-auto flex-1 min-h-0">
-              <p className="text-gray-400 whitespace-pre-wrap text-sm leading-relaxed font-medium">
+            <div className="p-5 overflow-y-auto flex-1 min-h-0">
+              <p className="text-xs text-slate-600 dark:text-gray-300 whitespace-pre-wrap leading-relaxed">
                 {detailNote.content?.trim() ? detailNote.content : t('vocabulary.dash')}
               </p>
-              <p className="text-[10px] font-bold text-gray-500 uppercase tracking-widest mt-6">
+              <p className="text-[10px] font-bold text-slate-400 dark:text-gray-500 uppercase tracking-wider mt-4">
                 {new Date(detailNote.createdAt).toLocaleString(dateLocale)}
               </p>
             </div>
-            <div className="p-5 border-t border-white/5 shrink-0 flex justify-end bg-black/20">
+            <div className="px-5 py-4 border-t border-slate-100 dark:border-border-dark shrink-0 flex justify-end">
               <button
                 type="button"
                 onClick={closeDetail}
-                className="px-8 py-2.5 rounded-xl bg-gradient-to-r from-purple-600 to-pink-600 text-white text-sm font-black shadow-lg shadow-purple-500/20 hover:shadow-xl hover:shadow-purple-500/30 active:scale-95 transition-all uppercase tracking-widest"
+                className="px-6 py-2 bg-primary text-white font-black text-[10px] rounded-xl uppercase tracking-widest hover:brightness-110 transition-all shadow-lg shadow-primary/20"
               >
                 {t('vocabulary.notesCloseDetail')}
               </button>

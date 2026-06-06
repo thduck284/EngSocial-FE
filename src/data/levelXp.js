@@ -234,3 +234,47 @@ export function applyLevelUp(level, exp) {
   }
   return { level: l, exp: x }
 }
+
+/** 10 hạng — mỗi 10 level một tên (1–10, 11–20, …, 91–100). */
+export const LEVEL_TIER_I18N_KEYS = [
+  'levelTier.novice',       // 1–10
+  'levelTier.explorer',     // 11–20
+  'levelTier.practitioner', // 21–30
+  'levelTier.scholar',      // 31–40
+  'levelTier.communicator', // 41–50
+  'levelTier.fluent',       // 51–60
+  'levelTier.expert',       // 61–70
+  'levelTier.master',       // 71–80
+  'levelTier.mentor',       // 81–90
+  'levelTier.legend',       // 91–100
+]
+
+/** Tên mặc định (không qua i18n) */
+export const LEVEL_TIER_NAMES = {
+  vi: ['Tập sự', 'Khám phá', 'Thực hành', 'Học giả', 'Giao tiếp', 'Lưu loát', 'Chuyên gia', 'Bậc thầy', 'Cố vấn', 'Huyền thoại'],
+  en: ['Novice', 'Explorer', 'Practitioner', 'Scholar', 'Communicator', 'Fluent', 'Expert', 'Master', 'Mentor', 'Legend'],
+}
+
+/** Chỉ số hạng 0–9 từ level 1–100 */
+export function getLevelTierIndex(level) {
+  const l = Math.max(1, Math.min(100, Number(level) || 1))
+  return Math.min(LEVEL_TIER_I18N_KEYS.length - 1, Math.floor((l - 1) / 10))
+}
+
+/** Key i18n cho hạng level hiện tại */
+export function getLevelTierI18nKey(level) {
+  return LEVEL_TIER_I18N_KEYS[getLevelTierIndex(level)] ?? LEVEL_TIER_I18N_KEYS[0]
+}
+
+/** Tên hạng theo ngôn ngữ (`vi` | `en`) */
+export function getLevelTierName(level, lang = 'vi') {
+  const idx = getLevelTierIndex(level)
+  const names = LEVEL_TIER_NAMES[lang === 'en' ? 'en' : 'vi']
+  return names[idx] ?? names[0]
+}
+
+/** Khoảng level của hạng, VD: { min: 11, max: 20 } */
+export function getLevelTierRange(level) {
+  const idx = getLevelTierIndex(level)
+  return { min: idx * 10 + 1, max: Math.min(100, idx * 10 + 10) }
+}

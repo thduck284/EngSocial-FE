@@ -9,9 +9,9 @@ export function ProfileAvatarCard({
   onOpenAvatarModal,
 }) {
   return (
-    <div className="bg-white dark:bg-card-dark rounded-2xl p-8 border border-slate-200 dark:border-border-dark flex flex-col items-center text-center">
-      <div className="relative mb-6">
-        <div className="w-40 h-40 rounded-full border-4 border-primary p-1 overflow-hidden">
+    <div className="bg-white dark:bg-card-dark rounded-xl p-5 border border-slate-200 dark:border-border-dark shadow-sm flex flex-col items-center text-center">
+      <div className="relative mb-4">
+        <div className="size-28 rounded-full border-2 border-primary p-0.5 overflow-hidden">
           <img
             alt=""
             className="w-full h-full rounded-full object-cover"
@@ -20,28 +20,28 @@ export function ProfileAvatarCard({
         </div>
         <button
           type="button"
-          className="absolute bottom-2 right-2 w-10 h-10 bg-primary text-white rounded-full flex items-center justify-center border-4 border-white dark:border-card-dark shadow hover:bg-primary/90 transition-colors"
+          className="absolute bottom-1 right-1 size-8 bg-primary text-white rounded-full flex items-center justify-center border-2 border-white dark:border-card-dark shadow-sm hover:bg-primary/90 transition-colors"
           title={t('profile.changeAvatar')}
           onClick={onOpenAvatarModal}
         >
           <span className="material-symbols-outlined text-sm">photo_camera</span>
         </button>
       </div>
-      <h2 className="text-2xl font-bold dark:text-white">{displayName}</h2>
-      <p className="text-slate-500 dark:text-slate-400 mb-6 font-medium">
+      <h2 className="text-base font-bold dark:text-white">{displayName}</h2>
+      <p className="text-xs text-slate-500 dark:text-slate-400 mb-4 font-medium">
         {t('dashboard.level')} {displayLevel || 1} ·{' '}
         <span className="text-primary">{displayXp || 0} XP</span>
       </p>
-      <div className="w-full bg-slate-100 dark:bg-slate-800 rounded-full h-4 mb-2 overflow-hidden">
+      <div className="w-full bg-slate-100 dark:bg-slate-800 rounded-full h-2 mb-2 overflow-hidden">
         <div
-          className="bg-primary h-4 rounded-full transition-all duration-300"
+          className="bg-primary h-2 rounded-full transition-all duration-300"
           style={{
             width: `${xpPercent}%`,
-            boxShadow: '0 0 10px rgba(19, 182, 236, 0.4)',
+            boxShadow: '0 0 8px rgba(19, 182, 236, 0.4)',
           }}
         />
       </div>
-      <div className="flex justify-between w-full text-xs text-slate-500 font-medium">
+      <div className="flex justify-between w-full text-[10px] text-slate-500 font-medium">
         <span>
           {t('profile.currentLevel')} {displayLevel || 1}
         </span>

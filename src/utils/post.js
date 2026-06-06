@@ -35,6 +35,21 @@ export function formatReactionCount(n) {
   return String(num)
 }
 
+export function nextCommentCount(current) {
+  const cur = Number(current)
+  return Number.isFinite(cur) ? cur + 1 : 1
+}
+
+/** Functional patch for onUpdatePost after a new comment is created */
+export function incrementCommentCountPatch(post) {
+  return { commentCount: nextCommentCount(post?.commentCount) }
+}
+
+export function resolvePostPatch(post, patch) {
+  const resolved = typeof patch === 'function' ? patch(post) : patch
+  return { ...post, ...(resolved || {}) }
+}
+
 /**
  * Normalize mentions to array of { id, name?, avatar? } (backend may return populated or raw id).
  */

@@ -74,10 +74,10 @@ export function AddMembersToGroupModal({ t, open, onClose, selected, currentUser
       onClick={onClose}
     >
       <div
-        className="bg-[#1e2630] rounded-2xl shadow-2xl w-full max-w-md border border-white/5 flex flex-col max-h-[85vh] overflow-hidden"
+        className="bg-white dark:bg-card-dark rounded-xl shadow-2xl w-full max-w-md border border-slate-200 dark:border-border-dark flex flex-col max-h-[85vh] overflow-hidden"
         onClick={(e) => e.stopPropagation()}
       >
-        <div className="p-5 border-b border-white/5">
+        <div className="p-5 border-b border-slate-200 dark:border-border-dark">
           <h3 className="text-lg font-semibold text-slate-900 dark:text-white">{t('messages.addMember')}</h3>
         </div>
         <div className="p-5 flex-1 overflow-y-auto">
@@ -97,7 +97,7 @@ export function AddMembersToGroupModal({ t, open, onClose, selected, currentUser
                   <p className="text-xs text-slate-400 dark:text-gray-500 mb-2">
                     {t('messages.membersSelected', { count: selectedIds.size, max: maxSelect })}
                   </p>
-                  <ul className="space-y-1 max-h-48 overflow-y-auto rounded-xl border border-slate-200 dark:border-border-dark bg-card-dark/50 p-2">
+                  <ul className="space-y-1 max-h-48 overflow-y-auto rounded-xl border border-slate-200 dark:border-border-dark bg-slate-50 dark:bg-card-dark/50 p-2">
                     {friends.map((friend) => {
                       const id = friend.id ?? friend._id
                       const sid = String(id)
@@ -106,14 +106,14 @@ export function AddMembersToGroupModal({ t, open, onClose, selected, currentUser
                       return (
                         <li key={sid}>
                           <label
-                            className={`flex items-center gap-3 p-2 rounded-lg hover:bg-white/5 cursor-pointer ${disabled ? 'opacity-60 cursor-not-allowed' : ''}`}
+                            className={`flex items-center gap-3 p-2 rounded-lg hover:bg-slate-100 dark:hover:bg-white/5 cursor-pointer ${disabled ? 'opacity-60 cursor-not-allowed' : ''}`}
                           >
                             <input
                               type="checkbox"
                               checked={checked}
                               disabled={disabled}
                               onChange={() => toggleMember(id)}
-                              className="rounded border-gray-500 text-primary focus:ring-primary"
+                              className="rounded border-slate-300 dark:border-gray-500 text-primary focus:ring-primary"
                             />
                             <img
                               src={
@@ -123,7 +123,7 @@ export function AddMembersToGroupModal({ t, open, onClose, selected, currentUser
                               alt=""
                               className="w-8 h-8 rounded-full object-cover"
                             />
-                            <span className="text-sm text-gray-200 truncate">{friend.name || 'User'}</span>
+                            <span className="text-sm text-slate-800 dark:text-gray-200 truncate">{friend.name || 'User'}</span>
                           </label>
                         </li>
                       )
@@ -131,15 +131,15 @@ export function AddMembersToGroupModal({ t, open, onClose, selected, currentUser
                   </ul>
                 </>
               )}
-              {error && <p className="text-sm text-red-400 mt-3">{error}</p>}
+              {error && <p className="text-sm text-red-600 dark:text-red-400 mt-3">{error}</p>}
             </>
           )}
         </div>
-        <div className="p-5 border-t border-white/5 flex justify-end gap-2">
+        <div className="p-5 border-t border-slate-200 dark:border-border-dark flex justify-end gap-2">
           <button
             type="button"
             onClick={onClose}
-            className="px-4 py-2 rounded-xl bg-white/10 text-slate-900 dark:text-white hover:bg-white/20 text-sm font-medium"
+            className="px-4 py-2 rounded-lg bg-slate-100 dark:bg-white/10 text-slate-700 dark:text-white hover:bg-slate-200 dark:hover:bg-white/20 text-sm font-medium"
           >
             {t('common.cancel')}
           </button>
@@ -147,7 +147,7 @@ export function AddMembersToGroupModal({ t, open, onClose, selected, currentUser
             type="button"
             onClick={handleSubmit}
             disabled={submitLoading || selectedIds.size === 0 || maxCanAdd <= 0}
-            className="px-4 py-2 rounded-xl bg-primary text-white hover:opacity-90 disabled:opacity-50 text-sm font-medium flex items-center gap-2"
+            className="px-4 py-2 rounded-lg bg-primary text-white hover:opacity-90 disabled:opacity-50 text-sm font-medium flex items-center gap-2"
           >
             {submitLoading && <span className="material-symbols-outlined animate-spin text-lg">progress_activity</span>}
             {t('messages.addMember')}

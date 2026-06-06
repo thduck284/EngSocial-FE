@@ -13,6 +13,17 @@ import { vocabPracticePath } from '../../utils/vocabularyCustomRoutes'
 import { VOCAB_WORD_TYPE_IDS } from '../../constants/vocabWordTypes'
 import { useAchievementSync } from '../../hooks/useAchievementSync'
 
+const labelClass =
+  'block font-semibold text-xs text-slate-500 dark:text-gray-400 mb-2'
+const inputClass =
+  'w-full bg-slate-50 dark:bg-background-dark border border-slate-200 dark:border-border-dark rounded-xl px-3 py-2.5 text-sm text-slate-900 dark:text-white focus:ring-2 focus:ring-primary outline-none transition-all placeholder:text-slate-400 dark:placeholder:text-gray-600'
+const cardClass =
+  'bg-white dark:bg-card-dark rounded-xl border border-slate-200 dark:border-border-dark shadow-sm'
+const sectionTitleClass =
+  'font-bold text-sm text-slate-900 dark:text-white flex items-center gap-2'
+const primaryBtnClass =
+  'inline-flex items-center gap-2 px-4 py-2.5 bg-primary hover:bg-primary/90 text-white font-bold rounded-xl text-sm transition-all shadow-lg shadow-primary/20 active:scale-95'
+
 export default function VocabularyMyWordsPanel() {
   const { t } = useTranslation()
   const navigate = useNavigate()
@@ -51,28 +62,24 @@ export default function VocabularyMyWordsPanel() {
         name: t('vocabulary.modeFlashcard'),
         description: t('vocabulary.modeFlashcardDesc'),
         icon: '🃏',
-        color: 'from-blue-400 to-blue-600',
       },
       {
         id: 'learn',
         name: t('vocabulary.modeLearn'),
         description: t('vocabulary.modeLearnDesc'),
         icon: '📚',
-        color: 'from-green-400 to-green-600',
       },
       {
         id: 'test',
         name: t('vocabulary.modeTest'),
         description: t('vocabulary.modeTestDesc'),
         icon: '📝',
-        color: 'from-green-400 to-green-600',
       },
       {
         id: 'match',
         name: t('vocabulary.modeMatch'),
         description: t('vocabulary.modeMatchDesc'),
         icon: '🧩',
-        color: 'from-pink-400 to-pink-600',
       },
     ],
     [t]
@@ -91,178 +98,181 @@ export default function VocabularyMyWordsPanel() {
     sync()
   }
 
-  const req = (
-    <span className="text-red-500">{t('vocabulary.requiredMark')}</span>
-  )
+  const req = <span className="text-red-500">{t('vocabulary.requiredMark')}</span>
 
   const wordTypeLabel = (id) =>
     id ? t(`vocabulary.wordType.${id}`) : t('vocabulary.wordType.none')
 
   return (
-    <div className="max-w-[1440px] mx-auto w-full space-y-12 animate-in fade-in slide-in-from-bottom-4 duration-700">
-      <div className="bg-white dark:bg-card-dark rounded-[2.5rem] border border-slate-200 dark:border-border-dark shadow-2xl shadow-slate-200/50 dark:shadow-none p-10 relative overflow-hidden">
-        <div className="absolute top-0 right-0 w-64 h-64 bg-primary/5 rounded-full -mr-32 -mt-32 blur-3xl" />
-        
-        <div className="relative z-10">
-          <h2 className="text-3xl font-black text-slate-900 dark:text-white mb-3 uppercase tracking-tight flex items-center gap-4">
-            <span className="size-12 bg-primary/10 rounded-2xl flex items-center justify-center text-2xl">✏️</span>
-            {t('vocabulary.myWordsAddTitle')}
-          </h2>
-          <p className="text-[10px] font-black text-slate-400 dark:text-gray-500 uppercase tracking-[0.2em] mb-10 ml-16">
-            {t('vocabulary.myWordsAddIntro')}
-          </p>
+    <div className="space-y-6">
+      <div className={`${cardClass} p-5`}>
+        <h2 className={`${sectionTitleClass} mb-1`}>
+          <span className="material-symbols-outlined text-lg text-primary">edit_note</span>
+          {t('vocabulary.myWordsAddTitle')}
+        </h2>
+        <p className="text-xs text-slate-500 dark:text-gray-400 mb-5">
+          {t('vocabulary.myWordsAddIntro')}
+        </p>
 
-          <form onSubmit={handleAdd} className="grid grid-cols-1 md:grid-cols-2 gap-8">
-            <div className="md:col-span-2">
-              <label className="text-[10px] font-black text-slate-500 dark:text-gray-400 uppercase tracking-widest mb-3 block ml-1">
-                {t('vocabulary.fieldDeck')} {req}
-              </label>
-              <input
-                value={deck}
-                onChange={(e) => setDeck(e.target.value)}
-                required
-                className="w-full rounded-2xl border-2 border-slate-100 dark:border-white/5 bg-slate-50 dark:bg-background-dark/50 px-6 py-4 text-sm font-bold text-slate-900 dark:text-white focus:ring-2 focus:ring-primary focus:border-transparent transition-all placeholder:text-slate-300 dark:placeholder:text-gray-600"
-                placeholder={t('vocabulary.deckPlaceholder')}
-              />
-            </div>
-            <div className="md:col-span-2">
-              <label className="text-[10px] font-black text-slate-500 dark:text-gray-400 uppercase tracking-widest mb-3 block ml-1">
-                {t('vocabulary.fieldWordEn')} {req}
-              </label>
-              <input
-                value={word}
-                onChange={(e) => setWord(e.target.value)}
-                required
-                className="w-full rounded-2xl border-2 border-slate-100 dark:border-white/5 bg-slate-50 dark:bg-background-dark/50 px-6 py-4 text-sm font-bold text-slate-900 dark:text-white focus:ring-2 focus:ring-primary focus:border-transparent transition-all placeholder:text-slate-300 dark:placeholder:text-gray-600"
-                placeholder={t('vocabulary.wordPlaceholder')}
-              />
-            </div>
-            <div className="md:col-span-2">
-              <label className="text-[10px] font-black text-slate-500 dark:text-gray-400 uppercase tracking-widest mb-3 block ml-1">
-                {t('vocabulary.fieldMeaningVi')} {req}
-              </label>
-              <input
-                value={meaning}
-                onChange={(e) => setMeaning(e.target.value)}
-                required
-                className="w-full rounded-2xl border-2 border-slate-100 dark:border-white/5 bg-slate-50 dark:bg-background-dark/50 px-6 py-4 text-sm font-bold text-slate-900 dark:text-white focus:ring-2 focus:ring-primary focus:border-transparent transition-all placeholder:text-slate-300 dark:placeholder:text-gray-600"
-                placeholder={t('vocabulary.meaningPlaceholder')}
-              />
-            </div>
-            <div>
-              <label className="text-[10px] font-black text-slate-500 dark:text-gray-400 uppercase tracking-widest mb-3 block ml-1">
-                {t('vocabulary.fieldWordType')}
-              </label>
-              <select
-                value={wordType}
-                onChange={(e) => setWordType(e.target.value)}
-                className="w-full rounded-2xl border-2 border-slate-100 dark:border-white/5 bg-slate-50 dark:bg-background-dark/50 px-6 py-4 text-sm font-bold text-slate-900 dark:text-white focus:ring-2 focus:ring-primary focus:border-transparent transition-all appearance-none"
-              >
-                {VOCAB_WORD_TYPE_IDS.map((id) => (
-                  <option key={id || 'none'} value={id}>
-                    {wordTypeLabel(id)}
-                  </option>
-                ))}
-              </select>
-            </div>
-            <div>
-              <label className="text-[10px] font-black text-slate-500 dark:text-gray-400 uppercase tracking-widest mb-3 block ml-1">
-                {t('vocabulary.fieldPronunciation')}
-              </label>
-              <input
-                value={pronunciation}
-                onChange={(e) => setPronunciation(e.target.value)}
-                className="w-full rounded-2xl border-2 border-slate-100 dark:border-white/5 bg-slate-50 dark:bg-background-dark/50 px-6 py-4 text-sm font-bold text-slate-900 dark:text-white focus:ring-2 focus:ring-primary focus:border-transparent transition-all placeholder:text-slate-300 dark:placeholder:text-gray-600"
-                placeholder={t('vocabulary.pronunciationPlaceholder')}
-              />
-            </div>
-            <div className="md:col-span-2">
-              <label className="text-[10px] font-black text-slate-500 dark:text-gray-400 uppercase tracking-widest mb-3 block ml-1">
-                {t('vocabulary.fieldExample')}
-              </label>
-              <textarea
-                value={example}
-                onChange={(e) => setExample(e.target.value)}
-                rows={2}
-                className="w-full rounded-2xl border-2 border-slate-100 dark:border-white/5 bg-slate-50 dark:bg-background-dark/50 px-6 py-4 text-sm font-bold text-slate-900 dark:text-white focus:ring-2 focus:ring-primary focus:border-transparent transition-all resize-y min-h-[100px] placeholder:text-slate-300 dark:placeholder:text-gray-600"
-                placeholder={t('vocabulary.examplePlaceholder')}
-              />
-            </div>
-            <div className="md:col-span-2 flex justify-end mt-4">
-              <button
-                type="submit"
-                className="px-10 py-5 rounded-2xl bg-primary text-white text-[10px] font-black uppercase tracking-widest hover:brightness-110 shadow-xl shadow-primary/20 transition-all active:scale-95 flex items-center gap-3"
-              >
-                <span className="material-symbols-outlined text-lg">add_circle</span>
-                {t('vocabulary.addWord')}
-              </button>
-            </div>
-          </form>
-        </div>
+        <form onSubmit={handleAdd} className="grid grid-cols-1 md:grid-cols-2 gap-5">
+          <div className="md:col-span-2">
+            <label className={labelClass}>
+              {t('vocabulary.fieldDeck')} {req}
+            </label>
+            <input
+              value={deck}
+              onChange={(e) => setDeck(e.target.value)}
+              required
+              className={inputClass}
+              placeholder={t('vocabulary.deckPlaceholder')}
+            />
+          </div>
+          <div className="md:col-span-2">
+            <label className={labelClass}>
+              {t('vocabulary.fieldWordEn')} {req}
+            </label>
+            <input
+              value={word}
+              onChange={(e) => setWord(e.target.value)}
+              required
+              className={inputClass}
+              placeholder={t('vocabulary.wordPlaceholder')}
+            />
+          </div>
+          <div className="md:col-span-2">
+            <label className={labelClass}>
+              {t('vocabulary.fieldMeaningVi')} {req}
+            </label>
+            <input
+              value={meaning}
+              onChange={(e) => setMeaning(e.target.value)}
+              required
+              className={inputClass}
+              placeholder={t('vocabulary.meaningPlaceholder')}
+            />
+          </div>
+          <div>
+            <label className={labelClass}>{t('vocabulary.fieldWordType')}</label>
+            <select
+              value={wordType}
+              onChange={(e) => setWordType(e.target.value)}
+              className={inputClass}
+            >
+              {VOCAB_WORD_TYPE_IDS.map((id) => (
+                <option key={id || 'none'} value={id}>
+                  {wordTypeLabel(id)}
+                </option>
+              ))}
+            </select>
+          </div>
+          <div>
+            <label className={labelClass}>{t('vocabulary.fieldPronunciation')}</label>
+            <input
+              value={pronunciation}
+              onChange={(e) => setPronunciation(e.target.value)}
+              className={inputClass}
+              placeholder={t('vocabulary.pronunciationPlaceholder')}
+            />
+          </div>
+          <div className="md:col-span-2">
+            <label className={labelClass}>{t('vocabulary.fieldExample')}</label>
+            <textarea
+              value={example}
+              onChange={(e) => setExample(e.target.value)}
+              rows={2}
+              className={`${inputClass} resize-y min-h-[88px] p-3`}
+              placeholder={t('vocabulary.examplePlaceholder')}
+            />
+          </div>
+          <div className="md:col-span-2 flex justify-end pt-1">
+            <button type="submit" className={primaryBtnClass}>
+              <span className="material-symbols-outlined text-lg">add_circle</span>
+              {t('vocabulary.addWord')}
+            </button>
+          </div>
+        </form>
       </div>
 
-      <div className="bg-white dark:bg-card-dark rounded-[2.5rem] border border-slate-200 dark:border-border-dark shadow-2xl shadow-slate-200/50 dark:shadow-none overflow-hidden">
-        <div className="p-8 border-b border-slate-100 dark:border-white/5 flex justify-between items-center bg-slate-50/50 dark:bg-background-dark/30">
-          <h3 className="text-sm font-black text-slate-900 dark:text-white uppercase tracking-[0.2em] flex items-center gap-3">
-            <span className="size-2 rounded-full bg-primary" />
+      <div className={`${cardClass} overflow-hidden`}>
+        <div className="px-5 py-4 border-b border-slate-100 dark:border-border-dark bg-slate-50/50 dark:bg-background-dark/30">
+          <h3 className={sectionTitleClass}>
+            <span className="material-symbols-outlined text-lg text-primary">list_alt</span>
             {t('vocabulary.wordListTitle', { count: words.length })}
           </h3>
         </div>
-        
+
         {words.length === 0 ? (
-          <div className="p-20 text-center flex flex-col items-center">
-            <div className="size-24 bg-slate-50 dark:bg-background-dark/50 rounded-full flex items-center justify-center mb-8 border border-slate-100 dark:border-white/5">
-              <span className="material-symbols-outlined text-5xl text-slate-300 dark:text-gray-700">inventory_2</span>
+          <div className="py-16 px-6 text-center flex flex-col items-center">
+            <div className="size-16 bg-slate-50 dark:bg-white/5 rounded-full flex items-center justify-center mb-4 border border-slate-200 dark:border-border-dark">
+              <span className="material-symbols-outlined text-3xl text-slate-300 dark:text-gray-600">
+                inventory_2
+              </span>
             </div>
-            <p className="text-[10px] font-black text-slate-400 dark:text-gray-500 uppercase tracking-[0.2em]">
+            <p className="text-sm text-slate-500 dark:text-gray-400 font-medium">
               {t('vocabulary.wordListEmpty')}
             </p>
           </div>
         ) : (
           <div className="overflow-x-auto no-scrollbar">
             <table className="w-full text-sm">
-              <thead className="bg-slate-50/50 dark:bg-background-dark/30 text-[10px] font-black text-slate-400 dark:text-gray-500 uppercase tracking-widest">
+              <thead className="bg-slate-50/50 dark:bg-background-dark/30 text-xs font-semibold text-slate-500 dark:text-gray-400">
                 <tr>
-                  <th className="text-left px-8 py-5 border-b border-slate-100 dark:border-white/5">{t('vocabulary.colDeck')}</th>
-                  <th className="text-left px-8 py-5 border-b border-slate-100 dark:border-white/5 hidden md:table-cell">{t('vocabulary.colWordType')}</th>
-                  <th className="text-left px-8 py-5 border-b border-slate-100 dark:border-white/5">{t('vocabulary.colWord')}</th>
-                  <th className="text-left px-8 py-5 border-b border-slate-100 dark:border-white/5">{t('vocabulary.colMeaning')}</th>
-                  <th className="text-left px-8 py-5 border-b border-slate-100 dark:border-white/5 hidden sm:table-cell">{t('vocabulary.colPronunciation')}</th>
-                  <th className="text-left px-8 py-5 border-b border-slate-100 dark:border-white/5 hidden lg:table-cell min-w-[220px]">{t('vocabulary.colExample')}</th>
-                  <th className="w-24 px-8 py-5 border-b border-slate-100 dark:border-white/5" />
+                  <th className="text-left px-5 py-3.5 border-b border-slate-100 dark:border-border-dark">
+                    {t('vocabulary.colDeck')}
+                  </th>
+                  <th className="text-left px-5 py-3.5 border-b border-slate-100 dark:border-border-dark hidden md:table-cell">
+                    {t('vocabulary.colWordType')}
+                  </th>
+                  <th className="text-left px-5 py-3.5 border-b border-slate-100 dark:border-border-dark">
+                    {t('vocabulary.colWord')}
+                  </th>
+                  <th className="text-left px-5 py-3.5 border-b border-slate-100 dark:border-border-dark">
+                    {t('vocabulary.colMeaning')}
+                  </th>
+                  <th className="text-left px-5 py-3.5 border-b border-slate-100 dark:border-border-dark hidden sm:table-cell">
+                    {t('vocabulary.colPronunciation')}
+                  </th>
+                  <th className="text-left px-5 py-3.5 border-b border-slate-100 dark:border-border-dark hidden lg:table-cell min-w-[200px]">
+                    {t('vocabulary.colExample')}
+                  </th>
+                  <th className="w-16 px-5 py-3.5 border-b border-slate-100 dark:border-border-dark" />
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-100 dark:divide-white/5">
+              <tbody className="divide-y divide-slate-100 dark:divide-border-dark">
                 {words.map((w) => (
                   <tr
                     key={w.id}
                     className="hover:bg-slate-50/50 dark:hover:bg-white/5 transition-colors group"
                   >
-                    <td className="px-8 py-6 text-xs font-bold text-slate-500 dark:text-gray-400">
-                      <span className="px-3 py-1 rounded-full bg-slate-100 dark:bg-white/5 border border-slate-200 dark:border-white/10">
+                    <td className="px-5 py-4 text-xs font-bold text-slate-500 dark:text-gray-400">
+                      <span className="px-2 py-0.5 rounded-lg bg-slate-50 dark:bg-white/5 border border-slate-100 dark:border-border-dark">
                         {(w.deck || '').trim() || t('vocabulary.dash')}
                       </span>
                     </td>
-                    <td className="px-8 py-6 text-xs font-black text-primary uppercase tracking-widest hidden md:table-cell">
+                    <td className="px-5 py-4 text-xs font-bold text-primary hidden md:table-cell">
                       {(w.wordType || '').trim() ? wordTypeLabel(w.wordType) : t('vocabulary.dash')}
                     </td>
-                    <td className="px-8 py-6 text-sm font-black text-slate-900 dark:text-white uppercase tracking-tight group-hover:text-primary transition-colors">{w.word}</td>
-                    <td className="px-8 py-6 text-sm font-medium text-slate-600 dark:text-gray-300">{w.meaning}</td>
-                    <td className="px-8 py-6 text-xs font-medium text-slate-400 dark:text-gray-500 italic hidden sm:table-cell">
+                    <td className="px-5 py-4 text-sm font-bold text-slate-900 dark:text-white group-hover:text-primary transition-colors">
+                      {w.word}
+                    </td>
+                    <td className="px-5 py-4 text-sm font-medium text-slate-600 dark:text-gray-300">
+                      {w.meaning}
+                    </td>
+                    <td className="px-5 py-4 text-xs font-medium text-slate-400 dark:text-gray-500 italic hidden sm:table-cell">
                       {w.pronunciation || t('vocabulary.dash')}
                     </td>
-                    <td className="px-8 py-6 text-xs font-medium text-slate-400 dark:text-gray-500 hidden lg:table-cell max-w-xs">
+                    <td className="px-5 py-4 text-xs font-medium text-slate-400 dark:text-gray-500 hidden lg:table-cell max-w-xs">
                       {(w.example || '').trim() ? (
                         <span className="italic line-clamp-2 leading-relaxed">{w.example}</span>
                       ) : (
                         t('vocabulary.dash')
                       )}
                     </td>
-                    <td className="px-8 py-6">
+                    <td className="px-5 py-4">
                       <button
                         type="button"
                         onClick={() => setItemToDelete(w)}
-                        className="size-10 rounded-xl bg-rose-50 dark:bg-rose-500/10 text-rose-500 flex items-center justify-center hover:bg-rose-500 hover:text-white transition-all active:scale-95 shadow-sm opacity-0 group-hover:opacity-100"
+                        className="size-8 rounded-xl text-slate-400 hover:bg-red-500/10 hover:text-red-400 flex items-center justify-center transition-all opacity-0 group-hover:opacity-100"
                         title={t('vocabulary.delete')}
                       >
                         <span className="material-symbols-outlined text-lg">delete</span>
@@ -276,49 +286,45 @@ export default function VocabularyMyWordsPanel() {
         )}
       </div>
 
-      <div className="bg-white dark:bg-card-dark rounded-[2.5rem] border border-slate-200 dark:border-border-dark shadow-2xl shadow-slate-200/50 dark:shadow-none p-10">
-        <h3 className="text-xl font-black text-slate-900 dark:text-white mb-2 uppercase tracking-tight">
+      <div className={`${cardClass} p-5`}>
+        <h3 className={`${sectionTitleClass} mb-1`}>
+          <span className="material-symbols-outlined text-lg text-primary">school</span>
           {t('vocabulary.practiceSectionTitle')}
         </h3>
-        <p className="text-[10px] font-black text-slate-400 dark:text-gray-500 uppercase tracking-[0.2em] mb-8">
+        <p className="text-xs text-slate-500 dark:text-gray-400 mb-5">
           {t('vocabulary.practiceSectionIntro')}
         </p>
-        
-        <div className="mb-10 max-w-md">
-          <label className="text-[10px] font-black text-slate-500 dark:text-gray-400 uppercase tracking-widest mb-3 block ml-1">
-            {t('vocabulary.practiceByTopic')}
-          </label>
-          <div className="relative">
-            <select
-              value={practiceDeck}
-              onChange={(e) => setPracticeDeck(e.target.value)}
-              className="w-full rounded-2xl border-2 border-slate-100 dark:border-white/5 bg-slate-50 dark:bg-background-dark/50 px-6 py-4 text-sm font-bold text-slate-900 dark:text-white focus:ring-2 focus:ring-primary focus:border-transparent transition-all appearance-none"
-            >
-              <option value="all">{t('vocabulary.allDecks')}</option>
-              {deckNames.map((d) => (
-                <option key={d} value={d}>
-                  {d}
-                </option>
-              ))}
-            </select>
-            <span className="material-symbols-outlined absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none">expand_more</span>
-          </div>
+
+        <div className="mb-5 max-w-md">
+          <label className={labelClass}>{t('vocabulary.practiceByTopic')}</label>
+          <select
+            value={practiceDeck}
+            onChange={(e) => setPracticeDeck(e.target.value)}
+            className={inputClass}
+          >
+            <option value="all">{t('vocabulary.allDecks')}</option>
+            {deckNames.map((d) => (
+              <option key={d} value={d}>
+                {d}
+              </option>
+            ))}
+          </select>
         </div>
 
         {!canPractice && (
-          <div className="p-6 rounded-2xl bg-amber-500/5 border border-amber-500/20 text-[10px] font-black text-amber-600 dark:text-amber-400 uppercase tracking-widest mb-6 flex items-center gap-3">
-            <span className="material-symbols-outlined">warning</span>
+          <div className="p-4 rounded-xl bg-amber-500/5 border border-amber-500/20 text-sm text-amber-600 dark:text-amber-400 mb-4 flex items-center gap-2">
+            <span className="material-symbols-outlined text-lg">warning</span>
             {t('vocabulary.noWordsInScope')}
           </div>
         )}
         {canPractice && !matchOk && (
-          <div className="p-6 rounded-2xl bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/10 text-[10px] font-black text-slate-400 dark:text-gray-500 uppercase tracking-widest mb-6 flex items-center gap-3">
-            <span className="material-symbols-outlined">info</span>
+          <div className="p-4 rounded-xl bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-border-dark text-sm text-slate-500 dark:text-gray-400 mb-4 flex items-center gap-2">
+            <span className="material-symbols-outlined text-lg">info</span>
             {t('vocabulary.matchNeedsFour')}
           </div>
         )}
 
-        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-5">
           {studyModes.map((mode) => {
             const disabled = !canPractice || (mode.id === 'match' && !matchOk)
             return (
@@ -327,47 +333,44 @@ export default function VocabularyMyWordsPanel() {
                 type="button"
                 disabled={disabled}
                 onClick={() => navigate(vocabPracticePath(CUSTOM_TOPIC_ID, mode.id, practiceDeck))}
-                className="group relative bg-slate-50 dark:bg-background-dark/50 rounded-[2rem] border border-slate-100 dark:border-white/5 p-8 flex flex-col items-center text-center transition-all duration-500 hover:-translate-y-2 hover:shadow-2xl hover:shadow-primary/10 disabled:opacity-40 disabled:hover:translate-y-0 disabled:hover:shadow-none overflow-hidden"
+                className="group bg-white dark:bg-card-dark rounded-xl border border-slate-200 dark:border-border-dark p-5 flex flex-col items-center text-center transition-all hover:border-primary/50 hover:shadow-md disabled:opacity-40 disabled:hover:border-slate-200 dark:disabled:hover:border-border-dark disabled:hover:shadow-none"
               >
-                <div className={`absolute inset-0 bg-gradient-to-br ${mode.color} opacity-0 group-hover:opacity-5 transition-opacity duration-500`} />
-                <div className="size-20 rounded-[1.5rem] bg-white dark:bg-card-dark border border-slate-100 dark:border-white/10 shadow-lg flex items-center justify-center text-4xl mb-6 group-hover:scale-110 transition-transform duration-500">
+                <div className="size-14 rounded-xl bg-slate-50 dark:bg-white/5 border border-slate-100 dark:border-border-dark flex items-center justify-center text-3xl mb-4 group-hover:scale-105 transition-transform">
                   {mode.icon}
                 </div>
-                <h3 className="text-sm font-black text-slate-900 dark:text-white uppercase tracking-widest group-hover:text-primary transition-colors mb-2">
+                <h4 className="text-sm font-bold text-slate-900 dark:text-white group-hover:text-primary transition-colors mb-1.5">
                   {mode.name}
-                </h3>
-                <p className="text-[9px] font-bold text-slate-400 dark:text-gray-600 uppercase tracking-[0.1em] leading-relaxed">
+                </h4>
+                <p className="text-xs text-slate-500 dark:text-gray-400 leading-relaxed line-clamp-2">
                   {mode.description}
                 </p>
-                <div className="mt-8 size-10 rounded-full bg-white dark:bg-card-dark border border-slate-100 dark:border-white/10 flex items-center justify-center text-primary shadow-sm group-hover:bg-primary group-hover:text-white transition-all group-hover:shadow-lg group-hover:shadow-primary/20">
-                  <span className="material-symbols-outlined text-xl">arrow_forward</span>
-                </div>
+                <span className="mt-4 inline-flex items-center gap-1 text-xs font-bold text-primary opacity-0 group-hover:opacity-100 transition-opacity">
+                  {t('dashboard.viewDetail')}
+                  <span className="material-symbols-outlined text-base">arrow_forward</span>
+                </span>
               </button>
             )
           })}
         </div>
 
-        <div className="mt-12 flex justify-center border-t border-slate-100 dark:border-white/5 pt-10">
+        <div className="mt-6 flex justify-center border-t border-slate-100 dark:border-border-dark pt-5">
           <button
             type="button"
             disabled={!canPractice}
             onClick={() => navigate(vocabPracticePath(CUSTOM_TOPIC_ID, 'data', practiceDeck))}
-            className="flex items-center gap-4 px-10 py-5 rounded-2xl bg-white dark:bg-card-dark border-2 border-slate-100 dark:border-white/5 text-slate-600 dark:text-white hover:text-primary dark:hover:text-primary hover:border-primary/50 transition-all shadow-xl shadow-slate-200/50 dark:shadow-none active:scale-95 disabled:opacity-40"
+            className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-white dark:bg-card-dark border border-slate-200 dark:border-border-dark text-sm font-bold text-slate-600 dark:text-gray-300 hover:text-primary dark:hover:text-primary hover:border-primary/40 transition-all shadow-sm disabled:opacity-40 active:scale-95"
           >
-            <span className="text-2xl">📋</span>
-            <span className="text-[10px] font-black uppercase tracking-widest">
-              {t('vocabulary.viewAllWords')}
-            </span>
-            <span className="material-symbols-outlined text-primary ml-2 group-hover:translate-x-1 transition-transform">
-              arrow_forward
-            </span>
+            <span className="text-lg">📋</span>
+            {t('vocabulary.viewAllWords')}
+            <span className="material-symbols-outlined text-primary text-lg">arrow_forward</span>
           </button>
         </div>
       </div>
 
-      <p className="text-center text-[10px] font-black text-slate-300 dark:text-gray-700 uppercase tracking-[0.3em] py-10">
+      <p className="text-center text-xs text-slate-400 dark:text-gray-500 pb-2">
         {t('vocabulary.pickActivity')}
       </p>
+
       <AlertModal
         open={!!itemToDelete}
         title={t('common.confirmDelete')}

@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect, useRef, useCallback } from 'react'
 import { createPortal } from 'react-dom'
 import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
@@ -17,12 +17,11 @@ import { EditPostModal } from '../ui/post/EditPostModal'
 import { useDashboardPostCard } from '../../hooks'
 import { usePostReactionPicker, useDashboardPostComments } from '../../hooks/usePostInteractions'
 import { PostShareModal } from '../ui/post/PostShareModal'
-import { formatReactionCount, getPostReactionTotal } from '../../utils/post'
+import { formatReactionCount, getPostReactionTotal, incrementCommentCountPatch, getPostVisibilityLabel, normalizeMentions } from '../../utils/post'
 import { AlertModal } from '../ui/common/AlertModal'
 import { ReportContentModal } from '../ui/common/ReportContentModal'
-import { getPostVisibilityLabel, normalizeMentions } from '../../utils/post'
 import { PostInteractionsModal } from '../ui/post/PostInteractionsModal'
-import { PostDetailModal } from '../ui/post/PostDetailModal'
+import { navigateToPostDetail } from '../../utils/postLinks'
 
 /** Max characters to show before "See more" */
 const MAX_CONTENT_PREVIEW = 300
@@ -62,7 +61,6 @@ export function DashboardPostCard({
   const [showDeleteConfirmModal, setShowDeleteConfirmModal] = useState(false)
   const [showInteractionsModal, setShowInteractionsModal] = useState(false)
   const [interactionsType, setInteractionsType] = useState('comments') // 'comments' | 'shares'
-  const [showDetailModal, setShowDetailModal] = useState(false)
   const [showReportModal, setShowReportModal] = useState(false)
   if (!post) return null
 
@@ -87,6 +85,11 @@ export function DashboardPostCard({
     handleLikeAreaBlur: handleCardLikeAreaBlur,
     hideReactionPicker: hideCardReactionPicker,
   } = usePostReactionPicker()
+
+  const handleCommentAdded = useCallback(() => {
+    if (!postId || typeof onUpdatePost !== 'function') return
+    onUpdatePost(postId, incrementCommentCountPatch)
+  }, [postId, onUpdatePost])
 
   // Comments, uploads, GIF picker logic
   const {
@@ -145,7 +148,7 @@ export function DashboardPostCard({
     loadMoreThreadComments,
     expandAfterReply,
     onExpandAfterReplyConsumed,
-  } = useDashboardPostComments(postId, t)
+  } = useDashboardPostComments(postId, t, handleCommentAdded)
 
   const {
     author,
@@ -209,6 +212,11 @@ export function DashboardPostCard({
     editImages.length > 0 ||
     Boolean(editVideoUrl) ||
     editDocuments.length > 0
+
+  const openPostDetailModal = () => {
+    if (!postId) return
+    navigateToPostDetail(navigate, location, postId)
+  }
 
   const handleEditImageSelect = async (e) => {
     const files = Array.from(e.target.files || [])
@@ -433,7 +441,10 @@ export function DashboardPostCard({
             {contentToShow ? (
               <>
                 <div className="whitespace-pre-wrap">
-                  <PostContentBody content={contentPreview} mentions={mentionsList} />
+                  <PostContentBody
+                    content={contentPreview}
+                    mentions={hasMentions ? [] : mentionsList}
+                  />
                   {isLongContent && !contentExpanded && ' ... '}
                 </div>
                 {isLongContent && (
@@ -564,9 +575,7 @@ export function DashboardPostCard({
           </div>
           <div className="flex items-center gap-4 shrink-0">
             <button
-              onClick={() => {
-                setShowDetailModal(true)
-              }}
+              onClick={openPostDetailModal}
               className="tabular-nums hover:underline hover:text-primary transition-colors cursor-pointer"
             >
               {t('dashboard.commentsCount', { count: post.commentCount ?? 0 })}
@@ -613,7 +622,7 @@ export function DashboardPostCard({
           </div>
           <button
             type="button"
-            onClick={() => setShowDetailModal(true)}
+            onClick={openPostDetailModal}
             className="flex-1 h-full flex items-center justify-center gap-2 py-2 text-sm font-bold text-slate-500 dark:text-[#92bbc9] hover:bg-slate-50 dark:hover:bg-[#233f48] rounded-lg transition-colors"
           >
             <span className="material-symbols-outlined text-2xl">chat_bubble</span>
@@ -802,14 +811,6 @@ export function DashboardPostCard({
         onClose={() => setShowInteractionsModal(false)}
         postId={postId}
         type={interactionsType}
-      />
-      <PostDetailModal
-        open={showDetailModal}
-        onClose={() => setShowDetailModal(false)}
-        post={post}
-        onToggleLike={handleLikeClick}
-        onUpdatePost={onUpdatePost}
-        likeLoading={likeLoading}
       />
       <ReportContentModal
         open={showReportModal}

@@ -8,31 +8,30 @@ export function CommunityGroupMembersModal({ open, onClose, groupId, onMemberRem
 
   return (
     <div
-      className="fixed inset-0 z-[200] flex items-center justify-center overflow-y-auto bg-black/60 backdrop-blur-sm px-4 pt-20 pb-8 sm:pt-24 sm:pb-10"
+      className="fixed inset-0 z-[200] flex items-center justify-center bg-black/50 backdrop-blur-sm p-4"
       onClick={onClose}
       role="presentation"
     >
       <div
-        className="bg-white dark:bg-card-dark border border-slate-200 dark:border-border-dark rounded-[2.5rem] w-full max-w-md shadow-2xl flex flex-col min-h-0 max-h-[min(85vh,calc(100dvh-7rem))] sm:max-h-[min(85vh,calc(100dvh-8rem))]"
+        className="bg-white dark:bg-card-dark border border-slate-200 dark:border-border-dark rounded-xl w-full max-w-md shadow-sm flex flex-col min-h-0 max-h-[min(85vh,calc(100dvh-2rem))]"
         onClick={(e) => e.stopPropagation()}
         role="dialog"
         aria-modal="true"
         aria-labelledby="group-members-modal-title"
       >
-        <div className="px-6 py-5 border-b border-slate-100 dark:border-white/5 flex items-center justify-between shrink-0">
-          <p id="group-members-modal-title" className="text-base font-black text-slate-900 dark:text-white uppercase tracking-tight">
-            {t('groups.membersModal.title', { defaultValue: 'Thành viên nhóm' })}
+        <div className="px-5 py-4 border-b border-slate-100 dark:border-border-dark flex items-center justify-between shrink-0">
+          <p id="group-members-modal-title" className="text-base font-bold text-slate-900 dark:text-white">
+            {t('groups.membersModal.title')}
           </p>
           <button
             type="button"
-            className="size-10 flex items-center justify-center rounded-2xl hover:bg-slate-100 dark:hover:bg-white/10 text-slate-400 dark:text-gray-400 transition-all"
+            className="size-8 flex items-center justify-center rounded-lg hover:bg-slate-100 dark:hover:bg-background-dark text-slate-400 dark:text-gray-400 transition-colors"
             onClick={onClose}
-            aria-label={t('groups.membersModal.close', { defaultValue: 'Đóng' })}
+            aria-label={t('groups.membersModal.close')}
           >
-            <span className="material-symbols-outlined text-xl">close</span>
+            <span className="material-symbols-outlined text-lg">close</span>
           </button>
         </div>
-
 
         <CommunityGroupMembersList
           groupId={groupId}

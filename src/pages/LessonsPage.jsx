@@ -1,14 +1,16 @@
-import { useState } from 'react'
+import { useState, useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Link } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import { ROUTES } from '../constants'
-import { TOPIC_OPTIONS, SKILL_TABS_LESSONS, LEVEL_COLORS } from '../constants/lessons'
+import { SKILL_TABS_LESSONS, LEVEL_COLORS } from '../constants/lessons'
 import { getLessonLink } from '../utils/lesson'
+import { getVisiblePageNumbers } from '../utils/pagination'
 import { useLessonsList, useGuestAuthGate } from '../hooks'
 
 import { addVocabNote } from '../utils/vocabularyUserStorage'
 import { AlertModal } from '../components/ui/common/AlertModal'
+import { CompactSelect } from '../components/ui/common/CompactSelect'
 
 export function LessonsPage() {
   const { t } = useTranslation()
@@ -34,8 +36,25 @@ export function LessonsPage() {
     handleDeleteLesson,
     deletingId,
     completedLessonIds,
+    topicOptions,
   } = useLessonsList()
   const { requireAuth, guestModal } = useGuestAuthGate()
+
+  const topicSelectOptions = useMemo(
+    () => [
+      { value: 'all', label: t('lessons.topicsAll') },
+      ...topicOptions.map((topic) => ({ value: topic, label: topic })),
+    ],
+    [topicOptions, t]
+  )
+
+  const perPage = pagination.perPage || 10
+  const rangeFrom = pagination.total > 0 ? (page - 1) * perPage + 1 : 0
+  const rangeTo = pagination.total > 0 ? Math.min(page * perPage, pagination.total) : 0
+  const visiblePages = useMemo(
+    () => getVisiblePageNumbers(page, pagination.totalPages),
+    [page, pagination.totalPages]
+  )
 
   const blockGuestNav = (e) => {
     if (!requireAuth()) e.preventDefault()
@@ -170,17 +189,14 @@ export function LessonsPage() {
                 <span className="material-symbols-outlined text-sm">category</span>
                 {t('lessons.filterTopic')}
               </h4>
-              <select
+              <CompactSelect
                 value={topicFilter}
-                onChange={(e) => setTopic(e.target.value)}
-                className="w-full bg-slate-50 dark:bg-background-dark border border-slate-200 dark:border-border-dark rounded-lg px-3 py-2 text-sm text-slate-900 dark:text-white focus:ring-2 focus:ring-primary outline-none transition-all"
-              >
-                {TOPIC_OPTIONS.map(({ key, label }) => (
-                  <option key={key} value={key}>
-                    {t(label)}
-                  </option>
-                ))}
-              </select>
+                onChange={setTopic}
+                options={topicSelectOptions}
+                placement="up"
+                className="w-full"
+                buttonClassName="bg-slate-50 dark:bg-background-dark"
+              />
             </div>
           </div>
         </div>
@@ -260,17 +276,14 @@ export function LessonsPage() {
           </div>
           <div className="flex items-center gap-2 shrink-0">
             <span className="text-xs text-slate-500 dark:text-gray-400 hidden sm:inline">{t('lessons.filterTopic')}:</span>
-            <select
+            <CompactSelect
               value={topicFilter}
-              onChange={(e) => setTopic(e.target.value)}
-              className="bg-white dark:bg-card-dark border border-slate-200 dark:border-border-dark rounded-lg px-3 py-2 text-sm text-slate-900 dark:text-white focus:ring-2 focus:ring-primary outline-none min-w-[140px] shadow-sm"
-            >
-              {TOPIC_OPTIONS.map(({ key, label }) => (
-                <option key={key} value={key}>
-                  {t(label)}
-                </option>
-              ))}
-            </select>
+              onChange={setTopic}
+              options={topicSelectOptions}
+              placement="up"
+              className="w-[120px] sm:w-[132px]"
+              buttonClassName="bg-white dark:bg-card-dark shadow-sm"
+            />
           </div>
         </div>
 
@@ -296,7 +309,7 @@ export function LessonsPage() {
               >
                 <Link to={getLessonLink(lesson)} onClick={blockGuestNav} className="flex flex-1 items-center gap-4 min-w-0">
                   <span className="w-8 h-8 rounded-lg bg-slate-100 dark:bg-gray-700 text-slate-500 dark:text-gray-400 flex items-center justify-center text-sm font-bold shrink-0">
-                    {(page - 1) * (pagination.pageSize || 10) + index + 1}
+                    {(page - 1) * perPage + index + 1}
                   </span>
                   <div
                     className="w-16 h-16 rounded-lg bg-cover bg-center shrink-0 shadow-inner"
@@ -379,7 +392,13 @@ export function LessonsPage() {
                 <div className="flex items-center gap-2 shrink-0">
                   {canAddLesson && user?.id != null && (
                     <div className="flex items-center gap-1">
-                      <Link to={`${ROUTES.MANAGE_LESSONS(user.id)}/${lesson.id}`} className="p-2 rounded-lg text-slate-400 hover:bg-primary/10 hover:text-primary transition-colors" title={t('quests.edit')}>
+                      <Link
+                        to={`${ROUTES.MANAGE_LESSONS(user.id)}/${lesson.id}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="p-2 rounded-lg text-slate-400 hover:bg-primary/10 hover:text-primary transition-colors"
+                        title={t('quests.edit')}
+                      >
                         <span className="material-symbols-outlined text-sm">edit</span>
                       </Link>
                       <button type="button" onClick={() => onDeleteLesson(lesson)} disabled={deletingId === lesson.id} className="p-2 rounded-lg text-slate-400 hover:bg-red-500/10 hover:text-red-500 transition-colors disabled:opacity-50" title={t('quests.delete')}>
@@ -414,26 +433,56 @@ export function LessonsPage() {
         )}
 
         {pagination.totalPages > 1 && (
-          <div className="flex items-center justify-center gap-2 pt-6">
-            <button
-              type="button"
-              disabled={page <= 1}
-              onClick={() => setPage((p) => Math.max(1, p - 1))}
-              className="px-4 py-2 rounded-lg bg-white dark:bg-card-dark border border-slate-200 dark:border-border-dark text-sm font-medium text-slate-700 dark:text-slate-300 shadow-sm disabled:opacity-50 disabled:cursor-not-allowed hover:bg-slate-50 dark:hover:bg-gray-700 transition-colors"
-            >
-              {t('buttons.prev') || 'Trước'}
-            </button>
-            <span className="px-4 py-2 text-sm text-slate-500 dark:text-gray-400 bg-slate-50 dark:bg-background-dark rounded-lg border border-slate-100 dark:border-border-dark">
-              {page} / {pagination.totalPages}
-            </span>
-            <button
-              type="button"
-              disabled={page >= pagination.totalPages}
-              onClick={() => setPage((p) => Math.min(pagination.totalPages, p + 1))}
-              className="px-4 py-2 rounded-lg bg-white dark:bg-card-dark border border-slate-200 dark:border-border-dark text-sm font-medium text-slate-700 dark:text-slate-300 shadow-sm disabled:opacity-50 disabled:cursor-not-allowed hover:bg-slate-50 dark:hover:bg-gray-700 transition-colors"
-            >
-              {t('buttons.next') || 'Sau'}
-            </button>
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 pt-6">
+            <p className="text-xs text-slate-500 dark:text-gray-400 text-center sm:text-left">
+              {t('lessons.paginationRange', { from: rangeFrom, to: rangeTo, total: pagination.total })}
+            </p>
+            <div className="flex flex-wrap items-center justify-center gap-1.5">
+              <button
+                type="button"
+                disabled={page <= 1}
+                onClick={() => setPage(page - 1)}
+                className="inline-flex items-center gap-1 px-3 py-2 rounded-lg bg-white dark:bg-card-dark border border-slate-200 dark:border-border-dark text-xs font-medium text-slate-700 dark:text-slate-300 shadow-sm disabled:opacity-50 disabled:cursor-not-allowed hover:bg-slate-50 dark:hover:bg-gray-700 transition-colors"
+              >
+                <span className="material-symbols-outlined text-base">chevron_left</span>
+                {t('buttons.prev') || 'Trước'}
+              </button>
+              {visiblePages.map((item, idx) =>
+                item === '…' ? (
+                  <span
+                    key={`ellipsis-${idx}`}
+                    className="px-2 py-2 text-xs text-slate-400 dark:text-gray-500 select-none"
+                  >
+                    …
+                  </span>
+                ) : (
+                  <button
+                    key={item}
+                    type="button"
+                    onClick={() => setPage(item)}
+                    className={`min-w-[2.25rem] px-2.5 py-2 rounded-lg text-xs font-bold border transition-colors ${
+                      item === page
+                        ? 'bg-primary text-white border-primary shadow-sm'
+                        : 'bg-white dark:bg-card-dark border-slate-200 dark:border-border-dark text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-gray-700'
+                    }`}
+                  >
+                    {item}
+                  </button>
+                )
+              )}
+              <button
+                type="button"
+                disabled={page >= pagination.totalPages}
+                onClick={() => setPage(page + 1)}
+                className="inline-flex items-center gap-1 px-3 py-2 rounded-lg bg-white dark:bg-card-dark border border-slate-200 dark:border-border-dark text-xs font-medium text-slate-700 dark:text-slate-300 shadow-sm disabled:opacity-50 disabled:cursor-not-allowed hover:bg-slate-50 dark:hover:bg-gray-700 transition-colors"
+              >
+                {t('buttons.next') || 'Sau'}
+                <span className="material-symbols-outlined text-base">chevron_right</span>
+              </button>
+            </div>
+            <p className="text-xs text-slate-500 dark:text-gray-400 text-center sm:text-right">
+              {t('lessons.paginationPage', { current: page, total: pagination.totalPages })}
+            </p>
           </div>
         )}
       </section>

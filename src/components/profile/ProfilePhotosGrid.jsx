@@ -59,7 +59,7 @@ export function ProfilePhotosGrid({ photos, loading, error, hasMore, loadMore })
 
   return (
     <div className="w-full">
-      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
+      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2">
         {photos.map((item, index) => (
           <button
             key={`${item.postId || 'post'}-${index}-${item.url}`}
@@ -72,12 +72,12 @@ export function ProfilePhotosGrid({ photos, loading, error, hasMore, loadMore })
                 })
               }
             }}
-            className="relative group overflow-hidden rounded-xl border border-slate-200 dark:border-border-dark bg-slate-100 dark:bg-slate-800 cursor-pointer block w-full outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2"
+            className="relative group overflow-hidden rounded-lg border border-slate-200 dark:border-border-dark bg-slate-100 dark:bg-slate-800 cursor-pointer block w-full outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2"
           >
             <img
               src={item.url}
               alt=""
-              className="w-full h-40 object-cover group-hover:scale-105 transition-transform duration-200"
+              className="w-full h-32 object-cover group-hover:scale-105 transition-transform duration-200"
               loading="lazy"
             />
             <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors" />

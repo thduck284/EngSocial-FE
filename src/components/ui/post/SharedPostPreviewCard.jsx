@@ -4,6 +4,7 @@ import { DEFAULT_AVATAR } from '../../../constants/ui'
 import { ROUTES } from '../../../constants'
 import { formatPostTime } from '../../../utils/dateTime'
 import { PostContentBody } from './PostContentBody'
+import { getDisplayContent } from '../../../utils/postContent'
 
 export function SharedPostPreviewCard({
   sharedPost,
@@ -22,8 +23,7 @@ export function SharedPostPreviewCard({
       (typeof firstSharedMention === 'string' ? firstSharedMention : null))
     : null
   const sharedOthersCount = sharedMentions.length > 1 ? sharedMentions.length - 1 : 0
-  const sharedContent =
-    sharedPost.content != null ? String(sharedPost.content) : ''
+  const sharedContent = getDisplayContent(sharedPost.content, sharedMentions)
   const isLongSharedContent = sharedContent.length > 300
   const sharedContentPreview =
     isLongSharedContent && !contentExpanded
@@ -103,7 +103,7 @@ export function SharedPostPreviewCard({
             <p className="whitespace-pre-wrap">
               <PostContentBody
                 content={sharedContentPreview}
-                mentions={sharedMentions}
+                mentions={sharedMentions.length > 0 ? [] : sharedMentions}
               />
               {isLongSharedContent && !contentExpanded && ' ... '}
             </p>
