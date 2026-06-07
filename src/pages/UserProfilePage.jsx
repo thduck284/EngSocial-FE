@@ -238,6 +238,21 @@ export function UserProfilePage() {
       .finally(() => setFriendActionLoading(false))
   }, [profile?.friendshipId, friendActionLoading, refetchProfile])
 
+  const handleAcceptRequest = useCallback(() => {
+    const friendshipId = profile?.friendshipId
+    if (!friendshipId || friendActionLoading) return
+    setFriendActionLoading(true)
+    friendsService
+      .acceptRequest(friendshipId)
+      .then(() => {
+        setProfile((prev) =>
+          prev ? { ...prev, friendStatus: 'connected', friendshipId: null, pendingSentByMe: false } : prev
+        )
+      })
+      .catch(() => refetchProfile())
+      .finally(() => setFriendActionLoading(false))
+  }, [profile?.friendshipId, friendActionLoading, refetchProfile])
+
   const handleRemoveFriend = useCallback(() => {
     if (!userId || friendActionLoading) return
     setFriendActionLoading(true)
@@ -336,8 +351,8 @@ export function UserProfilePage() {
       .then((res) => {
         const data = res?.data
         const mapped = mapApiProfileToState(data)
-        if (mapped?.blockedByMe) {
-          navigate(ROUTES.HOME, { replace: true })
+        if (!mapped) {
+          setProfile(null)
           return
         }
         setProfile(mapped)
@@ -396,9 +411,9 @@ export function UserProfilePage() {
 
   return (
     <main className="max-w-[1440px] mx-auto p-6">
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-[minmax(0,400px)_minmax(0,1fr)] gap-6">
         {/* Left: Profile card & Friends */}
-        <div className="lg:col-span-3 space-y-4">
+        <div className="space-y-4">
           <div className="bg-white dark:bg-card-dark border border-slate-200 dark:border-border-dark rounded-xl p-5 flex flex-col items-center text-center shadow-sm relative">
             <div className="absolute top-0 left-0 w-full h-16 bg-gradient-to-b from-primary/10 to-transparent rounded-t-xl" />
             <div className="relative mb-4 z-10">
@@ -449,15 +464,15 @@ export function UserProfilePage() {
             )}
 
             <div className="w-full flex flex-col gap-2 relative z-10">
-              <div className="flex gap-2">
+              <div className="flex gap-2 items-stretch">
                 {profile.friendStatus === 'connected' && (
                   <button
                     type="button"
                     disabled={profile.blockedByMe}
                     onClick={handleMessage}
-                    className="flex-1 bg-primary hover:brightness-110 disabled:opacity-50 text-white h-9 rounded-lg text-[10px] font-bold uppercase tracking-wide flex items-center justify-center gap-2 shadow-sm transition-all active:scale-95"
+                    className="flex-1 bg-primary hover:brightness-110 disabled:opacity-50 text-white h-10 rounded-lg text-sm font-semibold flex items-center justify-center gap-2 shadow-sm transition-all active:scale-95"
                   >
-                    <span className="material-symbols-outlined text-lg">chat</span>
+                    <span className="material-symbols-outlined text-[18px]">chat</span>
                     {t('userProfile.sendMessage')}
                   </button>
                 )}
@@ -467,12 +482,12 @@ export function UserProfilePage() {
                       type="button"
                       disabled={friendActionLoading}
                       onClick={handleAddFriend}
-                      className="flex-1 bg-primary hover:brightness-110 disabled:opacity-60 text-white py-2 rounded-lg text-[10px] font-bold uppercase tracking-wide flex items-center justify-center gap-2 shadow-sm transition-all active:scale-95"
+                      className="flex-1 bg-primary hover:brightness-110 disabled:opacity-60 text-white h-10 rounded-lg text-sm font-semibold flex items-center justify-center gap-2 shadow-sm transition-all active:scale-95"
                     >
                       {friendActionLoading ? (
-                        <span className="material-symbols-outlined text-lg animate-spin">progress_activity</span>
+                        <span className="material-symbols-outlined text-[18px] animate-spin">progress_activity</span>
                       ) : (
-                        <span className="material-symbols-outlined text-lg">person_add</span>
+                        <span className="material-symbols-outlined text-[18px]">person_add</span>
                       )}
                       {t('userProfile.addFriend')}
                     </button>
@@ -480,9 +495,9 @@ export function UserProfilePage() {
                       type="button"
                       disabled={profile.blockedByMe}
                       onClick={handleMessage}
-                      className="flex-1 bg-slate-100 dark:bg-white/10 hover:bg-slate-200 dark:hover:bg-white/20 disabled:opacity-50 text-slate-600 dark:text-white py-2 rounded-lg text-[10px] font-bold uppercase tracking-wide flex items-center justify-center gap-2 transition-all active:scale-95 border border-slate-200 dark:border-white/10"
+                      className="flex-1 bg-slate-100 dark:bg-white/10 hover:bg-slate-200 dark:hover:bg-white/20 disabled:opacity-50 text-slate-700 dark:text-white h-10 rounded-lg text-sm font-semibold flex items-center justify-center gap-2 transition-all active:scale-95 border border-slate-200 dark:border-white/10"
                     >
-                      <span className="material-symbols-outlined text-lg">chat</span>
+                      <span className="material-symbols-outlined text-[18px]">chat</span>
                       {t('userProfile.sendMessage')}
                     </button>
                   </>
@@ -493,12 +508,12 @@ export function UserProfilePage() {
                       type="button"
                       disabled={friendActionLoading}
                       onClick={handleCancelRequest}
-                      className="flex-1 bg-amber-500 hover:brightness-110 disabled:opacity-60 text-white py-2 rounded-lg text-[10px] font-bold uppercase tracking-wide flex items-center justify-center gap-2 shadow-sm transition-all active:scale-95"
+                      className="flex-1 bg-amber-500 hover:brightness-110 disabled:opacity-60 text-white h-10 rounded-lg text-sm font-semibold flex items-center justify-center gap-2 shadow-sm transition-all active:scale-95"
                     >
                       {friendActionLoading ? (
-                        <span className="material-symbols-outlined text-lg animate-spin">progress_activity</span>
+                        <span className="material-symbols-outlined text-[18px] animate-spin">progress_activity</span>
                       ) : (
-                        <span className="material-symbols-outlined text-lg">person_remove</span>
+                        <span className="material-symbols-outlined text-[18px]">person_remove</span>
                       )}
                       {t('userProfile.cancelRequest')}
                     </button>
@@ -506,18 +521,38 @@ export function UserProfilePage() {
                       type="button"
                       disabled={profile.blockedByMe}
                       onClick={handleMessage}
-                      className="flex-1 bg-slate-100 dark:bg-white/10 hover:bg-slate-200 dark:hover:bg-white/20 disabled:opacity-50 text-slate-600 dark:text-white py-2 rounded-lg text-[10px] font-bold uppercase tracking-wide flex items-center justify-center gap-2 transition-all active:scale-95 border border-slate-200 dark:border-white/10"
+                      className="flex-1 bg-slate-100 dark:bg-white/10 hover:bg-slate-200 dark:hover:bg-white/20 disabled:opacity-50 text-slate-700 dark:text-white h-10 rounded-lg text-sm font-semibold flex items-center justify-center gap-2 transition-all active:scale-95 border border-slate-200 dark:border-white/10"
                     >
-                      <span className="material-symbols-outlined text-lg">chat</span>
+                      <span className="material-symbols-outlined text-[18px]">chat</span>
                       {t('userProfile.sendMessage')}
                     </button>
                   </>
                 )}
                 {profile.friendStatus === 'pending' && !profile.pendingSentByMe && (
-                  <div className="flex-1 bg-slate-50 dark:bg-white/5 text-slate-400 dark:text-gray-600 py-2 rounded-lg text-[10px] font-bold uppercase tracking-wide flex items-center justify-center gap-2 cursor-default border border-slate-100 dark:border-white/5">
-                    <span className="material-symbols-outlined text-lg">schedule</span>
-                    {t('userProfile.pendingRequest')}
-                  </div>
+                  <>
+                    <button
+                      type="button"
+                      disabled={friendActionLoading}
+                      onClick={handleAcceptRequest}
+                      className="flex-1 bg-emerald-500 hover:brightness-110 disabled:opacity-60 text-white h-10 rounded-lg text-sm font-semibold flex items-center justify-center gap-2 shadow-sm transition-all active:scale-95"
+                    >
+                      {friendActionLoading ? (
+                        <span className="material-symbols-outlined text-[18px] animate-spin">progress_activity</span>
+                      ) : (
+                        <span className="material-symbols-outlined text-[18px]">check</span>
+                      )}
+                      {t('userProfile.acceptRequest')}
+                    </button>
+                    <button
+                      type="button"
+                      disabled={friendActionLoading}
+                      onClick={handleCancelRequest}
+                      className="flex-1 bg-slate-100 dark:bg-white/10 hover:bg-rose-500/10 hover:text-rose-600 dark:hover:text-rose-400 disabled:opacity-60 text-slate-700 dark:text-white h-10 rounded-lg text-sm font-semibold flex items-center justify-center gap-2 transition-all active:scale-95 border border-slate-200 dark:border-white/10"
+                    >
+                      <span className="material-symbols-outlined text-[18px]">close</span>
+                      {t('userProfile.declineRequest')}
+                    </button>
+                  </>
                 )}
                 
                 {viewerId && userId && String(viewerId) !== String(userId) && (
@@ -525,22 +560,22 @@ export function UserProfilePage() {
                     <button
                       type="button"
                       onClick={() => setFriendsMenuOpen((o) => !o)}
-                      className="size-9 bg-slate-50 dark:bg-white/5 hover:bg-slate-100 dark:hover:bg-white/10 text-slate-400 dark:text-gray-500 rounded-lg flex items-center justify-center transition-all border border-slate-100 dark:border-white/5"
+                      className="size-10 bg-slate-50 dark:bg-white/5 hover:bg-slate-100 dark:hover:bg-white/10 text-slate-500 dark:text-gray-400 rounded-lg flex items-center justify-center transition-all border border-slate-100 dark:border-white/5"
                       aria-expanded={friendsMenuOpen}
                     >
-                      <span className="material-symbols-outlined text-lg transition-transform duration-300" style={{ transform: friendsMenuOpen ? 'rotate(180deg)' : 'none' }}>expand_more</span>
+                      <span className="material-symbols-outlined text-[20px] transition-transform duration-300" style={{ transform: friendsMenuOpen ? 'rotate(180deg)' : 'none' }}>expand_more</span>
                     </button>
                     {friendsMenuOpen && (
-                      <div className="absolute right-0 top-full z-[100] mt-2 py-1.5 rounded-xl border border-slate-200 dark:border-border-dark bg-white dark:bg-card-dark shadow-lg min-w-[180px] overflow-hidden animate-in fade-in zoom-in-95 duration-200">
+                      <div className="absolute right-0 top-full z-[100] mt-2 py-1.5 rounded-xl border border-slate-200 dark:border-border-dark bg-white dark:bg-card-dark shadow-lg min-w-[200px] overflow-hidden animate-in fade-in zoom-in-95 duration-200">
                         {profile.friendStatus === 'connected' && (
                           <>
                             <button
                               type="button"
                               disabled={friendActionLoading}
                               onClick={handleRemoveFriend}
-                              className="w-full flex items-center gap-3 px-5 py-3 text-[10px] font-bold uppercase tracking-widest text-left text-slate-600 dark:text-gray-300 hover:bg-slate-50 dark:hover:bg-white/5 disabled:opacity-60 transition-colors"
+                              className="w-full flex items-center gap-2.5 px-4 py-2.5 text-sm font-medium text-left text-slate-700 dark:text-gray-200 hover:bg-slate-50 dark:hover:bg-white/5 disabled:opacity-60 transition-colors"
                             >
-                              <span className="material-symbols-outlined text-lg text-rose-500">person_remove</span>
+                              <span className="material-symbols-outlined text-[18px] text-rose-500">person_remove</span>
                               {t('userProfile.removeFriend')}
                             </button>
                             <div className="h-px bg-slate-100 dark:bg-white/5 mx-2 my-1" />
@@ -551,9 +586,9 @@ export function UserProfilePage() {
                             type="button"
                             disabled={blockActionLoading}
                             onClick={handleUnblock}
-                            className="w-full flex items-center gap-3 px-5 py-3 text-[10px] font-bold uppercase tracking-widest text-left text-slate-600 dark:text-gray-300 hover:bg-slate-50 dark:hover:bg-white/5 disabled:opacity-60 transition-colors"
+                            className="w-full flex items-center gap-2.5 px-4 py-2.5 text-sm font-medium text-left text-slate-700 dark:text-gray-200 hover:bg-slate-50 dark:hover:bg-white/5 disabled:opacity-60 transition-colors"
                           >
-                            <span className="material-symbols-outlined text-lg text-primary">block</span>
+                            <span className="material-symbols-outlined text-[18px] text-primary">block</span>
                             {t('messages.unblock')}
                           </button>
                         ) : (
@@ -561,9 +596,9 @@ export function UserProfilePage() {
                             type="button"
                             disabled={blockActionLoading}
                             onClick={handleBlock}
-                            className="w-full flex items-center gap-3 px-5 py-3 text-[10px] font-bold uppercase tracking-widest text-left text-rose-500 hover:bg-rose-500/10 disabled:opacity-60 transition-colors"
+                            className="w-full flex items-center gap-2.5 px-4 py-2.5 text-sm font-medium text-left text-rose-600 dark:text-rose-400 hover:bg-rose-500/10 disabled:opacity-60 transition-colors"
                           >
-                            <span className="material-symbols-outlined text-lg">block</span>
+                            <span className="material-symbols-outlined text-[18px]">block</span>
                             {t('userProfile.block')}
                           </button>
                         )}
@@ -632,7 +667,7 @@ export function UserProfilePage() {
         </div>
 
         {/* Right: Tabs & Content */}
-        <div className="lg:col-span-9 min-w-0 bg-white dark:bg-card-dark rounded-xl border border-slate-200 dark:border-border-dark overflow-hidden shadow-sm flex flex-col">
+        <div className="min-w-0 bg-white dark:bg-card-dark rounded-xl border border-slate-200 dark:border-border-dark overflow-hidden shadow-sm flex flex-col">
           <nav className="flex w-full border-b border-slate-100 dark:border-white/5 overflow-x-auto no-scrollbar">
             {[
               { key: 'about', label: 'userProfile.tabAbout', icon: 'info' },

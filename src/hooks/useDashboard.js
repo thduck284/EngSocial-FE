@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo, useRef } from 'react'
+import { useState, useEffect, useMemo, useRef, useCallback } from 'react'
 import { io } from 'socket.io-client'
 import { useAuth } from '../context/AuthContext'
 import {
@@ -420,6 +420,20 @@ export function useDashboardFriends(onlineUserIds, setOnlineUserIds, allConversa
     loadFriendTabData(friendTab)
   }, [friendTab])
 
+  const sendSuggestionRequest = useCallback((userId) => {
+    const idStr = String(userId)
+    setSuggestionsList((prev) => prev.filter((u) => String(u?.id ?? u?._id) !== idStr))
+    return friendsService
+      .sendRequest(userId)
+      .then(() => {
+        friendsService.getSentRequests({ limit: 100 }).then((res) => {
+          const list = res?.data?.data ?? res?.data ?? []
+          setSentRequestsList(Array.isArray(list) ? list : [])
+        })
+      })
+      .catch(() => loadFriendTabData('suggestions'))
+  }, [])
+
   useEffect(() => {
     if (!friendSelectOpen) return
     const handleClickOutside = (e) => {
@@ -479,6 +493,7 @@ export function useDashboardFriends(onlineUserIds, setOnlineUserIds, allConversa
     receivedRequestsList,
     friendTabLoading,
     loadFriendTabData,
+    sendSuggestionRequest,
     displayedFriendsList,
     friendSelectOpen,
     setFriendSelectOpen,
@@ -492,7 +507,8 @@ export function useDashboardFriends(onlineUserIds, setOnlineUserIds, allConversa
     receivedRequestsList,
     friendTabLoading,
     displayedFriendsList,
-    friendSelectOpen
+    friendSelectOpen,
+    sendSuggestionRequest,
   ])
 }
 

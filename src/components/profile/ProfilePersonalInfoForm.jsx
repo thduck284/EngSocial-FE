@@ -1,22 +1,54 @@
+function PrivacyLabel({ label, privacyKey, visible, onToggle, saving, t, labelClass }) {
+  return (
+    <div className={`${labelClass} justify-between`}>
+      <span className="flex items-center gap-1">{label}</span>
+      <button
+        type="button"
+        onClick={() => onToggle(privacyKey)}
+        disabled={Boolean(saving)}
+        title={visible ? t('profile.privacyVisible') : t('profile.privacyHidden')}
+        aria-label={visible ? t('profile.privacyVisible') : t('profile.privacyHidden')}
+        className={`inline-flex items-center justify-center size-7 rounded-lg transition-colors shrink-0 ${
+          visible
+            ? 'text-primary hover:bg-primary/10'
+            : 'text-slate-400 dark:text-gray-500 hover:bg-slate-100 dark:hover:bg-white/10'
+        } disabled:opacity-50`}
+      >
+        {saving === privacyKey ? (
+          <span className="material-symbols-outlined text-[18px] animate-spin">progress_activity</span>
+        ) : (
+          <span className="material-symbols-outlined text-[18px]">
+            {visible ? 'visibility' : 'visibility_off'}
+          </span>
+        )}
+      </button>
+    </div>
+  )
+}
+
 export function ProfilePersonalInfoForm({
   t,
   form,
+  privacy,
+  privacySaving,
   saving,
   message,
   onChange,
+  onTogglePrivacy,
   onCancel,
   onSave,
 }) {
   const inputClass =
     'w-full bg-slate-50 dark:bg-background-dark border border-slate-200 dark:border-border-dark rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all dark:text-white'
-  const labelClass = 'text-xs font-bold text-slate-500 dark:text-gray-500'
+  const labelClass = 'text-xs font-bold text-slate-500 dark:text-gray-500 flex items-center gap-1.5'
 
   return (
     <>
-      <h3 className="text-sm font-bold text-slate-900 dark:text-white mb-4 flex items-center gap-2">
+      <h3 className="text-sm font-bold text-slate-900 dark:text-white mb-1 flex items-center gap-2">
         <span className="material-symbols-outlined text-primary text-lg">badge</span>
         {t('profile.editInfo')}
       </h3>
+      <p className="text-xs text-slate-400 dark:text-gray-500 mb-4">{t('profile.privacyHint')}</p>
 
       {message.text && (
         <div
@@ -41,7 +73,15 @@ export function ProfilePersonalInfoForm({
           />
         </div>
         <div className="space-y-1">
-          <label className={labelClass}>{t('auth.email')}</label>
+          <PrivacyLabel
+            label={t('auth.email')}
+            privacyKey="showEmail"
+            visible={privacy.showEmail}
+            onToggle={onTogglePrivacy}
+            saving={privacySaving}
+            t={t}
+            labelClass={labelClass}
+          />
           <input
             type="email"
             disabled
@@ -51,7 +91,15 @@ export function ProfilePersonalInfoForm({
           />
         </div>
         <div className="space-y-1">
-          <label className={labelClass}>{t('profile.phone')}</label>
+          <PrivacyLabel
+            label={t('profile.phone')}
+            privacyKey="showPhone"
+            visible={privacy.showPhone}
+            onToggle={onTogglePrivacy}
+            saving={privacySaving}
+            t={t}
+            labelClass={labelClass}
+          />
           <input
             type="text"
             className={inputClass}
@@ -71,7 +119,15 @@ export function ProfilePersonalInfoForm({
           />
         </div>
         <div className="space-y-1">
-          <label className={labelClass}>{t('profile.address')}</label>
+          <PrivacyLabel
+            label={t('profile.address')}
+            privacyKey="showAddress"
+            visible={privacy.showAddress}
+            onToggle={onTogglePrivacy}
+            saving={privacySaving}
+            t={t}
+            labelClass={labelClass}
+          />
           <input
             type="text"
             className={inputClass}
@@ -82,7 +138,15 @@ export function ProfilePersonalInfoForm({
         </div>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div className="space-y-1">
-            <label className={labelClass}>{t('auth.dateOfBirth')}</label>
+            <PrivacyLabel
+              label={t('auth.dateOfBirth')}
+              privacyKey="showDateOfBirth"
+              visible={privacy.showDateOfBirth}
+              onToggle={onTogglePrivacy}
+              saving={privacySaving}
+              t={t}
+              labelClass={labelClass}
+            />
             <input
               type="date"
               className={inputClass}
@@ -91,7 +155,15 @@ export function ProfilePersonalInfoForm({
             />
           </div>
           <div className="space-y-1">
-            <label className={labelClass}>{t('auth.gender')}</label>
+            <PrivacyLabel
+              label={t('auth.gender')}
+              privacyKey="showGender"
+              visible={privacy.showGender}
+              onToggle={onTogglePrivacy}
+              saving={privacySaving}
+              t={t}
+              labelClass={labelClass}
+            />
             <select
               className={`${inputClass} appearance-none`}
               value={form.gender}

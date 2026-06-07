@@ -34,6 +34,8 @@ export function ProfilePage() {
     form,
     saving,
     message,
+    privacy,
+    privacySaving,
     friendSearch,
     setFriendSearch,
     showAvatarModal,
@@ -46,6 +48,7 @@ export function ProfilePage() {
     profilePostsError,
     filteredFriends,
     handleChange,
+    handleTogglePrivacy,
     handleSave,
     handleCancel,
     handleLogout,
@@ -109,9 +112,9 @@ export function ProfilePage() {
 
   return (
     <main className="max-w-[1440px] mx-auto p-6">
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 mb-8">
+      <div className="grid grid-cols-1 lg:grid-cols-[minmax(0,400px)_minmax(0,1fr)] gap-6 mb-8">
         {/* Left: Avatar + Level + Friends (+ optional stats when on Posts tab) */}
-        <div className="lg:col-span-3 space-y-4">
+        <div className="space-y-4">
           <div className="flex flex-col gap-4">
             <ProfileAvatarCard
               t={t}
@@ -160,7 +163,7 @@ export function ProfilePage() {
         />
 
         {/* Right: Tabs + content */}
-        <div className="lg:col-span-9 min-w-0 bg-white dark:bg-card-dark rounded-xl border border-slate-200 dark:border-border-dark overflow-hidden shadow-sm flex flex-col">
+        <div className="min-w-0 bg-white dark:bg-card-dark rounded-xl border border-slate-200 dark:border-border-dark overflow-hidden shadow-sm flex flex-col">
           <nav className="flex w-full border-b border-slate-100 dark:border-white/5 overflow-x-auto no-scrollbar">
             {[
               { id: 'personalInfo', key: 'tabPersonalInfo', icon: 'badge' },
@@ -195,9 +198,12 @@ export function ProfilePage() {
                 <ProfilePersonalInfoForm
                   t={t}
                   form={form}
+                  privacy={privacy}
+                  privacySaving={privacySaving}
                   saving={saving}
                   message={message}
                   onChange={handleChange}
+                  onTogglePrivacy={handleTogglePrivacy}
                   onCancel={handleCancel}
                   onSave={handleSave}
                 />

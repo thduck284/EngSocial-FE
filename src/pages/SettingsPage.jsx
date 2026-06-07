@@ -1,10 +1,155 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { Link } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { ROUTES } from '../constants'
 import { useAuth } from '../context/AuthContext'
 import { LanguageSwitcher } from '../components/ui/common/LanguageSwitcher'
 import { userService } from '../services'
+
+const PW_OTP_COOLDOWN_MS = 60_000
+const PW_OTP_FLOW_TTL_MS = 10 * 60 * 1000
+
+function pwOtpCooldownKey(userId) {
+  return `engsocial_pw_otp_until_${userId || 'anon'}`
+}
+
+function pwOtpFlowKey(userId) {
+  return `engsocial_pw_otp_flow_${userId || 'anon'}`
+}
+
+function getPwOtpCooldownRemaining(userId) {
+  if (!userId) return 0
+  const until = parseInt(localStorage.getItem(pwOtpCooldownKey(userId)), 10)
+  if (!until || Number.isNaN(until)) return 0
+  return Math.max(0, until - Date.now())
+}
+
+function setPwOtpCooldown(userId, ms = PW_OTP_COOLDOWN_MS) {
+  if (!userId) return
+  localStorage.setItem(pwOtpCooldownKey(userId), String(Date.now() + ms))
+}
+
+function pwOtpVerifiedKey(userId) {
+  return `engsocial_pw_otp_verified_${userId || 'anon'}`
+}
+
+function savePwOtpVerified(userId, otp) {
+  if (!userId) return
+  sessionStorage.setItem(pwOtpVerifiedKey(userId), JSON.stringify({ otp, verifiedAt: Date.now() }))
+}
+
+function loadPwOtpVerified(userId) {
+  if (!userId) return null
+  try {
+    const raw = sessionStorage.getItem(pwOtpVerifiedKey(userId))
+    if (!raw) return null
+    const data = JSON.parse(raw)
+    if (!data?.otp || !data?.verifiedAt || Date.now() - data.verifiedAt > PW_OTP_FLOW_TTL_MS) {
+      sessionStorage.removeItem(pwOtpVerifiedKey(userId))
+      return null
+    }
+    return data
+  } catch {
+    return null
+  }
+}
+
+function clearPwOtpVerified(userId) {
+  if (!userId) return
+  sessionStorage.removeItem(pwOtpVerifiedKey(userId))
+}
+
+function savePwOtpFlow(userId) {
+  if (!userId) return
+  sessionStorage.setItem(pwOtpFlowKey(userId), JSON.stringify({ sentAt: Date.now() }))
+}
+
+function loadPwOtpFlow(userId) {
+  if (!userId) return null
+  try {
+    const raw = sessionStorage.getItem(pwOtpFlowKey(userId))
+    if (!raw) return null
+    const data = JSON.parse(raw)
+    if (!data?.sentAt || Date.now() - data.sentAt > PW_OTP_FLOW_TTL_MS) {
+      clearPwOtpFlow(userId)
+      return null
+    }
+    return data
+  } catch {
+    return null
+  }
+}
+
+function pwUiStateKey(userId) {
+  return `engsocial_pw_ui_${userId || 'anon'}`
+}
+
+function savePwUiState(userId, patch) {
+  if (!userId) return
+  let prev = {}
+  try {
+    const raw = sessionStorage.getItem(pwUiStateKey(userId))
+    if (raw) prev = JSON.parse(raw) || {}
+  } catch {
+    prev = {}
+  }
+  sessionStorage.setItem(
+    pwUiStateKey(userId),
+    JSON.stringify({ ...prev, ...patch, savedAt: Date.now() })
+  )
+}
+
+function loadPwUiState(userId) {
+  if (!userId) return null
+  try {
+    const raw = sessionStorage.getItem(pwUiStateKey(userId))
+    if (!raw) return null
+    const data = JSON.parse(raw)
+    if (!data?.savedAt || Date.now() - data.savedAt > PW_OTP_FLOW_TTL_MS) {
+      sessionStorage.removeItem(pwUiStateKey(userId))
+      return null
+    }
+    return data
+  } catch {
+    return null
+  }
+}
+
+function clearPwUiState(userId) {
+  if (!userId) return
+  sessionStorage.removeItem(pwUiStateKey(userId))
+}
+
+function getRestoredPasswordEmailState(userId) {
+  if (!userId) return null
+
+  const verified = loadPwOtpVerified(userId)
+  const flow = loadPwOtpFlow(userId)
+  const ui = loadPwUiState(userId)
+  const cooldownRemaining = getPwOtpCooldownRemaining(userId)
+  const otpPending = Boolean(flow || cooldownRemaining > 0)
+
+  if (!verified && !otpPending && !ui?.otpSent) return null
+
+  return {
+    showForm: ui?.showForm !== false,
+    method: ui?.method === 'email' || verified || otpPending ? 'email' : 'password',
+    otpSent: Boolean(verified || otpPending || ui?.otpSent),
+    otpVerified: Boolean(verified),
+    otp: verified?.otp || ui?.otp || '',
+  }
+}
+
+function clearPwOtpFlow(userId) {
+  if (!userId) return
+  sessionStorage.removeItem(pwOtpFlowKey(userId))
+}
+
+function clearPwOtpSession(userId) {
+  clearPwOtpFlow(userId)
+  clearPwOtpVerified(userId)
+  clearPwUiState(userId)
+}
 
 export function SettingsPage() {
   const { t, i18n } = useTranslation()
@@ -59,54 +204,262 @@ export function SettingsPage() {
 
   // Change Password
   const [showPwForm, setShowPwForm] = useState(false)
-  const [pwData, setPwData] = useState({ currentPassword: '', newPassword: '', confirmPassword: '' })
+  const [pwMethod, setPwMethod] = useState('password') // 'password' | 'email'
+  const [pwOtpSent, setPwOtpSent] = useState(false)
+  const [pwOtpVerified, setPwOtpVerified] = useState(false)
+  const [pwOtpCooldownSec, setPwOtpCooldownSec] = useState(0)
+  const [pwData, setPwData] = useState({ currentPassword: '', newPassword: '', confirmPassword: '', otp: '' })
   const [pwLoading, setPwLoading] = useState(false)
   const [pwMessage, setPwMessage] = useState('')
+  const [pwMessageType, setPwMessageType] = useState('') // 'success' | 'error'
 
-  const handleChangePassword = async () => {
-    if (pwData.newPassword !== pwData.confirmPassword) {
-      setPwMessage(isVi ? 'Mật khẩu xác nhận không khớp.' : 'Passwords do not match.')
+  const userId = user?.id || user?._id
+
+  const syncPwOtpCooldown = useCallback(() => {
+    const remaining = getPwOtpCooldownRemaining(userId)
+    setPwOtpCooldownSec(Math.ceil(remaining / 1000))
+  }, [userId])
+
+  useEffect(() => {
+    if (!userId) return
+
+    syncPwOtpCooldown()
+    const restored = getRestoredPasswordEmailState(userId)
+    if (restored) {
+      setShowPwForm(restored.showForm)
+      setPwMethod(restored.method)
+      if (restored.otpSent) setPwOtpSent(true)
+      if (restored.otpVerified) setPwOtpVerified(true)
+      if (restored.otp) {
+        setPwData(prev => ({ ...prev, otp: restored.otp }))
+      }
+    }
+
+    const timer = setInterval(syncPwOtpCooldown, 1000)
+    return () => clearInterval(timer)
+  }, [userId, syncPwOtpCooldown])
+
+  useEffect(() => {
+    if (!userId || pwMethod !== 'email') return
+    if (!pwOtpSent && !pwOtpVerified) return
+    savePwUiState(userId, {
+      showForm: showPwForm,
+      method: 'email',
+      otpSent: pwOtpSent,
+      otp: pwData.otp,
+    })
+  }, [userId, pwMethod, pwOtpSent, pwOtpVerified, showPwForm, pwData.otp])
+
+  const resetPwForm = () => {
+    setPwData({ currentPassword: '', newPassword: '', confirmPassword: '', otp: '' })
+    setPwOtpSent(false)
+    setPwOtpVerified(false)
+    setPwMethod('password')
+    setPwMessage('')
+    setPwMessageType('')
+    clearPwOtpSession(userId)
+  }
+
+  const handleRequestPasswordOtp = async () => {
+    if (pwOtpCooldownSec > 0) {
+      setPwMessage(t('settings.otpCooldown', { seconds: pwOtpCooldownSec }))
+      setPwMessageType('error')
       return
     }
     setPwLoading(true)
     setPwMessage('')
+    setPwMessageType('')
     try {
-      const res = await userService.changePassword({ currentPassword: pwData.currentPassword, newPassword: pwData.newPassword })
+      const res = await userService.requestPasswordChange()
       if (res?.success) {
-        setPwMessage(isVi ? 'Đổi mật khẩu thành công!' : 'Password changed successfully!')
-        setPwData({ currentPassword: '', newPassword: '', confirmPassword: '' })
-        setTimeout(() => { setPwMessage(''); setShowPwForm(false) }, 2500)
+        const cooldownSec = res?.data?.cooldownSec ?? 60
+        setPwOtpCooldown(userId, cooldownSec * 1000)
+        syncPwOtpCooldown()
+        setPwOtpSent(true)
+        setPwOtpVerified(false)
+        setPwData(prev => ({ ...prev, otp: '', newPassword: '', confirmPassword: '' }))
+        savePwOtpFlow(userId)
+        savePwUiState(userId, { showForm: true, method: 'email', otpSent: true, otp: '' })
+        setPwMessage(t('settings.passwordOtpSent', { email: user?.email }))
+        setPwMessageType('success')
       } else {
-        setPwMessage(isVi ? 'Mật khẩu hiện tại không đúng.' : 'Current password is incorrect.')
+        setPwMessage(t('settings.passwordOtpFailed'))
+        setPwMessageType('error')
       }
-    } catch {
-      setPwMessage(isVi ? 'Mật khẩu hiện tại không đúng.' : 'Current password is incorrect.')
+    } catch (err) {
+      const waitSec = err?.data?.data?.waitSec ?? err?.data?.waitSec
+      if (waitSec) {
+        setPwOtpCooldown(userId, waitSec * 1000)
+        syncPwOtpCooldown()
+        setPwMessage(t('settings.otpCooldown', { seconds: waitSec }))
+      } else {
+        setPwMessage(t('settings.passwordOtpFailed'))
+      }
+      setPwMessageType('error')
     } finally {
       setPwLoading(false)
     }
   }
 
+  const handleVerifyPasswordOtp = async () => {
+    if (pwData.otp.length < 6) return
+    setPwLoading(true)
+    setPwMessage('')
+    setPwMessageType('')
+    try {
+      const res = await userService.verifyPasswordChange(pwData.otp)
+      if (res?.success) {
+        setPwOtpVerified(true)
+        savePwOtpVerified(userId, pwData.otp)
+        sessionStorage.removeItem(pwOtpFlowKey(userId))
+        savePwUiState(userId, { showForm: true, method: 'email', otpSent: true, otp: pwData.otp })
+        setPwMessage(t('settings.otpVerified'))
+        setPwMessageType('success')
+      } else {
+        setPwMessage(t('settings.otpInvalid'))
+        setPwMessageType('error')
+      }
+    } catch {
+      setPwMessage(t('settings.otpInvalid'))
+      setPwMessageType('error')
+    } finally {
+      setPwLoading(false)
+    }
+  }
+
+  const handleChangePassword = async () => {
+    if (pwMethod === 'email' && !pwOtpVerified) {
+      setPwMessage(t('settings.otpVerifyFirst'))
+      setPwMessageType('error')
+      return
+    }
+    if (pwData.newPassword !== pwData.confirmPassword) {
+      setPwMessage(t('settings.passwordMismatch'))
+      setPwMessageType('error')
+      return
+    }
+    if (pwData.newPassword.length < 8) {
+      setPwMessage(t('settings.passwordTooShort'))
+      setPwMessageType('error')
+      return
+    }
+    setPwLoading(true)
+    setPwMessage('')
+    setPwMessageType('')
+    try {
+      const payload =
+        pwMethod === 'password'
+          ? { currentPassword: pwData.currentPassword, newPassword: pwData.newPassword }
+          : { otp: pwData.otp, newPassword: pwData.newPassword }
+      const res = await userService.changePassword(payload)
+      if (res?.success) {
+        setPwMessage(t('settings.passwordChanged'))
+        setPwMessageType('success')
+        resetPwForm()
+        setTimeout(() => { setPwMessage(''); setPwMessageType(''); setShowPwForm(false) }, 2500)
+      } else {
+        setPwMessage(
+          pwMethod === 'password' ? t('settings.wrongPassword') : t('settings.otpInvalid')
+        )
+        setPwMessageType('error')
+      }
+    } catch (err) {
+      const msg = err?.data?.message || ''
+      if (msg.toLowerCase().includes('otp') || msg.toLowerCase().includes('hết hạn') || msg.toLowerCase().includes('expired')) {
+        setPwMessage(t('settings.otpInvalid'))
+      } else {
+        setPwMessage(pwMethod === 'password' ? t('settings.wrongPassword') : t('settings.otpInvalid'))
+      }
+      setPwMessageType('error')
+    } finally {
+      setPwLoading(false)
+    }
+  }
+
+  const canSubmitPassword =
+    pwData.newPassword &&
+    pwData.confirmPassword &&
+    (pwMethod === 'password'
+      ? pwData.currentPassword
+      : pwOtpVerified)
+
+  const canVerifyOtp = pwOtpSent && !pwOtpVerified && pwData.otp.length >= 6
+  const canSendOtp = pwOtpCooldownSec <= 0 && !pwLoading
+
   // Change Email
   const [showEmailForm, setShowEmailForm] = useState(false)
-  const [emailStep, setEmailStep] = useState('input') // 'input' | 'otp'
+  const [emailStep, setEmailStep] = useState('password') // 'password' | 'input' | 'otp'
+  const [emailCurrentPassword, setEmailCurrentPassword] = useState('')
+  const [emailPasswordVerified, setEmailPasswordVerified] = useState(false)
   const [newEmail, setNewEmail] = useState('')
   const [otp, setOtp] = useState('')
   const [emailLoading, setEmailLoading] = useState(false)
   const [emailMessage, setEmailMessage] = useState('')
+  const [emailMessageType, setEmailMessageType] = useState('')
 
-  const handleRequestEmailOtp = async () => {
+  const resetEmailForm = () => {
+    setEmailStep('password')
+    setEmailCurrentPassword('')
+    setEmailPasswordVerified(false)
+    setNewEmail('')
+    setOtp('')
+    setEmailMessage('')
+    setEmailMessageType('')
+  }
+
+  const handleVerifyEmailPassword = async () => {
+    if (!emailCurrentPassword) return
     setEmailLoading(true)
     setEmailMessage('')
+    setEmailMessageType('')
+    try {
+      const res = await userService.verifyEmailChangePassword(emailCurrentPassword)
+      if (res?.success) {
+        setEmailPasswordVerified(true)
+        setEmailStep('input')
+        setEmailMessage(t('settings.emailPasswordVerified'))
+        setEmailMessageType('success')
+      } else {
+        setEmailMessage(t('settings.wrongPassword'))
+        setEmailMessageType('error')
+      }
+    } catch {
+      setEmailMessage(t('settings.wrongPassword'))
+      setEmailMessageType('error')
+    } finally {
+      setEmailLoading(false)
+    }
+  }
+
+  const handleRequestEmailOtp = async () => {
+    if (!emailPasswordVerified) {
+      setEmailMessage(t('settings.emailPasswordRequired'))
+      setEmailMessageType('error')
+      return
+    }
+    setEmailLoading(true)
+    setEmailMessage('')
+    setEmailMessageType('')
     try {
       const res = await userService.requestEmailChange(newEmail)
       if (res?.success) {
         setEmailStep('otp')
-        setEmailMessage(isVi ? `Mã OTP đã gửi đến ${newEmail}` : `OTP sent to ${newEmail}`)
+        setEmailMessage(t('settings.emailOtpSent', { email: newEmail }))
+        setEmailMessageType('success')
       } else {
-        setEmailMessage(isVi ? 'Email này đã được sử dụng.' : 'This email is already taken.')
+        setEmailMessage(t('settings.emailTaken'))
+        setEmailMessageType('error')
       }
-    } catch {
-      setEmailMessage(isVi ? 'Email này đã được sử dụng hoặc có lỗi.' : 'Email is taken or an error occurred.')
+    } catch (err) {
+      const msg = err?.data?.message || ''
+      if (msg.toLowerCase().includes('password') || msg.toLowerCase().includes('mật khẩu')) {
+        setEmailPasswordVerified(false)
+        setEmailStep('password')
+        setEmailMessage(t('settings.emailPasswordRequired'))
+      } else {
+        setEmailMessage(t('settings.emailTaken'))
+      }
+      setEmailMessageType('error')
     } finally {
       setEmailLoading(false)
     }
@@ -115,17 +468,26 @@ export function SettingsPage() {
   const handleConfirmEmailOtp = async () => {
     setEmailLoading(true)
     setEmailMessage('')
+    setEmailMessageType('')
     try {
       const res = await userService.confirmEmailChange(otp)
       if (res?.success) {
-        setAuth(res.data)  // res.data = { user: UserDTO }
-        setEmailMessage(isVi ? 'Đổi email thành công!' : 'Email changed successfully!')
-        setTimeout(() => { setEmailMessage(''); setShowEmailForm(false); setEmailStep('input'); setNewEmail(''); setOtp('') }, 2500)
+        setAuth(res.data)
+        setEmailMessage(t('settings.emailChanged'))
+        setEmailMessageType('success')
+        setTimeout(() => {
+          setEmailMessage('')
+          setEmailMessageType('')
+          setShowEmailForm(false)
+          resetEmailForm()
+        }, 2500)
       } else {
-        setEmailMessage(isVi ? 'Mã OTP không đúng hoặc đã hết hạn.' : 'OTP is invalid or expired.')
+        setEmailMessage(t('settings.otpInvalid'))
+        setEmailMessageType('error')
       }
     } catch {
-      setEmailMessage(isVi ? 'Mã OTP không đúng hoặc đã hết hạn.' : 'OTP is invalid or expired.')
+      setEmailMessage(t('settings.otpInvalid'))
+      setEmailMessageType('error')
     } finally {
       setEmailLoading(false)
     }
@@ -378,18 +740,58 @@ export function SettingsPage() {
                         <p className="text-slate-900 dark:text-white font-medium">{user?.email || 'user@example.com'}</p>
                       </div>
                       <button
-                        onClick={() => { setShowEmailForm(v => !v); setEmailStep('input'); setEmailMessage('') }}
+                        onClick={() => {
+                          if (showEmailForm) {
+                            resetEmailForm()
+                            setShowEmailForm(false)
+                          } else {
+                            setShowEmailForm(true)
+                          }
+                        }}
                         className="px-4 py-2 text-xs font-bold bg-white dark:bg-slate-800 text-primary border border-slate-200 dark:border-white/10 rounded-lg hover:bg-primary hover:text-white transition-all"
                       >
-                        {showEmailForm ? (isVi ? 'Ẩn' : 'Cancel') : t('settings.change')}
+                        {showEmailForm ? t('settings.cancel') : t('settings.change')}
                       </button>
                     </div>
                     {showEmailForm && (
                       <div className="px-4 pb-4 border-t border-slate-100 dark:border-white/5 pt-4 space-y-3">
-                        {emailStep === 'input' ? (
+                        {emailStep === 'password' ? (
                           <>
+                            <p className="text-xs text-slate-500 dark:text-slate-400">{t('settings.emailPasswordHint')}</p>
                             <div>
-                              <label className="block text-xs font-bold text-slate-400 uppercase tracking-widest mb-2">{isVi ? 'Email mới' : 'New Email'}</label>
+                              <label className="block text-xs font-bold text-slate-400 uppercase tracking-widest mb-2">{t('settings.currentPassword')}</label>
+                              <input
+                                type="password"
+                                value={emailCurrentPassword}
+                                onChange={e => setEmailCurrentPassword(e.target.value)}
+                                className="w-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-white/10 rounded-xl p-3 text-slate-900 dark:text-white text-sm focus:ring-2 focus:ring-primary focus:border-primary"
+                                placeholder="••••••••"
+                              />
+                            </div>
+                            <div className="flex items-center gap-3">
+                              <button
+                                type="button"
+                                onClick={handleVerifyEmailPassword}
+                                disabled={emailLoading || !emailCurrentPassword}
+                                className="px-5 py-2 text-sm font-bold bg-primary text-white rounded-xl hover:bg-primary/90 disabled:opacity-50"
+                              >
+                                {emailLoading ? t('settings.verifyingPassword') : t('settings.verifyPassword')}
+                              </button>
+                              {emailMessage && (
+                                <span className={`text-xs font-medium ${emailMessageType === 'success' ? 'text-emerald-500' : 'text-red-500'}`}>
+                                  {emailMessage}
+                                </span>
+                              )}
+                            </div>
+                          </>
+                        ) : emailStep === 'input' ? (
+                          <>
+                            <div className="flex items-center gap-2 px-3 py-2 rounded-xl bg-emerald-500/10 border border-emerald-500/20">
+                              <span className="material-symbols-outlined text-emerald-500 text-[18px]">verified</span>
+                              <span className="text-xs font-medium text-emerald-600 dark:text-emerald-400">{t('settings.emailPasswordVerified')}</span>
+                            </div>
+                            <div>
+                              <label className="block text-xs font-bold text-slate-400 uppercase tracking-widest mb-2">{t('settings.newEmail')}</label>
                               <input
                                 type="email"
                                 value={newEmail}
@@ -400,20 +802,29 @@ export function SettingsPage() {
                             </div>
                             <div className="flex items-center gap-3">
                               <button
+                                type="button"
                                 onClick={handleRequestEmailOtp}
                                 disabled={emailLoading || !newEmail}
                                 className="px-5 py-2 text-sm font-bold bg-primary text-white rounded-xl hover:bg-primary/90 disabled:opacity-50"
                               >
-                                {emailLoading ? (isVi ? 'Đang gửi...' : 'Sending...') : (isVi ? 'Gửi mã OTP' : 'Send OTP')}
+                                {emailLoading ? t('settings.sendingOtp') : t('settings.sendOtp')}
                               </button>
-                              {emailMessage && <span className={`text-xs font-medium ${emailMessage.includes('gửi') || emailMessage.includes('sent') ? 'text-emerald-500' : 'text-red-500'}`}>{emailMessage}</span>}
+                              {emailMessage && (
+                                <span className={`text-xs font-medium ${emailMessageType === 'success' ? 'text-emerald-500' : 'text-red-500'}`}>
+                                  {emailMessage}
+                                </span>
+                              )}
                             </div>
                           </>
                         ) : (
                           <>
-                            {emailMessage && <p className="text-xs text-emerald-500 font-medium">{emailMessage}</p>}
+                            {emailMessage && (
+                              <p className={`text-xs font-medium ${emailMessageType === 'success' ? 'text-emerald-500' : 'text-red-500'}`}>
+                                {emailMessage}
+                              </p>
+                            )}
                             <div>
-                              <label className="block text-xs font-bold text-slate-400 uppercase tracking-widest mb-2">{isVi ? 'Nhập mã OTP (6 số)' : 'Enter OTP (6 digits)'}</label>
+                              <label className="block text-xs font-bold text-slate-400 uppercase tracking-widest mb-2">{t('settings.enterOtp')}</label>
                               <input
                                 type="text"
                                 value={otp}
@@ -425,14 +836,19 @@ export function SettingsPage() {
                             </div>
                             <div className="flex items-center gap-3">
                               <button
+                                type="button"
                                 onClick={handleConfirmEmailOtp}
                                 disabled={emailLoading || otp.length < 6}
                                 className="px-5 py-2 text-sm font-bold bg-primary text-white rounded-xl hover:bg-primary/90 disabled:opacity-50"
                               >
-                                {emailLoading ? (isVi ? 'Đang xác nhận...' : 'Confirming...') : (isVi ? 'Xác nhận' : 'Confirm')}
+                                {emailLoading ? t('settings.confirmingOtp') : t('settings.confirmEmailChange')}
                               </button>
-                              <button onClick={() => { setEmailStep('input'); setOtp(''); setEmailMessage('') }} className="text-xs text-slate-500 hover:text-primary">
-                                {isVi ? 'Gửi lại' : 'Resend'}
+                              <button
+                                type="button"
+                                onClick={() => { setEmailStep('input'); setOtp(''); setEmailMessage(''); setEmailMessageType('') }}
+                                className="text-xs text-slate-500 hover:text-primary"
+                              >
+                                {t('settings.backToNewEmail')}
                               </button>
                             </div>
                           </>
@@ -449,36 +865,192 @@ export function SettingsPage() {
                         <p className="text-slate-900 dark:text-white font-medium">••••••••••••</p>
                       </div>
                       <button
-                        onClick={() => { setShowPwForm(v => !v); setPwMessage('') }}
+                        onClick={() => {
+                          if (showPwForm) {
+                            resetPwForm()
+                            setShowPwForm(false)
+                          } else {
+                            setShowPwForm(true)
+                          }
+                        }}
                         className="px-4 py-2 text-xs font-bold bg-white dark:bg-slate-800 text-primary border border-slate-200 dark:border-white/10 rounded-lg hover:bg-primary hover:text-white transition-all"
                       >
-                        {showPwForm ? (isVi ? 'Ẩn' : 'Cancel') : t('settings.update')}
+                        {showPwForm ? t('settings.cancel') : t('settings.update')}
                       </button>
                     </div>
                     {showPwForm && (
-                      <div className="px-4 pb-4 border-t border-slate-100 dark:border-white/5 pt-4 space-y-3">
-                        {[['currentPassword', isVi ? 'Mật khẩu hiện tại' : 'Current Password'], ['newPassword', isVi ? 'Mật khẩu mới' : 'New Password'], ['confirmPassword', isVi ? 'Xác nhận mật khẩu mới' : 'Confirm New Password']].map(([key, label]) => (
-                          <div key={key}>
-                            <label className="block text-xs font-bold text-slate-400 uppercase tracking-widest mb-2">{label}</label>
-                            <input
-                              type="password"
-                              value={pwData[key]}
-                              onChange={e => setPwData(prev => ({ ...prev, [key]: e.target.value }))}
-                              className="w-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-white/10 rounded-xl p-3 text-slate-900 dark:text-white text-sm focus:ring-2 focus:ring-primary focus:border-primary"
-                              placeholder="••••••••"
-                            />
+                      <div className="px-4 pb-4 border-t border-slate-100 dark:border-white/5 pt-4 space-y-4">
+                        <div className="flex flex-wrap gap-2">
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setPwMethod('password')
+                              setPwOtpSent(false)
+                              setPwOtpVerified(false)
+                              setPwMessage('')
+                              setPwMessageType('')
+                              clearPwOtpSession(userId)
+                              setPwData(prev => ({ ...prev, otp: '', newPassword: '', confirmPassword: '' }))
+                            }}
+                            className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
+                              pwMethod === 'password'
+                                ? 'bg-primary text-white shadow-sm'
+                                : 'bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-white/10 hover:border-primary/40'
+                            }`}
+                          >
+                            {t('settings.passwordMethodCurrent')}
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setPwMethod('email')
+                              setPwMessage('')
+                              setPwMessageType('')
+                              setPwData(prev => ({ ...prev, currentPassword: '', newPassword: '', confirmPassword: '' }))
+                              const cooldownRemaining = getPwOtpCooldownRemaining(userId)
+                              const flow = loadPwOtpFlow(userId)
+                              const verified = loadPwOtpVerified(userId)
+                              if (verified) {
+                                setPwOtpSent(true)
+                                setPwOtpVerified(true)
+                                setPwData(prev => ({ ...prev, otp: verified.otp }))
+                              } else {
+                                setPwOtpVerified(false)
+                                if (flow || cooldownRemaining > 0) setPwOtpSent(true)
+                              }
+                              savePwUiState(userId, {
+                                showForm: true,
+                                method: 'email',
+                                otpSent: Boolean(flow || cooldownRemaining > 0 || verified),
+                                otp: verified?.otp || '',
+                              })
+                            }}
+                            className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
+                              pwMethod === 'email'
+                                ? 'bg-primary text-white shadow-sm'
+                                : 'bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-white/10 hover:border-primary/40'
+                            }`}
+                          >
+                            {t('settings.passwordMethodEmail')}
+                          </button>
+                        </div>
+
+                        {pwMethod === 'password' ? (
+                          <div className="space-y-3">
+                            <div>
+                              <label className="block text-xs font-bold text-slate-400 uppercase tracking-widest mb-2">{t('settings.currentPassword')}</label>
+                              <input
+                                type="password"
+                                value={pwData.currentPassword}
+                                onChange={e => setPwData(prev => ({ ...prev, currentPassword: e.target.value }))}
+                                className="w-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-white/10 rounded-xl p-3 text-slate-900 dark:text-white text-sm focus:ring-2 focus:ring-primary focus:border-primary"
+                                placeholder="••••••••"
+                              />
+                            </div>
                           </div>
-                        ))}
+                        ) : (
+                          <div className="space-y-3">
+                            <p className="text-xs text-slate-500 dark:text-slate-400">
+                              {t('settings.passwordEmailHint', { email: user?.email || '—' })}
+                            </p>
+
+                            {!pwOtpSent ? (
+                              <div className="flex flex-wrap items-center gap-3">
+                                <button
+                                  type="button"
+                                  onClick={handleRequestPasswordOtp}
+                                  disabled={!canSendOtp}
+                                  className="px-5 py-2 text-sm font-bold bg-primary text-white rounded-xl hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed"
+                                >
+                                  {pwLoading
+                                    ? t('settings.sendingOtp')
+                                    : pwOtpCooldownSec > 0
+                                      ? t('settings.resendOtpIn', { seconds: pwOtpCooldownSec })
+                                      : t('settings.sendOtp')}
+                                </button>
+                              </div>
+                            ) : !pwOtpVerified ? (
+                              <div className="space-y-3">
+                                <div>
+                                  <label className="block text-xs font-bold text-slate-400 uppercase tracking-widest mb-2">{t('settings.enterOtp')}</label>
+                                  <input
+                                    type="text"
+                                    value={pwData.otp}
+                                    maxLength={6}
+                                    onChange={e => setPwData(prev => ({ ...prev, otp: e.target.value.replace(/\D/g, '') }))}
+                                    className="w-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-white/10 rounded-xl p-3 text-slate-900 dark:text-white text-sm text-center tracking-[0.3em] font-mono font-bold text-lg focus:ring-2 focus:ring-primary focus:border-primary"
+                                    placeholder="------"
+                                  />
+                                </div>
+                                <div className="flex flex-wrap items-center gap-3">
+                                  <button
+                                    type="button"
+                                    onClick={handleVerifyPasswordOtp}
+                                    disabled={pwLoading || !canVerifyOtp}
+                                    className="px-5 py-2 text-sm font-bold bg-primary text-white rounded-xl hover:bg-primary/90 disabled:opacity-50"
+                                  >
+                                    {pwLoading ? t('settings.verifyingOtp') : t('settings.verifyOtp')}
+                                  </button>
+                                  <button
+                                    type="button"
+                                    onClick={handleRequestPasswordOtp}
+                                    disabled={!canSendOtp}
+                                    className="text-xs text-slate-500 hover:text-primary disabled:opacity-50 disabled:cursor-not-allowed"
+                                  >
+                                    {pwOtpCooldownSec > 0
+                                      ? t('settings.resendOtpIn', { seconds: pwOtpCooldownSec })
+                                      : t('settings.resendOtp')}
+                                  </button>
+                                </div>
+                              </div>
+                            ) : (
+                              <div className="flex items-center gap-2 px-3 py-2 rounded-xl bg-emerald-500/10 border border-emerald-500/20">
+                                <span className="material-symbols-outlined text-emerald-500 text-[18px]">verified</span>
+                                <span className="text-xs font-medium text-emerald-600 dark:text-emerald-400">{t('settings.otpVerified')}</span>
+                              </div>
+                            )}
+                          </div>
+                        )}
+
+                        {(pwMethod === 'password' || pwOtpVerified) && (
+                        <div className="space-y-3 pt-1">
+                          {[['newPassword', t('settings.newPassword')], ['confirmPassword', t('settings.confirmNewPassword')]].map(([key, label]) => (
+                            <div key={key}>
+                              <label className="block text-xs font-bold text-slate-400 uppercase tracking-widest mb-2">{label}</label>
+                              <input
+                                type="password"
+                                value={pwData[key]}
+                                onChange={e => setPwData(prev => ({ ...prev, [key]: e.target.value }))}
+                                className="w-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-white/10 rounded-xl p-3 text-slate-900 dark:text-white text-sm focus:ring-2 focus:ring-primary focus:border-primary"
+                                placeholder="••••••••"
+                              />
+                            </div>
+                          ))}
+                        </div>
+                        )}
+
+                        {(pwMethod === 'password' || pwOtpVerified) && (
                         <div className="flex items-center gap-3 pt-1">
                           <button
                             onClick={handleChangePassword}
-                            disabled={pwLoading || !pwData.currentPassword || !pwData.newPassword}
+                            disabled={pwLoading || !canSubmitPassword}
                             className="px-5 py-2 text-sm font-bold bg-primary text-white rounded-xl hover:bg-primary/90 disabled:opacity-50"
                           >
-                            {pwLoading ? (isVi ? 'Đang lưu...' : 'Saving...') : (isVi ? 'Đổi mật khẩu' : 'Change Password')}
+                            {pwLoading ? t('settings.saving') : t('settings.changePassword')}
                           </button>
-                          {pwMessage && <span className={`text-xs font-medium ${pwMessage.includes('thành công') || pwMessage.includes('successfully') ? 'text-emerald-500' : 'text-red-500'}`}>{pwMessage}</span>}
+                          {pwMessage && (
+                            <span className={`text-xs font-medium ${pwMessageType === 'success' ? 'text-emerald-500' : 'text-red-500'}`}>
+                              {pwMessage}
+                            </span>
+                          )}
                         </div>
+                        )}
+
+                        {pwMethod === 'email' && !pwOtpVerified && pwMessage && (
+                          <p className={`text-xs font-medium ${pwMessageType === 'success' ? 'text-emerald-500' : 'text-red-500'}`}>
+                            {pwMessage}
+                          </p>
+                        )}
                       </div>
                     )}
                   </div>

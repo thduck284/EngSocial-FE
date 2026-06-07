@@ -9,6 +9,8 @@ import {
   formatDateForInput,
   normalizeFriendsFromResponse,
   sortFriendsByOnlineAndLastActive,
+  DEFAULT_PROFILE_PRIVACY,
+  normalizeProfilePrivacy,
 } from '../utils/profile'
 import { getDefaultSkillStats, normalizeSkillStatsFromStats } from '../utils/dashboard'
 import { DEFAULT_AVATAR } from '../constants/ui'
@@ -426,6 +428,8 @@ export function useProfilePage() {
   const [avatarSaving, setAvatarSaving] = useState(false)
   const [avatarError, setAvatarError] = useState('')
   const [profileTab, setProfileTab] = useState('personalInfo')
+  const [privacy, setPrivacy] = useState(DEFAULT_PROFILE_PRIVACY)
+  const [privacySaving, setPrivacySaving] = useState(null)
 
   useEffect(() => {
     const name = user?.name ?? raw.userProfile?.name ?? ''
@@ -438,6 +442,7 @@ export function useProfilePage() {
     const next = { name, email, phone, bio, address, dateOfBirth, gender }
     setForm(next)
     setInitialForm(next)
+    setPrivacy(normalizeProfilePrivacy(user?.profilePrivacy))
   }, [user, raw.userProfile?.name])
 
   const userId = user?.id || user?._id
@@ -450,6 +455,34 @@ export function useProfilePage() {
   const handleChange = (field, value) => {
     setForm((prev) => ({ ...prev, [field]: value }))
     setMessage({ type: '', text: '' })
+  }
+
+  const handleTogglePrivacy = async (key) => {
+    if (!key || privacySaving) return
+    const nextVal = !privacy[key]
+    const prevPrivacy = privacy
+    const nextPrivacy = { ...privacy, [key]: nextVal }
+    setPrivacy(nextPrivacy)
+    setPrivacySaving(key)
+    setMessage({ type: '', text: '' })
+    try {
+      const res = await userService.updateProfile({ profilePrivacy: { [key]: nextVal } })
+      if (res?.success !== false && res?.data?.user) {
+        const updatedUser = res.data.user
+        setAuth({ user: updatedUser })
+        getAuthStorage().setItem('user', JSON.stringify(updatedUser))
+        setPrivacy(normalizeProfilePrivacy(updatedUser.profilePrivacy))
+      }
+      setMessage({ type: 'success', text: t('profile.privacyUpdated') })
+    } catch (err) {
+      setPrivacy(prevPrivacy)
+      setMessage({
+        type: 'error',
+        text: err?.data?.message || err?.message || t('profile.privacyUpdateFailed'),
+      })
+    } finally {
+      setPrivacySaving(null)
+    }
   }
 
   const handleSave = async () => {
@@ -601,6 +634,8 @@ export function useProfilePage() {
     xpPercent,
     form,
     initialForm,
+    privacy,
+    privacySaving,
     saving,
     message,
     friendSearch,
@@ -618,6 +653,7 @@ export function useProfilePage() {
     goalsTotal,
     profileSkillDetails,
     handleChange,
+    handleTogglePrivacy,
     handleSave,
     handleCancel,
     handleLogout,
