@@ -179,8 +179,7 @@ export function CreatePostModal({
             )}
           </div>
 
-          <div className="shrink-0 overflow-y-auto max-h-[38vh] custom-scrollbar border-t border-slate-100 dark:border-border-dark">
-          {/* Previews (Images/Videos) */}
+          <div className="shrink-0 overflow-y-auto max-h-[38vh] custom-scrollbar">
           {(images.length > 0 || videoUrl) && (
             <div className="px-4 py-2 flex flex-wrap gap-2">
               {images.map((url, i) => (
@@ -255,23 +254,6 @@ export function CreatePostModal({
             </div>
           )}
 
-          {/* Addons Panel (Add to post tools) */}
-          <div className="px-4 py-1.5 bg-slate-50/50 dark:bg-card-dark/20">
-            <PostComposerAddToPostRow
-              compact
-              t={t}
-              uploading={uploading}
-              imagesCount={images.length}
-              hasVideo={Boolean(videoUrl)}
-              documentsCount={documents.length}
-              onImageSelect={handleImageSelect}
-              onVideoSelect={handleVideoSelect}
-              onDocSelect={handleDocSelect}
-              addons={addons}
-            />
-          </div>
-
-          {/* Alerts & Errors */}
           <div className="px-4 py-1.5">
             {uploading && (
               <p className="text-xs text-slate-500 dark:text-slate-400">
@@ -327,6 +309,21 @@ export function CreatePostModal({
               <p className="text-sm text-red-500 mt-2">{error}</p>
             )}
           </div>
+          </div>
+
+          <div className="px-4 py-1.5 bg-slate-50/50 dark:bg-card-dark/20 shrink-0 relative z-30 border-t border-slate-100 dark:border-border-dark">
+            <PostComposerAddToPostRow
+              compact
+              t={t}
+              uploading={uploading}
+              imagesCount={images.length}
+              hasVideo={Boolean(videoUrl)}
+              documentsCount={documents.length}
+              onImageSelect={handleImageSelect}
+              onVideoSelect={handleVideoSelect}
+              onDocSelect={handleDocSelect}
+              addons={addons}
+            />
           </div>
         </div>
 

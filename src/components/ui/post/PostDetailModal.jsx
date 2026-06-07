@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect, useCallback } from 'react'
 import { createPortal } from 'react-dom'
-import { Link } from 'react-router-dom'
+import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { formatPostTime } from '../../../utils/dateTime'
 import { ROUTES, POST_REACTION_TYPES, REACTION_TYPE_TO_EMOJI } from '../../../constants'
@@ -20,6 +20,9 @@ import { MentionedUsersModal } from './MentionedUsersModal'
 import { PostInteractionsModal } from './PostInteractionsModal'
 import { SharedPostPreviewCard } from './SharedPostPreviewCard'
 import { PostShareModal } from './PostShareModal'
+import { navigateToPostDetail, resolveSharedPostId } from '../../../utils/postLinks'
+
+const MAX_CONTENT_PREVIEW = 300
 
 export function PostDetailModal({ 
   open, 
@@ -30,15 +33,30 @@ export function PostDetailModal({
   likeLoading = false 
 }) {
   const { t } = useTranslation()
+  const navigate = useNavigate()
+  const location = useLocation()
   const [showReactionsModal, setShowReactionsModal] = useState(false)
   const [reactionsModalInitialTab, setReactionsModalInitialTab] = useState('all')
   const [showMentionsModal, setShowMentionsModal] = useState(false)
+  const [modalMentions, setModalMentions] = useState([])
   const [showInteractionsModal, setShowInteractionsModal] = useState(false)
   const [interactionsType, setInteractionsType] = useState('comments')
   const [showShareModal, setShowShareModal] = useState(false)
-  const [contentExpanded, setContentExpanded] = useState(true) // Default expanded in modal
+  const [contentExpanded, setContentExpanded] = useState(false)
+  const [sharedContentExpanded, setSharedContentExpanded] = useState(false)
+  const openedAtRef = useRef(0)
 
   const postId = post?.id ?? post?._id
+
+  useEffect(() => {
+    if (open && postId) openedAtRef.current = Date.now()
+  }, [open, postId])
+
+  const handleBackdropClick = (e) => {
+    if (e.target !== e.currentTarget) return
+    if (Date.now() - openedAtRef.current < 300) return
+    onClose?.()
+  }
 
   const handleCommentAdded = useCallback(() => {
     if (!postId || typeof onUpdatePost !== 'function') return
@@ -118,6 +136,8 @@ export function PostDetailModal({
   useEffect(() => {
     if (open && postId) {
       setShowCommentsPanel(true)
+      setContentExpanded(false)
+      setSharedContentExpanded(false)
     }
   }, [open, postId, setShowCommentsPanel])
 
@@ -141,11 +161,23 @@ export function PostDetailModal({
   const firstMentionId = firstMention?.id ?? (typeof firstMention === 'string' ? firstMention : null)
   const othersCount = hasMentions ? mentionsList.length - 1 : 0
   const displayContent = getDisplayContent(post.content, mentionsList)
+  const isLongContent = displayContent.length > MAX_CONTENT_PREVIEW
+  const contentPreview =
+    isLongContent && !contentExpanded
+      ? displayContent.slice(0, MAX_CONTENT_PREVIEW)
+      : displayContent
   const isLiked = Boolean(post.liked)
   const reactionTotal = getPostReactionTotal(post)
   const userReaction = post.userReaction || null
   const imagesList = Array.isArray(post.images) ? post.images : []
   const documentsList = Array.isArray(post.documents) ? post.documents : []
+  const embeddedSharedPostId = resolveSharedPostId(post.sharedPost, post.sharedPostId)
+
+  const handleOpenSharedPost = () => {
+    if (!embeddedSharedPostId) return
+    if (postId && String(postId) === embeddedSharedPostId) return
+    setTimeout(() => navigateToPostDetail(navigate, location, embeddedSharedPostId), 0)
+  }
 
   const handleLikeClick = () => {
     if (typeof onToggleLike === 'function') onToggleLike()
@@ -158,7 +190,7 @@ export function PostDetailModal({
   }
 
   const modalContent = (
-    <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/70 backdrop-blur-sm p-4 overflow-y-auto overflow-x-hidden custom-scrollbar" onClick={onClose}>
+    <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/70 backdrop-blur-sm p-4 overflow-y-auto overflow-x-hidden custom-scrollbar" onClick={handleBackdropClick}>
       <div 
         className="bg-white dark:bg-[#111e22] rounded-2xl shadow-2xl w-full max-w-2xl max-h-[95vh] flex flex-col overflow-hidden min-w-0 border border-slate-200 dark:border-[#325a67]"
         onClick={(e) => e.stopPropagation()}
@@ -209,7 +241,10 @@ export function PostDetailModal({
                           </span>{' '}
                           <button
                             type="button"
-                            onClick={() => setShowMentionsModal(true)}
+                            onClick={() => {
+                              setModalMentions(mentionsList)
+                              setShowMentionsModal(true)
+                            }}
                             className="text-sm font-bold text-primary hover:underline"
                           >
                             {t('dashboard.othersCount', { count: othersCount })}
@@ -226,16 +261,49 @@ export function PostDetailModal({
             </div>
 
             {/* Post Content */}
-            <div className="text-base leading-relaxed text-slate-800 dark:text-slate-200 mb-4 whitespace-pre-wrap break-words [overflow-wrap:anywhere]">
-              <PostContentBody content={displayContent} mentions={hasMentions ? [] : mentionsList} />
-            </div>
+            {displayContent ? (
+              <div className="text-base leading-relaxed text-slate-800 dark:text-slate-200 mb-4 whitespace-pre-wrap break-words [overflow-wrap:anywhere]">
+                <PostContentBody
+                  content={contentPreview}
+                  mentions={hasMentions ? [] : mentionsList}
+                />
+                {isLongContent && !contentExpanded && ' ... '}
+                {isLongContent && (
+                  <button
+                    type="button"
+                    onClick={() => setContentExpanded((v) => !v)}
+                    className="mt-2 block text-primary font-bold hover:underline text-sm"
+                  >
+                    {contentExpanded
+                      ? t('dashboard.seeLess') || 'Thu gon'
+                      : t('dashboard.seeMore') || 'Xem them'}
+                  </button>
+                )}
+              </div>
+            ) : null}
 
             {/* Shared Post */}
             {post.sharedPost && (
               <div className="mb-4">
-                <SharedPostPreviewCard 
+                <SharedPostPreviewCard
                   sharedPost={post.sharedPost}
+                  sharedPostId={embeddedSharedPostId}
                   sharedMentions={normalizeMentions(post.sharedPost?.mentions)}
+                  contentExpanded={sharedContentExpanded}
+                  onToggleContentExpanded={() => setSharedContentExpanded((v) => !v)}
+                  onOpenMentions={() => {
+                    setModalMentions(normalizeMentions(post.sharedPost?.mentions))
+                    setShowMentionsModal(true)
+                  }}
+                  onOpenImageViewer={(index) => {
+                    if (!embeddedSharedPostId) return
+                    const params = new URLSearchParams()
+                    params.set('image', String(index))
+                    navigate(`/post/photo/${embeddedSharedPostId}?${params.toString()}`, {
+                      state: { background: location },
+                    })
+                  }}
+                  onOpenPost={handleOpenSharedPost}
                 />
               </div>
             )}
@@ -442,7 +510,7 @@ export function PostDetailModal({
       <MentionedUsersModal 
         open={showMentionsModal} 
         onClose={() => setShowMentionsModal(false)}
-        mentions={mentionsList}
+        mentions={modalMentions.length ? modalMentions : mentionsList}
       />
 
       <PostInteractionsModal 

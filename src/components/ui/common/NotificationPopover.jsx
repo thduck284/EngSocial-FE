@@ -75,6 +75,16 @@ function renderNotificationContent(n, t) {
   if (n.type === 'group_invite') {
     return n.message || n.title || t('notifications.groupInviteFallback', { defaultValue: 'You were invited to a group.' })
   }
+  if (n.type === 'system') {
+    if (n.data?.kind === 'report_status_change' && n.title && n.message) {
+      return (
+        <>
+          <span className="font-bold">{n.title}</span> {n.message}
+        </>
+      )
+    }
+    return n.message || n.title || t('notifications.systemFallback', { defaultValue: 'System notification.' })
+  }
   return n.message || n.title || null
 }
 
@@ -232,6 +242,34 @@ export function NotificationPopover({ open, onClose, anchorRef, unreadCount, onM
                   <div className="w-11 h-11 rounded-full bg-primary/20 flex items-center justify-center shrink-0">
                     <span className="material-symbols-outlined text-primary">
                       {n.type === 'group_invite' ? 'group_add' : 'person_add'}
+                    </span>
+                  </div>
+                ) : n.type === 'system' ? (
+                  <div
+                    className={`w-11 h-11 rounded-full flex items-center justify-center shrink-0 ${
+                      n.data?.outcome === 'accepted'
+                        ? 'bg-emerald-500/15'
+                        : n.data?.outcome === 'rejected'
+                          ? 'bg-slate-500/15'
+                          : 'bg-amber-500/15'
+                    }`}
+                  >
+                    <span
+                      className={`material-symbols-outlined ${
+                        n.data?.outcome === 'accepted'
+                          ? 'text-emerald-600 dark:text-emerald-400'
+                          : n.data?.outcome === 'rejected'
+                            ? 'text-slate-600 dark:text-slate-400'
+                            : 'text-amber-600 dark:text-amber-400'
+                      }`}
+                    >
+                      {n.data?.kind === 'report_status_change'
+                        ? n.data?.outcome === 'accepted'
+                          ? 'check_circle'
+                          : n.data?.outcome === 'rejected'
+                            ? 'cancel'
+                            : 'flag'
+                        : 'admin_panel_settings'}
                     </span>
                   </div>
                 ) : (

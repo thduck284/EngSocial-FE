@@ -1,21 +1,50 @@
-import { Link } from 'react-router-dom'
+import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { DEFAULT_AVATAR } from '../../../constants/ui'
 import { ROUTES } from '../../../constants'
 import { formatPostTime } from '../../../utils/dateTime'
 import { PostContentBody } from './PostContentBody'
 import { getDisplayContent } from '../../../utils/postContent'
+import { navigateToPostDetail, resolveSharedPostId } from '../../../utils/postLinks'
 
 export function SharedPostPreviewCard({
   sharedPost,
+  sharedPostId: sharedPostIdProp,
   sharedMentions,
   contentExpanded,
   onToggleContentExpanded,
   onOpenMentions,
   onOpenImageViewer,
+  onOpenPost,
+  compact = false,
 }) {
   const { t } = useTranslation()
+  const navigate = useNavigate()
+  const location = useLocation()
+
   if (!sharedPost) return null
+
+  const sharedPostId = resolveSharedPostId(sharedPost, sharedPostIdProp)
+  const openPost =
+    onOpenPost ??
+    (sharedPostId
+      ? () => navigateToPostDetail(navigate, location, sharedPostId)
+      : undefined)
+
+  const handleCardClick = (e) => {
+    if (!openPost) return
+    if (e.target.closest('a, button, video, input, textarea, img')) return
+    e.stopPropagation()
+    e.preventDefault()
+    setTimeout(() => openPost(), 0)
+  }
+
+  const handleImageClick = (index, e) => {
+    e.stopPropagation()
+    onOpenImageViewer?.(index)
+  }
+
+  const stopBubble = (e) => e.stopPropagation()
 
   const firstSharedMention = sharedMentions.length > 0 ? sharedMentions[0] : null
   const firstSharedMentionId = firstSharedMention
@@ -31,8 +60,25 @@ export function SharedPostPreviewCard({
       : sharedContent
 
   return (
-    <div className="mt-4 rounded-xl border border-slate-200 dark:border-[#325a67] bg-slate-50 dark:bg-[#0b1518] overflow-hidden">
-      <div className="flex items-center gap-2 px-4 py-3 border-b border-slate-200 dark:border-[#325a67]">
+    <div
+      className={`${compact ? 'mt-0' : 'mt-4'} rounded-xl border border-slate-200 dark:border-[#325a67] bg-slate-50 dark:bg-[#0b1518] overflow-hidden ${
+        openPost ? 'cursor-pointer hover:ring-2 hover:ring-primary/40 transition-shadow' : ''
+      }`}
+      onClick={openPost ? handleCardClick : undefined}
+      onKeyDown={
+        openPost
+          ? (e) => {
+              if (e.key === 'Enter' || e.key === ' ') {
+                e.preventDefault()
+                handleCardClick(e)
+              }
+            }
+          : undefined
+      }
+      role={openPost ? 'button' : undefined}
+      tabIndex={openPost ? 0 : undefined}
+    >
+      <div className={`flex items-center gap-2 px-4 border-b border-slate-200 dark:border-[#325a67] ${compact ? 'py-2' : 'py-3'}`}>
         <span className="material-symbols-outlined text-primary text-lg">
           repeat
         </span>
@@ -40,9 +86,12 @@ export function SharedPostPreviewCard({
           {t('dashboard.sharedAPost') || 'Da chia se mot bai viet'}
         </span>
       </div>
-      <div className="p-4">
+      <div className={compact ? 'p-3' : 'p-4'}>
         <div className="flex gap-3 mb-3">
-          <Link to={sharedPost.author?.id ?? sharedPost.author?._id ? ROUTES.PROFILE_USER(sharedPost.author?.id ?? sharedPost.author?._id) : '#'}>
+          <Link
+            to={sharedPost.author?.id ?? sharedPost.author?._id ? ROUTES.PROFILE_USER(sharedPost.author?.id ?? sharedPost.author?._id) : '#'}
+            onClick={stopBubble}
+          >
             <img
               src={
                 sharedPost.author?.avatar ||
@@ -61,6 +110,7 @@ export function SharedPostPreviewCard({
               <Link
                 to={sharedPost.author?.id ?? sharedPost.author?._id ? ROUTES.PROFILE_USER(sharedPost.author?.id ?? sharedPost.author?._id) : '#'}
                 className="text-sm hover:text-primary transition-colors"
+                onClick={stopBubble}
               >
                 {sharedPost.author?.name || 'User'}
               </Link>
@@ -72,6 +122,7 @@ export function SharedPostPreviewCard({
                   <Link
                     to={ROUTES.PROFILE_USER(firstSharedMentionId)}
                     className="text-sm font-bold text-primary hover:underline"
+                    onClick={stopBubble}
                   >
                     {firstSharedMention.name || firstSharedMentionId}
                   </Link>
@@ -82,7 +133,10 @@ export function SharedPostPreviewCard({
                       </span>
                       <button
                         type="button"
-                        onClick={onOpenMentions}
+                        onClick={(e) => {
+                          stopBubble(e)
+                          onOpenMentions?.()
+                        }}
                         className="text-sm font-bold text-primary hover:underline ml-0.5"
                       >
                         {t('dashboard.othersCount', { count: sharedOthersCount })}
@@ -110,7 +164,10 @@ export function SharedPostPreviewCard({
             {isLongSharedContent && (
               <button
                 type="button"
-                onClick={onToggleContentExpanded}
+                onClick={(e) => {
+                  stopBubble(e)
+                  onToggleContentExpanded?.()
+                }}
                 className="mt-1 text-primary font-medium hover:underline"
               >
                 {contentExpanded
@@ -122,12 +179,15 @@ export function SharedPostPreviewCard({
         )}
 
         {Array.isArray(sharedPost.images) && sharedPost.images.length > 0 && (
-          <div className="mt-3 rounded-xl overflow-hidden border border-slate-200 dark:border-[#325a67] flex flex-wrap gap-1">
+          <div
+            className="mt-3 rounded-xl overflow-hidden border border-slate-200 dark:border-[#325a67] flex flex-wrap gap-1"
+            onClick={stopBubble}
+          >
             {sharedPost.images.map((url, i) => (
               <button
                 key={`shared-img-${i}-${url.slice(0, 40)}`}
                 type="button"
-                onClick={() => onOpenImageViewer(i)}
+                onClick={(e) => handleImageClick(i, e)}
                 className="flex-1 min-w-0 cursor-pointer block focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 rounded overflow-hidden"
               >
                 <img
@@ -144,12 +204,13 @@ export function SharedPostPreviewCard({
         {sharedPost.video &&
           typeof sharedPost.video === 'string' &&
           sharedPost.video.trim() && (
-            <div className="mt-3 rounded-xl overflow-hidden border border-slate-200 dark:border-[#325a67]">
+            <div className="mt-3 rounded-xl overflow-hidden border border-slate-200 dark:border-[#325a67]" onClick={stopBubble}>
               <video
                 src={sharedPost.video}
                 controls
                 className="w-full max-h-80"
                 preload="metadata"
+                onClick={stopBubble}
               />
             </div>
           )}
@@ -168,6 +229,7 @@ export function SharedPostPreviewCard({
                     href={url}
                     target="_blank"
                     rel="noopener noreferrer"
+                    onClick={stopBubble}
                     className="inline-flex items-center gap-2 px-3 py-2 rounded-lg bg-white dark:bg-[#111e22] border border-slate-200 dark:border-[#325a67] text-sm font-medium text-primary hover:underline max-w-full min-w-0"
                     title={name || undefined}
                   >

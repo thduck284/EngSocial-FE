@@ -179,6 +179,7 @@ export const API_ENDPOINTS = {
     USER_STATUS: (userId) => `/admin/users/${encodeURIComponent(userId)}/status`,
     USER_PASSWORD: (userId) => `/admin/users/${encodeURIComponent(userId)}/password`,
     REPORTS: '/admin/reports',
+    REPORT_DETAIL: (reportId) => `/admin/reports/${encodeURIComponent(reportId)}`,
     REPORT_STATUS: (reportId) => `/admin/reports/${encodeURIComponent(reportId)}/status`,
     STATS: '/admin/stats',
   },

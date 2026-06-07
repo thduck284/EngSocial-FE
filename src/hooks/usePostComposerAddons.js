@@ -59,6 +59,7 @@ export function usePostComposerAddons({ open, onInsertEmoji, onSelectGif }) {
   useEffect(() => {
     if (!open) return
     const onMouseDown = (e) => {
+      if (e.target.closest('[data-composer-floating-panel]')) return
       if (gifPickerRef.current && !gifPickerRef.current.contains(e.target)) setShowGifPicker(false)
       if (emojiPickerRef.current && !emojiPickerRef.current.contains(e.target)) setShowEmojiPicker(false)
     }

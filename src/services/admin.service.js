@@ -40,6 +40,8 @@ export const adminService = {
     return apiClient.get(`${API_ENDPOINTS.ADMIN.REPORTS}${qs ? `?${qs}` : ''}`)
   },
 
+  getReportById: (reportId) => apiClient.get(API_ENDPOINTS.ADMIN.REPORT_DETAIL(reportId)),
+
   updateReportStatus: (reportId, status) =>
     apiClient.patch(API_ENDPOINTS.ADMIN.REPORT_STATUS(reportId), { status }),
 }

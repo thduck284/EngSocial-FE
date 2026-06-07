@@ -1,3 +1,55 @@
+import { useCallback, useEffect, useState } from 'react'
+import { createPortal } from 'react-dom'
+
+function useAnchoredPanelStyle(anchorRef, open, align = 'left', zIndex = 10000) {
+  const [style, setStyle] = useState(null)
+
+  const update = useCallback(() => {
+    const el = anchorRef.current
+    if (!el) return
+    const rect = el.getBoundingClientRect()
+    const gap = 12
+    const next = {
+      position: 'fixed',
+      zIndex,
+      bottom: `${window.innerHeight - rect.top + gap}px`,
+    }
+    if (align === 'right') {
+      next.right = `${Math.max(8, window.innerWidth - rect.right)}px`
+    } else {
+      next.left = `${Math.max(8, rect.left)}px`
+    }
+    setStyle(next)
+  }, [anchorRef, align, zIndex])
+
+  useEffect(() => {
+    if (!open) {
+      setStyle(null)
+      return undefined
+    }
+    update()
+    window.addEventListener('resize', update)
+    window.addEventListener('scroll', update, true)
+    return () => {
+      window.removeEventListener('resize', update)
+      window.removeEventListener('scroll', update, true)
+    }
+  }, [open, update])
+
+  return style
+}
+
+function AnchoredPanel({ anchorRef, open, align, zIndex, children }) {
+  const style = useAnchoredPanelStyle(anchorRef, open, align, zIndex)
+  if (!open || !style) return null
+  return createPortal(
+    <div data-composer-floating-panel style={style} className="w-72 max-w-[calc(100vw-1rem)]">
+      {children}
+    </div>,
+    document.body,
+  )
+}
+
 export function PostComposerAddToPostRow({
   t,
   uploading,
@@ -9,6 +61,7 @@ export function PostComposerAddToPostRow({
   onDocSelect,
   addons,
   compact = false,
+  panelZIndex = 10000,
 }) {
   const {
     showGifPicker,
@@ -35,7 +88,7 @@ export function PostComposerAddToPostRow({
   } = addons
 
   return (
-    <div className={`${compact ? 'py-0 border-t-0' : 'py-3 border-t border-slate-200 dark:border-border-dark'} shrink-0`}>
+    <div className={`${compact ? 'py-0 border-t-0' : 'py-3 border-t border-slate-200 dark:border-border-dark'} shrink-0 relative z-30`}>
       <p className={`text-xs font-bold text-slate-500 dark:text-slate-400 ${compact ? 'mb-1.5' : 'mb-3 uppercase tracking-wider'}`}>
         {t('dashboard.addToPost') || 'Them vao bai viet'}
       </p>
@@ -84,8 +137,8 @@ export function PostComposerAddToPostRow({
               {t('messages.emoji') || 'Bieu cam'}
             </span>
           </button>
-          {showEmojiPicker && (
-            <div className="absolute bottom-full mb-3 left-0 w-72 bg-white dark:bg-card-dark rounded-xl shadow-2xl border border-slate-200 dark:border-border-dark z-50 overflow-hidden">
+          <AnchoredPanel anchorRef={emojiPickerRef} open={showEmojiPicker} align="left" zIndex={panelZIndex}>
+            <div className="bg-white dark:bg-card-dark rounded-xl shadow-2xl border border-slate-200 dark:border-border-dark overflow-hidden">
               <div className="flex justify-center gap-1 p-1.5 border-b border-slate-100 dark:border-border-dark overflow-x-auto shrink-0">
                 {emojiCategories.map((cat) => (
                   <button
@@ -116,7 +169,7 @@ export function PostComposerAddToPostRow({
                 ))}
               </div>
             </div>
-          )}
+          </AnchoredPanel>
         </div>
         <button
           type="button"
@@ -177,8 +230,8 @@ export function PostComposerAddToPostRow({
               {t('messages.gif') || 'GIF'}
             </span>
           </button>
-          {showGifPicker && (
-            <div className="absolute bottom-full mb-3 right-0 w-72 bg-white dark:bg-card-dark rounded-xl shadow-2xl border border-slate-200 dark:border-border-dark z-50 overflow-hidden">
+          <AnchoredPanel anchorRef={gifPickerRef} open={showGifPicker} align="right" zIndex={panelZIndex}>
+            <div className="bg-white dark:bg-card-dark rounded-xl shadow-2xl border border-slate-200 dark:border-border-dark overflow-hidden">
               <div className="p-3 border-b border-slate-100 dark:border-border-dark">
                 <div className="relative flex gap-2">
                   <span className="material-symbols-outlined absolute left-2 top-1/2 -translate-y-1/2 text-slate-400 text-sm">
@@ -225,7 +278,7 @@ export function PostComposerAddToPostRow({
                 )}
               </div>
             </div>
-          )}
+          </AnchoredPanel>
         </div>
       </div>
     </div>

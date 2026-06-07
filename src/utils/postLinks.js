@@ -44,13 +44,38 @@ export function postDetailPath(postId) {
  */
 export function navigateToPostDetail(navigate, location, postId) {
   if (!postId) return
-  navigate(postDetailPath(postId), {
-    state: {
-      background: location,
-      scrollY: captureMainScrollY(),
-    },
+  const targetPath = postDetailPath(postId)
+  const currentPostId = location.pathname.match(POST_PATH_REGEX)?.[1]
+  if (currentPostId === String(postId)) return
+
+  const isOnPostDetail = Boolean(currentPostId)
+  const rootBackground = location.state?.background ?? (!isOnPostDetail ? location : undefined)
+  const parentPostId = isOnPostDetail ? currentPostId : undefined
+
+  const nextState = {
+    scrollY: location.state?.scrollY ?? captureMainScrollY(),
+  }
+  if (rootBackground) nextState.background = rootBackground
+  if (parentPostId) nextState.parentPostId = parentPostId
+
+  navigate(targetPath, {
+    state: nextState,
     preventScrollReset: true,
   })
+}
+
+/**
+ * Resolve embedded shared post id from preview object or parent post field.
+ * @param {object|string|null|undefined} sharedPost
+ * @param {string|null|undefined} [fallbackId]
+ * @returns {string|null}
+ */
+export function resolveSharedPostId(sharedPost, fallbackId) {
+  if (fallbackId != null && String(fallbackId).trim()) return String(fallbackId)
+  if (!sharedPost) return null
+  if (typeof sharedPost === 'string') return sharedPost.trim() || null
+  const id = sharedPost.id ?? sharedPost._id
+  return id != null ? String(id) : null
 }
 
 /**
@@ -60,8 +85,19 @@ export function navigateToPostDetail(navigate, location, postId) {
  * @param {string} [fallbackPath='/home']
  */
 export function closePostDetail(navigate, location, fallbackPath = '/home') {
+  const parentPostId = location.state?.parentPostId
   const bg = location.state?.background
   const scrollY = location.state?.scrollY
+
+  if (parentPostId) {
+    const parentState = { scrollY }
+    if (bg) parentState.background = bg
+    navigate(postDetailPath(parentPostId), {
+      state: parentState,
+      preventScrollReset: true,
+    })
+    return
+  }
 
   if (bg) {
     navigate(
