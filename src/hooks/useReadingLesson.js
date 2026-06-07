@@ -1,7 +1,8 @@
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect, useRef, useCallback } from 'react'
 import { useNavigate, useLocation } from 'react-router-dom'
 import { lessonsService } from '../services'
 import { addVocabNote } from '../utils/vocabularyUserStorage'
+import { isLessonInActiveMockTest } from '../utils/mockTestSession'
 
 /**
  * Hook for Reading Lesson page: content, quiz state, notes, countdown, vocab, pagination.
@@ -35,6 +36,7 @@ export function useReadingLesson(id, t) {
   const [highlightOn, setHighlightOn] = useState(false)
   /** Mốc mở bài (giây) để gửi timeSpent khi nộp — backend cộng vào UserSkillStats (đổi sang phút) */
   const lessonOpenedAtMs = useRef(null)
+  const autoSubmitDoneRef = useRef(false)
 
   useEffect(() => {
     if (!id) return
@@ -46,6 +48,7 @@ export function useReadingLesson(id, t) {
     setCompleteMessage('')
     setShowConfirmModal(false)
     setShowIncompleteModal(false)
+    autoSubmitDoneRef.current = false
     // Fetch lesson content
     lessonsService
       .getReadingContent(id)
@@ -53,8 +56,12 @@ export function useReadingLesson(id, t) {
         const data = res?.data || null
         lessonOpenedAtMs.current = Date.now()
         setContent(data)
-        const est = data?.content?.estimatedTime || data?.estimatedTime || 15
-        setCountdownSeconds(est * 60)
+        if (!isLessonInActiveMockTest(id)) {
+          const est = data?.content?.estimatedTime || data?.estimatedTime || 15
+          setCountdownSeconds(est * 60)
+        } else {
+          setCountdownSeconds(null)
+        }
       })
       .catch(() => setContent(null))
       .finally(() => setLoading(false))
@@ -144,6 +151,54 @@ export function useReadingLesson(id, t) {
       .finally(() => setNoteSaving(false))
   }
 
+  const performSubmit = useCallback(({ auto = false } = {}) => {
+    if (!id || completingLesson) return
+    setShowConfirmModal(false)
+    setShowIncompleteModal(false)
+    setCompletingLesson(true)
+    setCompleteMessage('')
+
+    const answersPayload = questions.map((q, i) => ({
+      questionId: String(q?.id ?? i + 1),
+      questionIndex: i,
+      answer: answers[i] ?? '',
+    }))
+
+    const elapsedSec =
+      lessonOpenedAtMs.current != null
+        ? Math.max(0, Math.floor((Date.now() - lessonOpenedAtMs.current) / 1000))
+        : 0
+
+    lessonsService
+      .submit(id, { answers: answersPayload, timeSpent: elapsedSec })
+      .then((res) => {
+        const xp = res?.data?.xpEarnedThisAttempt ?? 0
+        setCompleteMessage(
+          auto
+            ? t('readingLesson.autoSubmitSuccess')
+            : xp > 0
+              ? t('readingLesson.completeSuccess', { xp })
+              : t('readingLesson.completeSuccessShort')
+        )
+        const type = location.pathname.startsWith('/practice/') ? 'practice' : 'lesson'
+        const redirectTo = `/${type}/reading/${id}/result`
+        setTimeout(() => {
+          setCompleteMessage('')
+          navigate(redirectTo)
+        }, auto ? 1500 : 3000)
+      })
+      .catch(() => setCompleteMessage(t('readingLesson.completeFailed')))
+      .finally(() => setCompletingLesson(false))
+  }, [id, completingLesson, questions, answers, location.pathname, navigate, t])
+
+  useEffect(() => {
+    if (loading || !id || completingLesson || isLessonInActiveMockTest(id)) return
+    if (countdownSeconds !== 0) return
+    if (autoSubmitDoneRef.current) return
+    autoSubmitDoneRef.current = true
+    performSubmit({ auto: true })
+  }, [countdownSeconds, loading, id, completingLesson, performSubmit])
+
   const handleComplete = () => {
     if (!id) return
     const allAnswered =
@@ -160,37 +215,7 @@ export function useReadingLesson(id, t) {
   }
 
   const handleConfirmComplete = () => {
-    setShowConfirmModal(false)
-    setCompletingLesson(true)
-    setCompleteMessage('')
-    
-    const answersPayload = questions.map((q, i) => ({
-      questionId: String(q?.id ?? i + 1),
-      questionIndex: i,
-      answer: answers[i],
-    }))
-    
-    const elapsedSec =
-      lessonOpenedAtMs.current != null
-        ? Math.max(0, Math.floor((Date.now() - lessonOpenedAtMs.current) / 1000))
-        : 0
-
-    lessonsService
-      .submit(id, { answers: answersPayload, timeSpent: elapsedSec })
-      .then((res) => {
-        const xp = res?.data?.xpEarnedThisAttempt ?? 0
-        setCompleteMessage(
-          xp > 0 ? t('readingLesson.completeSuccess', { xp }) : t('readingLesson.completeSuccessShort')
-        )
-        const type = location.pathname.startsWith('/practice/') ? 'practice' : 'lesson'
-        const redirectTo = `/${type}/reading/${id}/result`
-        setTimeout(() => {
-          setCompleteMessage('')
-          navigate(redirectTo)
-        }, 3000)
-      })
-      .catch(() => setCompleteMessage(t('readingLesson.completeFailed')))
-      .finally(() => setCompletingLesson(false))
+    performSubmit({ auto: false })
   }
 
   const handleNext = () => {
@@ -260,6 +285,7 @@ export function useReadingLesson(id, t) {
     setPageInput,
     showHint,
     setShowHint,
+    showIncompleteModal,
     closeIncompleteModal,
     completingLesson,
     completeMessage,

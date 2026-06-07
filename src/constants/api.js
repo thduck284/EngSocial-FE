@@ -119,7 +119,9 @@ export const API_ENDPOINTS = {
     RECORD: '/mock-tests/record',
     MY_HISTORY: '/mock-tests/my-history',
     SESSION: (id) => `/mock-tests/session/${id}`,
+    ALL_RESULTS: '/mock-tests/all-results',
     getUserResults: (userId) => `/mock-tests/user-results/${userId}`,
+    syncScores: (id) => `/mock-tests/${id}/sync-scores`,
   },
 
   /** Từ vựng: lịch sử truy cập / hình thức luyện (MongoDB, cần đăng nhập) */
@@ -179,6 +181,7 @@ export const API_ENDPOINTS = {
     USER_STATUS: (userId) => `/admin/users/${encodeURIComponent(userId)}/status`,
     USER_PASSWORD: (userId) => `/admin/users/${encodeURIComponent(userId)}/password`,
     REPORTS: '/admin/reports',
+    REPORT_DETAIL: (reportId) => `/admin/reports/${encodeURIComponent(reportId)}`,
     REPORT_STATUS: (reportId) => `/admin/reports/${encodeURIComponent(reportId)}/status`,
     STATS: '/admin/stats',
   },

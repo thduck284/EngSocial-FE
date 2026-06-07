@@ -463,6 +463,7 @@ export function DashboardPostCard({
               <div className="mt-4">
                 <SharedPostPreviewCard
                   sharedPost={sharedPost}
+                  sharedPostId={post?.sharedPostId}
                   sharedMentions={sharedMentions}
                   contentExpanded={contentExpanded}
                   onToggleContentExpanded={() => setContentExpanded((v) => !v)}

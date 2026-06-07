@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback, useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
 import { adminService } from '../services'
+import { AdminReportTargetModal } from '../components/admin/AdminReportTargetModal'
 
 const PAGE_SIZE = 20
 
@@ -29,6 +30,7 @@ export function AdminReportsPage() {
   const [statusFilter, setStatusFilter] = useState('')
   const [targetTypeFilter, setTargetTypeFilter] = useState('')
   const [updatingId, setUpdatingId] = useState(null)
+  const [viewReportId, setViewReportId] = useState(null)
 
   useEffect(() => {
     setPage(1)
@@ -113,13 +115,13 @@ export function AdminReportsPage() {
 
       <div className="rounded-2xl border border-border-dark bg-card-dark overflow-hidden">
         <div className="overflow-x-auto">
-          <table className="w-full text-sm text-left min-w-[900px]">
+          <table className="w-full text-sm text-left min-w-[980px]">
             <thead className="bg-black/25 text-gray-400 text-xs uppercase tracking-wide">
               <tr>
                 <th className="px-3 py-3 font-semibold whitespace-nowrap">{t('adminConsole.colDate')}</th>
                 <th className="px-3 py-3 font-semibold">{t('adminConsole.colReporter')}</th>
                 <th className="px-3 py-3 font-semibold">{t('adminConsole.colTargetType')}</th>
-                <th className="px-3 py-3 font-semibold">{t('adminConsole.colTargetId')}</th>
+                <th className="px-3 py-3 font-semibold min-w-[180px]">{t('adminConsole.colTargetContent')}</th>
                 <th className="px-3 py-3 font-semibold max-w-[140px]">{t('adminConsole.colReason')}</th>
                 <th className="px-3 py-3 font-semibold max-w-[180px]">{t('adminConsole.colDetails')}</th>
                 <th className="px-3 py-3 font-semibold">{t('adminConsole.colReportStatus')}</th>
@@ -152,7 +154,47 @@ export function AdminReportsPage() {
                       </div>
                     </td>
                     <td className="px-3 py-3 text-primary text-xs font-mono">{r.targetType}</td>
-                    <td className="px-3 py-3 text-gray-400 text-xs font-mono break-all max-w-[120px]">{r.targetId}</td>
+                    <td className="px-3 py-3 text-xs max-w-[220px]">
+                      {r.targetPreview?.found ? (
+                        <div className="space-y-1.5">
+                          {r.targetPreview.label ? (
+                            <div className="font-medium text-white truncate" title={r.targetPreview.label}>
+                              {r.targetPreview.label}
+                            </div>
+                          ) : null}
+                          {r.targetPreview.excerpt ? (
+                            <div className="text-gray-400 line-clamp-2 break-words" title={r.targetPreview.excerpt}>
+                              {r.targetPreview.excerpt}
+                            </div>
+                          ) : (
+                            <div className="text-gray-500 italic">{t('adminConsole.reportTargetNoText')}</div>
+                          )}
+                          {r.targetPreview.unavailable ? (
+                            <span className="inline-block text-[10px] text-red-400">{t('adminConsole.reportTargetUnavailable')}</span>
+                          ) : null}
+                          <button
+                            type="button"
+                            onClick={() => setViewReportId(r.id)}
+                            className="inline-flex items-center gap-1 text-primary hover:underline text-[11px] font-semibold"
+                          >
+                            <span className="material-symbols-outlined text-sm">visibility</span>
+                            {t('adminConsole.reportViewTarget')}
+                          </button>
+                        </div>
+                      ) : (
+                        <div className="space-y-1">
+                          <span className="text-red-400 text-[11px]">{t('adminConsole.reportTargetNotFound')}</span>
+                          <div className="text-gray-500 font-mono text-[10px] break-all">{r.targetId}</div>
+                          <button
+                            type="button"
+                            onClick={() => setViewReportId(r.id)}
+                            className="text-primary hover:underline text-[11px] font-semibold"
+                          >
+                            {t('adminConsole.reportViewTarget')}
+                          </button>
+                        </div>
+                      )}
+                    </td>
                     <td className="px-3 py-3 text-gray-300 text-xs max-w-[140px] break-words">{r.reason}</td>
                     <td className="px-3 py-3 text-gray-500 text-xs max-w-[180px] break-words">{r.details || '—'}</td>
                     <td className="px-3 py-3">
@@ -198,6 +240,12 @@ export function AdminReportsPage() {
           </button>
         </div>
       ) : null}
+
+      <AdminReportTargetModal
+        open={!!viewReportId}
+        reportId={viewReportId}
+        onClose={() => setViewReportId(null)}
+      />
     </div>
   )
 }

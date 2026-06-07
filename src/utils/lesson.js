@@ -20,3 +20,15 @@ export function sortLessonsByLevelThenSkill(lessons) {
     return (SKILL_ORDER[a.skill] ?? 99) - (SKILL_ORDER[b.skill] ?? 99)
   })
 }
+
+/** Normalize Mongo/API id from string, ObjectId, or populated document. */
+export function resolveEntityId(value) {
+  if (value == null || value === '') return null
+  if (typeof value === 'string') return value
+  if (typeof value === 'number') return String(value)
+  if (typeof value === 'object') {
+    const inner = value._id ?? value.id ?? value.$oid
+    if (inner != null && inner !== value) return resolveEntityId(inner)
+  }
+  return String(value)
+}

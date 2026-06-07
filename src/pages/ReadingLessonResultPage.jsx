@@ -1,8 +1,8 @@
 import { useState, useEffect } from 'react'
-import { Link, useParams, useNavigate } from 'react-router-dom'
+import { useParams, useNavigate, useSearchParams } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
-import { ROUTES } from '../constants'
 import { lessonsService } from '../services'
+import { fetchLessonProgressForResult, isModLessonResultView } from '../utils/lessonResultLinks'
 
 /**
  * Trang kết quả làm bài Reading: điểm số, đoạn đọc, chi tiết từng câu (đáp án user, đáp án đúng, giải thích).
@@ -11,6 +11,8 @@ export function ReadingLessonResultPage() {
   const { t } = useTranslation()
   const { id } = useParams()
   const navigate = useNavigate()
+  const [searchParams] = useSearchParams()
+  const isModView = isModLessonResultView(searchParams)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
   const [lessonTitle, setLessonTitle] = useState('')
@@ -33,7 +35,7 @@ export function ReadingLessonResultPage() {
     setError(null)
     Promise.all([
       lessonsService.getReadingContent(id),
-      lessonsService.getProgress(id),
+      fetchLessonProgressForResult(id, searchParams, lessonsService),
     ])
       .then(([contentRes, progressRes]) => {
         const content = contentRes?.data || contentRes
@@ -54,8 +56,11 @@ export function ReadingLessonResultPage() {
 
         const savedAnswers = progressData?.answers || latestAttempt?.answers || []
         const progressPercent = progressData?.progress
+        const viewAttempt = progressData?.viewAttemptNo
+          ? attempts.find((a) => a.attemptNo === progressData.viewAttemptNo)
+          : latestAttempt
 
-        if (status === 'completed') {
+        if (status === 'completed' || savedAnswers.length > 0) {
           if (savedScore != null) setScore(savedScore)
           else if (savedAnswers.length > 0) setScore(savedAnswers.filter((a) => a.isCorrect).length)
           else if (typeof progressPercent === 'number') setScore(Math.round((progressPercent / 100) * (qList.length || 10)))
@@ -66,7 +71,7 @@ export function ReadingLessonResultPage() {
           setAnswers([])
         }
 
-        const xp = latestAttempt?.xpEarned ?? progressData?.xpEarnedThisAttempt ?? 0
+        const xp = viewAttempt?.xpEarned ?? progressData?.xpEarned ?? progressData?.xpEarnedThisAttempt ?? 0
         if (xp != null) setXpEarned(xp)
         setQuestions(
           qList.map((q, i) => ({
@@ -80,7 +85,7 @@ export function ReadingLessonResultPage() {
       })
       .catch(() => setError(true))
       .finally(() => setLoading(false))
-  }, [id])
+  }, [id, searchParams])
 
   const progressPercent = maxScore > 0 ? Math.round((score / maxScore) * 100) : 0
   const displayXp = progressPercent >= 80 ? (xpEarned || 0) : 0
@@ -110,6 +115,12 @@ export function ReadingLessonResultPage() {
 
   return (
     <main className="max-w-[1200px] mx-auto grid grid-cols-12 gap-6 pt-4 px-4 pb-10 animate-in fade-in duration-700">
+      {isModView ? (
+        <div className="col-span-12 rounded-xl border border-primary/30 bg-primary/5 px-4 py-3 text-sm text-primary font-medium flex items-center gap-2">
+          <span className="material-symbols-outlined text-lg">visibility</span>
+          {t('lessonResult.modViewBanner')}
+        </div>
+      ) : null}
       {/* Sidebar - Summary */}
       <aside className="col-span-12 lg:col-span-4 xl:col-span-3 space-y-4">
         <div className="bg-white dark:bg-card-dark rounded-xl border border-slate-200 dark:border-border-dark p-5 shadow-lg shadow-slate-100 dark:shadow-none sticky top-4 flex flex-col gap-5 overflow-hidden group">
@@ -186,16 +197,18 @@ export function ReadingLessonResultPage() {
             </div>
           </div>
 
-          <div className="flex flex-col gap-3 mt-2 relative z-10">
-            <button
-              type="button"
-              onClick={() => navigate(`/lesson/reading/${id}`)}
-              className="w-full py-2 bg-slate-900 dark:bg-white/5 hover:bg-primary text-white dark:text-slate-400 hover:dark:text-white rounded-lg text-[10px] font-bold uppercase tracking-wider transition-all border border-transparent flex items-center justify-center gap-2 group/btn shadow-md active:scale-95"
-            >
-              <span className="material-symbols-outlined text-sm group-hover/btn:rotate-180 transition-transform duration-500">refresh</span>
-              {t('lessonResult.retry')}
-            </button>
-          </div>
+          {!isModView ? (
+            <div className="flex flex-col gap-3 mt-2 relative z-10">
+              <button
+                type="button"
+                onClick={() => navigate(`/lesson/reading/${id}`)}
+                className="w-full py-2 bg-slate-900 dark:bg-white/5 hover:bg-primary text-white dark:text-slate-400 hover:dark:text-white rounded-lg text-[10px] font-bold uppercase tracking-wider transition-all border border-transparent flex items-center justify-center gap-2 group/btn shadow-md active:scale-95"
+              >
+                <span className="material-symbols-outlined text-sm group-hover/btn:rotate-180 transition-transform duration-500">refresh</span>
+                {t('lessonResult.retry')}
+              </button>
+            </div>
+          ) : null}
         </div>
       </aside>
 

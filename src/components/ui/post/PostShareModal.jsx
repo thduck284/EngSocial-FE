@@ -1,5 +1,6 @@
 import { createPortal } from 'react-dom'
 import { useEffect, useMemo, useRef, useState } from 'react'
+import { useLocation, useNavigate } from 'react-router-dom'
 import { useAuth } from '../../../context/AuthContext'
 import { communityService } from '../../../services/community.service'
 import { friendsService, conversationService } from '../../../services'
@@ -10,10 +11,14 @@ import { usePostComposerAddons } from '../../../hooks/usePostComposerAddons'
 import { resolveMentionIds, getContentWithoutMentions, getMentionRanges } from '../../../utils/postContent'
 import { showEngSuccessToast } from '../../../utils/showEngToast'
 import { PostShareComposerSection } from './PostShareComposerSection'
+import { PostComposerAddToPostRow } from './PostComposerAddToPostRow'
 import { PostShareMessengerGroupModal } from './PostShareMessengerGroupModal'
+import { navigateToPostDetail } from '../../../utils/postLinks'
 
 export function PostShareModal({ open, onClose, post, t, onRepostSuccess }) {
   const { user } = useAuth()
+  const navigate = useNavigate()
+  const location = useLocation()
   const [activeTab, setActiveTab] = useState('repost') // 'repost' | 'external' | 'inapp'
   const [repostText, setRepostText] = useState('')
   const [submitting, setSubmitting] = useState(false)
@@ -366,82 +371,83 @@ export function PostShareModal({ open, onClose, post, t, onRepostSuccess }) {
     }, 0)
   }
 
+  const handleOpenSharedPost = () => {
+    const id = post?.id || post?._id
+    if (!id) return
+    onClose?.()
+    navigateToPostDetail(navigate, location, String(id))
+  }
+
   const body = (
     <div
-      className="fixed inset-0 z-[10050] flex items-center justify-center bg-black/55 backdrop-blur-sm"
+      className="fixed inset-0 z-[10050] flex items-center justify-center bg-black/60 p-2 sm:p-4"
       role="dialog"
       aria-modal="true"
       aria-label={t('dashboard.share') || 'Chia sẻ bài viết'}
       onClick={onClose}
     >
       <div
-        className="w-full max-w-[760px] rounded-2xl bg-white dark:bg-card-dark text-slate-900 dark:text-slate-100 border border-slate-200 dark:border-border-dark shadow-2xl overflow-hidden"
+        className="w-full max-w-2xl bg-white dark:bg-card-dark rounded-xl shadow-2xl border border-slate-200 dark:border-border-dark overflow-hidden flex flex-col h-[min(92vh,920px)] max-h-[96vh]"
         onClick={(e) => e.stopPropagation()}
       >
-        {/* Header với tiêu đề + nút X */}
-        <div className="relative px-4 py-4 border-b border-slate-200 dark:border-border-dark flex justify-center items-center">
-          <h2 className="text-xl font-bold text-slate-900 dark:text-slate-100">
+        <header className="flex items-center justify-between px-4 py-2.5 border-b border-slate-200 dark:border-border-dark shrink-0">
+          <h2 className="text-lg font-bold text-slate-900 dark:text-slate-100">
             {(() => {
               const raw = t('dashboard.sharePostTitle')
-              return !raw || raw === 'dashboard.sharePostTitle'
-                ? 'Chia sẻ'
-                : raw
+              return !raw || raw === 'dashboard.sharePostTitle' ? 'Chia sẻ' : raw
             })()}
           </h2>
           <button
             type="button"
             onClick={onClose}
-            className="absolute right-3 p-1 rounded-full text-slate-500 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-white/10 transition-colors"
+            className="p-1.5 hover:bg-slate-100 dark:hover:bg-border-dark rounded-lg transition-colors text-slate-500 dark:text-slate-400"
             aria-label={t('buttons.close') || 'Đóng'}
           >
-            <span className="material-symbols-outlined text-[20px]">
-              close
-            </span>
+            <span className="material-symbols-outlined">close</span>
           </button>
-        </div>
+        </header>
 
-        {/* Body */}
-        <div className="max-h-[70vh] overflow-y-auto">
-          <PostShareComposerSection
-            t={t}
-            post={post}
-            user={user}
-            audience={audience}
-            setAudience={setAudience}
-            audienceOpen={audienceOpen}
-            setAudienceOpen={setAudienceOpen}
-            repostBlockRef={repostBlockRef}
-            repostTextareaRef={repostTextareaRef}
-            repostText={repostText}
-            onRepostTextChange={handleRepostTextChange}
-            onRepostTextKeyDown={handleRepostTextKeyDown}
-            showMentionDropdown={showMentionDropdown}
-            mentionCandidates={mentionCandidates}
-            onInsertMention={insertMention}
-            submitting={submitting}
-            uploading={uploading}
-            error={error}
-            images={images}
-            videoUrl={videoUrl}
-            documents={documents}
-            onRemoveImage={(idx) => setImages((prev) => prev.filter((_, i) => i !== idx))}
-            onRemoveVideo={() => setVideoUrl('')}
-            onRemoveDoc={(idx) => setDocuments((prev) => prev.filter((_, i) => i !== idx))}
-            onImageSelect={handleImageSelect}
-            onVideoSelect={handleVideoSelect}
-            onDocSelect={handleDocSelect}
-            addons={addons}
-          />
+        <div className="flex-1 min-h-0 flex flex-col overflow-hidden">
+          <div className="flex-1 min-h-0 overflow-y-auto custom-scrollbar">
+            <PostShareComposerSection
+              t={t}
+              post={post}
+              user={user}
+              audience={audience}
+              setAudience={setAudience}
+              audienceOpen={audienceOpen}
+              setAudienceOpen={setAudienceOpen}
+              repostBlockRef={repostBlockRef}
+              repostTextareaRef={repostTextareaRef}
+              repostText={repostText}
+              onRepostTextChange={handleRepostTextChange}
+              onRepostTextKeyDown={handleRepostTextKeyDown}
+              showMentionDropdown={showMentionDropdown}
+              mentionCandidates={mentionCandidates}
+              onInsertMention={insertMention}
+              uploading={uploading}
+              error={error}
+              images={images}
+              videoUrl={videoUrl}
+              documents={documents}
+              onRemoveImage={(idx) => setImages((prev) => prev.filter((_, i) => i !== idx))}
+              onRemoveVideo={() => setVideoUrl('')}
+              onRemoveDoc={(idx) => setDocuments((prev) => prev.filter((_, i) => i !== idx))}
+              onImageSelect={handleImageSelect}
+              onVideoSelect={handleVideoSelect}
+              onDocSelect={handleDocSelect}
+              addons={addons}
+              onOpenSharedPost={handleOpenSharedPost}
+              withAddToPost={false}
+            />
 
-          <div className="border-t border-slate-200 dark:border-border-dark mx-4" />
-
-          {/* Gửi bằng Messenger */}
-          <div className="p-4">
-            <h3 className="text-[17px] font-bold mb-4 text-slate-900 dark:text-slate-100">
-              {t('dashboard.shareMessengerSection') || 'Gửi bằng Messenger'}
-            </h3>
-            <div className="relative group">
-              <div className="flex gap-4 overflow-x-auto hide-scrollbar pb-2 relative">
+            <div className="border-t border-slate-200 dark:border-border-dark">
+              <div className="p-4">
+                <h3 className="text-sm font-bold mb-3 text-slate-900 dark:text-slate-100">
+                  {t('dashboard.shareMessengerSection') || 'Gửi bằng Messenger'}
+                </h3>
+                <div className="relative group">
+                  <div className="flex gap-4 overflow-x-auto hide-scrollbar pb-2 relative">
                 {friendsForShareLoading ? (
                   <div className="flex items-center justify-center h-16 px-4 text-xs text-slate-500 dark:text-slate-400">
                     <span className="material-symbols-outlined animate-spin text-[20px] mr-1">
@@ -526,14 +532,11 @@ export function PostShareModal({ open, onClose, post, t, onRepostSuccess }) {
             </div>
           </div>
 
-          <div className="border-t border-slate-200 dark:border-border-dark mx-4" />
-
-          {/* Chia sẻ lên */}
-          <div className="p-4">
-            <h3 className="text-[17px] font-bold mb-4 text-slate-900 dark:text-slate-100">
+          <div className="px-4 pb-4">
+            <h3 className="text-sm font-bold mb-3 text-slate-900 dark:text-slate-100">
               {t('dashboard.shareExternal') || 'Chia sẻ lên'}
             </h3>
-            <div className="flex flex-wrap gap-8 text-[12px] text-slate-500 dark:text-slate-400">
+            <div className="flex flex-wrap gap-6 text-[12px] text-slate-500 dark:text-slate-400">
               {/* Messenger */}
               <button
                 type="button"
@@ -585,15 +588,31 @@ export function PostShareModal({ open, onClose, post, t, onRepostSuccess }) {
               </button>
             </div>
           </div>
+          </div>
+          </div>
 
+          <div className="px-4 py-1.5 bg-slate-50/50 dark:bg-card-dark/20 shrink-0 relative z-30 border-t border-slate-100 dark:border-border-dark">
+            <PostComposerAddToPostRow
+              compact
+              panelZIndex={10100}
+              t={t}
+              uploading={uploading}
+              imagesCount={images.length}
+              hasVideo={Boolean(videoUrl)}
+              documentsCount={documents.length}
+              onImageSelect={handleImageSelect}
+              onVideoSelect={handleVideoSelect}
+              onDocSelect={handleDocSelect}
+              addons={addons}
+            />
+          </div>
         </div>
 
-        {/* Footer: Cancel + Share with same size */}
-        <div className="flex items-center justify-end gap-2 px-4 py-3 border-t border-slate-200 dark:border-border-dark">
+        <footer className="px-4 py-2.5 bg-slate-50 dark:bg-background-dark/30 border-t border-slate-200 dark:border-border-dark flex items-center justify-end gap-2 shrink-0">
           <button
             type="button"
             onClick={onClose}
-            className="h-10 min-w-[120px] px-4 rounded-lg text-sm font-semibold text-slate-700 dark:text-slate-200 bg-slate-100 dark:bg-background-dark/70 border border-slate-200 dark:border-border-dark hover:bg-slate-200 dark:hover:bg-background-dark"
+            className="px-4 py-1.5 rounded-lg text-xs font-bold text-slate-600 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-border-dark transition-colors"
           >
             {t('buttons.cancel') || 'Hủy'}
           </button>
@@ -601,13 +620,13 @@ export function PostShareModal({ open, onClose, post, t, onRepostSuccess }) {
             type="button"
             onClick={handleRepost}
             disabled={submitting || uploading}
-            className="h-10 min-w-[120px] px-4 rounded-lg text-sm font-semibold text-white bg-primary hover:opacity-90 disabled:opacity-70 disabled:cursor-not-allowed"
+            className="px-5 py-1.5 rounded-lg text-xs font-bold bg-primary text-white hover:opacity-90 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {submitting
               ? t('dashboard.sharing') || 'Dang chia se...'
               : t('dashboard.shareNow') || 'Chia se'}
           </button>
-        </div>
+        </footer>
       </div>
     </div>
   )

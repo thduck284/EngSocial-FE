@@ -1,15 +1,18 @@
 import { useState, useEffect } from 'react'
-import { useParams, useNavigate, useLocation } from 'react-router-dom'
+import { useParams, useNavigate, useLocation, useSearchParams } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { useAuth } from '../context/AuthContext'
 import { lessonsService } from '../services'
 import { getLessonLink } from '../utils/lesson'
+import { fetchLessonProgressForResult, isModLessonResultView } from '../utils/lessonResultLinks'
 
 export function WritingLessonResultPage() {
   const { t } = useTranslation()
   const { id } = useParams()
   const navigate = useNavigate()
   const location = useLocation()
+  const [searchParams] = useSearchParams()
+  const isModView = isModLessonResultView(searchParams)
   const { user } = useAuth()
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
@@ -28,7 +31,7 @@ export function WritingLessonResultPage() {
     
     Promise.all([
       lessonsService.getWritingContent(id),
-      lessonsService.getProgress(id),
+      fetchLessonProgressForResult(id, searchParams, lessonsService),
     ])
       .then(([contentRes, progressRes]) => {
         const fullContent = contentRes?.data || contentRes || {}
@@ -44,7 +47,7 @@ export function WritingLessonResultPage() {
         setError(true)
       })
       .finally(() => setLoading(false))
-  }, [id])
+  }, [id, searchParams])
 
   if (loading) {
     return (
@@ -99,6 +102,12 @@ export function WritingLessonResultPage() {
 
   return (
     <main className="max-w-[1440px] mx-auto grid grid-cols-12 gap-10 pt-4 px-6 pb-10 lg:pt-4 lg:px-10 lg:pb-10 animate-in fade-in duration-700">
+      {isModView ? (
+        <div className="col-span-12 rounded-xl border border-primary/30 bg-primary/5 px-4 py-3 text-sm text-primary font-medium flex items-center gap-2">
+          <span className="material-symbols-outlined text-lg">visibility</span>
+          {t('lessonResult.modViewBanner')}
+        </div>
+      ) : null}
       {/* Sidebar - Summary */}
       <aside className="col-span-12 lg:col-span-4 xl:col-span-3 space-y-6">
         <div className="bg-white dark:bg-card-dark rounded-2xl border border-slate-200 dark:border-border-dark p-6 shadow-xl sticky top-4 flex flex-col gap-6 overflow-hidden">
@@ -147,16 +156,16 @@ export function WritingLessonResultPage() {
           </div>
 
           <div className="flex flex-col gap-3 mt-2 relative z-10">
-            {!isCompleted && (
-              <button
-                type="button"
-                onClick={() => navigate(detailUrl)}
-                className="w-full py-2 bg-slate-900 dark:bg-white/5 hover:bg-primary text-white dark:text-slate-400 hover:dark:text-white rounded-lg text-[10px] font-bold uppercase tracking-wider transition-all border border-transparent flex items-center justify-center gap-2 group/btn shadow-md active:scale-95"
-              >
-                <span className="material-symbols-outlined text-sm group-hover/btn:rotate-180 transition-transform duration-500">refresh</span>
-                {t('lessonResult.retry')}
-              </button>
-            )}
+          {!isModView && !isCompleted ? (
+            <button
+              type="button"
+              onClick={() => navigate(detailUrl)}
+              className="w-full py-2 bg-slate-900 dark:bg-white/5 hover:bg-primary text-white dark:text-slate-400 hover:dark:text-white rounded-lg text-[10px] font-bold uppercase tracking-wider transition-all border border-transparent flex items-center justify-center gap-2 group/btn shadow-md active:scale-95"
+            >
+              <span className="material-symbols-outlined text-sm group-hover/btn:rotate-180 transition-transform duration-500">refresh</span>
+              {t('lessonResult.retry')}
+            </button>
+          ) : null}
           </div>
         </div>
       </aside>

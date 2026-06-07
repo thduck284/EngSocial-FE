@@ -227,8 +227,13 @@ export function PracticeMockTestPage() {
         totalQuestions: l.totalQuestions || 0
       })),
       startTime: Date.now(),
-      totalDurationSec
+      totalDurationSec,
+      activeLessonId: selectedSet.lessons[0]?._id || selectedSet.lessons[0]?.id,
+      partStartedAt: {},
+      partTimeSpent: {},
     }
+    const firstId = mockTestData.activeLessonId
+    if (firstId) mockTestData.partStartedAt[firstId] = Date.now()
     localStorage.setItem('engsocial_mock_test', JSON.stringify(mockTestData))
     localStorage.removeItem('engsocial_mock_test_answers')
     const first = selectedSet.lessons[0]

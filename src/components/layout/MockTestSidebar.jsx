@@ -1,9 +1,22 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef, useCallback } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { lessonsService, mockTestService } from '../../services'
 import { formatTime } from '../../utils/dateTime'
 import { AlertModal } from '../ui/common/AlertModal'
+
+function flushPartTime(data) {
+  const now = Date.now()
+  const activeId = data.activeLessonId
+  if (!activeId) return data
+  const startedAt = data.partStartedAt?.[activeId] || data.startTime
+  const elapsed = Math.max(0, Math.floor((now - startedAt) / 1000))
+  data.partTimeSpent = data.partTimeSpent || {}
+  data.partTimeSpent[activeId] = (data.partTimeSpent[activeId] || 0) + elapsed
+  data.partStartedAt = data.partStartedAt || {}
+  data.partStartedAt[activeId] = now
+  return data
+}
 
 export function MockTestSidebar({ currentAnswers, currentLessonId }) {
   const { t } = useTranslation()
@@ -15,6 +28,23 @@ export function MockTestSidebar({ currentAnswers, currentLessonId }) {
   const [showSubmitConfirm, setShowSubmitConfirm] = useState(false)
   const [showQuitConfirm, setShowQuitConfirm] = useState(false)
   const [submitting, setSubmitting] = useState(false)
+  const autoSubmitTriggeredRef = useRef(false)
+  const submittingRef = useRef(false)
+  const allAnswersRef = useRef(allAnswers)
+  const currentAnswersRef = useRef(currentAnswers)
+  const currentLessonIdRef = useRef(currentLessonId)
+
+  useEffect(() => {
+    allAnswersRef.current = allAnswers
+  }, [allAnswers])
+
+  useEffect(() => {
+    currentAnswersRef.current = currentAnswers
+  }, [currentAnswers])
+
+  useEffect(() => {
+    currentLessonIdRef.current = currentLessonId
+  }, [currentLessonId])
 
   useEffect(() => {
     const data = localStorage.getItem('engsocial_mock_test')
@@ -48,6 +78,87 @@ export function MockTestSidebar({ currentAnswers, currentLessonId }) {
     return () => clearInterval(interval)
   }, [timeLeft])
 
+  const handleConfirmSubmit = useCallback(async () => {
+    if (submittingRef.current) return
+    submittingRef.current = true
+    setShowSubmitConfirm(false)
+    setSubmitting(true)
+
+    try {
+      let data = JSON.parse(localStorage.getItem('engsocial_mock_test') || '{}')
+      data = flushPartTime(data)
+      localStorage.setItem('engsocial_mock_test', JSON.stringify(data))
+      const lessons = data.lessons || mockTestData?.lessons || []
+      const partTimeSpent = data.partTimeSpent || {}
+
+      const answersSnapshot = { ...allAnswersRef.current }
+      const activeLessonId = currentLessonIdRef.current
+      const activeAnswers = currentAnswersRef.current
+      if (activeLessonId && activeAnswers) {
+        answersSnapshot[activeLessonId] = activeAnswers
+      }
+
+      const sessionTimeSpent = data.startTime
+        ? Math.max(0, Math.floor((Date.now() - data.startTime) / 1000))
+        : Object.values(partTimeSpent).reduce((s, v) => s + (Number(v) || 0), 0)
+
+      await Promise.all(lessons.map(async (lesson) => {
+        const lessonId = lesson.id || lesson._id
+        const answers = answersSnapshot[lessonId] || {}
+        const timeSpent = Number(partTimeSpent[lessonId]) || 0
+        if (lesson.skill === 'writing') {
+          const content = answers[0] || ''
+          return lessonsService.submitWriting(lessonId, {
+            content,
+            wordCount: content.trim().split(/\s+/).filter(Boolean).length,
+            timeSpent,
+            isMockTest: true,
+          })
+        }
+
+        const answersPayload = Object.entries(answers).map(([key, val]) => ({
+          questionIndex: parseInt(key, 10),
+          answer: val ?? '',
+        }))
+
+        if (answersPayload.length === 0) {
+          const totalQ = lesson.totalQuestions || 0
+          for (let i = 0; i < totalQ; i += 1) {
+            answersPayload.push({ questionIndex: i, answer: '' })
+          }
+        }
+
+        return lessonsService.submit(lessonId, { answers: answersPayload, timeSpent, isMockTest: true })
+      }))
+
+      const res = await mockTestService.recordSession({
+        lessons: lessons.map((l) => ({
+          lessonId: l.id || l._id,
+          skill: l.skill,
+          title: l.title,
+        })),
+        timeSpent: sessionTimeSpent,
+      })
+
+      if (res?.data?._id) {
+        navigate(`/practice/mock-test/result/${res.data._id}`)
+      } else {
+        navigate('/practice/mock-test')
+      }
+    } catch (err) {
+      console.error('Mock test submission failed:', err)
+    } finally {
+      submittingRef.current = false
+      setSubmitting(false)
+    }
+  }, [mockTestData, navigate])
+
+  useEffect(() => {
+    if (timeLeft !== 0 || !mockTestData || submitting || autoSubmitTriggeredRef.current) return
+    autoSubmitTriggeredRef.current = true
+    handleConfirmSubmit()
+  }, [timeLeft, mockTestData, submitting, handleConfirmSubmit])
+
   // Sync current questions' answers to global mock test answers in localStorage
   useEffect(() => {
     if (currentLessonId && currentAnswers) {
@@ -62,60 +173,14 @@ export function MockTestSidebar({ currentAnswers, currentLessonId }) {
   if (!mockTestData) return null
 
   const handleNavigateToLesson = (lessonId, skill, questionIdx = 0) => {
+    let data = JSON.parse(localStorage.getItem('engsocial_mock_test') || '{}')
+    data = flushPartTime(data)
+    data.activeLessonId = lessonId
+    data.partStartedAt = data.partStartedAt || {}
+    data.partStartedAt[lessonId] = Date.now()
+    localStorage.setItem('engsocial_mock_test', JSON.stringify(data))
+    setMockTestData(data)
     navigate(`/practice/${skill}/${lessonId}/study`, { state: { questionIdx } })
-  }
-
-  const handleConfirmSubmit = async () => {
-    setShowSubmitConfirm(false)
-    setSubmitting(true)
-
-    try {
-      const lessons = mockTestData.lessons
-      
-      // 1. Submit each part individually
-      await Promise.all(lessons.map(async (lesson) => {
-        const answers = allAnswers[lesson.id] || {}
-        if (lesson.skill === 'writing') {
-          const content = answers[0] || ''
-          return lessonsService.submitWriting(lesson.id, {
-            content,
-            wordCount: content.trim().split(/\s+/).filter(Boolean).length,
-            isMockTest: true
-          })
-        }
-        
-        // For Reading/Listening, convert answers object to expected payload array
-        const answersPayload = Object.entries(answers).map(([key, val]) => ({
-          questionIndex: parseInt(key, 10),
-          answer: val
-        }))
-        
-        return lessonsService.submit(lesson.id, { answers: answersPayload, isMockTest: true })
-      }))
-
-      // 2. Record the overall Mock Test Session in the new model
-      const res = await mockTestService.recordSession({
-        lessons: lessons.map(l => ({
-          lessonId: l.id || l._id,
-          skill: l.skill,
-          title: l.title
-        }))
-      })
-
-      // localStorage.removeItem('engsocial_mock_test')
-      // localStorage.removeItem('engsocial_mock_test_answers')
-      
-      if (res?.data?._id) {
-        navigate(`/practice/mock-test/result/${res.data._id}`)
-      } else {
-        navigate('/practice/mock-test')
-      }
-    } catch (err) {
-      console.error('Mock test submission failed:', err)
-      // alert(t('common.error'))
-    } finally {
-      setSubmitting(false)
-    }
   }
 
   const handleConfirmQuit = () => {
@@ -136,6 +201,9 @@ export function MockTestSidebar({ currentAnswers, currentLessonId }) {
           </div>
           <div className={`text-3xl font-mono font-black ${timeLeft <= 60 ? 'text-red-500 animate-pulse' : 'text-white'}`}>
             {timeLeft != null ? formatTime(timeLeft) : '--:--'}
+            {timeLeft === 0 ? (
+              <span className="block text-[10px] font-bold uppercase tracking-widest mt-1">{t('mockTest.timeUpSubmitting')}</span>
+            ) : null}
           </div>
         </div>
 

@@ -1,4 +1,24 @@
 /**
+ * Format elapsed seconds as human-readable duration (e.g. "56 giây", "1 phút 52 giây", "1 giờ 48 phút").
+ * Omits zero units; shows at least the largest non-zero unit.
+ */
+export function formatTimeSpentDuration(seconds, t) {
+  const total = Math.floor(Number(seconds))
+  if (!Number.isFinite(total) || total <= 0) return '—'
+
+  const hours = Math.floor(total / 3600)
+  const minutes = Math.floor((total % 3600) / 60)
+  const secs = total % 60
+
+  const parts = []
+  if (hours > 0) parts.push(t('manageLessons.timeSpentHours', { n: hours }))
+  if (minutes > 0) parts.push(t('manageLessons.timeSpentMinutes', { n: minutes }))
+  if (secs > 0 || parts.length === 0) parts.push(t('manageLessons.timeSpentSeconds', { n: secs }))
+
+  return parts.join(' ')
+}
+
+/**
  * Format seconds as MM:SS (e.g. for audio duration/countdown)
  */
 export function formatTime(seconds) {
