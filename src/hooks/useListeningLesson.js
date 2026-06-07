@@ -1,9 +1,10 @@
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect, useRef, useCallback } from 'react'
 import { useNavigate, useLocation } from 'react-router-dom'
 import { lessonsService } from '../services'
 import { addVocabNote } from '../utils/vocabularyUserStorage'
 import { SPEED_OPTIONS } from '../constants/lessons'
 import { formatTime } from '../utils/dateTime'
+import { isLessonInActiveMockTest } from '../utils/mockTestSession'
 
 /**
  * Hook for Listening Lesson page: content, audio playback, quiz state, notes, countdown, vocab, pagination.
@@ -16,6 +17,7 @@ export function useListeningLesson(id, t) {
   const location = useLocation()
   const audioRef = useRef(null)
   const lessonOpenedAtMs = useRef(null)
+  const autoSubmitDoneRef = useRef(false)
 
   const [content, setContent] = useState(null)
   const [loading, setLoading] = useState(true)
@@ -52,6 +54,7 @@ export function useListeningLesson(id, t) {
     setCompleteMessage('')
     setShowConfirmModal(false)
     setShowIncompleteModal(false)
+    autoSubmitDoneRef.current = false
     // Fetch lesson content
     lessonsService
       .getListeningContent(id)
@@ -61,8 +64,12 @@ export function useListeningLesson(id, t) {
         setContent(data)
         if (data?.duration) setDuration(data.duration)
         if (data?.totalQuestions) setCurrentQuestion(0)
-        const initialCountdown = (data?.content?.estimatedTime || data?.estimatedTime || 15) * 60
-        setCountdownSeconds(initialCountdown)
+        if (!isLessonInActiveMockTest(id)) {
+          const initialCountdown = (data?.content?.estimatedTime || data?.estimatedTime || 15) * 60
+          setCountdownSeconds(initialCountdown)
+        } else {
+          setCountdownSeconds(null)
+        }
       })
       .catch(() => setContent(null))
       .finally(() => setLoading(false))
@@ -183,6 +190,54 @@ export function useListeningLesson(id, t) {
       .finally(() => setNoteSaving(false))
   }
 
+  const performSubmit = useCallback(({ auto = false } = {}) => {
+    if (!id || completingLesson) return
+    setShowConfirmModal(false)
+    setShowIncompleteModal(false)
+    setCompletingLesson(true)
+    setCompleteMessage('')
+
+    const answersPayload = questions.map((q, i) => ({
+      questionId: String(q?.id ?? i + 1),
+      questionIndex: i,
+      answer: answers[i] ?? '',
+    }))
+
+    const elapsedSec =
+      lessonOpenedAtMs.current != null
+        ? Math.max(0, Math.floor((Date.now() - lessonOpenedAtMs.current) / 1000))
+        : currentTime || 0
+
+    lessonsService
+      .submit(id, { answers: answersPayload, timeSpent: elapsedSec })
+      .then((res) => {
+        const xp = res?.data?.xpEarnedThisAttempt ?? 0
+        setCompleteMessage(
+          auto
+            ? t('listeningLesson.autoSubmitSuccess')
+            : xp > 0
+              ? t('listeningLesson.completeSuccess', { xp })
+              : t('listeningLesson.completeSuccessShort')
+        )
+        const type = location.pathname.startsWith('/practice/') ? 'practice' : 'lesson'
+        const redirectTo = `/${type}/listening/${id}/result`
+        setTimeout(() => {
+          setCompleteMessage('')
+          navigate(redirectTo)
+        }, auto ? 1500 : 3000)
+      })
+      .catch(() => setCompleteMessage(t('listeningLesson.completeFailed')))
+      .finally(() => setCompletingLesson(false))
+  }, [id, completingLesson, questions, answers, currentTime, location.pathname, navigate, t])
+
+  useEffect(() => {
+    if (loading || !id || completingLesson || isLessonInActiveMockTest(id)) return
+    if (countdownSeconds !== 0) return
+    if (autoSubmitDoneRef.current) return
+    autoSubmitDoneRef.current = true
+    performSubmit({ auto: true })
+  }, [countdownSeconds, loading, id, completingLesson, performSubmit])
+
   const handleComplete = () => {
     if (!id) return
     const allAnswered =
@@ -199,37 +254,7 @@ export function useListeningLesson(id, t) {
   }
 
   const handleConfirmComplete = () => {
-    setShowConfirmModal(false)
-    setCompletingLesson(true)
-    setCompleteMessage('')
-    
-    const answersPayload = questions.map((q, i) => ({
-      questionId: String(q?.id ?? i + 1),
-      questionIndex: i,
-      answer: answers[i],
-    }))
-    
-    const elapsedSec =
-      lessonOpenedAtMs.current != null
-        ? Math.max(0, Math.floor((Date.now() - lessonOpenedAtMs.current) / 1000))
-        : currentTime || 0
-
-    lessonsService
-      .submit(id, { answers: answersPayload, timeSpent: elapsedSec })
-      .then((res) => {
-        const xp = res?.data?.xpEarnedThisAttempt ?? 0
-        setCompleteMessage(
-          xp > 0 ? t('listeningLesson.completeSuccess', { xp }) : t('listeningLesson.completeSuccessShort')
-        )
-        const type = location.pathname.startsWith('/practice/') ? 'practice' : 'lesson'
-        const redirectTo = `/${type}/listening/${id}/result`
-        setTimeout(() => {
-          setCompleteMessage('')
-          navigate(redirectTo)
-        }, 3000)
-      })
-      .catch(() => setCompleteMessage(t('listeningLesson.completeFailed')))
-      .finally(() => setCompletingLesson(false))
+    performSubmit({ auto: false })
   }
 
   const cycleSpeed = () => {

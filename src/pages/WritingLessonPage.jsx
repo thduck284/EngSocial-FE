@@ -4,6 +4,7 @@ import { useTranslation } from 'react-i18next'
 import { lessonsService } from '../services'
 import { addVocabNote } from '../utils/vocabularyUserStorage'
 import { formatTime } from '../utils/dateTime'
+import { isLessonInActiveMockTest } from '../utils/mockTestSession'
 import { AlertModal } from '../components/ui/common/AlertModal'
 import { MockTestSidebar } from '../components/layout/MockTestSidebar'
 
@@ -31,6 +32,7 @@ export function WritingLessonPage() {
   const [rightBarOpen, setRightBarOpen] = useState(false)
   const [countdownSeconds, setCountdownSeconds] = useState(null)
   const lessonOpenedAtMs = useRef(null)
+  const autoSubmitDoneRef = useRef(false)
 
   const [isMockTest, setIsMockTest] = useState(false)
   
@@ -81,7 +83,15 @@ export function WritingLessonPage() {
   }
 
   useEffect(() => {
+    if (isMockTest) {
+      setCountdownSeconds(null)
+      autoSubmitDoneRef.current = false
+    }
+  }, [isMockTest])
+
+  useEffect(() => {
     setLoading(true)
+    autoSubmitDoneRef.current = false
     // Reset all per-lesson state when id changes
     setUserText('')
     setSubmitMessage('')
@@ -99,7 +109,11 @@ export function WritingLessonPage() {
         setContent(data)
         const estStr = data?.content?.time || '20m'
         const estNum = parseInt(estStr, 10) || 20
-        setCountdownSeconds(estNum * 60)
+        if (!isLessonInActiveMockTest(id)) {
+          setCountdownSeconds(estNum * 60)
+        } else {
+          setCountdownSeconds(null)
+        }
       })
       .catch(() => setContent(null))
       .finally(() => setLoading(false))
@@ -164,6 +178,39 @@ export function WritingLessonPage() {
   const wordCount = (userText.trim() && userText.trim().split(/\s+/).length) || 0
   const inRange = wordCount >= (wordLimit.min || 0) && wordCount <= (wordLimit.max || 999)
 
+  const performSubmit = ({ auto = false } = {}) => {
+    if (!id || submitting) return
+    setShowConfirmSubmitModal(false)
+    setShowIncompleteModal(false)
+    setSubmitting(true)
+    setSubmitMessage('')
+    setCompleteMessage('')
+
+    const textToSubmit = userText.trim()
+    const elapsedSec =
+      lessonOpenedAtMs.current != null
+        ? Math.max(0, Math.floor((Date.now() - lessonOpenedAtMs.current) / 1000))
+        : 0
+
+    lessonsService
+      .submitWriting(id, {
+        content: textToSubmit,
+        wordCount: textToSubmit ? textToSubmit.split(/\s+/).length : 0,
+        timeSpent: elapsedSec,
+      })
+      .then(() => {
+        if (auto) {
+          const type = location.pathname.startsWith('/practice/') ? 'practice' : 'lesson'
+          navigate(`/${type}/writing/${id}/result`)
+          return
+        }
+        setCompleteMessage(t('writingLesson.submitSuccess'))
+        setShowSuccessModal(true)
+      })
+      .catch(() => setSubmitMessage(t('writingLesson.submitFailed')))
+      .finally(() => setSubmitting(false))
+  }
+
   const handleSubmit = () => {
     if (!id || !userText.trim()) return
     if (!inRange) {
@@ -174,25 +221,16 @@ export function WritingLessonPage() {
   }
 
   const handleConfirmSubmit = () => {
-    setShowConfirmSubmitModal(false)
-    setSubmitting(true)
-    setSubmitMessage('')
-    setCompleteMessage('')
-    
-    const elapsedSec =
-      lessonOpenedAtMs.current != null
-        ? Math.max(0, Math.floor((Date.now() - lessonOpenedAtMs.current) / 1000))
-        : 0
-
-    lessonsService
-      .submitWriting(id, { content: userText, wordCount, timeSpent: elapsedSec })
-      .then((res) => {
-        setCompleteMessage(t('writingLesson.submitSuccess'))
-        setShowSuccessModal(true)
-      })
-      .catch(() => setSubmitMessage(t('writingLesson.submitFailed')))
-      .finally(() => setSubmitting(false))
+    performSubmit({ auto: false })
   }
+
+  useEffect(() => {
+    if (isMockTest || loading || submitting || !id) return
+    if (countdownSeconds !== 0) return
+    if (autoSubmitDoneRef.current) return
+    autoSubmitDoneRef.current = true
+    performSubmit({ auto: true })
+  }, [countdownSeconds, isMockTest, loading, submitting, id, userText])
 
   useEffect(() => {
     if (countdownSeconds == null || countdownSeconds <= 0) return

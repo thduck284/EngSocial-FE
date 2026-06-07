@@ -187,11 +187,8 @@ export function MockTestResultPage() {
                   </div>
                   <div className="text-right relative z-10">
                     <div className="text-3xl font-black text-slate-900 dark:text-white flex items-baseline gap-1.5 justify-end tracking-tighter">
-                      {isWriting 
-                        ? (result.score ?? result.submission?.aiScore ?? 0) 
-                        : (result.score ?? 0)
-                      }
-                      <span className="text-sm font-black text-slate-300 dark:text-gray-700 tracking-widest uppercase">/ {result.maxScore || (isWriting ? 100 : 0)}</span>
+                      {result.score ?? 0}
+                      <span className="text-sm font-black text-slate-300 dark:text-gray-700 tracking-widest uppercase">/ {result.maxScore || 0}</span>
                     </div>
                     <div className="text-[9px] text-slate-400 dark:text-gray-600 font-black uppercase tracking-[0.3em] mt-2 italic">{t('lessonResult.scoreLabel')}</div>
                   </div>

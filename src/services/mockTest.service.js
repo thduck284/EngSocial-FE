@@ -19,5 +19,10 @@ export const mockTestService = {
   getUserResults: async (userId, params = {}) => {
     const q = new URLSearchParams(params).toString()
     return apiClient.get(`${API_ENDPOINTS.MOCK_TESTS.getUserResults(userId)}${q ? `?${q}` : ''}`)
-  }
+  },
+  getAllResults: async (params = {}) => {
+    const q = new URLSearchParams(params).toString()
+    return apiClient.get(`${API_ENDPOINTS.MOCK_TESTS.ALL_RESULTS}${q ? `?${q}` : ''}`)
+  },
+  syncScores: (sessionId) => apiClient.post(API_ENDPOINTS.MOCK_TESTS.syncScores(sessionId)),
 }

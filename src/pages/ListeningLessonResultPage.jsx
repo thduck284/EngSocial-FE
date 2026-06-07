@@ -1,8 +1,8 @@
 import { useState, useEffect } from 'react'
-import { Link, useParams, useNavigate } from 'react-router-dom'
+import { useParams, useNavigate, useSearchParams } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
-import { ROUTES } from '../constants'
 import { lessonsService } from '../services'
+import { fetchLessonProgressForResult, isModLessonResultView } from '../utils/lessonResultLinks'
 
 /**
  * Trang kết quả làm bài Listening: điểm số, chi tiết từng câu (đáp án user, đáp án đúng, giải thích).
@@ -11,6 +11,8 @@ export function ListeningLessonResultPage() {
   const { t } = useTranslation()
   const { id } = useParams()
   const navigate = useNavigate()
+  const [searchParams] = useSearchParams()
+  const isModView = isModLessonResultView(searchParams)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
   const [lessonTitle, setLessonTitle] = useState('')
@@ -32,7 +34,7 @@ export function ListeningLessonResultPage() {
     setError(null)
     Promise.all([
       lessonsService.getListeningContent(id),
-      lessonsService.getProgress(id),
+      fetchLessonProgressForResult(id, searchParams, lessonsService),
     ])
       .then(([contentRes, progressRes]) => {
         const content = contentRes?.data || contentRes
@@ -53,8 +55,11 @@ export function ListeningLessonResultPage() {
 
         const savedAnswers = progressData?.answers || latestAttempt?.answers || []
         const progressPercent = progressData?.progress
+        const viewAttempt = progressData?.viewAttemptNo
+          ? attempts.find((a) => a.attemptNo === progressData.viewAttemptNo)
+          : latestAttempt
 
-        if (status === 'completed') {
+        if (status === 'completed' || savedAnswers.length > 0) {
           if (savedScore != null) setScore(savedScore)
           else if (savedAnswers.length > 0) setScore(savedAnswers.filter((a) => a.isCorrect).length)
           else if (typeof progressPercent === 'number') setScore(Math.round((progressPercent / 100) * (qList.length || 10)))
@@ -65,7 +70,7 @@ export function ListeningLessonResultPage() {
           setAnswers([])
         }
 
-        const xp = latestAttempt?.xpEarned ?? progressData?.xpEarnedThisAttempt ?? 0
+        const xp = viewAttempt?.xpEarned ?? progressData?.xpEarned ?? progressData?.xpEarnedThisAttempt ?? 0
         if (xp != null) setXpEarned(xp)
         setQuestions(
           qList.map((q, i) => ({
@@ -79,11 +84,12 @@ export function ListeningLessonResultPage() {
       })
       .catch(() => setError(true))
       .finally(() => setLoading(false))
-  }, [id])
+  }, [id, searchParams])
 
   const progressPercent = maxScore > 0 ? Math.round((score / maxScore) * 100) : 0
   const displayXp = progressPercent >= 80 ? (xpEarned || 0) : 0
-  const getAnswerForQuestion = (index) => answers.find((a) => a.questionId === String(questions[index]?.id) || a.questionIndex === index)
+  const getAnswerForQuestion = (index) =>
+    answers.find((a) => a.questionIndex === index || a.questionId === questions[index]?.id || a.questionId === String(questions[index]?.id)) || answers[index]
 
   if (loading) {
     return (
@@ -106,65 +112,77 @@ export function ListeningLessonResultPage() {
   }
 
   return (
-    <main className="max-w-[1440px] mx-auto grid grid-cols-12 gap-10 pt-4 px-6 pb-10 lg:pt-4 lg:px-10 lg:pb-10 animate-in fade-in duration-700">
+    <main className="max-w-[1200px] mx-auto grid grid-cols-12 gap-6 pt-4 px-4 pb-10 animate-in fade-in duration-700">
+      {isModView ? (
+        <div className="col-span-12 rounded-xl border border-primary/30 bg-primary/5 px-4 py-3 text-sm text-primary font-medium flex items-center gap-2">
+          <span className="material-symbols-outlined text-lg">visibility</span>
+          {t('lessonResult.modViewBanner')}
+        </div>
+      ) : null}
+
       {/* Sidebar - Summary */}
-      <aside className="col-span-12 lg:col-span-4 xl:col-span-3 space-y-8">
-        <div className="bg-white dark:bg-card-dark rounded-[2.5rem] border border-slate-200 dark:border-border-dark p-10 shadow-2xl shadow-slate-200/50 dark:shadow-none sticky top-4 flex flex-col gap-10 overflow-hidden group">
-          <div className="absolute top-0 right-0 w-32 h-32 bg-primary/5 rounded-full -mr-16 -mt-16 blur-3xl" />
-          
-          <div className="flex flex-col gap-4 relative z-10">
-            <h1 className="text-3xl font-black text-slate-900 dark:text-white tracking-tighter leading-none uppercase">{t('lessonResult.title')}</h1>
-            <p className="text-[11px] text-slate-500 dark:text-gray-400 font-bold leading-relaxed italic opacity-80">
-               "{lessonTitle}"
+      <aside className="col-span-12 lg:col-span-4 xl:col-span-3 space-y-4">
+        <div className="bg-white dark:bg-card-dark rounded-xl border border-slate-200 dark:border-border-dark p-5 shadow-lg shadow-slate-100 dark:shadow-none sticky top-4 flex flex-col gap-5 overflow-hidden group">
+          <div className="absolute top-0 right-0 w-24 h-24 bg-primary/5 rounded-full -mr-12 -mt-12 blur-2xl" />
+
+          <div className="flex flex-col gap-2 relative z-10">
+            <h1 className="text-base font-bold text-slate-800 dark:text-white tracking-wider leading-none uppercase">{t('lessonResult.title')}</h1>
+            <p className="text-[10px] text-slate-500 dark:text-gray-400 font-bold leading-relaxed">
+              {t('lessonResult.subtitle')} <span className="text-primary font-bold italic">&quot;{lessonTitle}&quot;</span>.
             </p>
           </div>
 
-          <div className="grid grid-cols-1 gap-6 relative z-10">
-            {/* Score Card */}
-            <div className="bg-slate-50 dark:bg-background-dark/40 rounded-[2rem] p-8 border border-slate-100 dark:border-white/5 relative overflow-hidden group/score shadow-inner">
-              <div className="absolute top-0 left-0 w-1.5 h-full bg-primary transition-all group-hover/score:w-2" />
-              <p className="text-slate-400 dark:text-gray-500 text-[10px] font-black uppercase tracking-[0.2em] mb-4">{t('lessonResult.scoreLabel')}</p>
-              <div className="flex items-baseline gap-3">
-                <p className="text-slate-900 dark:text-white text-5xl font-black">{score}/{maxScore}</p>
-                <span className="text-emerald-500 text-[11px] font-black uppercase tracking-widest bg-emerald-500/10 px-2 py-1 rounded-full border border-emerald-500/20">
+          <div className="grid grid-cols-1 gap-4 relative z-10">
+            <div className="bg-slate-50 dark:bg-background-dark/40 rounded-xl p-4 border border-slate-100 dark:border-white/5 relative overflow-hidden group/score shadow-inner">
+              <div className="absolute top-0 left-0 w-1 h-full bg-primary transition-all group-hover/score:w-1.5" />
+              <p className="text-slate-400 dark:text-gray-500 text-[9px] font-bold uppercase tracking-widest mb-1.5">{t('lessonResult.scoreLabel')}</p>
+              <div className="flex items-center justify-between gap-2">
+                <p className="text-slate-800 dark:text-white text-xl font-bold">{score}/{maxScore}</p>
+                <span className="text-emerald-500 text-[9px] font-bold uppercase tracking-widest bg-emerald-500/10 px-2 py-0.5 rounded shadow-sm border border-emerald-500/10 shrink-0">
                   {progressPercent}%
                 </span>
               </div>
-              <div className="w-full bg-slate-200 dark:bg-card-dark h-2 rounded-full mt-6 shadow-inner">
+              <div className="w-full bg-slate-200 dark:bg-card-dark h-1.5 rounded-full mt-3 shadow-inner">
                 <div
-                  className="bg-gradient-to-r from-primary to-cyan-400 h-full rounded-full shadow-[0_0_12px_rgba(19,182,236,0.5)] transition-all duration-1000"
+                  className="bg-gradient-to-r from-primary to-cyan-400 h-full rounded-full shadow-[0_0_8px_rgba(19,182,236,0.4)] transition-all duration-1000"
                   style={{ width: `${progressPercent}%` }}
                 />
               </div>
             </div>
 
-            {/* XP Card */}
-            <div className="bg-slate-50 dark:bg-background-dark/40 rounded-[2rem] p-8 border border-slate-100 dark:border-white/5 relative overflow-hidden group/xp shadow-inner">
-              <div className="absolute top-0 left-0 w-1.5 h-full bg-amber-500 transition-all group-hover/xp:w-2" />
-              <p className="text-slate-400 dark:text-gray-500 text-[10px] font-black uppercase tracking-[0.2em] mb-4">{t('lessonResult.xpEarned')}</p>
-              <div className="flex items-baseline gap-3">
-                <p className="text-slate-900 dark:text-white text-5xl font-black tracking-tight">+{displayXp} XP</p>
+            <div className="bg-slate-50 dark:bg-background-dark/40 rounded-xl p-4 border border-slate-100 dark:border-white/5 relative overflow-hidden group/xp shadow-inner">
+              <div className="absolute top-0 left-0 w-1 h-full bg-amber-500 transition-all group-hover/xp:w-1.5" />
+              <p className="text-slate-400 dark:text-gray-500 text-[9px] font-bold uppercase tracking-widest mb-1.5">{t('lessonResult.xpEarned')}</p>
+              <div className="flex items-center justify-between gap-2">
+                <p className="text-slate-800 dark:text-white text-xl font-bold tracking-tight">+{displayXp} XP</p>
+                {displayXp > 0 && (
+                  <span className="text-amber-500 text-[9px] font-bold uppercase tracking-widest bg-amber-500/10 px-2 py-0.5 rounded shadow-sm border border-amber-500/10 flex items-center gap-1 shrink-0 animate-pulse">
+                    <span className="material-symbols-outlined text-[10px]">bolt</span>
+                    {t('lessonResult.bonus')}
+                  </span>
+                )}
               </div>
             </div>
           </div>
 
-          {/* Question Index */}
-          <div className="space-y-6 relative z-10">
-            <p className="text-slate-400 dark:text-gray-500 text-[10px] font-black uppercase tracking-[0.2em] flex items-center gap-3">
-              <span className="material-symbols-outlined text-base text-primary/50">navigation</span>
+          <div className="space-y-4 relative z-10">
+            <p className="text-slate-400 dark:text-gray-500 text-[9px] font-bold uppercase tracking-wider flex items-center gap-2">
+              <span className="material-symbols-outlined text-sm text-primary/50">navigation</span>
               {t('lessonResult.questionDetails')}
             </p>
-            <div className="flex flex-wrap gap-3">
+            <div className="flex flex-wrap gap-2">
               {questions.map((q, idx) => {
                 const userAnswer = getAnswerForQuestion(idx)
-                const isCorrect = userAnswer?.isCorrect
+                const userValue = userAnswer?.answer ?? userAnswer?.userAnswer
+                const isCorrect = userAnswer?.isCorrect ?? (userValue != null && String(userValue).trim() === String(q.correctAnswer).trim())
                 return (
                   <button
                     key={idx}
+                    type="button"
                     onClick={() => scrollToQuestion(idx)}
-                    className={`size-10 rounded-xl flex items-center justify-center text-[11px] font-black transition-all border-2 shrink-0 hover:scale-110 active:scale-90 ${
-                      isCorrect 
-                        ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-500 hover:bg-emerald-500 hover:text-white' 
+                    className={`size-8 rounded-lg flex items-center justify-center text-[10px] font-bold transition-all border shrink-0 hover:scale-105 active:scale-95 ${
+                      isCorrect
+                        ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-500 hover:bg-emerald-500 hover:text-white'
                         : 'bg-rose-500/10 border-rose-500/20 text-rose-500 hover:bg-rose-500 hover:text-white'
                     }`}
                   >
@@ -175,123 +193,137 @@ export function ListeningLessonResultPage() {
             </div>
           </div>
 
-          <div className="flex flex-col gap-4 mt-4 relative z-10">
-            <button
-              type="button"
-              onClick={() => navigate(`/lesson/listening/${id}`)}
-              className="w-full py-5 bg-slate-900 dark:bg-white/5 hover:bg-primary text-white dark:text-slate-400 hover:dark:text-white rounded-[1.5rem] text-[10px] font-black uppercase tracking-[0.2em] transition-all border border-transparent flex items-center justify-center gap-4 group/btn shadow-xl shadow-slate-900/10 active:scale-95"
-            >
-              <span className="material-symbols-outlined text-lg group-hover/btn:rotate-180 transition-transform duration-500">refresh</span>
-              {t('lessonResult.retry')}
-            </button>
-          </div>
+          {!isModView ? (
+            <div className="flex flex-col gap-3 mt-2 relative z-10">
+              <button
+                type="button"
+                onClick={() => navigate(`/lesson/listening/${id}`)}
+                className="w-full py-2 bg-slate-900 dark:bg-white/5 hover:bg-primary text-white dark:text-slate-400 hover:dark:text-white rounded-lg text-[10px] font-bold uppercase tracking-wider transition-all border border-transparent flex items-center justify-center gap-2 group/btn shadow-md active:scale-95"
+              >
+                <span className="material-symbols-outlined text-sm group-hover/btn:rotate-180 transition-transform duration-500">refresh</span>
+                {t('lessonResult.retry')}
+              </button>
+            </div>
+          ) : null}
         </div>
       </aside>
 
       {/* Main Content */}
-      <div className="col-span-12 lg:col-span-8 xl:col-span-9 space-y-10">
-        {/* Audio Player Section */}
-        {audioUrl && (
-          <section className="bg-white dark:bg-card-dark rounded-[2.5rem] border border-slate-200 dark:border-border-dark overflow-hidden shadow-2xl shadow-slate-200/50 dark:shadow-none p-8 flex flex-col md:flex-row items-center gap-8 group animate-in slide-in-from-top-8 duration-700">
-            <div className={`size-24 rounded-3xl bg-primary text-white flex items-center justify-center shrink-0 shadow-2xl shadow-primary/30 transition-transform duration-500 group-hover:scale-110 group-hover:rotate-3`}>
-              <span className="material-symbols-outlined text-4xl animate-pulse">headset</span>
-            </div>
-            <div className="flex-1 w-full space-y-4">
-              <div>
-                <h3 className="text-slate-900 dark:text-white font-black text-xl uppercase tracking-tight">{t('listeningLesson.audioTitle') || 'Listening Material'}</h3>
-                <p className="text-[10px] text-slate-400 dark:text-gray-500 font-black uppercase tracking-[0.2em] mt-2">{t('listeningLesson.audioSubtitle') || 'Listen again to improve your understanding'}</p>
+      <div className="col-span-12 lg:col-span-8 xl:col-span-9 space-y-6">
+        {audioUrl ? (
+          <section className="bg-white dark:bg-card-dark rounded-xl border border-slate-200 dark:border-border-dark overflow-hidden shadow-md shadow-slate-100 dark:shadow-none animate-in slide-in-from-top-8 duration-700">
+            <div className="p-5 flex flex-col sm:flex-row items-start sm:items-center gap-4">
+              <div className="size-10 rounded-lg bg-primary text-white flex items-center justify-center shrink-0 shadow-md shadow-primary/20">
+                <span className="material-symbols-outlined text-xl">headset</span>
               </div>
-              <div className="bg-slate-50 dark:bg-background-dark/50 p-4 rounded-2xl border border-slate-100 dark:border-white/5 shadow-inner">
-                <audio 
-                  src={audioUrl} 
-                  controls 
-                  className="w-full h-10 rounded-lg custom-audio-player"
-                />
+              <div className="flex-1 w-full space-y-3">
+                <div>
+                  <h3 className="text-slate-800 dark:text-white text-base font-bold uppercase tracking-wider">
+                    {t('listeningLesson.audioTitle') || 'Listening Material'}
+                  </h3>
+                  <p className="text-[9px] text-slate-400 dark:text-gray-500 font-bold uppercase tracking-wider mt-1">
+                    {t('listeningLesson.audioSubtitle') || 'Listen again to improve your understanding'}
+                  </p>
+                </div>
+                <div className="bg-slate-50 dark:bg-background-dark/50 p-3 rounded-lg border border-slate-100 dark:border-white/5 shadow-inner">
+                  <audio src={audioUrl} controls className="w-full h-9 rounded-lg custom-audio-player" />
+                </div>
               </div>
             </div>
           </section>
-        )}
+        ) : null}
 
-        {/* Transcript Section */}
-        {transcript && (
-          <section className="bg-white dark:bg-card-dark rounded-[2.5rem] border border-slate-200 dark:border-border-dark overflow-hidden shadow-2xl shadow-slate-200/50 dark:shadow-none animate-in slide-in-from-top-8 duration-700">
-            <details className="group/trans">
-              <summary className="flex cursor-pointer items-center justify-between p-8 list-none hover:bg-slate-50 dark:hover:bg-white/5 transition-colors">
-                <div className="flex items-center gap-6">
-                  <div className="size-14 rounded-2xl bg-primary text-white flex items-center justify-center shadow-xl shadow-primary/20">
-                    <span className="material-symbols-outlined text-3xl">description</span>
+        {transcript ? (
+          <section className="bg-white dark:bg-card-dark rounded-xl border border-slate-200 dark:border-border-dark overflow-hidden shadow-md shadow-slate-100 dark:shadow-none animate-in slide-in-from-top-8 duration-700">
+            <details className="group">
+              <summary className="flex cursor-pointer items-center justify-between p-5 list-none hover:bg-slate-50 dark:hover:bg-white/5 transition-colors">
+                <div className="flex items-center gap-3">
+                  <div className="size-10 rounded-lg bg-primary text-white flex items-center justify-center shadow-md shadow-primary/20">
+                    <span className="material-symbols-outlined text-xl">description</span>
                   </div>
-                  <h3 className="text-slate-900 dark:text-white text-xl font-black uppercase tracking-tight">{t('listeningLesson.transcript') || 'Transcript'}</h3>
+                  <h3 className="text-slate-800 dark:text-white text-base font-bold uppercase tracking-wider">
+                    {t('listeningLesson.transcript') || 'Transcript'}
+                  </h3>
                 </div>
-                <span className="material-symbols-outlined text-slate-300 dark:text-gray-700 text-3xl transition-transform duration-500 group-open/trans:rotate-180">expand_more</span>
+                <span className="material-symbols-outlined text-slate-300 dark:text-gray-700 text-xl transition-transform duration-500 group-open:rotate-180">expand_more</span>
               </summary>
-              <div className="p-10 pt-4 text-slate-600 dark:text-gray-300 leading-snug text-lg font-medium whitespace-pre-wrap border-t-2 border-slate-100 dark:border-white/5 bg-slate-50/50 dark:bg-background-dark/20 italic selection:bg-primary/20">
+              <div className="p-6 pt-1 text-slate-600 dark:text-slate-300 leading-relaxed text-sm font-medium whitespace-pre-wrap border-t border-slate-100 dark:border-white/5 bg-slate-50/50 dark:bg-background-dark/20 selection:bg-primary/20">
                 {transcript}
               </div>
             </details>
           </section>
-        )}
+        ) : null}
 
-        <div className="flex items-center justify-between px-4 pt-4">
-          <h2 className="text-3xl font-black text-slate-900 dark:text-white uppercase tracking-tight flex items-center gap-4">
-            <span className="material-symbols-outlined text-primary text-4xl">fact_check</span>
-            {t('lessonResult.questionDetails')}
-          </h2>
-        </div>
+        <section className="space-y-4">
+          <div className="flex items-center justify-between px-1">
+            <h2 className="text-sm font-bold text-slate-800 dark:text-white uppercase tracking-wider flex items-center gap-2">
+              <span className="material-symbols-outlined text-primary text-lg">fact_check</span>
+              {t('lessonResult.questionDetails')}
+            </h2>
+            <span className="bg-white dark:bg-card-dark text-slate-400 dark:text-gray-500 text-[9px] font-bold px-3 py-1.5 rounded-full border border-slate-200 dark:border-border-dark uppercase tracking-wider shadow-sm">
+              {t('lessonResult.showingQuestions', { count: questions.length, total: questions.length })}
+            </span>
+          </div>
 
-        <div className="flex flex-col gap-8">
-          {questions.map((q, index) => {
-            const userAnswer = getAnswerForQuestion(index)
-            const isCorrect = userAnswer?.isCorrect
-            const correctText = q.options?.find((o) => o.value === q.correctAnswer)?.text || q.correctAnswer
-            const userText = q.options?.find((o) => o.value === (userAnswer?.answer ?? userAnswer?.userAnswer))?.text || (userAnswer?.answer ?? userAnswer?.userAnswer)
+          <div className="flex flex-col gap-4">
+            {questions.map((q, index) => {
+              const userAnswer = getAnswerForQuestion(index)
+              const userValue = userAnswer?.answer ?? userAnswer?.userAnswer
+              const isCorrect = userAnswer?.isCorrect ?? (userValue != null && String(userValue).trim() === String(q.correctAnswer).trim())
+              const correctText = q.options?.find((o) => o.value === q.correctAnswer)?.text || q.correctAnswer
+              const userText = q.options?.find((o) => o.value === userValue)?.text || userValue
 
-            return (
-              <div
-                key={q.id || index}
-                id={`question-card-${index}`}
-                className={`bg-white dark:bg-card-dark border-2 rounded-[2.5rem] p-10 flex flex-col gap-8 shadow-2xl shadow-slate-200/50 dark:shadow-none transition-all hover:border-primary/40 group animate-in slide-in-from-right-8 duration-500 ${!isCorrect ? 'border-l-8 border-l-rose-500 dark:border-l-rose-500' : 'border-slate-200 dark:border-border-dark'}`}
-                style={{ animationDelay: `${index * 100}ms` }}
-              >
-                <div className="flex items-center justify-between">
-                  <span className="text-slate-400 dark:text-gray-500 font-black uppercase text-[10px] tracking-[0.3em] flex items-center gap-3">
-                    <span className="size-2 rounded-full bg-primary" />
-                    {t('lessonResult.questionNum', { num: index + 1 })}
-                  </span>
-                  <div className={`flex items-center gap-2.5 px-5 py-2 rounded-2xl text-[10px] font-black uppercase tracking-widest border-2 transition-all group-hover:scale-105 ${isCorrect ? 'bg-emerald-500/5 border-emerald-500/20 text-emerald-500' : 'bg-rose-500/5 border-rose-500/20 text-rose-500'}`}>
-                    <span className="material-symbols-outlined text-base">{isCorrect ? 'check_circle' : 'cancel'}</span>
-                    {isCorrect ? t('lessonResult.correct') : t('lessonResult.incorrect')}
-                  </div>
-                </div>
-                
-                <p className="text-slate-900 dark:text-white text-2xl font-black leading-tight uppercase tracking-tight">{q.question}</p>
-                
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <div className={`p-8 rounded-[2rem] border-2 transition-colors shadow-inner ${!isCorrect ? 'bg-rose-500/5 border-rose-500/20' : 'bg-slate-50 dark:bg-white/5 border-slate-100 dark:border-white/5'}`}>
-                    <p className="text-slate-400 dark:text-gray-500 text-[10px] font-black uppercase tracking-[0.2em] mb-4">{t('lessonResult.yourAnswer')}</p>
-                    <p className={`text-lg font-black uppercase tracking-tight ${!isCorrect ? 'line-through decoration-rose-500/50 text-slate-400' : 'text-slate-900 dark:text-white'}`}>{userText || '—'}</p>
-                  </div>
-                  <div className="p-8 rounded-[2rem] bg-emerald-500/5 border-2 border-emerald-500/20 shadow-inner">
-                    <p className="text-emerald-500/70 text-[10px] font-black uppercase tracking-[0.2em] mb-4">{t('lessonResult.correctAnswer')}</p>
-                    <p className="text-emerald-500 text-lg font-black uppercase tracking-tight">{correctText || '—'}</p>
-                  </div>
-                </div>
-                
-                {q.explanation && (
-                  <details className="group/exp">
-                    <summary className="flex items-center gap-3 text-primary font-black text-[11px] cursor-pointer list-none hover:bg-primary/5 transition-all uppercase tracking-[0.2em] p-4 -mx-4 rounded-2xl active:scale-95">
-                      <span className="material-symbols-outlined text-xl transition-transform group-open/exp:rotate-90">info</span>
-                      {t('lessonResult.viewExplanation')}
-                    </summary>
-                    <div className="mt-4 p-8 bg-primary/5 rounded-[2rem] border-l-8 border-primary text-slate-600 dark:text-gray-400 text-sm font-bold leading-relaxed italic shadow-inner animate-in slide-in-from-top-4 duration-300">
-                      {q.explanation}
+              return (
+                <div
+                  key={q.id || index}
+                  id={`question-card-${index}`}
+                  className={`bg-white dark:bg-card-dark border rounded-xl p-5 flex flex-col gap-4 shadow-md shadow-slate-100 dark:shadow-none transition-all hover:border-primary/40 group animate-in slide-in-from-right-8 duration-500 ${!isCorrect ? 'border-l-4 border-l-rose-500 dark:border-l-rose-500' : 'border-slate-200 dark:border-border-dark'}`}
+                  style={{ animationDelay: `${index * 100}ms` }}
+                >
+                  <div className="flex items-center justify-between">
+                    <span className="text-slate-400 dark:text-gray-500 font-black uppercase text-[11px] tracking-wider flex items-center gap-2">
+                      <span className="size-2 rounded-full bg-primary" />
+                      {t('lessonResult.questionNum', { num: index + 1 })}
+                    </span>
+                    <div
+                      className={`flex items-center gap-1.5 px-3 py-1 rounded-lg text-[10px] font-black uppercase tracking-wider border transition-all group-hover:scale-105 ${
+                        isCorrect ? 'bg-emerald-500/5 border-emerald-500/10 text-emerald-500' : 'bg-rose-500/5 border-rose-500/10 text-rose-500'
+                      }`}
+                    >
+                      <span className="material-symbols-outlined text-xs">{isCorrect ? 'check_circle' : 'cancel'}</span>
+                      {isCorrect ? t('lessonResult.correct') : t('lessonResult.incorrect')}
                     </div>
-                  </details>
-                )}
-              </div>
-            )
-          })}
-        </div>
+                  </div>
+
+                  <p className="text-slate-800 dark:text-white text-sm font-black leading-relaxed">{q.question}</p>
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className={`p-4 rounded-lg border transition-colors shadow-inner ${!isCorrect ? 'bg-rose-500/5 border-rose-500/10' : 'bg-slate-50 dark:bg-white/5 border-slate-100 dark:border-white/5'}`}>
+                      <p className="text-slate-400 dark:text-gray-500 text-[9px] font-bold uppercase tracking-wider mb-1">{t('lessonResult.yourAnswer')}</p>
+                      <p className={`text-sm font-bold ${!isCorrect ? 'line-through decoration-rose-500/50 text-slate-400' : 'text-slate-800 dark:text-white'}`}>{userText || '—'}</p>
+                    </div>
+                    <div className="p-4 rounded-lg bg-emerald-500/5 border border-emerald-500/10 shadow-inner">
+                      <p className="text-emerald-500/70 text-[9px] font-bold uppercase tracking-wider mb-1">{t('lessonResult.correctAnswer')}</p>
+                      <p className="text-emerald-500 text-sm font-bold">{correctText || '—'}</p>
+                    </div>
+                  </div>
+
+                  {q.explanation ? (
+                    <details className="group/exp">
+                      <summary className="flex items-center gap-2 text-primary font-bold text-[10px] cursor-pointer list-none hover:bg-primary/5 transition-all uppercase tracking-wider p-2 -mx-2 rounded-lg active:scale-95">
+                        <span className="material-symbols-outlined text-base transition-transform group-open/exp:rotate-90">info</span>
+                        {t('lessonResult.viewExplanation')}
+                      </summary>
+                      <div className="mt-2 p-4 bg-primary/5 rounded-lg border-l-4 border-primary text-xs font-bold leading-relaxed italic shadow-inner animate-in slide-in-from-top-4 duration-300 text-slate-500 dark:text-gray-400">
+                        {q.explanation}
+                      </div>
+                    </details>
+                  ) : null}
+                </div>
+              )
+            })}
+          </div>
+        </section>
       </div>
     </main>
   )

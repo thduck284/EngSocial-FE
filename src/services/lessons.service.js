@@ -22,6 +22,10 @@ export const lessonsService = {
   getListeningContent: (id) => apiClient.get(API_ENDPOINTS.LESSONS.LISTENING_CONTENT(id || 'demo')),
   getWritingContent: (id) => apiClient.get(API_ENDPOINTS.LESSONS.WRITING_CONTENT(id || '')),
   getProgress: (id) => apiClient.get(API_ENDPOINTS.LESSONS.PROGRESS(id)),
+  getProgressForUser: (id, userId, params = {}) => {
+    const q = new URLSearchParams(params).toString()
+    return apiClient.get(`${API_ENDPOINTS.LESSONS.PROGRESS(id)}/${encodeURIComponent(userId)}${q ? `?${q}` : ''}`)
+  },
   addNote: (id, body) => apiClient.post(API_ENDPOINTS.LESSONS.NOTES(id), body),
   submit: (id, body) => apiClient.post(API_ENDPOINTS.LESSONS.SUBMIT(id), body),
   submitWriting: (id, body) => apiClient.post(API_ENDPOINTS.LESSONS.SUBMIT_WRITING(id), body),
@@ -42,4 +46,5 @@ export const lessonsService = {
 
   gradeWriting: (id, userId, body) => apiClient.post(`${API_ENDPOINTS.LESSONS.DETAIL(id)}/grade/${userId}`, body),
   aiGradeWriting: (id, userId) => apiClient.post(API_ENDPOINTS.LESSONS.AI_GRADE(id, userId)),
+  syncQuizScores: (id) => apiClient.post(`${API_ENDPOINTS.LESSONS.DETAIL(id)}/sync-scores`),
 }
