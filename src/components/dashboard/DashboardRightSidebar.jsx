@@ -20,6 +20,7 @@ export function DashboardRightSidebar({
   sentRequestsList,
   receivedRequestsList,
   loadFriendTabData,
+  sendSuggestionRequest,
   friendsFilterTab,
   setFriendsFilterTab,
   displayedFriendsList,
@@ -109,9 +110,7 @@ export function DashboardRightSidebar({
                     </Link>
                     <button
                       type="button"
-                      onClick={() => {
-                        friendsService.sendRequest(id).then(() => loadFriendTabData('suggestions'))
-                      }}
+                      onClick={() => sendSuggestionRequest(id)}
                       className="material-symbols-outlined text-primary hover:bg-primary/10 rounded-full p-1 transition-colors shrink-0"
                       title={t('dashboard.addFriend')}
                     >

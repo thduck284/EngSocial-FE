@@ -94,6 +94,7 @@ export function SearchPage() {
     receivedRequestsList,
     friendTabLoading,
     loadFriendTabData,
+    sendSuggestionRequest,
     displayedFriendsList,
     friendSelectOpen,
     setFriendSelectOpen,
@@ -265,6 +266,7 @@ export function SearchPage() {
             sentRequestsList={sentRequestsList}
             receivedRequestsList={receivedRequestsList}
             loadFriendTabData={loadFriendTabData}
+            sendSuggestionRequest={sendSuggestionRequest}
             friendsFilterTab={dashFriendsFilterTab}
             setFriendsFilterTab={setDashFriendsFilterTab}
             displayedFriendsList={displayedFriendsList}

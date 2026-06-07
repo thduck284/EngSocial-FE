@@ -51,6 +51,13 @@ export const userService = {
 
   changePassword: (data) => apiClient.post(API_ENDPOINTS.USER.CHANGE_PASSWORD, data),
 
+  requestPasswordChange: () => apiClient.post(API_ENDPOINTS.USER.CHANGE_PASSWORD_REQUEST),
+
+  verifyPasswordChange: (otp) => apiClient.post(API_ENDPOINTS.USER.CHANGE_PASSWORD_VERIFY, { otp }),
+
+  verifyEmailChangePassword: (currentPassword) =>
+    apiClient.post(API_ENDPOINTS.USER.CHANGE_EMAIL_VERIFY_PASSWORD, { currentPassword }),
+
   requestEmailChange: (newEmail) => apiClient.post(API_ENDPOINTS.USER.CHANGE_EMAIL_REQUEST, { newEmail }),
 
   confirmEmailChange: (otp) => apiClient.post(API_ENDPOINTS.USER.CHANGE_EMAIL_CONFIRM, { otp }),

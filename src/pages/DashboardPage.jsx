@@ -55,6 +55,7 @@ export function DashboardPage() {
     receivedRequestsList,
     friendTabLoading,
     loadFriendTabData,
+    sendSuggestionRequest,
     displayedFriendsList,
     friendSelectOpen,
     setFriendSelectOpen,
@@ -119,6 +120,7 @@ export function DashboardPage() {
           sentRequestsList={sentRequestsList}
           receivedRequestsList={receivedRequestsList}
           loadFriendTabData={loadFriendTabData}
+          sendSuggestionRequest={sendSuggestionRequest}
           friendsFilterTab={friendsFilterTab}
           setFriendsFilterTab={setFriendsFilterTab}
           displayedFriendsList={displayedFriendsList}

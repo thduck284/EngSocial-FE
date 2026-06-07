@@ -10,6 +10,25 @@ export function formatDateForInput(date) {
   return d.toISOString().slice(0, 10)
 }
 
+export const DEFAULT_PROFILE_PRIVACY = {
+  showEmail: true,
+  showPhone: true,
+  showAddress: true,
+  showDateOfBirth: true,
+  showGender: true,
+}
+
+export function normalizeProfilePrivacy(raw) {
+  const p = raw || {}
+  return {
+    showEmail: p.showEmail !== false,
+    showPhone: p.showPhone !== false,
+    showAddress: p.showAddress !== false,
+    showDateOfBirth: p.showDateOfBirth !== false,
+    showGender: p.showGender !== false,
+  }
+}
+
 // --- Friends helpers (normalized here for reuse) ---
 
 export function normalizeFriendsFromResponse(res) {

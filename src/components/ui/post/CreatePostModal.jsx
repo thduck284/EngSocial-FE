@@ -292,7 +292,10 @@ export function CreatePostModal({
                   <span className="material-symbols-outlined text-base text-red-500">warning</span>
                   Mức độ vi phạm:&nbsp;
                   <span className="font-bold text-red-600 dark:text-red-400 uppercase">
-                    {(violationResult.violation_score ?? 0) >= 80 ? 'Cao' : 'Trung bình'}
+                    {violationResult.level === 'high' ||
+                    (violationResult.violationScore ?? violationResult.violation_score ?? 0) >= 80
+                      ? 'Cao'
+                      : 'Trung bình'}
                   </span>
                 </div>
 

@@ -18,6 +18,9 @@ export default defineConfig(({ mode }) => {
       port: 3000,
       open: true,
       ...(useDevHttps ? { https: true } : {}),
+      headers: {
+        'Cache-Control': 'no-store',
+      },
     },
     resolve: {
       alias: {
