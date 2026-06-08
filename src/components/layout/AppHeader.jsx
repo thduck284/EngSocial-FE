@@ -7,6 +7,7 @@ import { NotificationPopover } from '../ui/common/NotificationPopover'
 import { LanguageSwitcher } from '../ui/common/LanguageSwitcher'
 import { NAV_ITEMS, ROUTES } from '../../constants'
 import { SOCKET_ENABLED, SOCKET_BASE_URL, SOCKET_FALLBACK_BASE_URL } from '../../constants/api'
+import { createSocketAuthOptions, disconnectSocketSafe } from '../../utils/socketClient'
 import { getAuthToken } from '../../utils/auth'
 import { notificationsService, conversationService } from '../../services'
 import { LogoutConfirmModal } from './LogoutConfirmModal'
@@ -93,7 +94,7 @@ export function AppHeader() {
     if (!SOCKET_ENABLED || !user || isGuest) return
     const token = getAuthToken()
     if (!token) return
-    const opts = { auth: { token }, transports: ['websocket', 'polling'] }
+    const opts = createSocketAuthOptions(token)
 
     function attachListeners(s) {
       s.on('notification', () => setUnreadCount((prev) => prev + 1))
@@ -108,7 +109,7 @@ export function AppHeader() {
       if (!SOCKET_FALLBACK_BASE_URL || headerTriedFallbackRef.current) return
       headerTriedFallbackRef.current = true
       socket.removeAllListeners()
-      socket.disconnect()
+      disconnectSocketSafe(socket)
       socket = io(SOCKET_FALLBACK_BASE_URL, opts)
       headerSocketRef.current = socket
       attachListeners(socket)
@@ -116,7 +117,7 @@ export function AppHeader() {
 
     return () => {
       headerTriedFallbackRef.current = false
-      headerSocketRef.current?.disconnect()
+      disconnectSocketSafe(headerSocketRef.current)
       headerSocketRef.current = null
     }
   }, [user, isGuest, fetchMessagesUnreadCount])

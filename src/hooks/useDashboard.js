@@ -16,6 +16,7 @@ import {
   normalizeWeeklyLeaderboard,
 } from '../utils/dashboard'
 import { SOCKET_ENABLED, SOCKET_BASE_URL, SOCKET_FALLBACK_BASE_URL } from '../constants/api'
+import { createSocketAuthOptions, disconnectSocketSafe } from '../utils/socketClient'
 import { getAuthToken } from '../utils/auth'
 import { resolvePostPatch } from '../utils/post'
 
@@ -243,7 +244,7 @@ export function useDashboardSocket(user, setConversations, setOnlineFriends, set
 
     const token = getAuthToken()
     if (!token) return
-    const opts = { auth: { token }, transports: ['websocket', 'polling'] }
+    const opts = createSocketAuthOptions(token)
     const pending = pendingOfflineRef.current
 
     function attachListeners(socket) {
@@ -320,7 +321,7 @@ export function useDashboardSocket(user, setConversations, setOnlineFriends, set
       if (!SOCKET_FALLBACK_BASE_URL || fallbackTriedRef.current) return
       fallbackTriedRef.current = true
       socket.removeAllListeners()
-      socket.disconnect()
+      disconnectSocketSafe(socket)
       socket = io(SOCKET_FALLBACK_BASE_URL, opts)
       socketRef.current = socket
       attachListeners(socket)
@@ -330,7 +331,7 @@ export function useDashboardSocket(user, setConversations, setOnlineFriends, set
       Object.values(pending).forEach(clearTimeout)
       Object.keys(pending).forEach((k) => delete pending[k])
       fallbackTriedRef.current = false
-      socketRef.current?.disconnect()
+      disconnectSocketSafe(socketRef.current)
       socketRef.current = null
     }
   }, [user?.id, user?._id])
