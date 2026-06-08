@@ -92,7 +92,11 @@ export function WritingLessonResultPage() {
     try {
       const res = await lessonsService.aiGradeWriting(id, user.id)
       const newProgress = res?.data || res || {}
-      setProgress(newProgress)
+      setProgress((prev) => ({
+        ...prev,
+        ...newProgress,
+        submission: { ...prev?.submission, ...newProgress.submission },
+      }))
     } catch (err) {
       console.error('Failed to trigger AI grading:', err)
     } finally {

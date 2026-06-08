@@ -415,9 +415,9 @@ export function ManageLessonsListPage({ mode }) {
       })
       const updatedProgress = res?.data
       if (updatedProgress?.submission) {
-        setGradingUser(prev => ({
+        setGradingUser((prev) => ({
           ...prev,
-          submission: updatedProgress.submission
+          submission: { ...prev.submission, ...updatedProgress.submission },
         }))
         setGradeScore(updatedProgress.submission.aiScore || '')
         setGradeFeedback(updatedProgress.submission.aiFeedback || '')
