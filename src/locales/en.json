@@ -1230,6 +1230,7 @@
   "auth": {
     "login": "Login",
     "register": "Register",
+    "help": "Help",
     "forgotPassword": "Forgot Password?",
     "email": "Email",
     "emailAddress": "Email Address",

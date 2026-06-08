@@ -1240,6 +1240,7 @@
   "auth": {
     "login": "Đăng nhập",
     "register": "Đăng ký",
+    "help": "Trợ giúp",
     "forgotPassword": "Quên mật khẩu?",
     "email": "Email",
     "emailAddress": "Địa chỉ Email",

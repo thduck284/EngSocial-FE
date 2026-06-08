@@ -1,13 +1,24 @@
+import { Link } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
-import { LanguageSwitcher } from '../ui/common/LanguageSwitcher'
+import { ROUTES } from '../../constants'
+import { LanguageSwitcher, AUTH_TOOLBAR_BTN_CLASS } from '../ui/common/LanguageSwitcher'
 
 export function AuthLayout({ children, leftContent }) {
+  const { t } = useTranslation()
+
   return (
     <div className="bg-textured text-slate-100 min-h-screen flex items-center justify-center p-4">
       <div className="max-w-5xl w-full grid grid-cols-1 md:grid-cols-2 bg-card-dark rounded-2xl overflow-hidden shadow-2xl border border-slate-800 relative">
-        {/* Language switcher - same as dashboard */}
-        <div className="absolute top-4 right-4 z-10">
-          <LanguageSwitcher />
+        <div className="absolute top-4 right-4 z-10 flex items-center gap-2">
+          <Link
+            to={ROUTES.HELP}
+            className={AUTH_TOOLBAR_BTN_CLASS}
+            aria-label={t('auth.help')}
+            title={t('auth.help')}
+          >
+            <span className="material-symbols-outlined text-lg group-hover:scale-110 transition-transform">help</span>
+          </Link>
+          <LanguageSwitcher buttonClassName={AUTH_TOOLBAR_BTN_CLASS} />
         </div>
         {/* Left panel - branding */}
         <div className="hidden md:flex flex-col justify-center p-12 bg-gradient-to-br from-[#111827] to-[#1e3a44] border-r border-slate-800">
