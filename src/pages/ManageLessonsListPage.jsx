@@ -334,6 +334,7 @@ export function ManageLessonsListPage({ mode }) {
     setSelectedLessonForResults({
       isMockTestSuite: true,
       sessionId: row.id ?? row._id,
+      completedAt: row.completedAt,
       title: `Mock Test - ${new Date(row.completedAt || row.createdAt).toLocaleDateString('vi-VN')}`,
       lessons: row.lessons,
       userId: user.id,
@@ -408,7 +409,10 @@ export function ManageLessonsListPage({ mode }) {
 
     setGradingAiLoading(true)
     try {
-      const res = await lessonsService.aiGradeWriting(lessonId, userId)
+      const res = await lessonsService.aiGradeWriting(lessonId, userId, {
+        attemptNo: gradingUser.sessionAttemptNo ?? gradingUser.attemptNo,
+        sessionCompletedAt: selectedLessonForResults.completedAt,
+      })
       const updatedProgress = res?.data
       if (updatedProgress?.submission) {
         setGradingUser(prev => ({
