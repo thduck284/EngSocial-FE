@@ -118,8 +118,6 @@ export function SkillPracticePage() {
     if (!requireAuth()) e.preventDefault()
   }
 
-  const [reviewModalOpen, setReviewModalOpen] = useState(false)
-  const [selectedLessonForReview, setSelectedLessonForReview] = useState(null)
   const [itemToDelete, setItemToDelete] = useState(null)
 
   const current = SKILLS[skill] || SKILLS.reading
@@ -261,9 +259,12 @@ export function SkillPracticePage() {
                 )}
               </div>
               <div className="flex flex-wrap items-center gap-x-3 gap-y-1 pl-1 text-[10px] text-slate-500 dark:text-gray-400">
-                <span className="flex items-center gap-1">
-                  <span className="material-symbols-outlined text-xs">reviews</span>
-                  {t('lessons.reviewsCount', { count: card.ratingCount || 0 })}
+                <span className="flex items-center gap-1 text-yellow-600 dark:text-yellow-500 font-medium">
+                  <span className="material-symbols-outlined text-xs fill-icon">star</span>
+                  {Number(card.rating || 0).toFixed(1)}
+                  <span className="text-slate-400 ml-1">
+                    ({t('lessons.reviewsCount', { count: card.ratingCount || 0 })})
+                  </span>
                 </span>
                 <span className="flex items-center gap-1">
                   <span className="material-symbols-outlined text-xs">group</span>
@@ -296,6 +297,16 @@ export function SkillPracticePage() {
                     <span className="material-symbols-outlined text-lg">delete</span>
                   </button>
                 </>
+              )}
+              {card.id && (
+                <Link
+                  to={ROUTES.LESSON_REVIEWS(card.id)}
+                  onClick={blockGuestNav}
+                  className="size-8 flex items-center justify-center rounded-xl text-yellow-600 dark:text-yellow-500 hover:bg-yellow-500/10 transition-all"
+                  title={t('lessons.reviews') || 'Review'}
+                >
+                  <span className="material-symbols-outlined text-lg">star</span>
+                </Link>
               )}
               <Link
                 to={detailUrl}

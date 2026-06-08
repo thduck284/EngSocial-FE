@@ -274,6 +274,7 @@ export const API_ENDPOINTS = {
   CHALLENGES: {
     LIST: '/challenges',
     ME: '/challenges/me',
+    REGISTER_VISIT: '/challenges/me/register-visit',
     DETAIL: (id) => `/challenges/${id}`,
     JOIN: (id) => `/challenges/${id}/join`,
     LEAVE: (id) => `/challenges/${id}/leave`,
@@ -385,6 +386,7 @@ export const ROUTES = {
   MANAGE_ADMIN_USERS: (userId) => `/adminstrator/${encodeURIComponent(String(userId))}/users`,
   MANAGE_ADMIN_REPORTS: (userId) => `/adminstrator/${encodeURIComponent(String(userId))}/reports`,
   SETTINGS: '/settings',
+  HELP: '/help',
 }
 
 /** Phần path sau /mod/:userId hoặc /adminstrator/:userId (vd. `/lessons`, `/users`); null nếu không khớp */

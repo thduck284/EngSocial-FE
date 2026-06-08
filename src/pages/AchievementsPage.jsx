@@ -9,9 +9,9 @@ import { useAchievementsCatalog } from '../hooks/useAchievementsCatalog'
 /** @param {{ embedded?: boolean }} props — embedded: trong khu /mod/:userId (không có AppHeader) */
 export function AchievementsPage({ embedded = false }) {
   const { t, i18n } = useTranslation()
-  const { isModerator } = useAuth()
-  /** Trang /achievements: admin như user; quản catalog trong /mod/.../achievements (moderator). */
-  const canManage = isModerator
+  const { isModerator, isAdmin } = useAuth()
+  /** /achievements: xem như user; chỉnh catalog trong /mod/.../achievements (embedded). */
+  const canManage = embedded && (isModerator || isAdmin)
 
   const {
     categories,
@@ -44,7 +44,7 @@ export function AchievementsPage({ embedded = false }) {
     <main
       className={
         embedded
-          ? 'max-w-[1440px] mx-auto p-6 min-h-[min(920px,calc(100dvh-7rem))] flex flex-col overflow-hidden'
+          ? 'h-[calc(100dvh-3.5rem)] max-w-[1440px] mx-auto p-6 flex flex-col overflow-hidden'
           : 'max-w-[1440px] mx-auto p-6 h-[calc(100vh-80px)] overflow-hidden flex flex-col'
       }
     >
@@ -74,8 +74,8 @@ export function AchievementsPage({ embedded = false }) {
         </div>
       </div>
 
-      <div className="flex-1 min-h-0 grid grid-cols-1 lg:grid-cols-11 gap-6">
-        <section className="lg:col-span-5 bg-white dark:bg-card-dark border border-slate-200 dark:border-border-dark rounded-xl p-5 space-y-4 h-full min-h-0 shadow-sm overflow-hidden flex flex-col">
+      <div className="flex-1 min-h-0 grid grid-cols-1 lg:grid-cols-11 lg:grid-rows-1 gap-6 overflow-hidden">
+        <section className="lg:col-span-5 bg-white dark:bg-card-dark border border-slate-200 dark:border-border-dark rounded-xl p-5 space-y-4 min-h-0 max-h-[min(480px,52vh)] lg:max-h-none h-full shadow-sm overflow-hidden flex flex-col">
           <div className="flex flex-col gap-3 shrink-0">
             <div className="flex items-center justify-between gap-3">
               <h2 className="text-sm font-bold text-slate-900 dark:text-white">
@@ -104,7 +104,7 @@ export function AchievementsPage({ embedded = false }) {
 
 
 
-          <div className="flex-1 min-h-0 overflow-hidden">
+          <div className="flex-1 min-h-0 overflow-y-auto overflow-x-hidden custom-scrollbar pr-1">
             <AchievementsList
               t={t}
               items={activeCategory?.items || []}
@@ -114,7 +114,7 @@ export function AchievementsPage({ embedded = false }) {
           </div>
         </section>
 
-        <section className="lg:col-span-6 bg-white dark:bg-card-dark border border-slate-200 dark:border-border-dark rounded-xl p-5 h-full min-h-0 shadow-sm overflow-y-auto overflow-x-hidden custom-scrollbar">
+        <section className="lg:col-span-6 bg-white dark:bg-card-dark border border-slate-200 dark:border-border-dark rounded-xl p-5 min-h-0 h-full shadow-sm overflow-y-auto overflow-x-hidden custom-scrollbar">
           <AchievementDetails
             t={t}
             achievement={achievement}

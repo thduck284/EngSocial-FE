@@ -68,6 +68,8 @@ import LearnPage from './pages/LearnPage'
 import MatchGamePage from './pages/MatchGamePage'
 import TestPage from './pages/TestPage'
 import { SettingsPage } from './pages/SettingsPage'
+import { NotificationsPage } from './pages/NotificationsPage'
+import { HelpPage } from './pages/HelpPage'
 import { GlobalGameInviteListener } from './components/GlobalGameInviteListener'
 import { AchievementUnlockedToast } from './components/achievements/AchievementUnlockedToast'
 
@@ -137,6 +139,7 @@ function App() {
           <Route path="/reset-password" element={<ResetPasswordPage />} />
         </Route>
         <Route path="/term" element={<TermPage />} />
+        <Route path="/help" element={<HelpPage />} />
 
         {/* Các route cần đăng nhập: DashboardLayout dùng useAuth() để redirect */}
         <Route path="/" element={<DashboardLayout />}>
@@ -232,6 +235,7 @@ function App() {
           <Route path="topic/:topicId/match" element={<GuestRestrictedPage><MatchGamePage /></GuestRestrictedPage>} />
           <Route path="topic/:topicId/test" element={<GuestRestrictedPage><TestPage /></GuestRestrictedPage>} />
           <Route path="settings" element={<GuestRestrictedPage><SettingsPage /></GuestRestrictedPage>} />
+          <Route path="notifications" element={<GuestRestrictedPage><NotificationsPage /></GuestRestrictedPage>} />
         </Route>
 
         <Route path="/manage/*" element={<LegacyManageRedirect />} />
