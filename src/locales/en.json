@@ -1034,6 +1034,9 @@
     "title": "Notifications",
     "markAllRead": "Mark all as read",
     "viewAll": "View All Notifications",
+    "filterAll": "All",
+    "filterUnread": "Unread",
+    "unreadSummary": "{{count}} unread",
     "loading": "Loading...",
     "empty": "No notifications.",
     "friendRequestSuffix": " sent you a friend request.",
@@ -1227,6 +1230,7 @@
   "auth": {
     "login": "Login",
     "register": "Register",
+    "help": "Help",
     "forgotPassword": "Forgot Password?",
     "email": "Email",
     "emailAddress": "Email Address",
@@ -1343,6 +1347,90 @@
     "noToken": "Missing reset link. Please request a new one from the forgot password page.",
     "showPassword": "Show password",
     "hidePassword": "Hide password"
+  },
+  "helpPage": {
+    "badge": "Help Center",
+    "title": "Help & Support",
+    "subtitle": "Find answers to common questions or contact our support team during business hours.",
+    "faqTitle": "Frequently asked questions",
+    "contactTitle": "Support contact",
+    "contactSubtitle": "We typically respond within 1–2 business days.",
+    "emailLabel": "Email",
+    "emailHint": "Click the email to open Gmail and compose a support message.",
+    "hotlineLabel": "Hotline",
+    "hoursLabel": "Business hours",
+    "hours": "Mon – Fri, 8:00 AM – 5:00 PM (GMT+7)",
+    "webLabel": "Web",
+    "quickLinksTitle": "Quick links",
+    "backHome": "Back to Home",
+    "backLogin": "Back to Login",
+    "goToApp": "Go to app",
+    "faq": {
+      "account": {
+        "q": "How do I reset my password?",
+        "steps": [
+          "Go to Login → Forgot password.",
+          "Enter the email linked to your EngSocial account and submit.",
+          "Open the reset link in your inbox (check Spam if needed) and set a new password (8+ characters recommended).",
+          "Already signed in? Open Settings → Security, enter current password, then new password twice.",
+          "Still stuck? Email support@engsocial.vn from your registered address."
+        ]
+      },
+      "lesson": {
+        "q": "Where are my lessons and learning history?",
+        "steps": [
+          "Open Lesson in the top menu to browse by skill, level, and topic.",
+          "Click a card → View detail → Start or Continue the lesson.",
+          "Submit answers to save score and completion automatically.",
+          "Open Lesson → History to see past attempts (date, score, time).",
+          "Check Profile for skill charts, XP, level, and badges.",
+          "Writing may show “pending review” until an instructor grades — final score updates after that."
+        ]
+      },
+      "practice": {
+        "q": "What is the difference between Lessons and Practice?",
+        "steps": [
+          "Lessons: main structured path — longer instructor content (reading, audio, writing, quizzes).",
+          "Practice: skill drills under the Practice menu — extra R/L/W exercises, mock tests, games.",
+          "Same flow for both: study → answer → result page.",
+          "Both earn XP and count toward daily/weekly quests and active challenges.",
+          "Mock tests use a multi-part flow with a dedicated results summary."
+        ]
+      },
+      "quest": {
+        "q": "How do daily quests and challenges work?",
+        "steps": [
+          "Quests (Quests menu): personal goals that refresh daily/weekly (lessons, friends, posts, vocab notes, online time…).",
+          "Progress bars update automatically when you complete the matching action.",
+          "Challenges (Challenge menu): time-limited events with a visible start/end date.",
+          "Visit /challenge to register — each user is counted once per challenge.",
+          "Meet the goal (lessons, score, streak, online minutes…) before the deadline to earn XP.",
+          "Long-term badges live under Achievements."
+        ]
+      },
+      "report": {
+        "q": "How do I report inappropriate content?",
+        "steps": [
+          "On a post or comment: open ⋮ → Report.",
+          "On a user profile: use the report option on their page.",
+          "Pick a reason and add a short note if helpful.",
+          "Reports go to moderators; the reported person does not see your identity.",
+          "You get an in-app notification when the case is accepted, dismissed, or still pending.",
+          "Urgent issues: also email support@engsocial.vn with links or screenshots."
+        ]
+      },
+      "technical": {
+        "q": "The app is slow or not loading — what should I do?",
+        "steps": [
+          "Refresh the page (Ctrl+R / Cmd+R) and close extra browser tabs.",
+          "Use an updated Chrome, Edge, Firefox, or Safari on a stable connection.",
+          "Clear cache/cookies for this site; try Incognito without extensions.",
+          "Listening: check volume and browser autoplay permissions.",
+          "Large images or writing uploads may timeout — use smaller files.",
+          "Still failing? Email support@engsocial.vn with account email, device/browser, steps to reproduce, and a screenshot."
+        ]
+      }
+    }
   },
   "term": {
     "title": "Terms & Privacy Policy",

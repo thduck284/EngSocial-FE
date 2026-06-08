@@ -1,7 +1,11 @@
 import { useTranslation } from 'react-i18next'
 import { authService } from '../../../services'
 
-export function LanguageSwitcher() {
+/** Nút toolbar auth (login/register) — đồng bộ với icon Help cạnh LanguageSwitcher */
+export const AUTH_TOOLBAR_BTN_CLASS =
+  'flex items-center justify-center gap-1 h-8 px-2.5 rounded-xl bg-white dark:bg-card-dark text-slate-500 dark:text-gray-400 hover:text-primary dark:hover:text-primary border border-slate-100 dark:border-white/5 transition-all shadow-lg shadow-slate-200/40 dark:shadow-none active:scale-95 group'
+
+export function LanguageSwitcher({ buttonClassName }) {
   const { i18n } = useTranslation()
 
   const toggleLanguage = async () => {
@@ -29,7 +33,10 @@ export function LanguageSwitcher() {
     <button
       type="button"
       onClick={toggleLanguage}
-      className="flex items-center gap-1 px-2 py-0.5 rounded-xl bg-white dark:bg-card-dark text-slate-500 dark:text-gray-400 hover:text-primary dark:hover:text-primary border border-slate-100 dark:border-white/5 transition-all shadow-lg shadow-slate-200/40 dark:shadow-none active:scale-95 group"
+      className={
+        buttonClassName ??
+        'flex items-center gap-1 px-2 py-0.5 rounded-xl bg-white dark:bg-card-dark text-slate-500 dark:text-gray-400 hover:text-primary dark:hover:text-primary border border-slate-100 dark:border-white/5 transition-all shadow-lg shadow-slate-200/40 dark:shadow-none active:scale-95 group'
+      }
       aria-label="Chuyển ngôn ngữ"
     >
       <span className="material-symbols-outlined text-lg group-hover:scale-110 transition-transform">translate</span>

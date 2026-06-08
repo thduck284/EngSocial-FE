@@ -20,6 +20,8 @@ export const challengesService = {
     const query = q.toString()
     return apiClient.get(API_ENDPOINTS.CHALLENGES.ME + (query ? `?${query}` : ''))
   },
+  /** Ghi nhận tham gia khi mở /challenge (mỗi user/challenge chỉ +1 lần). */
+  registerVisit: () => apiClient.post(API_ENDPOINTS.CHALLENGES.REGISTER_VISIT),
   joinChallenge: async (id) => {
     return apiClient.post(API_ENDPOINTS.CHALLENGES.JOIN(id))
   },

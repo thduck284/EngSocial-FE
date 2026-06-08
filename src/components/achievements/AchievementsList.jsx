@@ -11,7 +11,6 @@ export function AchievementsList({
   items,
   activeId,
   onSelect,
-  maxHeightClass = 'max-h-[260px]',
 }) {
   const { i18n } = useTranslation()
   const lng = i18n.language
@@ -30,9 +29,7 @@ export function AchievementsList({
   }
 
   return (
-    <div
-      className="space-y-2.5 h-full overflow-y-auto pr-2 custom-scrollbar no-scrollbar"
-    >
+    <div className="space-y-2.5 pb-1">
       {(items || []).map((a) => {
         const prog = getAchievementProgressState(a, t)
         return (

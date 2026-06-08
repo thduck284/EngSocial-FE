@@ -1043,6 +1043,9 @@
     "title": "Thông báo",
     "markAllRead": "Đánh dấu tất cả đã đọc",
     "viewAll": "Xem tất cả thông báo",
+    "filterAll": "Tất cả",
+    "filterUnread": "Chưa đọc",
+    "unreadSummary": "{{count}} chưa đọc",
     "loading": "Đang tải...",
     "empty": "Chưa có thông báo.",
     "friendRequestSuffix": " đã gửi lời mời kết bạn.",
@@ -1237,6 +1240,7 @@
   "auth": {
     "login": "Đăng nhập",
     "register": "Đăng ký",
+    "help": "Trợ giúp",
     "forgotPassword": "Quên mật khẩu?",
     "email": "Email",
     "emailAddress": "Địa chỉ Email",
@@ -1353,6 +1357,90 @@
     "noToken": "Thiếu link đặt lại. Vui lòng yêu cầu gửi lại từ trang quên mật khẩu.",
     "showPassword": "Hiện mật khẩu",
     "hidePassword": "Ẩn mật khẩu"
+  },
+  "helpPage": {
+    "badge": "Trung tâm trợ giúp",
+    "title": "Trợ giúp & Hỗ trợ",
+    "subtitle": "Tìm câu trả lời cho các câu hỏi thường gặp hoặc liên hệ đội ngũ hỗ trợ trong giờ làm việc.",
+    "faqTitle": "Câu hỏi thường gặp",
+    "contactTitle": "Liên hệ hỗ trợ",
+    "contactSubtitle": "Chúng tôi thường phản hồi trong 1–2 ngày làm việc.",
+    "emailLabel": "Email",
+    "emailHint": "Nhấn email để mở Gmail soạn thư gửi hỗ trợ.",
+    "hotlineLabel": "Hotline",
+    "hoursLabel": "Giờ làm việc",
+    "hours": "Thứ 2 – Thứ 6, 8:00 – 17:00 (GMT+7)",
+    "webLabel": "Web",
+    "quickLinksTitle": "Liên kết nhanh",
+    "backHome": "Về trang chủ",
+    "backLogin": "Về đăng nhập",
+    "goToApp": "Vào ứng dụng",
+    "faq": {
+      "account": {
+        "q": "Làm sao để đặt lại mật khẩu?",
+        "steps": [
+          "Vào Đăng nhập → Quên mật khẩu.",
+          "Nhập email đã đăng ký EngSocial và gửi form.",
+          "Mở link trong hộp thư (kiểm tra cả thư rác) và đặt mật khẩu mới (nên từ 8 ký tự trở lên).",
+          "Đã đăng nhập? Vào Cài đặt → Bảo mật, nhập mật khẩu cũ và mật khẩu mới hai lần.",
+          "Vẫn không được? Gửi support@engsocial.vn từ đúng email đã đăng ký."
+        ]
+      },
+      "lesson": {
+        "q": "Bài học và lịch sử học ở đâu?",
+        "steps": [
+          "Mở Bài học (Lesson) trên menu — lọc theo kỹ năng, trình độ, chủ đề.",
+          "Chọn thẻ bài → Xem chi tiết → Bắt đầu hoặc Tiếp tục.",
+          "Nộp bài để hệ thống lưu điểm và trạng thái hoàn thành.",
+          "Vào Lesson → Lịch sử để xem các lần làm trước (ngày, điểm, thời gian).",
+          "Xem Hồ sơ để theo dõi biểu đồ kỹ năng, XP, cấp và huy hiệu.",
+          "Writing có thể hiển thị chờ chấm — điểm cuối cập nhật sau khi giảng viên chấm."
+        ]
+      },
+      "practice": {
+        "q": "Lesson và Practice khác nhau thế nào?",
+        "steps": [
+          "Lesson: lộ trình học chính — nội dung dài, do giảng viên biên soạn.",
+          "Practice: bài luyện kỹ năng (Reading/Listening/Writing), mock test, game.",
+          "Cùng luồng: học → trả lời → trang kết quả.",
+          "Cả hai đều cộng XP và tính vào quest/challenge.",
+          "Mock test có nhiều phần và trang tổng kết riêng."
+        ]
+      },
+      "quest": {
+        "q": "Quest và Challenge hoạt động ra sao?",
+        "steps": [
+          "Quest (Nhiệm vụ): mục tiêu cá nhân làm mới theo ngày/tuần.",
+          "Làm đúng hành động (học bài, kết bạn, đăng bài…) — thanh tiến độ tự tăng.",
+          "Challenge (Thử thách): sự kiện có ngày bắt đầu và kết thúc.",
+          "Vào /challenge — mỗi user chỉ ghi nhận tham gia một lần mỗi thử thách.",
+          "Hoàn thành mục tiêu trước hạn để nhận XP.",
+          "Huy hiệu dài hạn xem tại Achievements."
+        ]
+      },
+      "report": {
+        "q": "Báo cáo nội dung không phù hợp như thế nào?",
+        "steps": [
+          "Bài viết/bình luận: menu ⋮ → Báo cáo.",
+          "Hồ sơ người dùng: dùng tùy chọn báo cáo trên trang profile.",
+          "Chọn lý do và ghi chú ngắn (nếu cần).",
+          "Báo cáo gửi tới moderator — người bị báo cáo không biết bạn là ai.",
+          "Nhận thông báo chuông khi đã xử lý / bác bỏ / đang xem xét.",
+          "Khẩn cấp: gửi thêm support@engsocial.vn kèm link hoặc ảnh chụp."
+        ]
+      },
+      "technical": {
+        "q": "App chậm hoặc không tải được — phải làm gì?",
+        "steps": [
+          "Tải lại trang (Ctrl+R / Cmd+R), đóng bớt tab trình duyệt.",
+          "Dùng Chrome / Edge / Firefox / Safari bản mới, mạng ổn định.",
+          "Xóa cache/cookie site; thử cửa sổ ẩn danh (tắt extension).",
+          "Listening: kiểm tra âm lượng và quyền phát audio.",
+          "Ảnh hoặc bài Writing quá lớn có thể lỗi — dùng file nhỏ hơn.",
+          "Vẫn lỗi? Gửi support@engsocial.vn: email tài khoản, thiết bị/trình duyệt, các bước tái hiện, ảnh màn hình."
+        ]
+      }
+    }
   },
   "term": {
     "title": "Điều khoản & Chính sách bảo mật",

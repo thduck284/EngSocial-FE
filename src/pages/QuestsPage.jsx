@@ -175,6 +175,15 @@ function pickChallengeLocaleText(challenge, lang) {
   return { title, description }
 }
 
+function isChallengeLiveNow(challenge) {
+  if (!challenge || challenge.status !== 'active') return false
+  const now = Date.now()
+  const start = new Date(challenge.startDate).getTime()
+  const end = new Date(challenge.endDate).getTime()
+  if (!Number.isFinite(start) || !Number.isFinite(end)) return false
+  return start <= now && end >= now
+}
+
 export function QuestsPage() {
   const location = useLocation()
   const { t, i18n } = useTranslation()
@@ -244,10 +253,10 @@ export function QuestsPage() {
     setChallengesLoading(true)
     const listPromise = challengesService.getChallenges({ status: 'active', limit: 50 })
     const minePromise = isAuthenticated ? challengesService.getMine({ limit: 100 }) : Promise.resolve(null)
-    Promise.all([
-      listPromise.catch(() => null),
-      minePromise.catch(() => null),
-    ])
+    Promise.resolve(
+      isAuthenticated ? challengesService.registerVisit().catch(() => null) : null,
+    )
+      .then(() => Promise.all([listPromise.catch(() => null), minePromise.catch(() => null)]))
       .then(([resList, resMine]) => {
         if (resList) {
           const list = resList?.data?.data ?? resList?.data ?? []
@@ -274,11 +283,13 @@ export function QuestsPage() {
   }, [isAuthenticated])
 
   const challengesSorted = useMemo(() => {
-    return [...challenges].sort((a, b) => {
-      const endA = new Date(a.endDate).getTime()
-      const endB = new Date(b.endDate).getTime()
-      return endA - endB
-    })
+    return [...challenges]
+      .filter(isChallengeLiveNow)
+      .sort((a, b) => {
+        const endA = new Date(a.endDate).getTime()
+        const endB = new Date(b.endDate).getTime()
+        return endA - endB
+      })
   }, [challenges])
 
   useEffect(() => {
@@ -485,7 +496,7 @@ export function QuestsPage() {
         </div>
       )}
 
-      {tab === TAB_CHALLENGES && !challengesLoading && challenges.length > 0 && (
+      {tab === TAB_CHALLENGES && !challengesLoading && challengesSorted.length > 0 && (
         <div className="space-y-8">
           <section>
             <div className="flex items-center gap-2 mb-4 px-1">
@@ -590,7 +601,7 @@ export function QuestsPage() {
         </div>
       )}
 
-      {tab === TAB_CHALLENGES && !challengesLoading && challenges.length === 0 && (
+      {tab === TAB_CHALLENGES && !challengesLoading && challengesSorted.length === 0 && (
         <div className="text-center py-24 bg-white dark:bg-card-dark rounded-3xl border-2 border-dashed border-slate-200 dark:border-border-dark">
           <div className="size-20 bg-slate-50 dark:bg-white/5 rounded-full flex items-center justify-center mx-auto mb-4">
             <span className="material-symbols-outlined text-5xl text-slate-300 dark:opacity-50">emoji_events</span>
