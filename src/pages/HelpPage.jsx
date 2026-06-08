@@ -9,7 +9,7 @@ export const HELP_CONTACT = {
   hotline: '+84 28 3822 1234',
   hotlineTel: '+842838221234',
   hoursKey: 'helpPage.hours',
-  webPath: '/help',
+  webUrl: 'https://engsocial-fe.onrender.com/help',
 }
 
 const FAQ_KEYS = ['account', 'lesson', 'practice', 'quest', 'report', 'technical']
@@ -80,8 +80,6 @@ function HelpLogoLink() {
 export function HelpPage() {
   const { t } = useTranslation()
   const { canAccessApp } = useAuth()
-  const helpUrl =
-    typeof window !== 'undefined' ? `${window.location.origin}${HELP_CONTACT.webPath}` : HELP_CONTACT.webPath
 
   const quickLinks = [
     { to: ROUTES.LESSON, icon: 'menu_book', labelKey: 'header.lessons' },
@@ -173,13 +171,13 @@ export function HelpPage() {
               <li>
                 <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-1">{t('helpPage.webLabel')}</p>
                 <a
-                  href={helpUrl}
+                  href={HELP_CONTACT.webUrl}
                   className="inline-flex items-center gap-2 text-sm font-semibold text-primary hover:underline break-all"
                   target="_blank"
                   rel="noopener noreferrer"
                 >
                   <span className="material-symbols-outlined text-base">language</span>
-                  {helpUrl}
+                  {HELP_CONTACT.webUrl}
                 </a>
               </li>
             </ul>
