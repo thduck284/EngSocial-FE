@@ -4,6 +4,7 @@ import { useTranslation } from 'react-i18next'
 import { useLocation, useNavigate, useSearchParams, useParams } from 'react-router-dom'
 import { ROUTES } from '../constants'
 import { SOCKET_ENABLED, SOCKET_BASE_URL, SOCKET_FALLBACK_BASE_URL } from '../constants/api'
+import { createSocketAuthOptions, disconnectSocketSafe } from '../utils/socketClient'
 import { useAuth } from '../context/AuthContext'
 import { conversationService, friendsService } from '../services'
 import { getAuthToken } from '../utils/auth'
@@ -32,7 +33,7 @@ export function useConversationSocket({
     const token = getAuthToken()
     if (!token) return
 
-    const opts = { auth: { token }, transports: ['websocket', 'polling'] }
+    const opts = createSocketAuthOptions(token)
 
     function attachListeners(socket) {
       socket.on('conversation:read', (payload) => {
@@ -375,7 +376,7 @@ export function useConversationSocket({
       if (!SOCKET_FALLBACK_BASE_URL || triedFallbackRef.current) return
       triedFallbackRef.current = true
       socket.removeAllListeners()
-      socket.disconnect()
+      disconnectSocketSafe(socket)
       socket = io(SOCKET_FALLBACK_BASE_URL, opts)
       currentSocketRef.current = socket
       if (socketRef) socketRef.current = socket
@@ -384,7 +385,7 @@ export function useConversationSocket({
 
     return () => {
       triedFallbackRef.current = false
-      currentSocketRef.current?.disconnect()
+      disconnectSocketSafe(currentSocketRef.current)
       currentSocketRef.current = null
       if (socketRef) socketRef.current = null
     }

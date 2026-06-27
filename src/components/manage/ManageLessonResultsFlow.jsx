@@ -171,7 +171,9 @@ export function ManageLessonResultsFlow({ lesson, onBack }) {
     const userId = gradingAttempt.user?.id || gradingAttempt.user?._id
     setGradingAiLoading(true)
     try {
-      const res = await lessonsService.aiGradeWriting(lessonId, userId)
+      const res = await lessonsService.aiGradeWriting(lessonId, userId, {
+        attemptNo: gradingAttempt.attemptNo,
+      })
       const sub = res?.data?.submission
       if (sub) {
         setGradingAttempt((prev) => ({ ...prev, submission: { ...prev.submission, ...sub } }))

@@ -45,6 +45,6 @@ export const lessonsService = {
   },
 
   gradeWriting: (id, userId, body) => apiClient.post(`${API_ENDPOINTS.LESSONS.DETAIL(id)}/grade/${userId}`, body),
-  aiGradeWriting: (id, userId) => apiClient.post(API_ENDPOINTS.LESSONS.AI_GRADE(id, userId)),
+  aiGradeWriting: (id, userId, body = {}) => apiClient.post(API_ENDPOINTS.LESSONS.AI_GRADE(id, userId), body),
   syncQuizScores: (id) => apiClient.post(`${API_ENDPOINTS.LESSONS.DETAIL(id)}/sync-scores`),
 }
