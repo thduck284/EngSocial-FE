@@ -42,6 +42,6 @@ export const adminService = {
 
   getReportById: (reportId) => apiClient.get(API_ENDPOINTS.ADMIN.REPORT_DETAIL(reportId)),
 
-  updateReportStatus: (reportId, status) =>
-    apiClient.patch(API_ENDPOINTS.ADMIN.REPORT_STATUS(reportId), { status }),
+  updateReportStatus: (reportId, payload) =>
+    apiClient.patch(API_ENDPOINTS.ADMIN.REPORT_STATUS(reportId), payload),
 }

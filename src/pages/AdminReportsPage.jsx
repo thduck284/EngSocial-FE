@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback, useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
 import { adminService } from '../services'
 import { AdminReportTargetModal } from '../components/admin/AdminReportTargetModal'
+import { AdminReportStatusEmailModal } from '../components/admin/AdminReportStatusEmailModal'
 
 const PAGE_SIZE = 20
 
@@ -31,6 +32,7 @@ export function AdminReportsPage() {
   const [targetTypeFilter, setTargetTypeFilter] = useState('')
   const [updatingId, setUpdatingId] = useState(null)
   const [viewReportId, setViewReportId] = useState(null)
+  const [emailModal, setEmailModal] = useState(null)
 
   useEffect(() => {
     setPage(1)
@@ -66,10 +68,14 @@ export function AdminReportsPage() {
   const totalPages = pagination?.totalPages ?? 1
 
   const handleStatusChange = useCallback(
-    async (reportId, status) => {
+    async (reportId, status, emailPayload = null) => {
       setUpdatingId(reportId)
       try {
-        await adminService.updateReportStatus(reportId, status)
+        if (emailPayload) {
+          await adminService.updateReportStatus(reportId, emailPayload)
+        } else {
+          await adminService.updateReportStatus(reportId, { status })
+        }
         await load()
       } catch {
         setError(t('adminConsole.loadError'))
@@ -79,6 +85,15 @@ export function AdminReportsPage() {
     },
     [load, t]
   )
+
+  const handleStatusSelect = useCallback((report, newStatus) => {
+    if (newStatus === report.status) return
+    if (newStatus === 'reviewed' || newStatus === 'dismissed') {
+      setEmailModal({ reportId: report.id, newStatus })
+      return
+    }
+    handleStatusChange(report.id, newStatus)
+  }, [handleStatusChange])
 
   const title = useMemo(() => t('adminConsole.reportsTitle'), [t])
 
@@ -201,7 +216,7 @@ export function AdminReportsPage() {
                       <select
                         value={r.status}
                         disabled={updatingId === r.id}
-                        onChange={(e) => handleStatusChange(r.id, e.target.value)}
+                        onChange={(e) => handleStatusSelect(r, e.target.value)}
                         className={`${selectClass} min-w-[110px]`}
                       >
                         <option value="pending">{t('adminConsole.reportPending')}</option>
@@ -245,6 +260,14 @@ export function AdminReportsPage() {
         open={!!viewReportId}
         reportId={viewReportId}
         onClose={() => setViewReportId(null)}
+      />
+
+      <AdminReportStatusEmailModal
+        open={!!emailModal}
+        reportId={emailModal?.reportId}
+        newStatus={emailModal?.newStatus}
+        onClose={() => setEmailModal(null)}
+        onSuccess={load}
       />
     </div>
   )
