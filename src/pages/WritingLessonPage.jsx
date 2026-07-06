@@ -5,6 +5,7 @@ import { lessonsService } from '../services'
 import { addVocabNote } from '../utils/vocabularyUserStorage'
 import { formatTime } from '../utils/dateTime'
 import { isLessonInActiveMockTest } from '../utils/mockTestSession'
+import { buildLessonResultUrl } from '../utils/lessonResultLinks'
 import { AlertModal } from '../components/ui/common/AlertModal'
 import { MockTestSidebar } from '../components/layout/MockTestSidebar'
 
@@ -33,6 +34,7 @@ export function WritingLessonPage() {
   const [countdownSeconds, setCountdownSeconds] = useState(null)
   const lessonOpenedAtMs = useRef(null)
   const autoSubmitDoneRef = useRef(false)
+  const lastSubmitDataRef = useRef(null)
 
   const [isMockTest, setIsMockTest] = useState(false)
   
@@ -178,6 +180,17 @@ export function WritingLessonPage() {
   const wordCount = (userText.trim() && userText.trim().split(/\s+/).length) || 0
   const inRange = wordCount >= (wordLimit.min || 0) && wordCount <= (wordLimit.max || 999)
 
+  const navigateToResult = (submitData) => {
+    const category = location.pathname.startsWith('/practice/') ? 'practice' : 'lesson'
+    const attemptNo = submitData?.attempts
+    const url =
+      buildLessonResultUrl(
+        { id, skill: 'writing', category: category === 'practice' ? 'practice' : 'lesson' },
+        { attemptNo, category },
+      ) || `/${category}/writing/${id}/result`
+    navigate(url)
+  }
+
   const performSubmit = ({ auto = false } = {}) => {
     if (!id || submitting) return
     setShowConfirmSubmitModal(false)
@@ -198,14 +211,15 @@ export function WritingLessonPage() {
         wordCount: textToSubmit ? textToSubmit.split(/\s+/).length : 0,
         timeSpent: elapsedSec,
       })
-      .then(() => {
+      .then((res) => {
+        const data = res?.data ?? res ?? {}
         if (auto) {
-          const type = location.pathname.startsWith('/practice/') ? 'practice' : 'lesson'
-          navigate(`/${type}/writing/${id}/result`)
+          navigateToResult(data)
           return
         }
         setCompleteMessage(t('writingLesson.submitSuccess'))
         setShowSuccessModal(true)
+        lastSubmitDataRef.current = data
       })
       .catch(() => setSubmitMessage(t('writingLesson.submitFailed')))
       .finally(() => setSubmitting(false))
@@ -517,8 +531,7 @@ export function WritingLessonPage() {
         confirmText={t('common.ok')}
         onClose={() => {
           setShowSuccessModal(false)
-          const type = location.pathname.startsWith('/practice/') ? 'practice' : 'lesson'
-          navigate(`/${type}/writing/${id}/result`)
+          navigateToResult(lastSubmitDataRef.current || {})
         }}
       />
 

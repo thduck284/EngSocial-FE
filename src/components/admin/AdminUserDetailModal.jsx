@@ -1,6 +1,10 @@
 import { useState, useEffect, useCallback } from 'react'
 import { useTranslation } from 'react-i18next'
 import { adminService } from '../../services'
+import {
+  AdminStatusDurationPicker,
+  buildStatusDurationPayload,
+} from './AdminStatusDurationPicker'
 
 function toDateInputValue(v) {
   if (!v) return ''
@@ -26,6 +30,9 @@ export function AdminUserDetailModal({ open, userId, currentUserId, onClose, onM
   const [avatar, setAvatar] = useState('')
   const [role, setRole] = useState('user')
   const [status, setStatus] = useState('active')
+  const [lockDurationMode, setLockDurationMode] = useState('timed')
+  const [lockDurationValue, setLockDurationValue] = useState('7')
+  const [lockDurationUnit, setLockDurationUnit] = useState('day')
   const [newPassword, setNewPassword] = useState('')
   const [confirmPassword, setConfirmPassword] = useState('')
   const [pwSaving, setPwSaving] = useState(false)
@@ -103,7 +110,11 @@ export function AdminUserDetailModal({ open, userId, currentUserId, onClose, onM
         await adminService.updateUserRole(userId, role)
       }
       if (status !== original?.status) {
-        await adminService.updateUserStatus(userId, status)
+        const duration =
+          status === 'active' || status === 'pending'
+            ? undefined
+            : buildStatusDurationPayload(lockDurationMode, lockDurationValue, lockDurationUnit)
+        await adminService.updateUserStatus(userId, status, duration)
       }
       setSuccess(t('adminConsole.detailSaved'))
       load()
@@ -146,7 +157,8 @@ export function AdminUserDetailModal({ open, userId, currentUserId, onClose, onM
     setSaving(true)
     setError('')
     try {
-      await adminService.updateUserStatus(userId, 'banned')
+      const duration = buildStatusDurationPayload(lockDurationMode, lockDurationValue, lockDurationUnit)
+      await adminService.updateUserStatus(userId, 'banned', duration)
       setStatus('banned')
       setSuccess(t('adminConsole.userLocked'))
       load()
@@ -299,6 +311,18 @@ export function AdminUserDetailModal({ open, userId, currentUserId, onClose, onM
                     </select>
                   </div>
                 </div>
+              </div>
+
+              <div className="mb-4">
+                <AdminStatusDurationPicker
+                  mode={lockDurationMode}
+                  durationValue={lockDurationValue}
+                  durationUnit={lockDurationUnit}
+                  onModeChange={setLockDurationMode}
+                  onValueChange={setLockDurationValue}
+                  onUnitChange={setLockDurationUnit}
+                  disabled={saving || isSelf}
+                />
               </div>
 
               <div className="flex flex-wrap gap-2 mb-6">

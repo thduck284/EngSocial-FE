@@ -9,6 +9,9 @@ const PAGE_SIZE = 20
 const selectClass =
   'bg-background-dark border border-border-dark rounded-lg px-2 py-1.5 text-xs text-white outline-none focus:ring-1 focus:ring-primary'
 
+const inputClass =
+  'bg-background-dark border border-border-dark rounded-lg px-3 py-2 text-sm text-white placeholder:text-gray-500 outline-none focus:ring-1 focus:ring-primary'
+
 function formatDt(iso, locale) {
   if (!iso) return '—'
   try {
@@ -21,6 +24,29 @@ function formatDt(iso, locale) {
   }
 }
 
+function toDateInputValue(d) {
+  const y = d.getFullYear()
+  const m = String(d.getMonth() + 1).padStart(2, '0')
+  const day = String(d.getDate()).padStart(2, '0')
+  return `${y}-${m}-${day}`
+}
+
+function getPresetRange(preset) {
+  const now = new Date()
+  const today = toDateInputValue(now)
+  if (!preset || preset === 'all') return { from: '', to: '' }
+  if (preset === 'today') return { from: today, to: today }
+  const days = preset === '7d' ? 7 : preset === '30d' ? 30 : preset === '90d' ? 90 : null
+  if (days != null) {
+    const from = new Date(now)
+    from.setDate(from.getDate() - days)
+    return { from: toDateInputValue(from), to: today }
+  }
+  return { from: '', to: '' }
+}
+
+const TARGET_TYPES = ['post', 'message', 'conversation', 'user']
+
 export function AdminReportsPage() {
   const { t, i18n } = useTranslation()
   const [rows, setRows] = useState([])
@@ -28,15 +54,66 @@ export function AdminReportsPage() {
   const [error, setError] = useState('')
   const [page, setPage] = useState(1)
   const [pagination, setPagination] = useState(null)
+  const [search, setSearch] = useState('')
+  const [searchDebounced, setSearchDebounced] = useState('')
   const [statusFilter, setStatusFilter] = useState('')
   const [targetTypeFilter, setTargetTypeFilter] = useState('')
+  const [datePreset, setDatePreset] = useState('all')
+  const [dateFrom, setDateFrom] = useState('')
+  const [dateTo, setDateTo] = useState('')
   const [updatingId, setUpdatingId] = useState(null)
   const [viewReportId, setViewReportId] = useState(null)
   const [emailModal, setEmailModal] = useState(null)
 
   useEffect(() => {
+    const tmr = setTimeout(() => setSearchDebounced(search.trim()), 400)
+    return () => clearTimeout(tmr)
+  }, [search])
+
+  useEffect(() => {
     setPage(1)
-  }, [statusFilter, targetTypeFilter])
+  }, [searchDebounced, statusFilter, targetTypeFilter, dateFrom, dateTo])
+
+  const handleDatePresetChange = useCallback((preset) => {
+    setDatePreset(preset)
+    if (preset === 'custom') return
+    const { from, to } = getPresetRange(preset)
+    setDateFrom(from)
+    setDateTo(to)
+  }, [])
+
+  const handleDateFromChange = useCallback((value) => {
+    setDateFrom(value)
+    setDatePreset('custom')
+  }, [])
+
+  const handleDateToChange = useCallback((value) => {
+    setDateTo(value)
+    setDatePreset('custom')
+  }, [])
+
+  const hasActiveFilters = useMemo(
+    () =>
+      Boolean(
+        searchDebounced ||
+          statusFilter ||
+          targetTypeFilter ||
+          dateFrom ||
+          dateTo ||
+          (datePreset && datePreset !== 'all'),
+      ),
+    [searchDebounced, statusFilter, targetTypeFilter, dateFrom, dateTo, datePreset],
+  )
+
+  const clearFilters = useCallback(() => {
+    setSearch('')
+    setSearchDebounced('')
+    setStatusFilter('')
+    setTargetTypeFilter('')
+    setDatePreset('all')
+    setDateFrom('')
+    setDateTo('')
+  }, [])
 
   const load = useCallback(() => {
     setError('')
@@ -47,6 +124,9 @@ export function AdminReportsPage() {
         limit: PAGE_SIZE,
         status: statusFilter || undefined,
         targetType: targetTypeFilter || undefined,
+        search: searchDebounced || undefined,
+        dateFrom: dateFrom || undefined,
+        dateTo: dateTo || undefined,
       })
       .then((res) => {
         const list = Array.isArray(res?.data) ? res.data : []
@@ -59,7 +139,7 @@ export function AdminReportsPage() {
         setError(t('adminConsole.loadError'))
       })
       .finally(() => setLoading(false))
-  }, [page, statusFilter, targetTypeFilter, t])
+  }, [page, statusFilter, targetTypeFilter, searchDebounced, dateFrom, dateTo, t])
 
   useEffect(() => {
     load()
@@ -83,17 +163,20 @@ export function AdminReportsPage() {
         setUpdatingId(null)
       }
     },
-    [load, t]
+    [load, t],
   )
 
-  const handleStatusSelect = useCallback((report, newStatus) => {
-    if (newStatus === report.status) return
-    if (newStatus === 'reviewed' || newStatus === 'dismissed') {
-      setEmailModal({ reportId: report.id, newStatus })
-      return
-    }
-    handleStatusChange(report.id, newStatus)
-  }, [handleStatusChange])
+  const handleStatusSelect = useCallback(
+    (report, newStatus) => {
+      if (newStatus === report.status) return
+      if (newStatus === 'reviewed' || newStatus === 'dismissed') {
+        setEmailModal({ reportId: report.id, newStatus })
+        return
+      }
+      handleStatusChange(report.id, newStatus)
+    },
+    [handleStatusChange],
+  )
 
   const title = useMemo(() => t('adminConsole.reportsTitle'), [t])
 
@@ -102,28 +185,96 @@ export function AdminReportsPage() {
       <h1 className="text-2xl md:text-3xl font-bold text-white mb-2">{title}</h1>
       <p className="text-sm text-gray-500 mb-6">{t('staffDashboard.adminConsoleSubtitle')}</p>
 
-      <div className="flex flex-col sm:flex-row flex-wrap gap-3 mb-6">
-        <select
-          value={statusFilter}
-          onChange={(e) => setStatusFilter(e.target.value)}
-          className={`${selectClass} sm:w-44`}
-        >
-          <option value="">{t('adminConsole.filterReportStatusAll')}</option>
-          <option value="pending">{t('adminConsole.reportPending')}</option>
-          <option value="reviewed">{t('adminConsole.reportReviewed')}</option>
-          <option value="dismissed">{t('adminConsole.reportDismissed')}</option>
-        </select>
-        <select
-          value={targetTypeFilter}
-          onChange={(e) => setTargetTypeFilter(e.target.value)}
-          className={`${selectClass} sm:w-48`}
-        >
-          <option value="">{t('adminConsole.filterTargetTypeAll')}</option>
-          <option value="post">post</option>
-          <option value="message">message</option>
-          <option value="conversation">conversation</option>
-          <option value="user">user</option>
-        </select>
+      <div className="space-y-3 mb-6">
+        <div className="flex flex-col sm:flex-row flex-wrap gap-3">
+          <input
+            type="search"
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            placeholder={t('adminConsole.reportsSearchPlaceholder')}
+            className={`${inputClass} flex-1 min-w-[200px]`}
+          />
+          <select
+            value={statusFilter}
+            onChange={(e) => setStatusFilter(e.target.value)}
+            className={`${selectClass} sm:w-44 py-2`}
+          >
+            <option value="">{t('adminConsole.filterReportStatusAll')}</option>
+            <option value="pending">{t('adminConsole.reportPending')}</option>
+            <option value="reviewed">{t('adminConsole.reportReviewed')}</option>
+            <option value="dismissed">{t('adminConsole.reportDismissed')}</option>
+          </select>
+          <select
+            value={targetTypeFilter}
+            onChange={(e) => setTargetTypeFilter(e.target.value)}
+            className={`${selectClass} sm:w-48 py-2`}
+          >
+            <option value="">{t('adminConsole.filterTargetTypeAll')}</option>
+            {TARGET_TYPES.map((type) => (
+              <option key={type} value={type}>
+                {t(`adminConsole.reportTargetTypeLabel.${type}`, type)}
+              </option>
+            ))}
+          </select>
+        </div>
+
+        <div className="flex flex-col sm:flex-row flex-wrap gap-3 items-end">
+          <div className="flex flex-col gap-1 min-w-[160px]">
+            <label className="text-[11px] font-semibold text-gray-500 uppercase tracking-wide">
+              {t('adminConsole.reportsDatePreset')}
+            </label>
+            <select
+              value={datePreset}
+              onChange={(e) => handleDatePresetChange(e.target.value)}
+              className={`${selectClass} py-2 w-full sm:w-48`}
+            >
+              <option value="all">{t('adminConsole.reportsDatePresetAll')}</option>
+              <option value="today">{t('adminConsole.reportsDatePresetToday')}</option>
+              <option value="7d">{t('adminConsole.reportsDatePreset7d')}</option>
+              <option value="30d">{t('adminConsole.reportsDatePreset30d')}</option>
+              <option value="90d">{t('adminConsole.reportsDatePreset90d')}</option>
+              <option value="custom">{t('adminConsole.reportsDatePresetCustom')}</option>
+            </select>
+          </div>
+          <div className="flex flex-col gap-1 min-w-[140px]">
+            <label className="text-[11px] font-semibold text-gray-500 uppercase tracking-wide">
+              {t('adminConsole.reportsDateFrom')}
+            </label>
+            <input
+              type="date"
+              value={dateFrom}
+              onChange={(e) => handleDateFromChange(e.target.value)}
+              className={`${inputClass} py-1.5 text-xs`}
+            />
+          </div>
+          <div className="flex flex-col gap-1 min-w-[140px]">
+            <label className="text-[11px] font-semibold text-gray-500 uppercase tracking-wide">
+              {t('adminConsole.reportsDateTo')}
+            </label>
+            <input
+              type="date"
+              value={dateTo}
+              onChange={(e) => handleDateToChange(e.target.value)}
+              min={dateFrom || undefined}
+              className={`${inputClass} py-1.5 text-xs`}
+            />
+          </div>
+          {hasActiveFilters ? (
+            <button
+              type="button"
+              onClick={clearFilters}
+              className="px-3 py-2 rounded-lg border border-border-dark text-xs text-gray-400 hover:text-white hover:bg-white/5"
+            >
+              {t('adminConsole.reportsClearFilters')}
+            </button>
+          ) : null}
+        </div>
+
+        {pagination?.total != null ? (
+          <p className="text-xs text-gray-500">
+            {t('adminConsole.reportsResultCount', { count: pagination.total })}
+          </p>
+        ) : null}
       </div>
 
       {error ? <p className="text-red-400 text-sm mb-4">{error}</p> : null}
@@ -168,7 +319,9 @@ export function AdminReportsPage() {
                         {r.reporter?.email || ''}
                       </div>
                     </td>
-                    <td className="px-3 py-3 text-primary text-xs font-mono">{r.targetType}</td>
+                    <td className="px-3 py-3 text-primary text-xs font-mono">
+                      {t(`adminConsole.reportTargetTypeLabel.${r.targetType}`, r.targetType)}
+                    </td>
                     <td className="px-3 py-3 text-xs max-w-[220px]">
                       {r.targetPreview?.found ? (
                         <div className="space-y-1.5">

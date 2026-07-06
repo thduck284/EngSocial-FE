@@ -27,8 +27,13 @@ export const adminService = {
   updateUserRole: (userId, role) =>
     apiClient.patch(API_ENDPOINTS.ADMIN.USER_ROLE(userId), { role }),
 
-  updateUserStatus: (userId, status) =>
-    apiClient.patch(API_ENDPOINTS.ADMIN.USER_STATUS(userId), { status }),
+  updateUserStatus: (userId, status, duration) =>
+    apiClient.patch(API_ENDPOINTS.ADMIN.USER_STATUS(userId), {
+      status,
+      ...(duration?.value && duration?.unit
+        ? { durationValue: duration.value, durationUnit: duration.unit }
+        : {}),
+    }),
 
   getReports: (params = {}) => {
     const q = new URLSearchParams()
@@ -36,6 +41,9 @@ export const adminService = {
     if (params.limit != null) q.set('limit', String(params.limit))
     if (params.status) q.set('status', params.status)
     if (params.targetType) q.set('targetType', params.targetType)
+    if (params.search) q.set('search', params.search)
+    if (params.dateFrom) q.set('dateFrom', params.dateFrom)
+    if (params.dateTo) q.set('dateTo', params.dateTo)
     const qs = q.toString()
     return apiClient.get(`${API_ENDPOINTS.ADMIN.REPORTS}${qs ? `?${qs}` : ''}`)
   },

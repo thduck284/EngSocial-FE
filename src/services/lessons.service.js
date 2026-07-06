@@ -21,7 +21,10 @@ export const lessonsService = {
   getReadingContent: (id) => apiClient.get(API_ENDPOINTS.LESSONS.READING_CONTENT(id || 'demo')),
   getListeningContent: (id) => apiClient.get(API_ENDPOINTS.LESSONS.LISTENING_CONTENT(id || 'demo')),
   getWritingContent: (id) => apiClient.get(API_ENDPOINTS.LESSONS.WRITING_CONTENT(id || '')),
-  getProgress: (id) => apiClient.get(API_ENDPOINTS.LESSONS.PROGRESS(id)),
+  getProgress: (id, params = {}) => {
+    const q = new URLSearchParams(params).toString()
+    return apiClient.get(`${API_ENDPOINTS.LESSONS.PROGRESS(id)}${q ? `?${q}` : ''}`)
+  },
   getProgressForUser: (id, userId, params = {}) => {
     const q = new URLSearchParams(params).toString()
     return apiClient.get(`${API_ENDPOINTS.LESSONS.PROGRESS(id)}/${encodeURIComponent(userId)}${q ? `?${q}` : ''}`)

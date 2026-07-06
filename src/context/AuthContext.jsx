@@ -1,6 +1,6 @@
 import { createContext, useContext, useState, useMemo, useEffect, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { getStoredUser, getAuthToken, getRefreshToken, getAuthStorage } from '../utils/auth'
+import { getStoredUser, getAuthToken, getRefreshToken, getAuthStorage, markSessionReplacedLogout } from '../utils/auth'
 import {
   GUEST_USER,
   isGuestSession,
@@ -108,7 +108,7 @@ export function AuthProvider({ children }) {
       navigate(ROUTES.LESSON, { replace: true })
     }
 
-    const logout = () => {
+    const logout = (options) => {
       ;['authToken', 'refreshToken', 'user'].forEach((key) => {
         localStorage.removeItem(key)
         sessionStorage.removeItem(key)
@@ -116,6 +116,9 @@ export function AuthProvider({ children }) {
       clearGuestSession()
       setGuestFlag(false)
       setUser(null)
+      if (options?.reason === 'sessionReplaced') {
+        markSessionReplacedLogout()
+      }
       navigate(ROUTES.LOGIN, { replace: true })
     }
 

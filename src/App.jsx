@@ -71,6 +71,7 @@ import { SettingsPage } from './pages/SettingsPage'
 import { NotificationsPage } from './pages/NotificationsPage'
 import { HelpPage } from './pages/HelpPage'
 import { GlobalGameInviteListener } from './components/GlobalGameInviteListener'
+import { GlobalAuthSessionListener } from './components/GlobalAuthSessionListener'
 import { AchievementUnlockedToast } from './components/achievements/AchievementUnlockedToast'
 
 /** /manage/* → /mod/:userId/* */
@@ -129,6 +130,7 @@ function App() {
       <PostFeedSyncProvider>
       <Toaster position="top-center" reverseOrder={false} />
       <GlobalGameInviteListener />
+      <GlobalAuthSessionListener />
       <AchievementUnlockedToast />
       <Routes location={background || location}>
         {/* Auth - chỉ khi chưa đăng nhập; đã đăng nhập thì redirect về / */}
