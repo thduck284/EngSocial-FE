@@ -4,6 +4,7 @@ import { useTranslation } from 'react-i18next'
 import { ROUTES } from '../constants'
 import { lessonsService } from '../services'
 import { getLessonLink } from '../utils/lesson'
+import { buildLessonResultUrl } from '../utils/lessonResultLinks'
 
 /**
  * Page: Lịch sử làm bài (user's lesson progress history).
@@ -156,7 +157,10 @@ export function LessonHistoryPage() {
               let href = ROUTES.LESSON
               if (id) {
                 if (isCompleted || isUnderReview) {
-                  href = `/lesson/${skill}/${id}/result`
+                  href = buildLessonResultUrl(lesson, {
+                    attemptNo: item.attemptNo,
+                    category: lesson?.category,
+                  }) || `/lesson/${skill}/${id}/result`
                 } else {
                   href = getLessonLink(lesson)
                 }

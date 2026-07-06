@@ -63,7 +63,7 @@ function buildMockTestSyncFeedback(t, parts, attempts) {
 const selectClass =
   'w-full bg-background-dark border border-border-dark rounded-xl px-3 py-2.5 text-sm text-white outline-none focus:ring-2 focus:ring-primary focus:border-primary/50 transition-shadow appearance-none cursor-pointer bg-[length:1rem] bg-[right_0.65rem_center] bg-no-repeat pr-9'
 
-/** @typedef {'title' | 'skill' | 'level' | 'topic'} SortColumn */
+/** @typedef {'title' | 'skill' | 'level' | 'topic' | 'attemptCount'} SortColumn */
 
 function SortableTh({ columnKey, label, activeKey, sortDir, onSort, align, t }) {
   const active = activeKey === columnKey
@@ -218,6 +218,11 @@ export function ManageLessonsListPage({ mode }) {
       }
       if (sortKey === 'skill') {
         const c = rankSkill(a.skill) - rankSkill(b.skill)
+        if (c !== 0) return c * mul
+        return tieTitle(a, b) * mul
+      }
+      if (sortKey === 'attemptCount') {
+        const c = (Number(a.attemptCount) || 0) - (Number(b.attemptCount) || 0)
         if (c !== 0) return c * mul
         return tieTitle(a, b) * mul
       }
@@ -718,6 +723,7 @@ export function ManageLessonsListPage({ mode }) {
                     <SortableTh columnKey="skill" label={t('manageLessons.skill')} activeKey={sortKey} sortDir={sortDir} onSort={onSortColumn} t={t} />
                     <SortableTh columnKey="level" label={t('manageLessons.level')} activeKey={sortKey} sortDir={sortDir} onSort={onSortColumn} t={t} />
                     <SortableTh columnKey="topic" label={t('manageLessons.topic')} activeKey={sortKey} sortDir={sortDir} onSort={onSortColumn} t={t} />
+                    <SortableTh columnKey="attemptCount" label={t('manageLessons.colAttempts')} activeKey={sortKey} sortDir={sortDir} onSort={onSortColumn} align="right" t={t} />
                   </>
                 )}
                 <th className="px-4 py-3 text-gray-400 text-xs uppercase tracking-wide text-right font-semibold">
@@ -728,13 +734,13 @@ export function ManageLessonsListPage({ mode }) {
             <tbody>
               {loading ? (
                 <tr>
-                  <td colSpan={isMockTest ? 7 : 5} className="px-4 py-16 text-center text-gray-500">
+                  <td colSpan={isMockTest ? 7 : 6} className="px-4 py-16 text-center text-gray-500">
                     <span className="material-symbols-outlined animate-spin text-3xl text-primary inline-block align-middle">progress_activity</span>
                   </td>
                 </tr>
               ) : totalSorted === 0 ? (
                 <tr>
-                  <td colSpan={isMockTest ? 7 : 5} className="px-4 py-12 text-center text-gray-500">
+                  <td colSpan={isMockTest ? 7 : 6} className="px-4 py-12 text-center text-gray-500">
                     {emptyMessage}
                   </td>
                 </tr>
@@ -837,6 +843,9 @@ export function ManageLessonsListPage({ mode }) {
                       <td className="px-4 py-3 text-gray-300">{row.level || '—'}</td>
                       <td className="px-4 py-3 text-gray-300 max-w-[180px]">
                         <span className="line-clamp-2 text-sm">{row.topic || '—'}</span>
+                      </td>
+                      <td className="px-4 py-3 text-right text-gray-300 tabular-nums font-semibold">
+                        {Number(row.attemptCount) || 0}
                       </td>
                       <td className="px-4 py-3 text-right">
                         <div className="inline-flex items-center gap-1">

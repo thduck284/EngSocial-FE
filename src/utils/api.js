@@ -1,9 +1,13 @@
 import { buildApiUrl, API_FALLBACK_BASE_URL, ROUTES } from '../constants'
 import { isGuestSession } from './guestAuth'
+import { markSessionReplacedLogout } from './auth'
 
 /** Xóa auth storage và chuyển về trang đăng nhập (khi không token hoặc token hết hạn) */
-function clearAuthAndRedirectToLogin() {
+function clearAuthAndRedirectToLogin(reason) {
   if (isGuestSession()) return
+  if (reason === 'sessionReplaced') {
+    markSessionReplacedLogout()
+  }
   ;['authToken', 'refreshToken', 'user'].forEach((key) => {
     localStorage.removeItem(key)
     sessionStorage.removeItem(key)
@@ -74,8 +78,9 @@ class ApiClient {
 
       if (!response.ok) {
         const isAuthForm = endpoint.includes('/auth/login') || endpoint.includes('/auth/register')
+        const messageKey = typeof data === 'object' && data?.messageKey
         if (response.status === 401 && !isAuthForm) {
-          clearAuthAndRedirectToLogin()
+          clearAuthAndRedirectToLogin(messageKey === 'auth.sessionReplaced' ? 'sessionReplaced' : undefined)
           return
         }
         const err = {
@@ -90,7 +95,8 @@ class ApiClient {
       return data
     } catch (error) {
       if (error?.status === 401 && !error?.skipAuthRedirect) {
-        clearAuthAndRedirectToLogin()
+        const messageKey = error?.data?.messageKey
+        clearAuthAndRedirectToLogin(messageKey === 'auth.sessionReplaced' ? 'sessionReplaced' : undefined)
         return
       }
       const isNetworkError =

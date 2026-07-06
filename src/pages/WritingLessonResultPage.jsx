@@ -11,7 +11,7 @@ export function WritingLessonResultPage() {
   const { id } = useParams()
   const navigate = useNavigate()
   const location = useLocation()
-  const [searchParams] = useSearchParams()
+  const [searchParams, setSearchParams] = useSearchParams()
   const isModView = isModLessonResultView(searchParams)
   const { user } = useAuth()
   const [loading, setLoading] = useState(true)
@@ -68,13 +68,32 @@ export function WritingLessonResultPage() {
   const submission = progress?.submission || {}
   const status = progress?.status || 'under_review'
   const isCompleted = status === 'completed'
-  const score = progress?.score ?? 0
+  const score = progress?.score ?? submission.score ?? 0
   const maxScore = progress?.maxScore ?? 100
   const xpEarned = isCompleted ? (progress?.xpEarned ?? 0) : 0
-  
-  const feedback = submission.feedback || ''
-  const aiFeedback = submission.aiFeedback || ''
-  const aiScore = submission.aiScore || 0
+  const viewAttemptNo = progress?.viewAttemptNo ?? null
+  const writingAttempts = (Array.isArray(progress?.attemptHistory) ? progress.attemptHistory : [])
+    .filter((a) => a.type === 'writing')
+    .sort((a, b) => (a.attemptNo || 0) - (b.attemptNo || 0))
+
+  const handleAttemptChange = (newAttemptNo) => {
+    const next = new URLSearchParams(searchParams)
+    next.set('attemptNo', String(newAttemptNo))
+    setSearchParams(next, { replace: true })
+  }
+
+  const humanGraded = submission.humanGraded === true
+  const teacherFeedback = String(submission.feedback || '').trim()
+  const aiFeedback = String(submission.aiFeedback || progress?.aiFeedback || '').trim()
+  const aiScore = submission.aiScore ?? progress?.aiScore ?? null
+  const aiStrengths = Array.isArray(submission.aiStrengths) ? submission.aiStrengths : []
+  const aiImprovements = Array.isArray(submission.aiImprovements) ? submission.aiImprovements : []
+  const aiGrammarErrors = Array.isArray(submission.aiGrammarErrors) ? submission.aiGrammarErrors : []
+  const aiBreakdown = submission.aiBreakdown || null
+  const hasAiData = Boolean(aiFeedback || aiScore != null || aiStrengths.length || aiImprovements.length)
+  const hasTeacherFeedback = Boolean(teacherFeedback)
+  const showAiReference = hasAiData
+  const showTeacherFeedback = humanGraded || (isCompleted && hasTeacherFeedback)
 
   const detailUrl = getLessonLink({
     id: info.id || id,
@@ -87,22 +106,35 @@ export function WritingLessonResultPage() {
   })
 
   const handleAiGrade = async () => {
-    if (aiLoading || !user?.id) return
+    const gradeUserId = searchParams.get('userId') || user?.id
+    if (aiLoading || !gradeUserId) return
     setAiLoading(true)
     try {
-      const res = await lessonsService.aiGradeWriting(id, user.id)
-      const newProgress = res?.data || res || {}
-      setProgress((prev) => ({
-        ...prev,
-        ...newProgress,
-        submission: { ...prev?.submission, ...newProgress.submission },
-      }))
+      const body = {}
+      const attemptNo = searchParams.get('attemptNo') || progress?.viewAttemptNo
+      if (attemptNo) body.attemptNo = Number(attemptNo)
+      await lessonsService.aiGradeWriting(id, gradeUserId, body)
+      const refetchParams = new URLSearchParams(searchParams)
+      if (attemptNo && !refetchParams.get('attemptNo')) {
+        refetchParams.set('attemptNo', String(attemptNo))
+      }
+      const progressRes = await fetchLessonProgressForResult(id, refetchParams, lessonsService)
+      setProgress(progressRes?.data || progressRes || {})
     } catch (err) {
       console.error('Failed to trigger AI grading:', err)
     } finally {
       setAiLoading(false)
     }
   }
+
+  const breakdownItems = aiBreakdown
+    ? [
+        { label: 'Task Response', key: 'taskResponse' },
+        { label: 'Coherence', key: 'coherence' },
+        { label: 'Lexical', key: 'lexical' },
+        { label: 'Grammar', key: 'grammar' },
+      ]
+    : []
 
   return (
     <main className="max-w-[1440px] mx-auto grid grid-cols-12 gap-10 pt-4 px-6 pb-10 lg:pt-4 lg:px-10 lg:pb-10 animate-in fade-in duration-700">
@@ -120,6 +152,29 @@ export function WritingLessonResultPage() {
             <p className="text-sm text-slate-500 dark:text-gray-400 truncate">
               {info.title}
             </p>
+            {writingAttempts.length > 1 ? (
+              <div className="mt-1">
+                <label className="text-[10px] font-bold uppercase tracking-wider text-slate-400 dark:text-gray-500 mb-1 block">
+                  {t('manageLessons.colAttempt')}
+                </label>
+                <select
+                  value={viewAttemptNo ?? writingAttempts[writingAttempts.length - 1]?.attemptNo ?? ''}
+                  onChange={(e) => handleAttemptChange(Number(e.target.value))}
+                  className="w-full text-sm rounded-lg border border-slate-200 dark:border-border-dark bg-white dark:bg-background-dark px-3 py-2 text-slate-800 dark:text-slate-200"
+                >
+                  {writingAttempts.map((a) => (
+                    <option key={a.attemptNo} value={a.attemptNo}>
+                      {t('manageLessons.attemptNo', { n: a.attemptNo })}
+                      {a.score != null ? ` — ${a.score}/${a.maxScore ?? maxScore}` : ''}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            ) : viewAttemptNo ? (
+              <p className="text-xs font-semibold text-primary">
+                {t('manageLessons.attemptNo', { n: viewAttemptNo })}
+              </p>
+            ) : null}
           </div>
 
           <div className="grid grid-cols-1 gap-4 relative z-10">
@@ -213,20 +268,155 @@ export function WritingLessonResultPage() {
           </div>
         </section>
 
-        {/* Teacher Feedback */}
-        {feedback && (
-          <section className="bg-emerald-50 dark:bg-emerald-500/5 border border-emerald-500/20 rounded-2xl overflow-hidden shadow-xl animate-in slide-in-from-bottom-4 duration-500 delay-200">
-            <div className="p-4 border-b border-emerald-500/10 flex items-center gap-3">
-               <span className="material-symbols-outlined text-emerald-500">rate_review</span>
-               <h3 className="text-emerald-600 dark:text-emerald-400 font-bold text-sm">{t('writingLesson.modFeedback') || "Teacher's Feedback"}</h3>
+        {/* Feedback — giáo viên & AI */}
+        <section className="bg-white dark:bg-card-dark rounded-2xl border border-slate-200 dark:border-border-dark overflow-hidden shadow-xl animate-in slide-in-from-bottom-4 duration-500 delay-150">
+          <div className="p-4 bg-slate-50 dark:bg-background-dark/50 border-b border-slate-200 dark:border-border-dark flex flex-wrap items-center justify-between gap-3">
+            <div className="flex items-center gap-3">
+              <span className="material-symbols-outlined text-primary">reviews</span>
+              <h3 className="text-slate-900 dark:text-white font-bold text-sm">{t('lessonResult.feedbackSection')}</h3>
             </div>
-            <div className="p-5">
-              <div className="text-emerald-700 dark:text-emerald-300 text-sm whitespace-pre-wrap italic">
-                {feedback}
+            {!isModView && !hasAiData && submission.content ? (
+              <button
+                type="button"
+                onClick={handleAiGrade}
+                disabled={aiLoading}
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold border border-primary/40 text-primary hover:bg-primary/10 disabled:opacity-50"
+              >
+                <span className={`material-symbols-outlined text-base ${aiLoading ? 'animate-spin' : ''}`}>
+                  {aiLoading ? 'progress_activity' : 'psychology'}
+                </span>
+                {aiLoading ? t('writingLesson.aiGrading') : t('writingLesson.aiRegrade')}
+              </button>
+            ) : null}
+          </div>
+
+          <div className="p-5 space-y-5">
+            {!showTeacherFeedback && !showAiReference ? (
+              <p className="text-sm text-slate-500 dark:text-gray-400 leading-relaxed">
+                {t('lessonResult.feedbackPending')}
+              </p>
+            ) : null}
+
+            {showTeacherFeedback ? (
+              <div className="rounded-xl border border-emerald-500/25 bg-emerald-50 dark:bg-emerald-500/5 p-4 space-y-2">
+                <div className="flex items-center gap-2">
+                  <span className="material-symbols-outlined text-emerald-500 text-lg">school</span>
+                  <h4 className="text-sm font-bold text-emerald-700 dark:text-emerald-400">
+                    {t('writingLesson.modFeedback')}
+                  </h4>
+                  {humanGraded && submission.humanGradedAt ? (
+                    <span className="text-[10px] text-emerald-600/70 dark:text-emerald-400/70 ml-auto">
+                      {new Date(submission.humanGradedAt).toLocaleString()}
+                    </span>
+                  ) : null}
+                </div>
+                <p className="text-sm text-emerald-800 dark:text-emerald-200 whitespace-pre-wrap leading-relaxed">
+                  {teacherFeedback || t('lessonResult.feedbackPending')}
+                </p>
               </div>
-            </div>
-          </section>
-        )}
+            ) : null}
+
+            {showAiReference ? (
+              <div className="rounded-xl border border-indigo-500/20 bg-indigo-50/80 dark:bg-indigo-500/5 p-4 space-y-4">
+                <div className="flex flex-wrap items-center gap-2">
+                  <span className="material-symbols-outlined text-indigo-500 text-lg">psychology</span>
+                  <h4 className="text-sm font-bold text-indigo-700 dark:text-indigo-300">
+                    {t('writingLesson.aiFeedbackTitle')}
+                  </h4>
+                  {aiScore != null ? (
+                    <span className="ml-auto text-xs font-black text-indigo-600 dark:text-indigo-300 bg-white dark:bg-card-dark px-2.5 py-1 rounded-lg border border-indigo-500/20">
+                      {t('writingLesson.aiScore')}: {aiScore}/100
+                    </span>
+                  ) : null}
+                </div>
+
+                {aiBreakdown && breakdownItems.length ? (
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                    {breakdownItems.map(({ label, key }) => {
+                      const val = aiBreakdown[key]
+                      if (val == null) return null
+                      const pct = typeof val === 'number' ? (val / 25) * 100 : 0
+                      return (
+                        <div key={key} className="bg-white/70 dark:bg-background-dark/60 rounded-lg p-2.5 border border-indigo-500/10">
+                          <div className="flex justify-between text-[10px] mb-1">
+                            <span className="text-slate-500 dark:text-gray-500 font-semibold uppercase">{label}</span>
+                            <span className="font-black text-indigo-600 dark:text-indigo-300">{val}/25</span>
+                          </div>
+                          <div className="h-1 bg-slate-200 dark:bg-border-dark rounded-full overflow-hidden">
+                            <div
+                              className="h-full rounded-full bg-indigo-500"
+                              style={{ width: `${Math.min(100, pct)}%` }}
+                            />
+                          </div>
+                        </div>
+                      )
+                    })}
+                  </div>
+                ) : null}
+
+                {aiFeedback ? (
+                  <p className="text-sm text-slate-700 dark:text-slate-300 whitespace-pre-wrap leading-relaxed">
+                    {aiFeedback}
+                  </p>
+                ) : null}
+
+                {aiStrengths.length ? (
+                  <div>
+                    <p className="text-[11px] font-bold text-emerald-600 dark:text-emerald-400 uppercase mb-1.5">
+                      {t('writingLesson.aiStrengths')}
+                    </p>
+                    <ul className="text-sm text-slate-600 dark:text-gray-400 space-y-1 list-disc pl-4">
+                      {aiStrengths.map((item, i) => (
+                        <li key={i}>{item}</li>
+                      ))}
+                    </ul>
+                  </div>
+                ) : null}
+
+                {aiImprovements.length ? (
+                  <div>
+                    <p className="text-[11px] font-bold text-amber-600 dark:text-amber-400 uppercase mb-1.5">
+                      {t('writingLesson.aiImprovements')}
+                    </p>
+                    <ul className="text-sm text-slate-600 dark:text-gray-400 space-y-1 list-disc pl-4">
+                      {aiImprovements.map((item, i) => (
+                        <li key={i}>{item}</li>
+                      ))}
+                    </ul>
+                  </div>
+                ) : null}
+
+                {aiGrammarErrors.length ? (
+                  <div>
+                    <p className="text-[11px] font-bold text-slate-500 dark:text-gray-500 uppercase mb-2">
+                      {t('writingLesson.grammarFixes')}
+                    </p>
+                    <div className="space-y-2">
+                      {aiGrammarErrors.map((err, i) => (
+                        <div
+                          key={i}
+                          className="text-xs bg-white/80 dark:bg-background-dark/50 rounded-lg p-3 border border-slate-200 dark:border-border-dark"
+                        >
+                          <p className="text-red-500/90 line-through">{err.original}</p>
+                          <p className="text-emerald-600 dark:text-emerald-400 font-medium mt-1">{err.correction}</p>
+                          {err.explanation ? (
+                            <p className="text-slate-500 dark:text-gray-500 mt-1 italic">{err.explanation}</p>
+                          ) : null}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                ) : null}
+
+                {!humanGraded ? (
+                  <p className="text-[11px] text-slate-500 dark:text-gray-500 italic border-t border-indigo-500/10 pt-3">
+                    {t('writingLesson.aiDisclaimer')}
+                  </p>
+                ) : null}
+              </div>
+            ) : null}
+          </div>
+        </section>
 
         {/* Sample Answer */}
         {info.sampleAnswer && (

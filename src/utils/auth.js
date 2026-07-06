@@ -72,3 +72,29 @@ export function getPostLoginNavigatePath(fallbackPath) {
   if (u?.role === 'moderator') return ROUTES.MANAGE_OVERVIEW(id)
   return fallbackPath
 }
+
+export const AUTH_LOGOUT_REASON_KEY = 'authLogoutReason'
+
+export function markSessionReplacedLogout() {
+  sessionStorage.setItem(AUTH_LOGOUT_REASON_KEY, 'sessionReplaced')
+}
+
+export function consumeAuthLogoutReason() {
+  const reason = sessionStorage.getItem(AUTH_LOGOUT_REASON_KEY)
+  if (reason) sessionStorage.removeItem(AUTH_LOGOUT_REASON_KEY)
+  return reason
+}
+
+/** Đọc sv (session version) từ JWT access token */
+export function getTokenSessionVersion(token) {
+  if (!token) return 0
+  try {
+    const part = token.split('.')[1]
+    if (!part) return 0
+    const padded = part.replace(/-/g, '+').replace(/_/g, '/')
+    const payload = JSON.parse(atob(padded))
+    return payload.sv ?? 0
+  } catch {
+    return 0
+  }
+}

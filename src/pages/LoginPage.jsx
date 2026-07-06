@@ -1,9 +1,11 @@
+import { useState, useEffect } from 'react'
 import { Link } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { AuthLayout, SocialButtons } from '../components/layout/AuthLayout'
 import { useLogin } from '../hooks'
 import { useAuth } from '../context/AuthContext'
 import { isFacebookSdkBlockedOnHttp } from '../utils/socialAuth'
+import { consumeAuthLogoutReason } from '../utils/auth'
 
 const inputBase = 'w-full bg-slate-800/50 border text-white rounded-xl pl-10 pr-4 py-2.5 focus:ring-0 input-glow transition-all placeholder-slate-600'
 const inputError = 'border-red-500/50'
@@ -12,6 +14,7 @@ const inputNormal = 'border-slate-700 focus:border-primary'
 export function LoginPage() {
   const { t } = useTranslation()
   const { loginAsGuest } = useAuth()
+  const [sessionNotice, setSessionNotice] = useState('')
   const {
     email,
     password,
@@ -27,6 +30,12 @@ export function LoginPage() {
   } = useLogin()
 
   const field = (name) => (fieldErrors[name] ? inputError : inputNormal)
+
+  useEffect(() => {
+    if (consumeAuthLogoutReason() === 'sessionReplaced') {
+      setSessionNotice(t('auth.sessionReplaced'))
+    }
+  }, [t])
 
   const loginLeftContent = (
     <>
@@ -64,6 +73,12 @@ export function LoginPage() {
         onFacebook={() => startSocialLogin('facebook')}
         facebookDisabled={isFacebookSdkBlockedOnHttp()}
       />
+      {sessionNotice ? (
+        <div className="mt-4 p-3 rounded-xl bg-amber-500/10 border border-amber-500/30 text-amber-200 text-sm flex items-start gap-2">
+          <span className="material-symbols-outlined text-lg shrink-0">info</span>
+          <span>{sessionNotice}</span>
+        </div>
+      ) : null}
       {error && (
         <div className="mt-4 p-3 rounded-xl bg-red-500/10 border border-red-500/30 text-red-400 text-sm flex items-start gap-2">
           <span className="material-symbols-outlined text-lg shrink-0">error</span>
