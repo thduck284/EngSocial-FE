@@ -36,6 +36,14 @@ export const authService = {
     return apiClient.post(API_ENDPOINTS.AUTH.RESET_PASSWORD, { token, newPassword })
   },
 
+  verifyEmail: async (token) => {
+    return apiClient.post(API_ENDPOINTS.AUTH.VERIFY_EMAIL, { token })
+  },
+
+  resendVerification: async (email) => {
+    return apiClient.post(API_ENDPOINTS.AUTH.RESEND_VERIFICATION, { email })
+  },
+
   getMe: async () => {
     return apiClient.get(API_ENDPOINTS.AUTH.ME)
   },
@@ -81,6 +89,14 @@ export async function submitRegisterForm(data, t) {
     const res = await apiClient.post(API_ENDPOINTS.AUTH.REGISTER, body)
 
     if (res.success && res.data) {
+      if (res.data.requiresEmailVerification) {
+        return {
+          success: true,
+          requiresVerification: true,
+          email: res.data.email || body.email,
+        }
+      }
+
       const { accessToken, refreshToken, user } = res.data
       if (accessToken) localStorage.setItem('authToken', accessToken)
       if (refreshToken) localStorage.setItem('refreshToken', refreshToken)
@@ -131,6 +147,7 @@ export async function submitLoginForm(data, i18n) {
     const msg = err?.isNetworkError
       ? i18n.t('auth.networkError')
       : err?.message ?? err?.data?.message
+    const messageKey = err?.data?.messageKey
     const errors = err?.data?.errors
     const fieldErrors = {}
     if (Array.isArray(errors) && errors.length) {
@@ -141,6 +158,7 @@ export async function submitLoginForm(data, i18n) {
     return {
       success: false,
       error: msg || i18n.t('auth.loginFailed'),
+      emailNotVerified: messageKey === 'auth.emailNotVerified',
       ...(Object.keys(fieldErrors).length ? { fieldErrors } : {}),
     }
   }

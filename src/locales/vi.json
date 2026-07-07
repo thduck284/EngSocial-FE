@@ -1366,6 +1366,7 @@
     "dateOfBirthPlaceholder": "dd/mm/yyyy",
     "registerFailed": "Đăng ký thất bại. Vui lòng thử lại.",
     "loginFailed": "Đăng nhập thất bại. Vui lòng thử lại.",
+    "emailNotVerified": "Email chưa được xác minh. Vui lòng kiểm tra hộp thư.",
     "networkError": "Không kết nối được máy chủ. Trên localhost nếu tắt backend sẽ thử API Vercel—cả hai đều lỗi. Chạy backend (EngSocial-BE: npm run dev, cổng 5000) hoặc kiểm tra mạng.",
     "loginLeft": {
       "title": "Master English, Connect with the World.",
@@ -1408,6 +1409,21 @@
     "noToken": "Thiếu link đặt lại. Vui lòng yêu cầu gửi lại từ trang quên mật khẩu.",
     "showPassword": "Hiện mật khẩu",
     "hidePassword": "Ẩn mật khẩu"
+  },
+  "verifyEmail": {
+    "title": "Xác minh email",
+    "description": "Chúng tôi đã gửi link xác minh đến email của bạn. Nhấn vào link trong email để kích hoạt tài khoản. Nếu chưa nhận được, bạn có thể gửi lại bên dưới.",
+    "yourEmail": "Email của bạn",
+    "emailPlaceholder": "example@email.com",
+    "resend": "Gửi lại email xác minh",
+    "resent": "Nếu email tồn tại và chưa xác minh, bạn sẽ nhận email xác minh.",
+    "resendError": "Không thể gửi lại. Vui lòng thử lại sau.",
+    "resendCooldown": "Vui lòng đợi {{seconds}} giây trước khi gửi lại email xác minh.",
+    "backToLogin": "Quay lại Đăng nhập",
+    "verifying": "Đang xác minh email...",
+    "success": "Xác minh email thành công!",
+    "redirecting": "Đang chuyển hướng...",
+    "invalidToken": "Link xác minh không hợp lệ hoặc đã hết hạn."
   },
   "helpPage": {
     "badge": "Trung tâm trợ giúp",

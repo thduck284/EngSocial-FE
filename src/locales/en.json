@@ -1356,6 +1356,7 @@
     "dateOfBirthPlaceholder": "dd/mm/yyyy",
     "registerFailed": "Registration failed. Please try again.",
     "loginFailed": "Login failed. Please try again.",
+    "emailNotVerified": "Email not verified. Please check your inbox.",
     "networkError": "Cannot connect to server. When on localhost we use Vercel API if local backend is off—both failed. Start backend (EngSocial-BE: npm run dev, port 5000) or check network.",
     "loginLeft": {
       "title": "Master English, Connect with the World.",
@@ -1398,6 +1399,21 @@
     "noToken": "Missing reset link. Please request a new one from the forgot password page.",
     "showPassword": "Show password",
     "hidePassword": "Hide password"
+  },
+  "verifyEmail": {
+    "title": "Verify your email",
+    "description": "We sent a verification link to your email. Click the link in the email to activate your account. If you did not receive it, you can resend below.",
+    "yourEmail": "Your email",
+    "emailPlaceholder": "example@email.com",
+    "resend": "Resend verification email",
+    "resent": "If that email exists and is not verified, you will receive a verification email.",
+    "resendError": "Could not resend. Please try again later.",
+    "resendCooldown": "Please wait {{seconds}} seconds before resending the verification email.",
+    "backToLogin": "Back to Login",
+    "verifying": "Verifying your email...",
+    "success": "Email verified successfully!",
+    "redirecting": "Redirecting...",
+    "invalidToken": "Verification link is invalid or has expired."
   },
   "helpPage": {
     "badge": "Help Center",

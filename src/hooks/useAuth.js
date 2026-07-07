@@ -63,6 +63,10 @@ export function useRegister() {
       )
 
       if (result.success) {
+        if (result.requiresVerification) {
+          navigate(`${ROUTES.VERIFY_EMAIL}?email=${encodeURIComponent(result.email || email)}`, { replace: true })
+          return
+        }
         if (result.navigate) {
           const lang = localStorage.getItem('language')
           if (lang === 'vi' || lang === 'en') {
@@ -202,6 +206,11 @@ export function useLogin() {
           const fallback = location.state?.from?.pathname || ROUTES.HOME
           navigate(getPostLoginNavigatePath(fallback), { replace: true })
         }
+        return
+      }
+
+      if (result.emailNotVerified) {
+        navigate(`${ROUTES.VERIFY_EMAIL}?email=${encodeURIComponent(email.trim().toLowerCase())}`, { replace: true })
         return
       }
 
@@ -368,5 +377,96 @@ export function useResetPassword(token, t) {
     handleSubmit,
     newPwdErr: fieldErrors.newPassword,
     confirmErr: fieldErrors.confirmPassword,
+  }
+}
+
+// ─── useVerifyEmail ───────────────────────────────────────────────────────────
+
+export function useVerifyEmail(token, emailFromQuery, t) {
+  const navigate = useNavigate()
+  const { setAuth } = useAuth()
+  const [email, setEmail] = useState(emailFromQuery || '')
+  const [loading, setLoading] = useState(Boolean(token))
+  const [resendLoading, setResendLoading] = useState(false)
+  const [error, setError] = useState('')
+  const [success, setSuccess] = useState(false)
+  const [resent, setResent] = useState(false)
+  const [fieldErrors, setFieldErrors] = useState({})
+
+  const verifyWithToken = useCallback(async (verifyToken) => {
+    setLoading(true)
+    setError('')
+    try {
+      const res = await authService.verifyEmail(verifyToken)
+      if (res?.success && res?.data) {
+        const { accessToken, refreshToken, user } = res.data
+        if (accessToken) localStorage.setItem('authToken', accessToken)
+        if (refreshToken) localStorage.setItem('refreshToken', refreshToken)
+        if (user) localStorage.setItem('user', JSON.stringify(user))
+        setAuth()
+        const lang = localStorage.getItem('language')
+        if (lang === 'vi' || lang === 'en') {
+          authService.updatePreferences({ language: lang }).catch(() => {})
+        }
+        setSuccess(true)
+        setTimeout(() => {
+          navigate(getPostLoginNavigatePath(ROUTES.HOME), { replace: true })
+        }, 1500)
+        return
+      }
+      setError(res?.message || t('verifyEmail.invalidToken'))
+    } catch (err) {
+      const msg =
+        (typeof err?.message === 'string' && err.message) ||
+        (typeof err?.data?.message === 'string' && err.data.message) ||
+        t('verifyEmail.invalidToken')
+      setError(msg)
+    } finally {
+      setLoading(false)
+    }
+  }, [navigate, setAuth, t])
+
+  const handleResend = async (e) => {
+    e?.preventDefault?.()
+    setError('')
+    setFieldErrors({})
+
+    const emailErr = validateEmail(email)
+    if (emailErr) {
+      setFieldErrors({
+        email: emailErr.params ? t(emailErr.key, emailErr.params) : t(emailErr.key),
+      })
+      return
+    }
+
+    setResendLoading(true)
+    try {
+      await authService.resendVerification(email.trim().toLowerCase())
+      setResent(true)
+    } catch (err) {
+      const waitSec = err?.data?.data?.waitSec ?? err?.data?.waitSec
+      if (waitSec) {
+        setError(t('verifyEmail.resendCooldown', { seconds: waitSec }))
+      } else {
+        const msg = err?.message ?? err?.data?.message ?? t('verifyEmail.resendError')
+        setError(msg)
+      }
+      setResent(false)
+    } finally {
+      setResendLoading(false)
+    }
+  }
+
+  return {
+    email,
+    setEmail,
+    loading,
+    resendLoading,
+    error,
+    success,
+    resent,
+    fieldErrors,
+    verifyWithToken,
+    handleResend,
   }
 }
