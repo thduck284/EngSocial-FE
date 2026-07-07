@@ -8,16 +8,18 @@ import { scrambleLetters } from '../../utils/scrambleLetters'
 import { SOCKET_BASE_URL } from '../../constants/api'
 import { getAuthToken } from '../../utils/auth'
 import { useAuth } from '../../context/AuthContext'
+import { avatarForPlayer, slotsToGamePlayers, DEFAULT_AVATAR } from '../../utils/entertainmentPlayer'
 
 const MULTI_PLAYER_COUNTS = [2, 4, 6, 8]
 
-/** @param {{ fullScreen?: boolean, gameMode?: 'solo' | 'multi' | 'multi-quick' | 'multi-private', roomCode?: string | null, playerCount?: number, difficulty?: 'easy' | 'medium' | 'hard' }} props */
+/** @param {{ fullScreen?: boolean, gameMode?: 'solo' | 'multi' | 'multi-quick' | 'multi-private', roomCode?: string | null, playerCount?: number, difficulty?: 'easy' | 'medium' | 'hard', initialPlayers?: Array<object> }} props */
 export function EntertainmentWordScramble({
   fullScreen = false,
   gameMode = 'solo',
   roomCode = null,
   playerCount = 2,
   difficulty = 'medium',
+  initialPlayers = [],
 }) {
   const { t } = useTranslation()
   const { user } = useAuth()
@@ -40,7 +42,7 @@ export function EntertainmentWordScramble({
   const [streak, setStreak] = useState(0)
 
   // Trạng thái Network Game
-  const [networkPlayers, setNetworkPlayers] = useState([])
+  const [networkPlayers, setNetworkPlayers] = useState(() => slotsToGamePlayers(initialPlayers))
   const [activePlayerIdx, setActivePlayerIdx] = useState(0)
   const [roundId, setRoundId] = useState(0)
   const [timeLimitSec, setTimeLimitSec] = useState(null)
@@ -62,6 +64,17 @@ export function EntertainmentWordScramble({
 
   const myId = user?.id || user?._id
 
+  useEffect(() => {
+    if (initialPlayers?.length) {
+      setNetworkPlayers(slotsToGamePlayers(initialPlayers))
+    }
+  }, [roomCode, initialPlayers])
+
+  const displayPlayers = useMemo(() => {
+    if (networkPlayers.length > 0) return networkPlayers
+    return slotsToGamePlayers(initialPlayers)
+  }, [networkPlayers, initialPlayers])
+
   // Helper sync logic
   const applyGameState = useCallback((game) => {
     if (!game) return
@@ -70,7 +83,15 @@ export function EntertainmentWordScramble({
     setRoundId(Number(game.currentRoundId || 0))
     if (game.status === 'finished') {
       window.setTimeout(() => {
-        navigate(`/practice/entertainment/word-scramble/result/${roomCode}`)
+        navigate(`/practice/entertainment/word-scramble/result/${roomCode}`, {
+          state: {
+            gameSnapshot: {
+              roomCode,
+              players: game.players || [],
+              status: 'finished',
+            },
+          },
+        })
       }, 1500)
     }
     setGameEnded(game.status === 'finished')
@@ -650,14 +671,18 @@ export function EntertainmentWordScramble({
               {t('enter.game.modeMultiTitle')}
             </p>
             <div className="space-y-2.5">
-              {(networkPlayers.length > 0
-                ? networkPlayers
-                : Array.from({ length: nPlayers }, (_, i) => ({ name: `Player ${i + 1}`, userId: i + 1 }))
-              ).map((p, i, arr) => {
+              {displayPlayers.length === 0 ? (
+                <div className="rounded-xl px-3 py-4 border border-violet-500/20 bg-slate-900/40 text-center text-xs text-slate-500">
+                  <span className="material-symbols-outlined animate-spin text-base align-middle mr-1">progress_activity</span>
+                  {t('common.loading')}
+                </div>
+              ) : (
+              displayPlayers.map((p, i, arr) => {
                 const pid = i + 1
-                const isActive = networkPlayers.length > 0 ? (activePlayerIdx === i) : (activePlayer === pid)
-                const pScore = networkPlayers.length > 0 ? (p.score ?? 0) : (scores[pid] ?? 0)
-                const pStreak = networkPlayers.length > 0 ? (p.streak ?? 0) : (streaks[pid] ?? 0)
+                const isMe = myId != null && String(p.userId) === String(myId)
+                const isActive = networkPlayers.length > 0 ? (activePlayerIdx === i) : false
+                const pScore = p.score ?? 0
+                const pStreak = p.streak ?? 0
                 const rank = [...arr]
                   .sort((a, b) => (b?.score ?? 0) - (a?.score ?? 0))
                   .findIndex((rp) => String(rp?.userId ?? '') === String(p?.userId ?? '')) + 1
@@ -666,7 +691,7 @@ export function EntertainmentWordScramble({
                   <div
                     key={p.userId || pid}
                     className={`rounded-xl px-3 py-3 border text-sm transition-all duration-300 relative ${
-                      isActive ? 'ws-pill-active text-white' : 'ws-pill-idle text-slate-400'
+                      isActive || isMe ? 'ws-pill-active text-white' : 'ws-pill-idle text-slate-400'
                     } ${p.isOut ? 'opacity-50 grayscale-[0.5]' : ''}`}
                   >
                     {p.isOut && (
@@ -676,21 +701,35 @@ export function EntertainmentWordScramble({
                         </span>
                       </div>
                     )}
-                    <div className="flex items-center justify-between gap-2">
-                      <p className={`font-bold truncate ${p.isOut ? 'text-slate-500' : 'text-cyan-200'}`}>
-                        {p.name || t('enter.game.playerLabel', { n: pid })}
-                      </p>
-                      <span className="text-[11px] font-bold px-2 py-0.5 rounded-full border border-cyan-400/35 text-cyan-200">
-                        #{rank}
-                      </span>
-                    </div>
-                    <div className="mt-1.5 flex items-center justify-between text-xs">
-                      <span className="text-slate-300">{t('enter.game.score', { n: pScore })}</span>
-                      <span className="text-fuchsia-300/90">{t('enter.game.streakShort', { n: pStreak })}</span>
+                    <div className="flex items-center gap-2.5">
+                      <img
+                        src={avatarForPlayer(p)}
+                        alt=""
+                        className="size-9 shrink-0 rounded-full object-cover border-2 border-violet-400/40 bg-slate-800"
+                        onError={(e) => { e.currentTarget.src = DEFAULT_AVATAR }}
+                      />
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center justify-between gap-2">
+                          <p className={`font-bold truncate ${p.isOut ? 'text-slate-500' : 'text-cyan-200'}`}>
+                            {p.name || t('enter.game.playerLabel', { n: pid })}
+                            {isMe ? (
+                              <span className="ml-1 text-[10px] font-bold text-primary uppercase">{t('enter.game.youLabel')}</span>
+                            ) : null}
+                          </p>
+                          <span className="text-[11px] font-bold px-2 py-0.5 rounded-full border border-cyan-400/35 text-cyan-200 shrink-0">
+                            #{rank}
+                          </span>
+                        </div>
+                        <div className="mt-1 flex items-center justify-between text-xs">
+                          <span className="text-slate-300">{t('enter.game.score', { n: pScore })}</span>
+                          <span className="text-fuchsia-300/90">{t('enter.game.streakShort', { n: pStreak })}</span>
+                        </div>
+                      </div>
                     </div>
                   </div>
                 )
-              })}
+              })
+              )}
             </div>
           </aside>
         )}

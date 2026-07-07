@@ -1,15 +1,17 @@
 const isLocalhost = typeof window !== 'undefined' && (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')
+const isDev = import.meta.env.DEV
 const LOCAL_API = import.meta.env.VITE_API_LOCAL_URL
 const RENDER_API = import.meta.env.VITE_API_RENDER_URL
+const shouldUseLocalApi = !!LOCAL_API && (isLocalhost || isDev)
 
 const ensureApi = (url) => (url || '').replace(/\/api\/?$/, '') + '/api'
 const stripApi = (url) => (url || '').replace(/\/api\/?$/, '')
 
-export const API_BASE_URL = ensureApi(isLocalhost ? LOCAL_API : RENDER_API)
-export const API_FALLBACK_BASE_URL = isLocalhost ? ensureApi(RENDER_API) : null
+export const API_BASE_URL = ensureApi(shouldUseLocalApi ? LOCAL_API : RENDER_API)
+export const API_FALLBACK_BASE_URL = shouldUseLocalApi ? ensureApi(RENDER_API) : null
 
-export const SOCKET_BASE_URL = stripApi(isLocalhost ? LOCAL_API : RENDER_API)
-export const SOCKET_FALLBACK_BASE_URL = isLocalhost ? stripApi(RENDER_API) : null
+export const SOCKET_BASE_URL = stripApi(shouldUseLocalApi ? LOCAL_API : RENDER_API)
+export const SOCKET_FALLBACK_BASE_URL = shouldUseLocalApi ? stripApi(RENDER_API) : null
 
 // AI Matchmaking URL
 export const API_AI_MATCHING_URL = import.meta.env.VITE_API_AI_MATCHING_URL

@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef, useCallback } from 'react'
 import { io } from 'socket.io-client'
 import { SOCKET_BASE_URL, SOCKET_FALLBACK_BASE_URL } from '../constants/api'
+import { createSocketAuthOptions, disconnectSocketSafe } from '../utils/socketClient'
 
 /**
  * @param {object} props
@@ -72,8 +73,7 @@ export const useWordScrambleLobby = ({
       } catch {
         /* ignore */
       }
-      s.removeAllListeners()
-      s.disconnect()
+      disconnectSocketSafe(s)
       socketRef.current = null
     }
     initDoneRef.current = false
@@ -104,10 +104,9 @@ export const useWordScrambleLobby = ({
     setInitError(null)
     const joinCodeNorm = joinCode ? String(joinCode).trim().toUpperCase() : null
     const cap = capacity != null ? Number(capacity) : null
+    const triedFallbackRef = { current: false }
 
-    const opts = { auth: { token }, transports: ['websocket', 'polling'] }
-    let socket = io(SOCKET_BASE_URL, opts)
-    socketRef.current = socket
+    const opts = createSocketAuthOptions(token)
 
     /** Debug: nhận event từ server (bật khi dev, tắt khi build production) */
     const lobbyRx = (event, detail) => {
@@ -125,6 +124,34 @@ export const useWordScrambleLobby = ({
         findingMatchPrevRef.current = fm
         if (fm) onMatchingStartedRef.current?.()
         else if (prev === true) onMatchingEndedRef.current?.()
+      }
+    }
+
+    function initLobby(s) {
+      const done = (res) => {
+        if (!res?.ok) {
+          setInitError(res?.error || 'failed')
+          initDoneRef.current = false
+          return
+        }
+        setInitError(null)
+        if (res.state && typeof res.state === 'object') {
+          setRoomState(res.state)
+          const st = res.state
+          if (Array.isArray(st.chat)) setChatTail(st.chat)
+          applyFindingMatchFromState(st)
+          const c = Number(st.capacity)
+          if (Number.isFinite(c) && c > 0) onJoinedWithCapacityRef.current?.(c)
+        }
+      }
+
+      if (joinCodeNorm) {
+        s.emit('wordScrambleLobby:join', { roomCode: joinCodeNorm }, done)
+      } else if (cap != null && [2, 4, 6, 8].includes(cap)) {
+        s.emit('wordScrambleLobby:create', { capacity: cap }, done)
+      } else {
+        setInitError('bad_params')
+        initDoneRef.current = false
       }
     }
 
@@ -181,74 +208,54 @@ export const useWordScrambleLobby = ({
       })
     }
 
-    attachCoreListeners(socket)
-
-    socket.on('connect', () => {
-      lobbyRx('socket.io connect', { socketId: socket.id, joinCode: joinCodeNorm, capacity: cap })
-      setConnected(true)
-      if (initDoneRef.current) return
-      initDoneRef.current = true
-
-      const done = (res) => {
-        if (!res?.ok) {
-          setInitError(res?.error || 'failed')
-          initDoneRef.current = false
-          return
-        }
-        if (res.state && typeof res.state === 'object') {
-          setRoomState(res.state)
-          const st = res.state
-          if (Array.isArray(st.chat)) setChatTail(st.chat)
-          applyFindingMatchFromState(st)
-          const c = Number(st.capacity)
-          if (Number.isFinite(c) && c > 0) onJoinedWithCapacityRef.current?.(c)
-        }
-      }
-
-      if (joinCodeNorm) {
-        socket.emit('wordScrambleLobby:join', { roomCode: joinCodeNorm }, done)
-      } else if (cap != null && [2, 4, 6, 8].includes(cap)) {
-        socket.emit('wordScrambleLobby:create', { capacity: cap }, done)
-      }
-    })
-
-    socket.on('connect_error', () => {
-      socket.removeAllListeners()
-      socket.disconnect()
-      socket = io(SOCKET_FALLBACK_BASE_URL, opts)
-      socketRef.current = socket
-      attachCoreListeners(socket)
-      socket.on('connect', () => {
-        lobbyRx('socket.io connect (fallback)', { socketId: socket.id, joinCode: joinCodeNorm, capacity: cap })
+    function attachTransportListeners(s) {
+      s.on('connect', () => {
+        lobbyRx('socket.io connect', { socketId: s.id, joinCode: joinCodeNorm, capacity: cap })
         setConnected(true)
+        setInitError(null)
         if (initDoneRef.current) return
         initDoneRef.current = true
-        const done = (res) => {
-          if (!res?.ok) {
-            setInitError(res?.error || 'failed')
-            initDoneRef.current = false
-            return
-          }
-          if (res.state && typeof res.state === 'object') {
-            setRoomState(res.state)
-            const st = res.state
-            if (Array.isArray(st.chat)) setChatTail(st.chat)
-            applyFindingMatchFromState(st)
-            const c = Number(st.capacity)
-            if (Number.isFinite(c) && c > 0) onJoinedWithCapacityRef.current?.(c)
-          }
-        }
-        if (joinCodeNorm) socket.emit('wordScrambleLobby:join', { roomCode: joinCodeNorm }, done)
-        else if (cap != null && [2, 4, 6, 8].includes(cap)) {
-          socket.emit('wordScrambleLobby:create', { capacity: cap }, done)
-        }
+        initLobby(s)
       })
-    })
+
+      s.on('disconnect', () => {
+        setConnected(false)
+        initDoneRef.current = false
+      })
+
+      s.on('connect_error', (err) => {
+        setConnected(false)
+        const msg = String(err?.message || '')
+        if (msg.includes('auth')) {
+          setInitError('login_required')
+          return
+        }
+        if (!SOCKET_FALLBACK_BASE_URL || triedFallbackRef.current) return
+        triedFallbackRef.current = true
+        lobbyRx('socket.io connect_error → fallback', msg)
+        s.removeAllListeners()
+        disconnectSocketSafe(s)
+        socket = io(SOCKET_FALLBACK_BASE_URL, opts)
+        socketRef.current = socket
+        attachCoreListeners(socket)
+        attachTransportListeners(socket)
+      })
+
+      s.io.on('reconnect_failed', () => {
+        setConnected(false)
+        setInitError('connect_failed')
+      })
+    }
+
+    let socket = io(SOCKET_BASE_URL, opts)
+    socketRef.current = socket
+    attachCoreListeners(socket)
+    attachTransportListeners(socket)
 
     return () => {
       stopStartLoop()
-      socket.removeAllListeners()
-      socket.disconnect()
+      triedFallbackRef.current = false
+      disconnectSocketSafe(socket)
       socketRef.current = null
       initDoneRef.current = false
       findingMatchPrevRef.current = undefined

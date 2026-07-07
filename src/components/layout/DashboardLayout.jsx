@@ -13,9 +13,11 @@ const isFullScreenGame = (pathname) =>
   pathname === ROUTES.SKILLS.ENTERTAINMENT_WORD_SCRAMBLE ||
   pathname.startsWith(`${ROUTES.SKILLS.ENTERTAINMENT_WORD_SCRAMBLE}/lobby/`) ||
   pathname.startsWith(`${ROUTES.SKILLS.ENTERTAINMENT_WORD_SCRAMBLE}/roomId=`) ||
+  pathname.startsWith(`${ROUTES.SKILLS.ENTERTAINMENT_WORD_SCRAMBLE}/result/`) ||
   pathname === ROUTES.SKILLS.ENTERTAINMENT_SNAKE_WORD ||
   pathname.startsWith(`${ROUTES.SKILLS.ENTERTAINMENT_SNAKE_WORD}/lobby/`) ||
-  pathname.startsWith(`${ROUTES.SKILLS.ENTERTAINMENT_SNAKE_WORD}/roomId=`)
+  pathname.startsWith(`${ROUTES.SKILLS.ENTERTAINMENT_SNAKE_WORD}/roomId=`) ||
+  pathname.startsWith(`${ROUTES.SKILLS.ENTERTAINMENT_SNAKE_WORD}/result/`)
 
 export function DashboardLayout() {
   const location = useLocation()
