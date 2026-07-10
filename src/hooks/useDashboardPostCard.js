@@ -245,9 +245,8 @@ export function useDashboardPostCard({
             // Nội dung vi phạm
             const mod = err?.data?.data
             const label = mod?.label ? ` (${mod.label})` : ''
-            const keywords = mod?.keywords?.length ? ` — Từ khóa: ${mod.keywords.join(', ')}` : ''
             setEditError(
-              (err?.data?.message || 'Nội dung bài viết vi phạm tiêu chuẩn cộng đồng.') + label + keywords
+              (err?.data?.message || 'Nội dung bài viết vi phạm tiêu chuẩn cộng đồng.') + label
             )
           } else if (err?.status === 503) {
             setEditError('Hệ thống kiểm duyệt nội dung đang tạm thời không khả dụng. Vui lòng thử lại sau.')

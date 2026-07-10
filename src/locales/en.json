@@ -2494,7 +2494,19 @@
     "invalidWordCount": "Your word count is not within the allowed range. Please adjust before submitting.",
     "submittedAt": "Submitted at",
     "modFeedback": "Teacher's Feedback",
-    "aiFeedback": "AI Analysis"
+    "aiFeedback": "AI Analysis",
+    "aiCopyDetection": "AI Copy Evaluation",
+    "aiCopyProbability": "AI Usage Probability",
+    "aiCopyWarningHigh": "High probability that this essay is AI-generated/copied. Please inspect closely.",
+    "aiCopyWarningMedium": "Some patterns suggest possible AI assistance.",
+    "aiCopyWarningLow": "High probability of human writing.",
+    "compareAttempts": "Compare with previous attempt",
+    "compareAttemptsScore": "Score",
+    "compareAttemptsWords": "Word Count",
+    "compareImproved": "Improved",
+    "compareDeclined": "Declined",
+    "compareNoChange": "No Change",
+    "noPreviousAttempt": "No previous attempt to compare."
   },
   "mockTest": {
     "howItWorks": "How it works",

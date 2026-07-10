@@ -2522,7 +2522,19 @@
     "aiWaitDesc": "Quá trình này thường mất khoảng 10-15 giây.",
     "original": "Gốc",
     "correction": "Sửa lại",
-    "grammarFixes": "Gợi ý sửa lỗi ngữ pháp & từ vựng"
+    "grammarFixes": "Gợi ý sửa lỗi ngữ pháp & từ vựng",
+    "aiCopyDetection": "Đánh giá sao chép AI",
+    "aiCopyProbability": "Tỷ lệ sử dụng AI",
+    "aiCopyWarningHigh": "Khả năng bài viết được viết/sao chép từ AI rất cao. Vui lòng kiểm tra kỹ.",
+    "aiCopyWarningMedium": "Có một số dấu hiệu bài viết sử dụng AI hỗ trợ.",
+    "aiCopyWarningLow": "Khả năng cao bài viết tự viết (viết bởi con người).",
+    "compareAttempts": "So sánh với lượt trước",
+    "compareAttemptsScore": "Điểm số",
+    "compareAttemptsWords": "Số từ",
+    "compareImproved": "Tiến bộ",
+    "compareDeclined": "Giảm sút",
+    "compareNoChange": "Không đổi",
+    "noPreviousAttempt": "Không có lượt làm trước đó để so sánh."
   },
   "mockTest": {
     "howItWorks": "Hướng dẫn làm bài",
