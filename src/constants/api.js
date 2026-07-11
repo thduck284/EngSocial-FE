@@ -141,6 +141,7 @@ export const API_ENDPOINTS = {
     WORDS_IMPORT_TSV: '/word-scramble/words/import-tsv',
     WORD: (id) => `/word-scramble/words/${id}`,
     RESULTS: (roomCode) => `/word-scramble/results/${roomCode}`,
+    PROGRESS: '/word-scramble/progress',
   },
 
   // Quests
