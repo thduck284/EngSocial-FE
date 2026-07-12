@@ -86,6 +86,8 @@
     "colName": "Name",
     "colEmail": "Email",
     "colRole": "Role",
+    "colModeratorLevel": "Moderator Level",
+    "moderatorLevelNone": "-- Select level --",
     "colStatus": "Status",
     "colActions": "Actions",
     "colDate": "Time",

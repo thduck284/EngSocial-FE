@@ -214,12 +214,7 @@ export function EntertainmentSnakeWord({ onExit }) {
             const isMyTarget = safeText === me?.targetWord?.word
             
             // Outer glow and styling
-            if (isMyTarget) {
-                ctx.shadowBlur = 15
-                ctx.shadowColor = '#22d3ee'
-                ctx.fillStyle = 'rgba(34, 211, 238, 0.2)'
-                ctx.strokeStyle = '#22d3ee'
-            } else if (f.isDroppedPoints) {
+            if (f.isDroppedPoints) {
                 ctx.shadowBlur = 20
                 ctx.shadowColor = '#fbbf24' // Gold
                 ctx.fillStyle = 'rgba(251, 191, 36, 0.3)'
@@ -260,8 +255,8 @@ export function EntertainmentSnakeWord({ onExit }) {
                 const dy = (targetFood.y + GRID_SIZE / 2) - safeHeadY
                 const dist = Math.sqrt(dx * dx + dy * dy)
                 
-                // If distance is large enough (> 1500), draw arrow around head
-                if (dist > 1500) {
+                // If distance is large enough (> 150), draw arrow around head
+                if (dist > 150) {
                     const angle = Math.atan2(dy, dx)
                     const orbitRadius = 80 // pixels from head
                     

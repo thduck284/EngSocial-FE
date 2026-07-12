@@ -69,7 +69,7 @@ export function AdminUsersPage() {
     list.forEach((u) => {
       const id = u.id ?? u._id
       if (!id) return
-      next[id] = { role: u.role || 'user', status: u.status || 'active' }
+      next[id] = { role: u.role || 'user', status: u.status || 'active', moderatorLevel: u.moderatorLevel || '' }
     })
     setPendingEdits(next)
   }, [])
@@ -95,8 +95,8 @@ export function AdminUsersPage() {
       if (!draft) return
       setSavingId(id)
       try {
-        if (draft.role !== row.role) {
-          await adminService.updateUserRole(id, draft.role)
+        if (draft.role !== row.role || (draft.role === 'moderator' && draft.moderatorLevel !== (row.moderatorLevel || ''))) {
+          await adminService.updateUserRole(id, draft.role, draft.role === 'moderator' ? draft.moderatorLevel : undefined)
         }
         if (draft.status !== row.status) {
           await adminService.updateUserStatus(id, draft.status)
@@ -116,7 +116,9 @@ export function AdminUsersPage() {
       const id = row.id ?? row._id
       const d = pendingEdits[id]
       if (!d) return false
-      return d.role !== row.role || d.status !== row.status
+      if (d.role !== row.role || d.status !== row.status) return true
+      if (d.role === 'moderator' && d.moderatorLevel !== (row.moderatorLevel || '')) return true
+      return false
     },
     [pendingEdits]
   )
@@ -169,6 +171,7 @@ export function AdminUsersPage() {
                 <th className="px-4 py-3 font-semibold">{t('adminConsole.colName')}</th>
                 <th className="px-4 py-3 font-semibold">{t('adminConsole.colEmail')}</th>
                 <th className="px-4 py-3 font-semibold">{t('adminConsole.colRole')}</th>
+                <th className="px-4 py-3 font-semibold">{t('adminConsole.colModeratorLevel')}</th>
                 <th className="px-4 py-3 font-semibold">{t('adminConsole.colStatus')}</th>
                 <th className="px-4 py-3 font-semibold text-right">{t('adminConsole.colActions')}</th>
               </tr>
@@ -209,6 +212,23 @@ export function AdminUsersPage() {
                           <option value="moderator">{t('adminConsole.roleModerator')}</option>
                           <option value="admin">{t('adminConsole.roleAdmin')}</option>
                         </select>
+                      </td>
+                      <td className="px-4 py-3">
+                        {draft.role === 'moderator' ? (
+                          <select
+                            value={draft.moderatorLevel || ''}
+                            disabled={self}
+                            onChange={(e) => handleFieldChange(id, 'moderatorLevel', e.target.value)}
+                            className={selectClass}
+                          >
+                            <option value="">{t('adminConsole.moderatorLevelNone')}</option>
+                            {['A1','A2','B1','B2','C1','C2'].map(lvl => (
+                              <option key={lvl} value={lvl}>{lvl}</option>
+                            ))}
+                          </select>
+                        ) : (
+                          <span className="text-gray-500 text-xs">—</span>
+                        )}
                       </td>
                       <td className="px-4 py-3">
                         <select

@@ -24,8 +24,8 @@ export const adminService = {
     return apiClient.get(`${API_ENDPOINTS.ADMIN.USERS}${qs ? `?${qs}` : ''}`)
   },
 
-  updateUserRole: (userId, role) =>
-    apiClient.patch(API_ENDPOINTS.ADMIN.USER_ROLE(userId), { role }),
+  updateUserRole: (userId, role, moderatorLevel) =>
+    apiClient.patch(API_ENDPOINTS.ADMIN.USER_ROLE(userId), { role, moderatorLevel }),
 
   updateUserStatus: (userId, status, duration) =>
     apiClient.patch(API_ENDPOINTS.ADMIN.USER_STATUS(userId), {

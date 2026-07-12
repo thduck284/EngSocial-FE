@@ -87,6 +87,8 @@
     "colName": "Tên",
     "colEmail": "Email",
     "colRole": "Vai trò",
+    "colModeratorLevel": "Cấp độ Moderator",
+    "moderatorLevelNone": "-- Chọn cấp độ --",
     "colStatus": "Trạng thái",
     "colActions": "Thao tác",
     "colDate": "Thời gian",
