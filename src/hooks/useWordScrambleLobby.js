@@ -303,8 +303,8 @@ export const useWordScrambleLobby = ({
 
   const startGame = useCallback(() => {
     setStartError(null)
-    // Không bật matching optimistic: server chỉ emit matching/state sau khi qua allReady.
-    // Bật sớm → chủ thấy màn ghép dù ack players_not_ready → Hủy → khách chỉ nhận matchingEnd.
+    setIsMatchingLocal(true)
+    onMatchingStartedRef.current?.()
 
     const attempt = () => {
       if (import.meta.env?.DEV) {
