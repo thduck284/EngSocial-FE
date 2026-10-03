@@ -51,11 +51,11 @@ export function WordScrambleGameArena({ children, topBar }) {
       ))}
       <div className="relative z-10 flex flex-col flex-1 min-h-0 mt-2">
         {topBar && (
-          <div className="ws-topbar mx-1 sm:mx-2 mt-1 min-h-[50px] shrink-0">
+          <div className="ws-topbar mx-1 sm:mx-2 mt-1 shrink-0 w-fit">
             {topBar}
           </div>
         )}
-        <div className="flex-1 min-h-0 flex flex-col px-2 sm:px-4 pb-3 pt-3 overflow-hidden justify-center">
+        <div className="flex-1 min-h-0 flex flex-col px-2 sm:px-4 pb-3 pt-3 overflow-y-auto">
           {children}
         </div>
       </div>

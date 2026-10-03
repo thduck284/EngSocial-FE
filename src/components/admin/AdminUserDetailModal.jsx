@@ -29,6 +29,7 @@ export function AdminUserDetailModal({ open, userId, currentUserId, onClose, onM
   const [dateOfBirth, setDateOfBirth] = useState('')
   const [avatar, setAvatar] = useState('')
   const [role, setRole] = useState('user')
+  const [moderatorLevel, setModeratorLevel] = useState('')
   const [status, setStatus] = useState('active')
   const [lockDurationMode, setLockDurationMode] = useState('timed')
   const [lockDurationValue, setLockDurationValue] = useState('7')
@@ -64,6 +65,7 @@ export function AdminUserDetailModal({ open, userId, currentUserId, onClose, onM
         setDateOfBirth(toDateInputValue(u.dateOfBirth))
         setAvatar(u.avatar || '')
         setRole(u.role || 'user')
+        setModeratorLevel(u.moderatorLevel || '')
         setStatus(u.status || 'active')
       })
       .catch(() => {
@@ -106,8 +108,8 @@ export function AdminUserDetailModal({ open, userId, currentUserId, onClose, onM
         dateOfBirth: dateOfBirth ? dateOfBirth : null,
         avatar: avatar.trim(),
       })
-      if (role !== original?.role) {
-        await adminService.updateUserRole(userId, role)
+      if (role !== original?.role || (role === 'moderator' && moderatorLevel !== (original?.moderatorLevel || ''))) {
+        await adminService.updateUserRole(userId, role, role === 'moderator' ? moderatorLevel : undefined)
       }
       if (status !== original?.status) {
         const duration =
@@ -312,6 +314,24 @@ export function AdminUserDetailModal({ open, userId, currentUserId, onClose, onM
                   </div>
                 </div>
               </div>
+
+              {/* Moderator Level — only shown when role = moderator */}
+              {role === 'moderator' && (
+                <div className="mb-4">
+                  <label className="block text-xs text-gray-500 mb-1">{t('adminConsole.colModeratorLevel')}</label>
+                  <select
+                    className={inputClass}
+                    value={moderatorLevel}
+                    disabled={isSelf}
+                    onChange={(e) => setModeratorLevel(e.target.value)}
+                  >
+                    <option value="">{t('adminConsole.moderatorLevelNone')}</option>
+                    {['A1', 'A2', 'B1', 'B2', 'C1', 'C2'].map(lvl => (
+                      <option key={lvl} value={lvl}>{lvl}</option>
+                    ))}
+                  </select>
+                </div>
+              )}
 
               <div className="mb-4">
                 <AdminStatusDurationPicker

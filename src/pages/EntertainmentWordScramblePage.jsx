@@ -30,6 +30,7 @@ export function EntertainmentWordScramblePage() {
   const [inviteCopied, setInviteCopied] = useState(false)
   const [isInviteBubbleOpen, setIsInviteBubbleOpen] = useState(false)
   const [activeRoomCode, setActiveRoomCode] = useState(/** @type {string | null} */(null))
+  const [initialGamePlayers, setInitialGamePlayers] = useState(/** @type {object[]} */([]))
   const [actualMatchedCount, setActualMatchedCount] = useState(/** @type {number | null} */(null))
   const [pendingQuickMatchCapacity, setPendingQuickMatchCapacity] = useState(/** @type {number | null} */(null))
   const [leaveLobbyModalOpen, setLeaveLobbyModalOpen] = useState(false)
@@ -82,6 +83,10 @@ export function EntertainmentWordScramblePage() {
         playerCount ||
         2
       setActualMatchedCount(n)
+
+      if (Array.isArray(slots)) {
+        setInitialGamePlayers(slots.filter(Boolean))
+      }
 
       if (data?.roomCode) {
         setActiveRoomCode(data.roomCode)
@@ -148,6 +153,7 @@ export function EntertainmentWordScramblePage() {
     setMultiPastLobby(false)
     setPendingJoinCode(null)
     setActiveRoomCode(null)
+    setInitialGamePlayers([])
   }
 
   const resetAll = () => {
@@ -160,6 +166,7 @@ export function EntertainmentWordScramblePage() {
     setIsMatching(false)
     setActualMatchedCount(null)
     setActiveRoomCode(null)
+    setInitialGamePlayers([])
     setPendingQuickMatchCapacity(null)
     if (lobbyCode) {
       navigate('/practice/entertainment/word-scramble', { replace: true })
@@ -177,6 +184,7 @@ export function EntertainmentWordScramblePage() {
     setPendingJoinCode(null)
     setMultiPastLobby(false)
     setActiveRoomCode(null)
+    setInitialGamePlayers([])
     setPendingQuickMatchCapacity(null)
   }, [lobby])
 
@@ -329,10 +337,8 @@ export function EntertainmentWordScramblePage() {
             if (mode === 'multi-quick') {
               setPendingQuickMatchCapacity(n)
               setIsMatching(true) // Go straight to matching UI, skip lobby
-            } else {
-              // multi-private: Tạo phòng luôn
-              lobby.create(n)
             }
+            // multi-private: socket hook tự create khi connect (capacity prop)
           }}
           onBack={() => {
             setMode(null)
@@ -368,6 +374,7 @@ export function EntertainmentWordScramblePage() {
           roomCode={activeRoomCode}
           playerCount={isMulti ? (actualMatchedCount || playerCount || 2) : 1}
           difficulty={difficulty}
+          initialPlayers={initialGamePlayers}
         />
       )}
     </WordScrambleGameArena>

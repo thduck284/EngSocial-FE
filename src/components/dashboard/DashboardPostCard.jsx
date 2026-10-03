@@ -432,9 +432,6 @@ export function DashboardPostCard({
                 <span className="material-symbols-outlined shrink-0 text-amber-500 text-xl">warning</span>
                 <div className="text-xs">
                   <p className="font-bold mb-0.5">⚠️ Cảnh báo nội dung ({post.moderation.level === 'high' ? 'Mức độ: Cao' : 'Mức độ: Trung bình'})</p>
-                  {post.moderation.keywords && post.moderation.keywords.length > 0 && (
-                    <p className="opacity-90">Từ khóa nhạy cảm phát hiện: <span className="font-semibold">{post.moderation.keywords.join(', ')}</span></p>
-                  )}
                 </div>
               </div>
             )}

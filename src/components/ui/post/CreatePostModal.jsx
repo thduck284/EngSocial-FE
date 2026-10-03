@@ -281,23 +281,7 @@ export function CreatePostModal({
                   </span>
                 </div>
 
-                {violationResult.keywords?.length > 0 && (
-                  <div>
-                    <p className="text-xs text-slate-500 dark:text-slate-400 mb-1.5">
-                      Từ khóa vi phạm phát hiện:
-                    </p>
-                    <div className="flex flex-wrap gap-1.5">
-                      {violationResult.keywords.map((kw, i) => (
-                        <span
-                          key={i}
-                          className="px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 dark:bg-red-900/40 text-red-600 dark:text-red-400 border border-red-200 dark:border-red-700"
-                        >
-                          {kw}
-                        </span>
-                      ))}
-                    </div>
-                  </div>
-                )}
+
 
                 <p className="text-xs text-slate-500 dark:text-slate-400 pt-1 border-t border-red-200 dark:border-red-800">
                   ⚠️ Vui lòng chỉnh sửa nội dung và thử lại.

@@ -13,7 +13,8 @@ export function WritingLessonResultPage() {
   const location = useLocation()
   const [searchParams, setSearchParams] = useSearchParams()
   const isModView = isModLessonResultView(searchParams)
-  const { user } = useAuth()
+  const { user, isAdmin, isModerator } = useAuth()
+  const isLecturer = isAdmin || isModerator
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
   const [info, setInfo] = useState({})
@@ -86,6 +87,7 @@ export function WritingLessonResultPage() {
   const teacherFeedback = String(submission.feedback || '').trim()
   const aiFeedback = String(submission.aiFeedback || progress?.aiFeedback || '').trim()
   const aiScore = submission.aiScore ?? progress?.aiScore ?? null
+  const aiCopyPercent = submission.aiCopyPercent ?? progress?.aiCopyPercent ?? null
   const aiStrengths = Array.isArray(submission.aiStrengths) ? submission.aiStrengths : []
   const aiImprovements = Array.isArray(submission.aiImprovements) ? submission.aiImprovements : []
   const aiGrammarErrors = Array.isArray(submission.aiGrammarErrors) ? submission.aiGrammarErrors : []
@@ -94,6 +96,64 @@ export function WritingLessonResultPage() {
   const hasTeacherFeedback = Boolean(teacherFeedback)
   const showAiReference = hasAiData
   const showTeacherFeedback = humanGraded || (isCompleted && hasTeacherFeedback)
+
+  // Calculate comparison with previous attempt
+  const selectedAttemptNo = viewAttemptNo ?? writingAttempts[writingAttempts.length - 1]?.attemptNo ?? null
+  const currentAttempt = writingAttempts.find((a) => a.attemptNo === selectedAttemptNo) || (writingAttempts.length > 0 ? writingAttempts[writingAttempts.length - 1] : null)
+  const currentIdx = currentAttempt ? writingAttempts.findIndex((a) => a.attemptNo === currentAttempt.attemptNo) : -1
+  const prevAttempt = currentIdx > 0 ? writingAttempts[currentIdx - 1] : null
+
+  const getCompareStatus = (val) => {
+    if (val > 0) return { label: t('writingLesson.compareImproved'), color: 'text-emerald-500 dark:text-emerald-400', icon: 'trending_up', bg: 'bg-emerald-50 dark:bg-emerald-500/5 border-emerald-500/20' }
+    if (val < 0) return { label: t('writingLesson.compareDeclined'), color: 'text-rose-500 dark:text-rose-400', icon: 'trending_down', bg: 'bg-rose-50 dark:bg-rose-500/5 border-rose-500/20' }
+    return { label: t('writingLesson.compareNoChange'), color: 'text-slate-500 dark:text-slate-400', icon: 'trending_flat', bg: 'bg-slate-50 dark:bg-slate-500/5 border-slate-500/20' }
+  }
+
+  let comparisonData = null
+  if (currentAttempt && prevAttempt) {
+    const currentScore = currentAttempt.score ?? currentAttempt.submission?.score ?? currentAttempt.submission?.aiScore ?? 0
+    const prevScore = prevAttempt.score ?? prevAttempt.submission?.score ?? prevAttempt.submission?.aiScore ?? 0
+    const scoreDiff = currentScore - prevScore
+
+    const currentWords = currentAttempt.submission?.wordCount || currentAttempt.submission?.content?.split(/\s+/).length || 0
+    const prevWords = prevAttempt.submission?.wordCount || prevAttempt.submission?.content?.split(/\s+/).length || 0
+    const wordsDiff = currentWords - prevWords
+
+    const currentBreakdown = currentAttempt.submission?.aiBreakdown || null
+    const prevBreakdown = prevAttempt.submission?.aiBreakdown || null
+
+    const breakdownCompare = []
+    if (currentBreakdown && prevBreakdown) {
+      const items = [
+        { label: 'Task Response', key: 'taskResponse' },
+        { label: 'Coherence', key: 'coherence' },
+        { label: 'Lexical', key: 'lexical' },
+        { label: 'Grammar', key: 'grammar' }
+      ]
+      items.forEach(item => {
+        const curVal = currentBreakdown[item.key] ?? 0
+        const prevVal = prevBreakdown[item.key] ?? 0
+        if (curVal !== null && prevVal !== null) {
+          breakdownCompare.push({
+            label: item.label,
+            diff: curVal - prevVal,
+            curVal,
+            prevVal
+          })
+        }
+      })
+    }
+
+    comparisonData = {
+      scoreDiff,
+      currentScore,
+      prevScore,
+      wordsDiff,
+      currentWords,
+      prevWords,
+      breakdownCompare
+    }
+  }
 
   const detailUrl = getLessonLink({
     id: info.id || id,
@@ -268,6 +328,78 @@ export function WritingLessonResultPage() {
           </div>
         </section>
 
+        {/* Attempt Comparison Section */}
+        <section className="bg-white dark:bg-card-dark rounded-2xl border border-slate-200 dark:border-border-dark overflow-hidden shadow-xl animate-in slide-in-from-bottom-4 duration-500 delay-100">
+          <div className="p-4 bg-slate-50 dark:bg-background-dark/50 border-b border-slate-200 dark:border-border-dark flex items-center gap-3">
+            <span className="material-symbols-outlined text-primary">compare_arrows</span>
+            <h3 className="text-slate-900 dark:text-white font-bold text-sm">{t('writingLesson.compareAttempts')}</h3>
+          </div>
+          <div className="p-5">
+            {comparisonData ? (
+              <div className="space-y-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {/* Score Compare */}
+                  <div className={`p-4 rounded-xl border flex flex-col justify-between ${getCompareStatus(comparisonData.scoreDiff).bg}`}>
+                    <div className="flex items-center justify-between mb-2">
+                      <span className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">{t('writingLesson.compareAttemptsScore')}</span>
+                      <span className={`flex items-center gap-1 text-xs font-bold ${getCompareStatus(comparisonData.scoreDiff).color}`}>
+                        <span className="material-symbols-outlined text-sm">{getCompareStatus(comparisonData.scoreDiff).icon}</span>
+                        {comparisonData.scoreDiff > 0 ? `+${comparisonData.scoreDiff}` : comparisonData.scoreDiff}
+                      </span>
+                    </div>
+                    <div className="flex items-baseline gap-2">
+                      <span className="text-2xl font-black text-slate-800 dark:text-white">{comparisonData.currentScore}</span>
+                      <span className="text-xs text-slate-400 dark:text-slate-500">so với {comparisonData.prevScore} (Lần {prevAttempt.attemptNo})</span>
+                    </div>
+                  </div>
+
+                  {/* Word Count Compare */}
+                  <div className={`p-4 rounded-xl border flex flex-col justify-between ${getCompareStatus(comparisonData.wordsDiff).bg}`}>
+                    <div className="flex items-center justify-between mb-2">
+                      <span className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">{t('writingLesson.compareAttemptsWords')}</span>
+                      <span className={`flex items-center gap-1 text-xs font-bold ${getCompareStatus(comparisonData.wordsDiff).color}`}>
+                        <span className="material-symbols-outlined text-sm">{getCompareStatus(comparisonData.wordsDiff).icon}</span>
+                        {comparisonData.wordsDiff > 0 ? `+${comparisonData.wordsDiff}` : comparisonData.wordsDiff}
+                      </span>
+                    </div>
+                    <div className="flex items-baseline gap-2">
+                      <span className="text-2xl font-black text-slate-800 dark:text-white">{comparisonData.currentWords} words</span>
+                      <span className="text-xs text-slate-400 dark:text-slate-500">so với {comparisonData.prevWords} words</span>
+                    </div>
+                  </div>
+                </div>
+
+                {comparisonData.breakdownCompare.length > 0 && (
+                  <div className="space-y-3">
+                    <h4 className="text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider">Chi tiết tiêu chí chấm điểm</h4>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                      {comparisonData.breakdownCompare.map((item) => {
+                        const status = getCompareStatus(item.diff)
+                        return (
+                          <div key={item.label} className="bg-slate-50 dark:bg-background-dark/30 border border-slate-200 dark:border-border-dark rounded-xl p-3.5 flex items-center justify-between">
+                            <div>
+                              <p className="text-sm font-bold text-slate-700 dark:text-slate-300">{item.label}</p>
+                              <p className="text-xs text-slate-400 dark:text-slate-500">Hiện tại: {item.curVal}/25 (Trước: {item.prevVal}/25)</p>
+                            </div>
+                            <div className={`flex items-center gap-0.5 font-bold text-xs ${status.color}`}>
+                              <span className="material-symbols-outlined text-sm">{status.icon}</span>
+                              {item.diff > 0 ? `+${item.diff}` : item.diff}
+                            </div>
+                          </div>
+                        )
+                      })}
+                    </div>
+                  </div>
+                )}
+              </div>
+            ) : (
+              <p className="text-sm text-slate-500 dark:text-gray-400 leading-relaxed italic">
+                {t('writingLesson.noPreviousAttempt')}
+              </p>
+            )}
+          </div>
+        </section>
+
         {/* Feedback — giáo viên & AI */}
         <section className="bg-white dark:bg-card-dark rounded-2xl border border-slate-200 dark:border-border-dark overflow-hidden shadow-xl animate-in slide-in-from-bottom-4 duration-500 delay-150">
           <div className="p-4 bg-slate-50 dark:bg-background-dark/50 border-b border-slate-200 dark:border-border-dark flex flex-wrap items-center justify-between gap-3">
@@ -318,6 +450,39 @@ export function WritingLessonResultPage() {
 
             {showAiReference ? (
               <div className="rounded-xl border border-indigo-500/20 bg-indigo-50/80 dark:bg-indigo-500/5 p-4 space-y-4">
+                {isLecturer && isModView && aiCopyPercent !== null && (
+                  <div className="rounded-xl border border-purple-500/30 bg-purple-50/50 dark:bg-purple-950/20 p-4 space-y-3">
+                    <div className="flex items-center gap-2">
+                      <span className="material-symbols-outlined text-purple-600 dark:text-purple-400">policy</span>
+                      <h4 className="text-sm font-bold text-purple-800 dark:text-purple-300">
+                        {t('writingLesson.aiCopyDetection')} (Giảng viên)
+                      </h4>
+                      <span className="ml-auto text-xs font-black text-purple-600 dark:text-purple-300 bg-white dark:bg-card-dark px-2.5 py-1 rounded-lg border border-purple-500/20">
+                        {t('writingLesson.aiCopyProbability')}: {aiCopyPercent}%
+                      </span>
+                    </div>
+                    <div className="w-full bg-slate-200 dark:bg-slate-800 h-2.5 rounded-full overflow-hidden">
+                      <div
+                        className={`h-full rounded-full transition-all duration-500 ${
+                          aiCopyPercent > 70
+                            ? 'bg-rose-500'
+                            : aiCopyPercent > 30
+                            ? 'bg-amber-500'
+                            : 'bg-emerald-500'
+                        }`}
+                        style={{ width: `${aiCopyPercent}%` }}
+                      />
+                    </div>
+                    <p className="text-xs text-slate-600 dark:text-slate-400 font-medium">
+                      {aiCopyPercent > 70
+                        ? t('writingLesson.aiCopyWarningHigh')
+                        : aiCopyPercent > 30
+                        ? t('writingLesson.aiCopyWarningMedium')
+                        : t('writingLesson.aiCopyWarningLow')}
+                    </p>
+                  </div>
+                )}
+
                 <div className="flex flex-wrap items-center gap-2">
                   <span className="material-symbols-outlined text-indigo-500 text-lg">psychology</span>
                   <h4 className="text-sm font-bold text-indigo-700 dark:text-indigo-300">

@@ -29,4 +29,8 @@ export const wordScrambleService = {
   deleteAllWords: () => apiClient.delete(API_ENDPOINTS.WORD_SCRAMBLE.WORDS_ALL),
 
   getResults: (roomCode) => apiClient.get(API_ENDPOINTS.WORD_SCRAMBLE.RESULTS(roomCode)),
+
+  getSoloProgress: () => apiClient.get(API_ENDPOINTS.WORD_SCRAMBLE.PROGRESS),
+
+  updateSoloProgress: (stage) => apiClient.post(API_ENDPOINTS.WORD_SCRAMBLE.PROGRESS, { stage }),
 }
